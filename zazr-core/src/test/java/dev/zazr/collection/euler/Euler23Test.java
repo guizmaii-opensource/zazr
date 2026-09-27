@@ -36,23 +36,36 @@ public class Euler23Test {
 
     private static final long SMALLEST_ABUNDANT_NUMBER = 12;
     private static final long SMALLEST_NUMBER_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS = 2 * SMALLEST_ABUNDANT_NUMBER;
-    private static final long LOWER_LIMIT_FOUND_BY_MATHEMATICAL_ANALYSIS_FOR_NUMBERS_THAT_CAN_BE_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS = 28123;
+    private static final long
+            LOWER_LIMIT_FOUND_BY_MATHEMATICAL_ANALYSIS_FOR_NUMBERS_THAT_CAN_BE_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS =
+                    28123;
 
     @Test
     public void shouldSolveProblem23() {
-        List.range(1, SMALLEST_ABUNDANT_NUMBER).forEach(n -> Assertions.assertThat(isAbundant.apply(n)).isFalse());
+        List.range(1, SMALLEST_ABUNDANT_NUMBER)
+                .forEach(n -> Assertions.assertThat(isAbundant.apply(n)).isFalse());
         Assertions.assertThat(isAbundant.apply(SMALLEST_ABUNDANT_NUMBER)).isTrue();
         Assertions.assertThat(isAbundant.apply(28L)).isFalse();
-        assertThat(canBeWrittenAsTheSumOfTwoAbundantNumbers(SMALLEST_NUMBER_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS - 1)).isFalse();
-        assertThat(canBeWrittenAsTheSumOfTwoAbundantNumbers(SMALLEST_NUMBER_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS)).isTrue();
-        assertThat(canBeWrittenAsTheSumOfTwoAbundantNumbers(LOWER_LIMIT_FOUND_BY_MATHEMATICAL_ANALYSIS_FOR_NUMBERS_THAT_CAN_BE_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS + 1)).isTrue();
-        assertThat(sumOfAllPositiveIntegersThatCannotBeWrittenAsTheSumOfTwoAbundantNumbers()).isEqualTo(4179871L);
+        assertThat(canBeWrittenAsTheSumOfTwoAbundantNumbers(
+                        SMALLEST_NUMBER_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS - 1))
+                .isFalse();
+        assertThat(canBeWrittenAsTheSumOfTwoAbundantNumbers(SMALLEST_NUMBER_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS))
+                .isTrue();
+        assertThat(canBeWrittenAsTheSumOfTwoAbundantNumbers(
+                        LOWER_LIMIT_FOUND_BY_MATHEMATICAL_ANALYSIS_FOR_NUMBERS_THAT_CAN_BE_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS
+                                + 1))
+                .isTrue();
+        assertThat(sumOfAllPositiveIntegersThatCannotBeWrittenAsTheSumOfTwoAbundantNumbers())
+                .isEqualTo(4179871L);
     }
 
     private static long sumOfAllPositiveIntegersThatCannotBeWrittenAsTheSumOfTwoAbundantNumbers() {
-        return Stream.rangeClosed(1, LOWER_LIMIT_FOUND_BY_MATHEMATICAL_ANALYSIS_FOR_NUMBERS_THAT_CAN_BE_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS)
+        return Stream.rangeClosed(
+                        1,
+                        LOWER_LIMIT_FOUND_BY_MATHEMATICAL_ANALYSIS_FOR_NUMBERS_THAT_CAN_BE_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS)
                 .filter(l -> !canBeWrittenAsTheSumOfTwoAbundantNumbers(l))
-                .sum().longValue();
+                .sum()
+                .longValue();
     }
 
     private static boolean canBeWrittenAsTheSumOfTwoAbundantNumbers(long l) {
@@ -62,8 +75,10 @@ public class Euler23Test {
         if (l == SMALLEST_NUMBER_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS) {
             return true;
         }
-        return Stream.rangeClosed(SMALLEST_ABUNDANT_NUMBER, l / 2).exists(a -> isAbundant.apply(a) && isAbundant.apply(l - a));
+        return Stream.rangeClosed(SMALLEST_ABUNDANT_NUMBER, l / 2)
+                .exists(a -> isAbundant.apply(a) && isAbundant.apply(l - a));
     }
 
-    private static final Function<Long, Boolean> isAbundant = Memoize.of((Long l) -> Utils.divisors(l).sum().longValue() > l);
+    private static final Function<Long, Boolean> isAbundant =
+            Memoize.of((Long l) -> Utils.divisors(l).sum().longValue() > l);
 }

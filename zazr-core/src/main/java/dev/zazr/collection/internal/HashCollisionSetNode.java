@@ -84,7 +84,8 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
     }
 
     @Override
-    @Nullable T find(T element, int hash, int shift) {
+    @Nullable
+    T find(T element, int hash, int shift) {
         final int index = (this.hash == hash) ? indexOf(element) : -1;
         return index >= 0 ? getPayload(index) : null;
     }
@@ -114,8 +115,14 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
             return this;
         } else if (content.length == 2) {
             // one element left: a node of the root level, to be inlined by the parent
-            return new BitmapIndexedSetNode<>(null, bitposFrom(maskFrom(this.hash, 0)), 0, new Object[] { content[1 - index] },
-                    new int[] { this.hash }, 1, this.hash);
+            return new BitmapIndexedSetNode<>(
+                    null,
+                    bitposFrom(maskFrom(this.hash, 0)),
+                    0,
+                    new Object[] {content[1 - index]},
+                    new int[] {this.hash},
+                    1,
+                    this.hash);
         } else {
             final Object[] dst = new Object[content.length - 1];
             System.arraycopy(content, 0, dst, 0, index);
@@ -181,7 +188,8 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
             return SetNode.empty();
         } else if (length == 1) {
             // one element left: a node of the root level, to be inlined by the parent
-            return new BitmapIndexedSetNode<>(null, bitposFrom(maskFrom(hash, 0)), 0, new Object[] { kept[0] }, new int[] { hash }, 1, hash);
+            return new BitmapIndexedSetNode<>(
+                    null, bitposFrom(maskFrom(hash, 0)), 0, new Object[] {kept[0]}, new int[] {hash}, 1, hash);
         } else {
             return new HashCollisionSetNode<>(hash, Arrays.copyOf(kept, length));
         }

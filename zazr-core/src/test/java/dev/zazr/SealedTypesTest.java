@@ -51,8 +51,22 @@ public class SealedTypesTest {
 
         @Test
         public void shouldBeRecords() {
-            for (Class<?> c : new Class<?>[] { Some.class, None.class, Left.class, Right.class, Success.class, Failure.class,
-                    Valid.class, Invalid.class, Cons.class, Nil.class, Tuple0.class, Tuple1.class, Tuple2.class, Tuple8.class }) {
+            for (Class<?> c : new Class<?>[] {
+                Some.class,
+                None.class,
+                Left.class,
+                Right.class,
+                Success.class,
+                Failure.class,
+                Valid.class,
+                Invalid.class,
+                Cons.class,
+                Nil.class,
+                Tuple0.class,
+                Tuple1.class,
+                Tuple2.class,
+                Tuple8.class
+            }) {
                 assertThat(c.isRecord()).as(c.getSimpleName()).isTrue();
             }
         }
@@ -99,7 +113,9 @@ public class SealedTypesTest {
 
         @Test
         public void shouldRejectNullInSome() {
-            assertThatThrownBy(() -> new Some<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
+            assertThatThrownBy(() -> new Some<>(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("value is null");
             assertThatThrownBy(() -> Option.some(null)).isInstanceOf(NullPointerException.class);
             assertThat(Option.ofNullable(null)).isSameAs(Option.none());
             assertThat(Option.some(1)).isEqualTo(Option.some(1));
@@ -148,8 +164,12 @@ public class SealedTypesTest {
 
         @Test
         public void shouldRejectNullOnBothSides() {
-            assertThatThrownBy(() -> new Left<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
-            assertThatThrownBy(() -> new Right<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
+            assertThatThrownBy(() -> new Left<>(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("value is null");
+            assertThatThrownBy(() -> new Right<>(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("value is null");
             assertThatThrownBy(() -> Either.left(null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Either.right(null)).isInstanceOf(NullPointerException.class);
         }
@@ -185,14 +205,19 @@ public class SealedTypesTest {
         @Test
         public void shouldMatchWithInstanceofPattern() {
             final Try<Integer> failure = Try.failure(new IllegalStateException("bad"));
-            assertThat(failure instanceof Failure(var cause) && cause instanceof IllegalStateException).isTrue();
+            assertThat(failure instanceof Failure(var cause) && cause instanceof IllegalStateException)
+                    .isTrue();
             assertThat(failure instanceof Success<?>).isFalse();
         }
 
         @Test
         public void shouldRejectNullInSuccessAndFailure() {
-            assertThatThrownBy(() -> new Success<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
-            assertThatThrownBy(() -> new Failure<>(null)).isInstanceOf(NullPointerException.class).hasMessage("cause is null");
+            assertThatThrownBy(() -> new Success<>(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("value is null");
+            assertThatThrownBy(() -> new Failure<>(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("cause is null");
             assertThatThrownBy(() -> Try.success(null)).isInstanceOf(NullPointerException.class);
             // a computation that yields null is captured, not thrown: every non-fatal outcome ends up in the Try
             assertThat(Try.of(() -> null).getCause()).isInstanceOf(NullPointerException.class);
@@ -212,7 +237,8 @@ public class SealedTypesTest {
             assertThat(new Failure<>(cause)).isEqualTo(Try.failure(cause)).hasSameHashCodeAs(Try.failure(cause));
             assertThat(new Failure<>(cause).cause()).isSameAs(cause);
             // same class, same message, same stack shape: still two exceptions
-            assertThat(Try.failure(new RuntimeException("same"))).isNotEqualTo(Try.failure(new RuntimeException("same")));
+            assertThat(Try.failure(new RuntimeException("same")))
+                    .isNotEqualTo(Try.failure(new RuntimeException("same")));
             assertThat(Try.failure(cause)).isNotEqualTo(Try.success(cause));
         }
 
@@ -250,8 +276,12 @@ public class SealedTypesTest {
 
         @Test
         public void shouldRejectNullOnBothSides() {
-            assertThatThrownBy(() -> new Valid<>(null)).isInstanceOf(NullPointerException.class).hasMessage("value is null");
-            assertThatThrownBy(() -> new Invalid<>(null)).isInstanceOf(NullPointerException.class).hasMessage("errors is null");
+            assertThatThrownBy(() -> new Valid<>(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("value is null");
+            assertThatThrownBy(() -> new Invalid<>(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("errors is null");
             assertThatThrownBy(() -> Validation.valid(null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Validation.invalid(null)).isInstanceOf(NullPointerException.class);
         }
@@ -259,7 +289,9 @@ public class SealedTypesTest {
         @Test
         public void shouldHonourRecordEqualityContract() {
             assertThat(new Valid<>(1)).isEqualTo(Validation.valid(1)).hasSameHashCodeAs(Validation.valid(1));
-            assertThat(new Invalid<>(NonEmptyVector.single("e"))).isEqualTo(Validation.invalid("e")).hasSameHashCodeAs(Validation.invalid("e"));
+            assertThat(new Invalid<>(NonEmptyVector.single("e")))
+                    .isEqualTo(Validation.invalid("e"))
+                    .hasSameHashCodeAs(Validation.invalid("e"));
             assertThat(new Valid<>(1)).isNotEqualTo(new Invalid<>(NonEmptyVector.single(1)));
             assertThat(new Valid<>(1).value()).isEqualTo(1);
             assertThat(new Invalid<>(NonEmptyVector.single("e")).errors()).isEqualTo(NonEmptyVector.single("e"));
@@ -304,14 +336,19 @@ public class SealedTypesTest {
         @Test
         public void shouldMatchWithInstanceofPattern() {
             final List<Integer> list = List.of(1, 2);
-            assertThat(list instanceof Cons(var head, var tail) && head == 1 && tail.equals(List.of(2))).isTrue();
+            assertThat(list instanceof Cons(var head, var tail) && head == 1 && tail.equals(List.of(2)))
+                    .isTrue();
             assertThat(List.empty() instanceof Nil()).isTrue();
         }
 
         @Test
         public void shouldRejectNullTailAndNullHead() {
-            assertThatThrownBy(() -> new Cons<>(1, null)).isInstanceOf(NullPointerException.class).hasMessage("tail is null");
-            assertThatThrownBy(() -> new Cons<>(null, List.empty())).isInstanceOf(NullPointerException.class).hasMessage("List: element is null");
+            assertThatThrownBy(() -> new Cons<>(1, null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("tail is null");
+            assertThatThrownBy(() -> new Cons<>(null, List.empty()))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("List: element is null");
         }
 
         @Test
@@ -351,13 +388,15 @@ public class SealedTypesTest {
             assertThatThrownBy(() -> Either.right(1).map(x -> null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Either.left(1).mapLeft(x -> null)).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> Validation.valid(1).map(x -> null)).isInstanceOf(NullPointerException.class);
-            assertThatThrownBy(() -> Validation.invalid(1).mapError(x -> null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Validation.invalid(1).mapError(x -> null))
+                    .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         public void shouldCaptureNullMapperResultInTry() {
             assertThat(Try.success(1).map(x -> null).getCause()).isInstanceOf(NullPointerException.class);
-            assertThat(Try.failure(new RuntimeException()).catchAll(t -> null).getCause()).isInstanceOf(NullPointerException.class);
+            assertThat(Try.failure(new RuntimeException()).catchAll(t -> null).getCause())
+                    .isInstanceOf(NullPointerException.class);
         }
 
         @Test

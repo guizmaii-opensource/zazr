@@ -50,31 +50,35 @@ public class Euler26Test {
         assertThat(recurringCycleLengthForDivisionOf1(8)._2()).isEqualTo(0);
         assertThat(recurringCycleLengthForDivisionOf1(9)._2()).isEqualTo(1);
         assertThat(recurringCycleLengthForDivisionOf1(10)._2()).isEqualTo(0);
-        assertThat(denominatorBelow1000WithTheLongetsRecurringCycleOfDecimalFractions()).isEqualTo(983);
+        assertThat(denominatorBelow1000WithTheLongetsRecurringCycleOfDecimalFractions())
+                .isEqualTo(983);
     }
 
     private static int denominatorBelow1000WithTheLongetsRecurringCycleOfDecimalFractions() {
         return List.range(2, 1000)
                 .map(Euler26Test::recurringCycleLengthForDivisionOf1)
                 .maxBy(Tuple2::_2)
-                .get()._1();
+                .get()
+                ._1();
     }
 
     private static Tuple2<Integer, Integer> recurringCycleLengthForDivisionOf1(int divisor) {
         return Tuple.of(
                 divisor,
-                recurringCycleLengthInDecimalFractionPart(
-                        removeLeadingZeroAndDecimalPoint()
-                                .andThen(removeRoundingDigit())
-                                .andThen(removeTrailingZeroes())
-                                .apply(Vector.ofAll(BigDecimal.ONE.divide(BigDecimal.valueOf(divisor), 2000, RoundingMode.UP).toString().toCharArray()))
-                                .mkString()
-                ));
+                recurringCycleLengthInDecimalFractionPart(removeLeadingZeroAndDecimalPoint()
+                        .andThen(removeRoundingDigit())
+                        .andThen(removeTrailingZeroes())
+                        .apply(Vector.ofAll(BigDecimal.ONE
+                                .divide(BigDecimal.valueOf(divisor), 2000, RoundingMode.UP)
+                                .toString()
+                                .toCharArray()))
+                        .mkString()));
     }
 
     private static int recurringCycleLengthInDecimalFractionPart(String decimalFractionPart) {
         // Stream is lazy, so the rest is only evaluated until the recurring cycle is found.
-        final Stream<Character> reversed = Vector.ofAll(decimalFractionPart.toCharArray()).reverse().toStream();
+        final Stream<Character> reversed =
+                Vector.ofAll(decimalFractionPart.toCharArray()).reverse().toStream();
         return createCandidateCycles()
                 .andThen(removeCandidatesLongerThanHalfTheFullString(decimalFractionPart))
                 .andThen(findFirstRecurringCycle(decimalFractionPart))
@@ -92,9 +96,8 @@ public class Euler26Test {
     }
 
     private static Function<Vector<Character>, Vector<Character>> removeTrailingZeroes() {
-        return seq -> seq
-                .reverse()
-                .dropWhile(c -> c == '0') //Remove any trailing zeroes
+        return seq -> seq.reverse()
+                .dropWhile(c -> c == '0') // Remove any trailing zeroes
                 .reverse();
     }
 
@@ -105,13 +108,17 @@ public class Euler26Test {
                 .drop(1); // Drop the first empty string created by scan
     }
 
-    private static Function<Stream<String>, Stream<String>> removeCandidatesLongerThanHalfTheFullString(String decimalFractionPart) {
-        return candidateCycles -> candidateCycles.filter(candidate -> decimalFractionPart.length() >= candidate.length() * 2);
+    private static Function<Stream<String>, Stream<String>> removeCandidatesLongerThanHalfTheFullString(
+            String decimalFractionPart) {
+        return candidateCycles ->
+                candidateCycles.filter(candidate -> decimalFractionPart.length() >= candidate.length() * 2);
     }
 
     private static Function<Stream<String>, Option<String>> findFirstRecurringCycle(String decimalFractionPart) {
         return reversedCandidateCycles -> reversedCandidateCycles
                 .map(s -> Vector.ofAll(s.toCharArray()).reverse().mkString())
-                .find(candidate -> candidate.equals(decimalFractionPart.substring(decimalFractionPart.length() - (candidate.length() * 2), decimalFractionPart.length() - candidate.length())));
+                .find(candidate -> candidate.equals(decimalFractionPart.substring(
+                        decimalFractionPart.length() - (candidate.length() * 2),
+                        decimalFractionPart.length() - candidate.length())));
     }
 }

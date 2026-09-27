@@ -14,7 +14,6 @@ import dev.zazr.collection.Stream;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
-
 import java.util.ArrayList;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -43,8 +42,7 @@ final class Shapes {
     static final int SET_LAYOUTS = 4;
     static final int MAP_LAYOUTS = 4;
 
-    private Shapes() {
-    }
+    private Shapes() {}
 
     // -- lengths and element draws
 
@@ -128,7 +126,9 @@ final class Shapes {
             default -> {
                 final ArrayList<T> prefix = extra(gen, sampling, size);
                 final ArrayList<T> suffix = extra(gen, sampling, size);
-                yield Vector.ofAll(concat(concat(prefix, xs), suffix)).drop(prefix.size()).dropRight(suffix.size());
+                yield Vector.ofAll(concat(concat(prefix, xs), suffix))
+                        .drop(prefix.size())
+                        .dropRight(suffix.size());
             }
         };
     }
@@ -178,7 +178,8 @@ final class Shapes {
                 yield queue;
             }
             case 2 -> {
-                final int split = xs.size() < 2 ? xs.size() : 1 + sampling.draw().nextInt(xs.size() - 1);
+                final int split =
+                        xs.size() < 2 ? xs.size() : 1 + sampling.draw().nextInt(xs.size() - 1);
                 yield Queue.ofAll(xs.subList(0, split)).enqueueAll(new ArrayList<>(xs.subList(split, xs.size())));
             }
             default -> {
@@ -241,30 +242,40 @@ final class Shapes {
         return switch (layout) {
             case 0 -> NonEmptyVector.single(head).appendAll(tail);
             case 1 -> NonEmptyVector.fromVector(tail.prepend(head)).get();
-            default -> tail.isEmpty()
-                    ? NonEmptyVector.single(head)
-                    : NonEmptyVector.fromVector(tail).get().prepend(head);
+            default ->
+                tail.isEmpty()
+                        ? NonEmptyVector.single(head)
+                        : NonEmptyVector.fromVector(tail).get().prepend(head);
         };
     }
 
     // -- sets
 
     /// The operations one set type offers to the set layouts.
-    record SetOps<T, S>(Supplier<S> empty, Function<Iterable<T>, S> ofAll, BiFunction<S, T, S> add,
-                        BiFunction<S, T, S> remove, BiPredicate<S, T> contains) {
-    }
+    record SetOps<T, S>(
+            Supplier<S> empty,
+            Function<Iterable<T>, S> ofAll,
+            BiFunction<S, T, S> add,
+            BiFunction<S, T, S> remove,
+            BiPredicate<S, T> contains) {}
 
     static <T> SetOps<T, HashSet<T>> hashSetOps() {
-        return new SetOps<T, HashSet<T>>(HashSet::empty, HashSet::ofAll, HashSet::add, HashSet::remove, HashSet::contains);
+        return new SetOps<T, HashSet<T>>(
+                HashSet::empty, HashSet::ofAll, HashSet::add, HashSet::remove, HashSet::contains);
     }
 
     static <T> SetOps<T, LinkedHashSet<T>> linkedHashSetOps() {
-        return new SetOps<T, LinkedHashSet<T>>(LinkedHashSet::empty, LinkedHashSet::ofAll, LinkedHashSet::add,
-                LinkedHashSet::remove, LinkedHashSet::contains);
+        return new SetOps<T, LinkedHashSet<T>>(
+                LinkedHashSet::empty,
+                LinkedHashSet::ofAll,
+                LinkedHashSet::add,
+                LinkedHashSet::remove,
+                LinkedHashSet::contains);
     }
 
     static <T extends Comparable<? super T>> SetOps<T, TreeSet<T>> treeSetOps() {
-        return new SetOps<T, TreeSet<T>>(TreeSet::empty, TreeSet::ofAll, TreeSet::add, TreeSet::remove, TreeSet::contains);
+        return new SetOps<T, TreeSet<T>>(
+                TreeSet::empty, TreeSet::ofAll, TreeSet::add, TreeSet::remove, TreeSet::contains);
     }
 
     static <T, S> Gen<S> set(Gen<T> gen, SetOps<T, S> ops) {
@@ -316,28 +327,36 @@ final class Shapes {
     // -- maps
 
     /// The operations one map type offers to the map layouts.
-    record MapOps<K, V, M>(Supplier<M> empty, Function<java.util.Map<K, V>, M> ofAll, Function3<M, K, V, M> put,
-                           BiFunction<M, K, M> remove, BiPredicate<M, K> containsKey) {
-    }
+    record MapOps<K, V, M>(
+            Supplier<M> empty,
+            Function<java.util.Map<K, V>, M> ofAll,
+            Function3<M, K, V, M> put,
+            BiFunction<M, K, M> remove,
+            BiPredicate<M, K> containsKey) {}
 
     static <K, V> MapOps<K, V, HashMap<K, V>> hashMapOps() {
-        return new MapOps<K, V, HashMap<K, V>>(HashMap::empty, HashMap::ofAll, HashMap::put, HashMap::remove,
-                HashMap::containsKey);
+        return new MapOps<K, V, HashMap<K, V>>(
+                HashMap::empty, HashMap::ofAll, HashMap::put, HashMap::remove, HashMap::containsKey);
     }
 
     static <K, V> MapOps<K, V, LinkedHashMap<K, V>> linkedHashMapOps() {
-        return new MapOps<K, V, LinkedHashMap<K, V>>(LinkedHashMap::empty, LinkedHashMap::ofAll, LinkedHashMap::put,
-                LinkedHashMap::remove, LinkedHashMap::containsKey);
+        return new MapOps<K, V, LinkedHashMap<K, V>>(
+                LinkedHashMap::empty,
+                LinkedHashMap::ofAll,
+                LinkedHashMap::put,
+                LinkedHashMap::remove,
+                LinkedHashMap::containsKey);
     }
 
     static <K extends Comparable<? super K>, V> MapOps<K, V, TreeMap<K, V>> treeMapOps() {
-        return new MapOps<K, V, TreeMap<K, V>>(TreeMap::empty, TreeMap::ofAll, TreeMap::put, TreeMap::remove,
-                TreeMap::containsKey);
+        return new MapOps<K, V, TreeMap<K, V>>(
+                TreeMap::empty, TreeMap::ofAll, TreeMap::put, TreeMap::remove, TreeMap::containsKey);
     }
 
     static <K, V, M> Gen<M> map(Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<Tuple2<K, V>> xs = entries(keys, values, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            final ArrayList<Tuple2<K, V>> xs =
+                    entries(keys, values, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(map(sampling.draw().nextInt(MAP_LAYOUTS), xs, keys, values, ops, sampling, size));
         });
     }
@@ -354,8 +373,14 @@ final class Shapes {
 
     /// `ofAll` of a JDK map, one `put` at a time, extra keys the map does not hold put then removed again, and every
     /// key first put with another value then overwritten.
-    static <K, V, M> M map(int layout, ArrayList<Tuple2<K, V>> xs, Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops,
-                           Sampling sampling, int size) {
+    static <K, V, M> M map(
+            int layout,
+            ArrayList<Tuple2<K, V>> xs,
+            Gen<K> keys,
+            Gen<V> values,
+            MapOps<K, V, M> ops,
+            Sampling sampling,
+            int size) {
         return switch (layout) {
             case 0 -> {
                 final java.util.LinkedHashMap<K, V> javaMap = new java.util.LinkedHashMap<>();

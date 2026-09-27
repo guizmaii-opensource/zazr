@@ -18,13 +18,15 @@ public class QuickSortTest {
     /** Note: this example is only meant to show off, not to be used in reality: it can have quadratic performance and cause stack overflow */
     private static List<Integer> sort(List<Integer> values) {
         if (values.size() <= 1) return values;
-        return values.tail().partition(v -> v <= values.head())
-                     .apply((less, more) -> sort(less).append(values.head()).appendAll(sort(more)));
+        return values.tail()
+                .partition(v -> v <= values.head())
+                .apply((less, more) -> sort(less).append(values.head()).appendAll(sort(more)));
     }
+
     private static <T extends Comparable<T>> List<T> sort2(List<T> values) {
         if (values.size() <= 1) return values;
         final Map<Integer, List<T>> map = values.groupBy(v -> signum(v.compareTo(values.head())));
-        final IntFunction<List<T>> parts =  signum -> map.get(signum).getOrElse(List.empty());
+        final IntFunction<List<T>> parts = signum -> map.get(signum).getOrElse(List.empty());
         return sort2(parts.apply(-1)).appendAll(parts.apply(0)).appendAll(sort2(parts.apply(1)));
     }
 }

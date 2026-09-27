@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ChampSetTest {
 
     private static final long SEED = 20260926L;
-    private static final int[] SIZES = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, 32768, 100_000 };
+    private static final int[] SIZES = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025, 32768, 100_000};
 
     /** A key placed by the test: `hash` is its mixed hash (the one whose 5-bit fragments pick its slots), and its hash
      *  code the one that mixes to it. Two keys are equal when both the hash and the id are. */
@@ -39,8 +39,27 @@ public class ChampSetTest {
         return result;
     }
 
-    private static final int[] HOT_HASHES = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, -1, Integer.MIN_VALUE, Integer.MAX_VALUE,
-            1 << 30, 2 << 30, 3 << 30, 1 << 25, 1 << 20, (1 << 25) | 1, (1 << 30) | 1 };
+    private static final int[] HOT_HASHES = {
+        0,
+        1,
+        2,
+        31,
+        32,
+        33,
+        1023,
+        1024,
+        1025,
+        -1,
+        Integer.MIN_VALUE,
+        Integer.MAX_VALUE,
+        1 << 30,
+        2 << 30,
+        3 << 30,
+        1 << 25,
+        1 << 20,
+        (1 << 25) | 1,
+        (1 << 30) | 1
+    };
 
     private static Key randomKey(Random random) {
         final int hash = switch (random.nextInt(4)) {
@@ -119,7 +138,8 @@ public class ChampSetTest {
         assertThat(trie.contains(2)).isFalse();
         assertThat(trie.contains(65)).isFalse();
         assertThat(trie.contains(null)).isFalse();
-        final BitmapIndexedSetNode<Key> colliding = SetNode.<Key> empty().updated(new Key(7, 0), true).updated(new Key(7, 1), true);
+        final BitmapIndexedSetNode<Key> colliding =
+                SetNode.<Key>empty().updated(new Key(7, 0), true).updated(new Key(7, 1), true);
         assertThat(colliding.contains(new Key(7, 1))).isTrue();
         assertThat(colliding.contains(new Key(7, 2))).isFalse();
         assertThat(colliding.contains(new Key(7 + (1 << 31), 0))).isFalse();
@@ -127,7 +147,7 @@ public class ChampSetTest {
 
     @Test
     public void shouldHoldUpTo32ElementsInlineInTheRootAndPushTheThirtyThirdDown() {
-        for (int size : new int[] { 0, 1, 2, 31, 32, 33 }) {
+        for (int size : new int[] {0, 1, 2, 31, 32, 33}) {
             final BitmapIndexedSetNode<Key> trie = persistent(keys(size));
             assertValid(trie);
             if (size <= 32) {
@@ -139,7 +159,7 @@ public class ChampSetTest {
                 assertThat(trie.getNode(0).size()).isEqualTo(2);
             }
         }
-        for (int size : new int[] { 1023, 1024, 1025 }) {
+        for (int size : new int[] {1023, 1024, 1025}) {
             final BitmapIndexedSetNode<Key> trie = persistent(keys(size));
             assertValid(trie);
             assertThat(trie.nodeMap).isEqualTo(-1);
@@ -149,7 +169,8 @@ public class ChampSetTest {
 
     @Test
     public void shouldPutElementsOfOneHashInACollisionNodeAndPullTheLastOneBackUp() {
-        final BitmapIndexedSetNode<Key> trie = persistent(java.util.List.of(new Key(5, 0), new Key(5, 1), new Key(5, 2)));
+        final BitmapIndexedSetNode<Key> trie =
+                persistent(java.util.List.of(new Key(5, 0), new Key(5, 1), new Key(5, 2)));
         assertValid(trie);
         SetNode<Key> node = trie;
         for (int level = 0; level < 7; level++) {
@@ -161,7 +182,8 @@ public class ChampSetTest {
         assertThat(one.nodeMap).isZero();
         assertThat(one.dataMap).isEqualTo(1 << 5);
         // a root that keeps other elements inlines the survivor of a deep chain
-        final BitmapIndexedSetNode<Key> mixed = persistent(java.util.List.of(new Key(0, 0), new Key(1 << 30, 0), new Key(7, 0)));
+        final BitmapIndexedSetNode<Key> mixed =
+                persistent(java.util.List.of(new Key(0, 0), new Key(1 << 30, 0), new Key(7, 0)));
         final BitmapIndexedSetNode<Key> after = mixed.removed(new Key(1 << 30, 0));
         assertCanonical(after);
         assertThat(after.nodeMap).isZero();
@@ -171,7 +193,7 @@ public class ChampSetTest {
 
     @Test
     public void shouldReplaceAnEqualElementOnlyWhenAsked() {
-        for (boolean colliding : new boolean[] { false, true }) {
+        for (boolean colliding : new boolean[] {false, true}) {
             final Key first = new Key(3, 0);
             final Key second = new Key(3, 0);
             BitmapIndexedSetNode<Key> trie = SetNode.empty();
@@ -306,7 +328,9 @@ public class ChampSetTest {
                 assertThat(owners).hasSize(1).doesNotContainNull();
             }
         }
-        internalNodes(persistent(ids(1025))).forEach(node -> assertThat(((BitmapIndexedSetNode<?>) node).owner).isNull());
+        internalNodes(persistent(ids(1025)))
+                .forEach(node ->
+                        assertThat(((BitmapIndexedSetNode<?>) node).owner).isNull());
         final BitmapIndexedSetNode<Integer> built = built(ids(1025));
         final String before = describe(built);
         BitmapIndexedSetNode<Integer> updated = built;
@@ -319,7 +343,7 @@ public class ChampSetTest {
     @Test
     public void shouldAdoptATrieAndCopyItsNodesOnFirstWrite() {
         final Random random = new Random(SEED);
-        for (int size : new int[] { 1, 2, 31, 32, 33, 1023, 1024, 1025, 32768 }) {
+        for (int size : new int[] {1, 2, 31, 32, 33, 1023, 1024, 1025, 32768}) {
             final java.util.List<Integer> elements = ids(size);
             final BitmapIndexedSetNode<Integer> source = persistent(elements);
             final String sourceBefore = describe(source);
@@ -381,7 +405,8 @@ public class ChampSetTest {
                 poolContents.add(model);
             }
             for (int step = 0; step < 25; step++) {
-                final java.util.List<String> snapshots = pool.stream().map(ChampValidity::describe).toList();
+                final java.util.List<String> snapshots =
+                        pool.stream().map(ChampValidity::describe).toList();
                 final int from = random.nextInt(pool.size());
                 final HashSetBuilder<Key> left = new HashSetBuilder<>("test");
                 final HashSetBuilder<Key> right = new HashSetBuilder<>("test");
@@ -393,8 +418,8 @@ public class ChampSetTest {
                 final int adds = random.nextInt(4) == 0 ? random.nextInt(5) : random.nextInt(600);
                 for (int i = 0; i < adds; i++) {
                     final Key key = (!sourceKeys.isEmpty() && random.nextBoolean())
-                                    ? sourceKeys.get(random.nextInt(sourceKeys.size()))
-                                    : randomKey(random);
+                            ? sourceKeys.get(random.nextInt(sourceKeys.size()))
+                            : randomKey(random);
                     final Key equal = new Key(key.hash(), key.id());
                     left.add(equal);
                     leftModel.putIfAbsent(equal, equal);
@@ -410,7 +435,9 @@ public class ChampSetTest {
                 final BitmapIndexedSetNode<Key> l = left.result();
                 final BitmapIndexedSetNode<Key> r = right.result();
                 for (int i = 0; i < pool.size(); i++) {
-                    assertThat(describe(pool.get(i))).as("seed %s, step %s, trie %s", seed, step, i).isEqualTo(snapshots.get(i));
+                    assertThat(describe(pool.get(i)))
+                            .as("seed %s, step %s, trie %s", seed, step, i)
+                            .isEqualTo(snapshots.get(i));
                     assertHolds(pool.get(i), poolContents.get(i));
                 }
                 assertValid(l);
@@ -450,7 +477,8 @@ public class ChampSetTest {
         final HashSetBuilder<Integer> builder = new HashSetBuilder<>("Some.Builder");
         builder.add(1);
         final BitmapIndexedSetNode<Integer> built = builder.result();
-        assertThatThrownBy(builder::checkOpen).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(builder::checkOpen)
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessage("result() has already been called on this Some.Builder");
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);

@@ -504,7 +504,9 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @throws IllegalArgumentException if {@code step} is zero
      */
     static Iterator<Double> rangeBy(double from, double toExclusive, double step) {
-        final BigDecimal fromDecimal = asDecimal(from), toDecimal = asDecimal(toExclusive), stepDecimal = asDecimal(step);
+        final BigDecimal fromDecimal = asDecimal(from),
+                toDecimal = asDecimal(toExclusive),
+                stepDecimal = asDecimal(step);
         return rangeBy(fromDecimal, toDecimal, stepDecimal).map(BigDecimal::doubleValue);
     }
 
@@ -533,7 +535,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     static Iterator<BigDecimal> rangeBy(BigDecimal from, BigDecimal toExclusive, BigDecimal step) {
         if (step.signum() == 0) {
             throw new IllegalArgumentException("step cannot be 0");
-        } else if (areEqual(from, toExclusive) || step.signum() == from.subtract(toExclusive).signum()) {
+        } else if (areEqual(from, toExclusive)
+                || step.signum() == from.subtract(toExclusive).signum()) {
             return empty();
         } else {
             if (step.signum() > 0) {
@@ -686,7 +689,6 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @param toInclusive the last character (inclusive)
      * @return an iterator over the specified character range, or empty if {@code from > toInclusive}
      */
-
     static Iterator<Character> rangeClosed(char from, char toInclusive) {
         return rangeClosedBy(from, toInclusive, 1);
     }
@@ -1081,10 +1083,12 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator yielding the values wrapped in {@code Some}, stopping at the first {@code None}
      * @throws NullPointerException if the supplier produces a {@code null} value
      */
-    static <T extends @Nullable Object> Iterator<T> iterate(Supplier<? extends Option<? extends T>> supplier, String nullResult) {
+    static <T extends @Nullable Object> Iterator<T> iterate(
+            Supplier<? extends Option<? extends T>> supplier, String nullResult) {
         Objects.requireNonNull(supplier, "supplier is null");
         return new AbstractIterator<T>() {
-            @Nullable Option<? extends T> nextOption;
+            @Nullable
+            Option<? extends T> nextOption;
             // set once supplier returned null: every later call fails the same way instead of asking for the next value
             boolean failed;
 
@@ -1108,7 +1112,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             // hasNext() populates nextOption, and AbstractIterator only calls getNext() after it
             @SuppressWarnings("NullAway")
             public T getNext() {
-                final T next =  nextOption.get();
+                final T next = nextOption.get();
                 nextOption = null;
                 return next;
             }
@@ -1136,7 +1140,9 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 nextFunc = f;
                 return seed;
             };
-            @Nullable T current = null;
+
+            @Nullable
+            T current = null;
 
             @Override
             public boolean hasNext() {
@@ -1250,7 +1256,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         return zipWith(that, Tuple::of);
     }
 
-    default <U extends @Nullable Object, R extends @Nullable Object> Iterator<R> zipWith(Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+    default <U extends @Nullable Object, R extends @Nullable Object> Iterator<R> zipWith(
+            Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
@@ -1272,7 +1279,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
+    default <U extends @Nullable Object> Iterator<Tuple2<T, U>> zipAll(
+            Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(thisElem, "Iterator.zipAll: element is null");
         Objects.requireNonNull(thatElem, "Iterator.zipAll: element is null");
@@ -1301,7 +1309,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         return zipWithIndex(Tuple::of);
     }
 
-    default <U extends @Nullable Object> Iterator<U> zipWithIndex(BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+    default <U extends @Nullable Object> Iterator<U> zipWithIndex(
+            BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
             return empty();
@@ -1324,7 +1333,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     /** {@link #unfold(Object, Function, String)}, a {@code null} from {@code f} reported as {@code Iterator.unfold}. */
-    static <T extends @Nullable Object> Iterator<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
+    static <T extends @Nullable Object> Iterator<T> unfold(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
         return unfold(seed, f, "Iterator.unfold: f returned null");
     }
 
@@ -1351,12 +1361,14 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator producing the elements generated by repeatedly applying {@code f}
      * @throws NullPointerException if {@code f} is {@code null}
      */
-    static <T extends @Nullable Object> Iterator<T> unfold(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f, String nullResult) {
+    static <T extends @Nullable Object> Iterator<T> unfold(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f, String nullResult) {
         return unfoldLeft(seed, f, nullResult);
     }
 
     /** {@link #unfoldLeft(Object, Function, String)}, a {@code null} from {@code f} reported as {@code Iterator.unfoldLeft}. */
-    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
         return unfoldLeft(seed, f, "Iterator.unfoldLeft: f returned null");
     }
 
@@ -1385,15 +1397,20 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator producing elements generated from the seed using {@code f}
      * @throws NullPointerException if {@code f} is {@code null}
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f, String nullResult) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldLeft(
+            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f, String nullResult) {
         Objects.requireNonNull(f, "f is null");
-        return Iterator.ofAll(Stream.<U> ofAll(
-                unfoldRight(seed, f.andThen(tupleOpt -> Objects.requireNonNull(tupleOpt, nullResult).map(t -> Tuple.of(t._2(), t._1()))), nullResult))
+        return Iterator.ofAll(Stream.<U>ofAll(unfoldRight(
+                        seed,
+                        f.andThen(tupleOpt ->
+                                Objects.requireNonNull(tupleOpt, nullResult).map(t -> Tuple.of(t._2(), t._1()))),
+                        nullResult))
                 .reverse());
     }
 
     /** {@link #unfoldRight(Object, Function, String)}, a {@code null} from {@code f} reported as {@code Iterator.unfoldRight}. */
-    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(
+            T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
         return unfoldRight(seed, f, "Iterator.unfoldRight: f returned null");
     }
 
@@ -1422,7 +1439,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @return an iterator producing elements generated from the seed using {@code f}
      * @throws NullPointerException if {@code f} is {@code null}
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f, String nullResult) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(
+            T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f, String nullResult) {
         Objects.requireNonNull(f, "the unfold iterating function is null");
         return new AbstractIterator<U>() {
             // f's result is memoised as it is, null included, and checked on every read: a later force fails the same
@@ -1486,9 +1504,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             return empty();
         } else {
             return Collections.reverseIterator(new DistinctIterator<>(
-                    Collections.reverseIterator(this),
-                    TreeSet.empty(comparator),
-                    Function.identity()));
+                    Collections.reverseIterator(this), TreeSet.empty(comparator), Function.identity()));
         }
     }
 
@@ -1516,9 +1532,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             return empty();
         } else {
             return Collections.reverseIterator(new DistinctIterator<>(
-                    Collections.reverseIterator(this),
-                    dev.zazr.collection.HashSet.empty(),
-                    keyExtractor));
+                    Collections.reverseIterator(this), dev.zazr.collection.HashSet.empty(), keyExtractor));
         }
     }
 
@@ -1579,7 +1593,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public T getNext() {
-                    final Tuple2<T, dev.zazr.collection.Queue<T>> t = queue.append(that.next()).dequeue();
+                    final Tuple2<T, dev.zazr.collection.Queue<T>> t =
+                            queue.append(that.next()).dequeue();
                     queue = t._2();
                     return t._1();
                 }
@@ -1650,7 +1665,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @param <U>    Component type
      * @return A new Iterator
      */
-    default <U extends @Nullable Object> Iterator<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+    default <U extends @Nullable Object> Iterator<U> flatMap(
+            Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (!hasNext()) {
             return empty();
@@ -1774,7 +1790,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         }
     }
 
-    default <U extends @Nullable Object> Iterator<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
+    default <U extends @Nullable Object> Iterator<U> collect(
+            Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (!hasNext()) {
             return empty();
@@ -1790,7 +1807,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 @Override
                 public boolean hasNext() {
                     while (!nextDefined && that.hasNext()) {
-                        final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(that.next()), "Iterator.collect: mapper returned null");
+                        final Option<? extends U> collected = Objects.requireNonNull(
+                                mapper.apply(that.next()), "Iterator.collect: mapper returned null");
                         if (collected.isDefined()) {
                             next = collected.get();
                             nextDefined = true;
@@ -1824,7 +1842,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @param operation the associative operation to apply
      * @return a new Iterator of accumulated values
      */
-    default <U extends @Nullable Object> Iterator<U> scanLeft(U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
+    default <U extends @Nullable Object> Iterator<U> scanLeft(
+            U zero, BiFunction<? super U, ? super T, ? extends U> operation) {
         Objects.requireNonNull(operation, "operation is null");
         Objects.requireNonNull(zero, "Iterator.scanLeft: element is null");
         if (isEmpty()) {
@@ -1906,17 +1925,18 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     default Iterator<Vector<T>> sliding(int size, int step) {
         return new GroupedIterator<>(this, size, step);
     }
-    
+
     default Tuple2<Iterator<T>, Iterator<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         if (!hasNext()) {
             return Tuple.of(empty(), empty());
         } else {
             final Stream<T> that = Stream.ofAll(this);
-            return Tuple.of(Iterator.ofAll(that).takeWhile(predicate), Iterator.ofAll(that).dropWhile(predicate));
+            return Tuple.of(
+                    Iterator.ofAll(that).takeWhile(predicate),
+                    Iterator.ofAll(that).dropWhile(predicate));
         }
     }
-
 
     /**
      * Take the first n elements from this iterator.

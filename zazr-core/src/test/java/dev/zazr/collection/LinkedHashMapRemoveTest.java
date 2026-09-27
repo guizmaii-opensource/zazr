@@ -49,7 +49,8 @@ public class LinkedHashMapRemoveTest {
                 }
             }
             assertThat(actual.size()).isEqualTo(expected.size());
-            final java.util.Iterator<java.util.Map.Entry<Integer, Integer>> expectedIterator = expected.entrySet().iterator();
+            final java.util.Iterator<java.util.Map.Entry<Integer, Integer>> expectedIterator =
+                    expected.entrySet().iterator();
             for (Tuple2<Integer, Integer> entry : actual) {
                 final java.util.Map.Entry<Integer, Integer> expectedEntry = expectedIterator.next();
                 assertThat(entry._1()).isEqualTo(expectedEntry.getKey());
@@ -86,17 +87,15 @@ public class LinkedHashMapRemoveTest {
         for (int i = 0; i < n; i += 2) {
             map = map.remove(i);
         }
-        assertThat(map.keySet().toList())
-                .isEqualTo(List.range(0, n).filter(i -> i % 2 == 1));
+        assertThat(map.keySet().toList()).isEqualTo(List.range(0, n).filter(i -> i % 2 == 1));
         assertThat(map.iterator().next()).isEqualTo(Tuple.of(1, 1));
         assertThat(map.toList().last()).isEqualTo(Tuple.of(n - 1, n - 1));
     }
 
     @Test
     public void shouldPreserveInsertionPointWhenRemovedKeyIsReinserted() {
-        LinkedHashMap<String, Integer> map = LinkedHashMap.of("a", 1, "b", 2, "c", 3)
-                .remove("b")
-                .put("b", 4);
+        LinkedHashMap<String, Integer> map =
+                LinkedHashMap.of("a", 1, "b", 2, "c", 3).remove("b").put("b", 4);
         assertThat(new java.util.ArrayList<>(map.keySet().asJava())).containsExactly("a", "c", "b");
     }
 
@@ -109,9 +108,13 @@ public class LinkedHashMapRemoveTest {
         for (int i = 10; i < 90; i += 3) {
             map = map.remove(i);
         }
-        final java.util.List<Integer> keys = new java.util.ArrayList<>(map.keySet().asJava());
-        assertThat(new java.util.ArrayList<>(map.remove(keys.get(0)).keySet().asJava())).isEqualTo(keys.subList(1, keys.size()));
-        assertThat(new java.util.ArrayList<>(map.remove(keys.get(keys.size() - 1)).keySet().asJava())).isEqualTo(keys.subList(0, keys.size() - 1));
+        final java.util.List<Integer> keys =
+                new java.util.ArrayList<>(map.keySet().asJava());
+        assertThat(new java.util.ArrayList<>(map.remove(keys.get(0)).keySet().asJava()))
+                .isEqualTo(keys.subList(1, keys.size()));
+        assertThat(new java.util.ArrayList<>(
+                        map.remove(keys.get(keys.size() - 1)).keySet().asJava()))
+                .isEqualTo(keys.subList(0, keys.size() - 1));
     }
 
     @Test
@@ -131,10 +134,12 @@ public class LinkedHashMapRemoveTest {
         assertThat(both.take(2).keySet().toList()).isEqualTo(List.of(30, 31));
         assertThat(both.takeRight(2).keySet().toList()).isEqualTo(List.of(68, 69));
         assertThat(both.tail().init().keySet().toList()).isEqualTo(List.range(31, 69));
-        assertThat(both.put(0, 0).keySet().toList()).isEqualTo(List.range(30, 70).append(0));
+        assertThat(both.put(0, 0).keySet().toList())
+                .isEqualTo(List.range(30, 70).append(0));
         assertThat(both.remove(30).remove(69).keySet().toList()).isEqualTo(List.range(31, 69));
         // the older version is untouched and can be cut again
-        assertThat(map.keySet().toList()).isEqualTo(List.of(0).appendAll(List.range(30, 70)).append(99));
+        assertThat(map.keySet().toList())
+                .isEqualTo(List.of(0).appendAll(List.range(30, 70)).append(99));
         assertThat(map.remove(99).keySet().toList()).isEqualTo(List.of(0).appendAll(List.range(30, 70)));
     }
 
@@ -170,7 +175,9 @@ public class LinkedHashMapRemoveTest {
                         final int k = random.nextInt(keys.size() + 2) - 1;
                         final boolean fromLeft = random.nextBoolean();
                         actual = fromLeft ? actual.take(k) : actual.drop(k);
-                        final java.util.List<Integer> kept = fromLeft ? keys.subList(0, Math.max(0, Math.min(k, keys.size()))) : keys.subList(Math.max(0, Math.min(k, keys.size())), keys.size());
+                        final java.util.List<Integer> kept = fromLeft
+                                ? keys.subList(0, Math.max(0, Math.min(k, keys.size())))
+                                : keys.subList(Math.max(0, Math.min(k, keys.size())), keys.size());
                         final java.util.LinkedHashMap<Integer, Integer> next = new java.util.LinkedHashMap<>();
                         for (Integer key : kept) {
                             next.put(key, expected.get(key));
@@ -187,9 +194,9 @@ public class LinkedHashMapRemoveTest {
                     }
                 }
                 assertThat(actual.size()).isEqualTo(expected.size());
-                assertThat(actual.toList()).isEqualTo(List.ofAll(expected.entrySet()).map(e -> Tuple.of(e.getKey(), e.getValue())));
+                assertThat(actual.toList())
+                        .isEqualTo(List.ofAll(expected.entrySet()).map(e -> Tuple.of(e.getKey(), e.getValue())));
             }
         }
     }
-
 }

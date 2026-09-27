@@ -20,7 +20,8 @@ public interface StreamModule {
             return findFirstSlice(source, toStream(slice), Math.max(from, 0));
         }
 
-        static <T extends @Nullable Object> int lastIndexOfSlice(Stream<T> source, Iterable<? extends T> slice, int end) {
+        static <T extends @Nullable Object> int lastIndexOfSlice(
+                Stream<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
             }
@@ -112,7 +113,6 @@ public interface StreamModule {
         }
     }
 
-
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Cons<T> self;
@@ -150,9 +150,9 @@ public interface StreamModule {
             if (k == 0) {
                 return Stream.of(Stream.empty());
             } else {
-                return elements.zipWithIndex().flatMap(
-                        t -> apply(elements.drop(t._2() + 1), (k - 1)).map((Stream<T> c) -> c.prepend(t._1()))
-                );
+                return elements.zipWithIndex()
+                        .flatMap(
+                                t -> apply(elements.drop(t._2() + 1), (k - 1)).map((Stream<T> c) -> c.prepend(t._1())));
             }
         }
     }
@@ -173,14 +173,15 @@ public interface StreamModule {
     interface DropRight {
 
         // works with infinite streams by buffering elements
-        static <T extends @Nullable Object> Stream<T> apply(dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear, Stream<T> remaining) {
+        static <T extends @Nullable Object> Stream<T> apply(
+                dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear, Stream<T> remaining) {
             if (remaining.isEmpty()) {
                 return remaining;
             } else if (front.isEmpty()) {
                 return apply(rear.reverse(), dev.zazr.collection.List.empty(), remaining);
             } else {
-                return Stream.cons(front.head(),
-                        () -> apply(front.tail(), rear.prepend(remaining.head()), remaining.tail()));
+                return Stream.cons(
+                        front.head(), () -> apply(front.tail(), rear.prepend(remaining.head()), remaining.tail()));
             }
         }
     }
@@ -225,11 +226,15 @@ public interface StreamModule {
         java.util.Iterator<? extends U> current = java.util.Collections.emptyIterator();
 
         // for a mapper that never returns null, such as the identity over inputs that reject null
-        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
+        public FlatMapIterator(
+                Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper) {
             this(inputs, mapper, "FlatMapIterator: mapper returned null");
         }
 
-        public FlatMapIterator(Iterator<? extends T> inputs, Function<? super T, ? extends Iterable<? extends U>> mapper, String nullResult) {
+        public FlatMapIterator(
+                Iterator<? extends T> inputs,
+                Function<? super T, ? extends Iterable<? extends U>> mapper,
+                String nullResult) {
             this.inputs = inputs;
             this.nullResult = nullResult;
             this.mapper = mapper;

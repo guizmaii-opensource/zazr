@@ -10,15 +10,15 @@ import java.util.function.Function;
 
 final class Utils {
 
-    private Utils() {
-    }
+    private Utils() {}
 
     static final Function<Integer, BigInteger> MEMOIZED_FACTORIAL = Memoize.of(Utils::factorial);
 
     static final Function<Long, Boolean> MEMOIZED_IS_PRIME = Memoize.of(Utils::isPrime);
 
     static Stream<BigInteger> fibonacci() {
-        return Stream.of(BigInteger.ZERO, BigInteger.ONE).appendSelf(self -> self.zip(self.tail()).map(t -> t._1().add(t._2())));
+        return Stream.of(BigInteger.ZERO, BigInteger.ONE)
+                .appendSelf(self -> self.zip(self.tail()).map(t -> t._1().add(t._2())));
     }
 
     static BigInteger factorial(int n) {

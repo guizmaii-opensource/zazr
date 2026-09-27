@@ -54,11 +54,14 @@ import org.jspecify.annotations.Nullable;
  * @param <K> Key type
  * @param <V> Value type
  */
-public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Nullable Object> implements Iterable<Tuple2<K, V>> {
+public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Nullable Object>
+        implements Iterable<Tuple2<K, V>> {
 
     private final TreeMap<K, V> map;
 
-    private NonEmptySortedMap(TreeMap<K, V> map) { this.map = map; }
+    private NonEmptySortedMap(TreeMap<K, V> map) {
+        this.map = map;
+    }
 
     // -- constructors
 
@@ -72,7 +75,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return a non-empty sorted map of size 1
      * @throws NullPointerException if {@code key} or {@code value} is null
      */
-    public static <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> single(K key, V value) {
+    public static <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> single(
+            K key, V value) {
         return single(Comparators.naturalComparator(), key, value);
     }
 
@@ -87,7 +91,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return a non-empty sorted map of size 1
      * @throws NullPointerException if an argument is null
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> single(Comparator<? super K> keyComparator, K key, V value) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> single(
+            Comparator<? super K> keyComparator, K key, V value) {
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(key, "NonEmptySortedMap: key is null");
         Objects.requireNonNull(value, "NonEmptySortedMap: value is null");
@@ -107,7 +112,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
-    public static <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> of(Tuple2<? extends K, ? extends V> head, Tuple2<? extends K, ? extends V>... tail) {
+    public static <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> of(
+            Tuple2<? extends K, ? extends V> head, Tuple2<? extends K, ? extends V>... tail) {
         return of(Comparators.naturalComparator(), head, tail);
     }
 
@@ -125,7 +131,10 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     @SafeVarargs
     @SuppressWarnings("varargs")
-    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> of(Comparator<? super K> keyComparator, Tuple2<? extends K, ? extends V> head, Tuple2<? extends K, ? extends V>... tail) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> of(
+            Comparator<? super K> keyComparator,
+            Tuple2<? extends K, ? extends V> head,
+            Tuple2<? extends K, ? extends V>... tail) {
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(head, "NonEmptySortedMap: head is null");
         Objects.requireNonNull(tail, "NonEmptySortedMap: tail is null");
@@ -148,7 +157,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return a non-empty sorted map
      * @throws NullPointerException if {@code head}, {@code tail}, an entry of {@code tail}, or a key or value is null
      */
-    public static <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> fromIterable(Tuple2<? extends K, ? extends V> head, Iterable<? extends Tuple2<? extends K, ? extends V>> tail) {
+    public static <K extends Comparable<? super K>, V extends @Nullable Object> NonEmptySortedMap<K, V> fromIterable(
+            Tuple2<? extends K, ? extends V> head, Iterable<? extends Tuple2<? extends K, ? extends V>> tail) {
         return fromIterable(Comparators.naturalComparator(), head, tail);
     }
 
@@ -164,7 +174,10 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return a non-empty sorted map
      * @throws NullPointerException if an argument, an entry of {@code tail}, or a key or value is null
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> fromIterable(Comparator<? super K> keyComparator, Tuple2<? extends K, ? extends V> head, Iterable<? extends Tuple2<? extends K, ? extends V>> tail) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> fromIterable(
+            Comparator<? super K> keyComparator,
+            Tuple2<? extends K, ? extends V> head,
+            Iterable<? extends Tuple2<? extends K, ? extends V>> tail) {
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(head, "NonEmptySortedMap: head is null");
         Objects.requireNonNull(tail, "NonEmptySortedMap: tail is null");
@@ -184,7 +197,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return {@code Some(nonEmptySortedMap)} sharing {@code map}'s entries, or {@code None} if {@code map} is empty
      * @throws NullPointerException if {@code map} is null
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> Option<NonEmptySortedMap<K, V>> fromSortedMap(TreeMap<K, V> map) {
+    public static <K extends @Nullable Object, V extends @Nullable Object>
+            Option<NonEmptySortedMap<K, V>> fromSortedMap(TreeMap<K, V> map) {
         Objects.requireNonNull(map, "NonEmptySortedMap.fromSortedMap: map is null");
         return map.isEmpty() ? Option.none() : Option.some(new NonEmptySortedMap<>(map));
     }
@@ -199,7 +213,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return {@code Some(nonEmptySortedMap)} of the entries, or {@code None} if there is none
      * @throws NullPointerException if {@code entries}, an entry, or a key or value is null
      */
-    public static <K extends Comparable<? super K>, V extends @Nullable Object> Option<NonEmptySortedMap<K, V>> fromIterable(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+    public static <K extends Comparable<? super K>, V extends @Nullable Object>
+            Option<NonEmptySortedMap<K, V>> fromIterable(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         return fromIterable(Comparators.naturalComparator(), entries);
     }
 
@@ -214,10 +229,12 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return {@code Some(nonEmptySortedMap)} of the entries, or {@code None} if there is none
      * @throws NullPointerException if an argument, an entry, or a key or value is null
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> Option<NonEmptySortedMap<K, V>> fromIterable(Comparator<? super K> keyComparator, Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> Option<NonEmptySortedMap<K, V>> fromIterable(
+            Comparator<? super K> keyComparator, Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(entries, "NonEmptySortedMap.fromIterable: entries is null");
-        return fromSortedMap(putAll(TreeMap.<K, V> newBuilder(keyComparator), entries).result());
+        return fromSortedMap(
+                putAll(TreeMap.<K, V>newBuilder(keyComparator), entries).result());
     }
 
     /**
@@ -232,7 +249,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws IllegalArgumentException if {@code map} is empty
      * @throws NullPointerException     if {@code map} is null
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> unsafeFromSortedMap(TreeMap<K, V> map) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> unsafeFromSortedMap(
+            TreeMap<K, V> map) {
         Objects.requireNonNull(map, "NonEmptySortedMap.unsafeFromSortedMap: map is null");
         if (map.isEmpty()) {
             throw new IllegalArgumentException("NonEmptySortedMap.unsafeFromSortedMap: map is empty");
@@ -241,13 +259,17 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /* an entry checked with messages naming this type, then put */
-    private static <K extends @Nullable Object, V extends @Nullable Object> void put(TreeMap.Builder<K, V> builder, @Nullable Tuple2<? extends K, ? extends V> entry) {
+    private static <K extends @Nullable Object, V extends @Nullable Object> void put(
+            TreeMap.Builder<K, V> builder, @Nullable Tuple2<? extends K, ? extends V> entry) {
         Objects.requireNonNull(entry, "NonEmptySortedMap: entry is null");
-        builder.put(Objects.requireNonNull(entry._1(), "NonEmptySortedMap: key is null"), Objects.requireNonNull(entry._2(), "NonEmptySortedMap: value is null"));
+        builder.put(
+                Objects.requireNonNull(entry._1(), "NonEmptySortedMap: key is null"),
+                Objects.requireNonNull(entry._2(), "NonEmptySortedMap: value is null"));
     }
 
     /* a TreeMap holds no null, so it is put as is; anything else is checked entry by entry, naming this type */
-    private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap.Builder<K, V> putAll(TreeMap.Builder<K, V> builder, Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+    private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap.Builder<K, V> putAll(
+            TreeMap.Builder<K, V> builder, Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         if (entries instanceof TreeMap) {
             return builder.putAll(entries);
         }
@@ -258,9 +280,14 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /* the entries computed from the elements of a non-empty iterable, ordered by {@code keyComparator}, the later of two equal keys winning; a null
-       key or value is reported under the calling method's name */
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> ofMapped(Comparator<? super K> keyComparator, Iterable<T> nonEmpty,
-            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper, String method) {
+    key or value is reported under the calling method's name */
+    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object>
+            NonEmptySortedMap<K, V> ofMapped(
+                    Comparator<? super K> keyComparator,
+                    Iterable<T> nonEmpty,
+                    Function<? super T, ? extends K> keyMapper,
+                    Function<? super T, ? extends V> valueMapper,
+                    String method) {
         Objects.requireNonNull(keyComparator, "comparator is null");
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
@@ -280,9 +307,13 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /* the entries f computes from the elements of a non-empty iterable, ordered by {@code keyComparator}, the later of two equal keys winning; a
-       null entry, key or value is reported under the calling method's name */
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> ofMappedEntries(Comparator<? super K> keyComparator, Iterable<T> nonEmpty,
-            Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f, String method) {
+    null entry, key or value is reported under the calling method's name */
+    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object>
+            NonEmptySortedMap<K, V> ofMappedEntries(
+                    Comparator<? super K> keyComparator,
+                    Iterable<T> nonEmpty,
+                    Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f,
+                    String method) {
         Objects.requireNonNull(keyComparator, "comparator is null");
         Objects.requireNonNull(f, "f is null");
         final TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
@@ -340,7 +371,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return this map with {@code key} mapped to {@code value}, or to the merged value if {@code key} was present
      * @throws NullPointerException if an argument is null or {@code merge} returns null
      */
-    public <U extends V> NonEmptySortedMap<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
+    public <U extends V> NonEmptySortedMap<K, V> put(
+            K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(key, "NonEmptySortedMap.put: key is null");
         Objects.requireNonNull(value, "NonEmptySortedMap.put: value is null");
         return new NonEmptySortedMap<>(map.put(key, value, merge));
@@ -355,7 +387,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return this map with {@code entry}, or with the merged value if its key was present
      * @throws NullPointerException if an argument, the entry's key or value is null, or {@code merge} returns null
      */
-    public <U extends V> NonEmptySortedMap<K, V> put(Tuple2<? extends K, U> entry, BiFunction<? super V, ? super U, ? extends V> merge) {
+    public <U extends V> NonEmptySortedMap<K, V> put(
+            Tuple2<? extends K, U> entry, BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(entry, "NonEmptySortedMap.put: entry is null");
         return put(entry._1(), entry._2(), merge);
     }
@@ -368,7 +401,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries of both maps, this map's values kept on shared keys
      * @throws NullPointerException if {@code that} is null
      */
-    public NonEmptySortedMap<K, V> merge(Map<? extends K, ? extends V> that) { return wrap(map.merge(that)); }
+    public NonEmptySortedMap<K, V> merge(Map<? extends K, ? extends V> that) {
+        return wrap(map.merge(that));
+    }
 
     /**
      * @param that                A map, possibly empty
@@ -377,7 +412,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries of both maps, shared keys mapped to the combined value
      * @throws NullPointerException if an argument is null
      */
-    public <U extends V> NonEmptySortedMap<K, V> merge(Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution) {
+    public <U extends V> NonEmptySortedMap<K, V> merge(
+            Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution) {
         return wrap(map.merge(that, collisionResolution));
     }
 
@@ -398,7 +434,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the new value of {@code key}, if it was present, and this map with it
      * @throws NullPointerException if {@code remappingFunction} is null or returns null
      */
-    public Tuple2<Option<V>, NonEmptySortedMap<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public Tuple2<Option<V>, NonEmptySortedMap<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         final Tuple2<Option<V>, TreeMap<K, V>> result = map.computeIfPresent(key, remappingFunction);
         return Tuple.of(result._1(), wrap(result._2()));
     }
@@ -413,9 +450,11 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the mapped entries, in the natural order of their keys
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> map(
+            BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return new NonEmptySortedMap<>(map.map((k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.map: mapper returned null")));
+        return new NonEmptySortedMap<>(map.map(
+                (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.map: mapper returned null")));
     }
 
     /**
@@ -429,9 +468,12 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the mapped entries
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> map(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> map(
+            Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return new NonEmptySortedMap<>(map.map(keyComparator, (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.map: mapper returned null")));
+        return new NonEmptySortedMap<>(map.map(
+                keyComparator,
+                (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.map: mapper returned null")));
     }
 
     /**
@@ -442,7 +484,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the mapped entries; of two with the same mapped key, the later one wins
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> mapBoth(
+            Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         return new NonEmptySortedMap<>(map.mapBoth(keyMapper, valueMapper));
     }
 
@@ -455,7 +498,10 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the mapped entries, ordered by {@code keyComparator}; of two with the same mapped key, the later one wins
      * @throws NullPointerException if an argument is null or a mapper returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> mapBoth(Comparator<? super K2> keyComparator, Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> mapBoth(
+            Comparator<? super K2> keyComparator,
+            Function<? super K, ? extends K2> keyMapper,
+            Function<? super V, ? extends V2> valueMapper) {
         return new NonEmptySortedMap<>(map.mapBoth(keyComparator, keyMapper, valueMapper));
     }
 
@@ -476,7 +522,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries with mapped keys
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K2 extends @Nullable Object> NonEmptySortedMap<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge) {
+    public <K2 extends @Nullable Object> NonEmptySortedMap<K2, V> mapKeys(
+            Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge) {
         return new NonEmptySortedMap<>(map.mapKeys(keyMapper, valueMerge));
     }
 
@@ -486,7 +533,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the same keys, with mapped values
      * @throws NullPointerException if {@code valueMapper} is null or returns null
      */
-    public <V2 extends @Nullable Object> NonEmptySortedMap<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
+    public <V2 extends @Nullable Object> NonEmptySortedMap<K, V2> mapValues(
+            Function<? super V, ? extends V2> valueMapper) {
         return new NonEmptySortedMap<>(map.mapValues(valueMapper));
     }
 
@@ -500,7 +548,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries of the results, in the natural order of their keys
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends NonEmptySortedMap<? extends K2, ? extends V2>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> flatMap(
+            BiFunction<? super K, ? super V, ? extends NonEmptySortedMap<? extends K2, ? extends V2>> mapper) {
         return flatMap(Comparators.naturalComparator(), mapper);
     }
 
@@ -515,12 +564,16 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries of the results
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> flatMap(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, ? extends NonEmptySortedMap<? extends K2, ? extends V2>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> flatMap(
+            Comparator<? super K2> keyComparator,
+            BiFunction<? super K, ? super V, ? extends NonEmptySortedMap<? extends K2, ? extends V2>> mapper) {
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(mapper, "mapper is null");
         final TreeMap.Builder<K2, V2> builder = TreeMap.newBuilder(keyComparator);
         for (Tuple2<K, V> entry : map) {
-            builder.putAll(Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "NonEmptySortedMap.flatMap: mapper returned null").map);
+            builder.putAll(Objects.requireNonNull(
+                            mapper.apply(entry._1(), entry._2()), "NonEmptySortedMap.flatMap: mapper returned null")
+                    .map);
         }
         return new NonEmptySortedMap<>(builder.result());
     }
@@ -549,7 +602,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the same as {@link #replace(Tuple2, Tuple2)}
      * @throws NullPointerException if {@code newElement}, its key or its value is null
      */
-    public NonEmptySortedMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) { return replace(currentElement, newElement); }
+    public NonEmptySortedMap<K, V> replaceAll(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
+        return replace(currentElement, newElement);
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#replace(Object, Object, Object)}.
@@ -572,7 +627,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the same keys, with the new values
      * @throws NullPointerException if {@code function} is null or returns null
      */
-    public NonEmptySortedMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) { return wrap(map.replaceAll(function)); }
+    public NonEmptySortedMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        return wrap(map.replaceAll(function));
+    }
 
     /**
      * @param key   A key
@@ -604,7 +661,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     public NonEmptySortedSet<K> keySet() {
         final SortedSet<K> keys = map.keySet();
-        return NonEmptySortedSet.unsafeFromSortedSet(keys instanceof TreeSet<K> treeSet ? treeSet : TreeSet.ofAll(map.comparator(), keys));
+        return NonEmptySortedSet.unsafeFromSortedSet(
+                keys instanceof TreeSet<K> treeSet ? treeSet : TreeSet.ofAll(map.comparator(), keys));
     }
 
     /**
@@ -612,7 +670,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      *
      * @return the values, one per entry, in the order of their keys
      */
-    public NonEmptyVector<V> values() { return NonEmptyVector.unsafeFromVector(map.values()); }
+    public NonEmptyVector<V> values() {
+        return NonEmptyVector.unsafeFromVector(map.values());
+    }
 
     /**
      * Groups the entries by the key {@code classifier} computes; each group keeps this map's comparator.
@@ -622,17 +682,21 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the groups, each non-empty, in a non-empty map
      * @throws NullPointerException if {@code classifier} is null or returns null
      */
-    public <C extends @Nullable Object> NonEmptyMap<C, NonEmptySortedMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
+    public <C extends @Nullable Object> NonEmptyMap<C, NonEmptySortedMap<K, V>> groupBy(
+            Function<? super Tuple2<K, V>, ? extends C> classifier) {
         final HashMap.Builder<C, NonEmptySortedMap<K, V>> groups = HashMap.newBuilder();
         Objects.requireNonNull(classifier, "classifier is null");
-        for (Tuple2<C, TreeMap<K, V>> group : map.<C> groupBy(element -> Objects.requireNonNull(classifier.apply(element), "NonEmptySortedMap.groupBy: classifier returned null"))) {
+        for (Tuple2<C, TreeMap<K, V>> group : map.<C>groupBy(element -> Objects.requireNonNull(
+                classifier.apply(element), "NonEmptySortedMap.groupBy: classifier returned null"))) {
             groups.put(group._1(), new NonEmptySortedMap<>(group._2()));
         }
         return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
     /* the plain operations that cannot empty a non-empty map return the same instance when nothing changes */
-    private NonEmptySortedMap<K, V> wrap(TreeMap<K, V> result) { return result == map ? this : new NonEmptySortedMap<>(result); }
+    private NonEmptySortedMap<K, V> wrap(TreeMap<K, V> result) {
+        return result == map ? this : new NonEmptySortedMap<>(result);
+    }
 
     // -- returns TreeMap: the result may be empty
 
@@ -641,68 +705,88 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      *
      * @return the wrapped map
      */
-    public TreeMap<K, V> toSortedMap() { return map; }
+    public TreeMap<K, V> toSortedMap() {
+        return map;
+    }
 
     /**
      * @return the order of the keys
      */
-    public Comparator<K> comparator() { return map.comparator(); }
+    public Comparator<K> comparator() {
+        return map.comparator();
+    }
 
     /**
      * @param predicate A test of a key and its value
      * @return the entries that pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> filter(BiPredicate<? super K, ? super V> predicate) { return map.filter(predicate); }
+    public TreeMap<K, V> filter(BiPredicate<? super K, ? super V> predicate) {
+        return map.filter(predicate);
+    }
 
     /**
      * @param predicate A test of an entry
      * @return the entries that pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> filter(Predicate<? super Tuple2<K, V>> predicate) { return map.filter(predicate); }
+    public TreeMap<K, V> filter(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.filter(predicate);
+    }
 
     /**
      * @param predicate A test of a key
      * @return the entries whose key passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> filterKeys(Predicate<? super K> predicate) { return map.filterKeys(predicate); }
+    public TreeMap<K, V> filterKeys(Predicate<? super K> predicate) {
+        return map.filterKeys(predicate);
+    }
 
     /**
      * @param predicate A test of a value
      * @return the entries whose value passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> filterValues(Predicate<? super V> predicate) { return map.filterValues(predicate); }
+    public TreeMap<K, V> filterValues(Predicate<? super V> predicate) {
+        return map.filterValues(predicate);
+    }
 
     /**
      * @param predicate A test of a key and its value
      * @return the entries that fail {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> reject(BiPredicate<? super K, ? super V> predicate) { return map.reject(predicate); }
+    public TreeMap<K, V> reject(BiPredicate<? super K, ? super V> predicate) {
+        return map.reject(predicate);
+    }
 
     /**
      * @param predicate A test of an entry
      * @return the entries that fail {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> reject(Predicate<? super Tuple2<K, V>> predicate) { return map.reject(predicate); }
+    public TreeMap<K, V> reject(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.reject(predicate);
+    }
 
     /**
      * @param predicate A test of a key
      * @return the entries whose key fails {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> rejectKeys(Predicate<? super K> predicate) { return map.rejectKeys(predicate); }
+    public TreeMap<K, V> rejectKeys(Predicate<? super K> predicate) {
+        return map.rejectKeys(predicate);
+    }
 
     /**
      * @param predicate A test of a value
      * @return the entries whose value fails {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> rejectValues(Predicate<? super V> predicate) { return map.rejectValues(predicate); }
+    public TreeMap<K, V> rejectValues(Predicate<? super V> predicate) {
+        return map.rejectValues(predicate);
+    }
 
     /**
      * Maps and filters in one pass: keeps the {@code Some} results.
@@ -713,9 +797,11 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the defined results
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(
+            BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return map.collect((k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.collect: mapper returned null"));
+        return map.collect((k, v) ->
+                Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.collect: mapper returned null"));
     }
 
     /**
@@ -728,9 +814,14 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the defined results
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> collect(
+            Comparator<? super K2> keyComparator,
+            BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return map.collect(keyComparator, (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.collect: mapper returned null"));
+        return map.collect(
+                keyComparator,
+                (k, v) ->
+                        Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.collect: mapper returned null"));
     }
 
     /**
@@ -743,9 +834,11 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries of the results
      * @throws NullPointerException if {@code mapper} is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> flatMapAll(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> flatMapAll(
+            BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return map.flatMap((k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.flatMapAll: mapper returned null"));
+        return map.flatMap((k, v) ->
+                Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -758,9 +851,14 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries of the results
      * @throws NullPointerException if an argument is null or {@code mapper} returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> flatMapAll(Comparator<? super K2> keyComparator, BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> TreeMap<K2, V2> flatMapAll(
+            Comparator<? super K2> keyComparator,
+            BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return map.flatMap(keyComparator, (k, v) -> Objects.requireNonNull(mapper.apply(k, v), "NonEmptySortedMap.flatMapAll: mapper returned null"));
+        return map.flatMap(
+                keyComparator,
+                (k, v) -> Objects.requireNonNull(
+                        mapper.apply(k, v), "NonEmptySortedMap.flatMapAll: mapper returned null"));
     }
 
     /**
@@ -769,7 +867,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param key A key
      * @return this map without {@code key}
      */
-    public TreeMap<K, V> remove(K key) { return map.remove(key); }
+    public TreeMap<K, V> remove(K key) {
+        return map.remove(key);
+    }
 
     /**
      * Complexity: O(m log n) for m given keys, as {@link TreeMap#removeAll(Iterable)}.
@@ -778,7 +878,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return this map without {@code keys}
      * @throws NullPointerException if {@code keys} is null
      */
-    public TreeMap<K, V> removeAll(Iterable<? extends K> keys) { return map.removeAll(keys); }
+    public TreeMap<K, V> removeAll(Iterable<? extends K> keys) {
+        return map.removeAll(keys);
+    }
 
     /**
      * Complexity: O(m log n) for m given entries, as {@link TreeMap#retainAll(Iterable)}.
@@ -787,28 +889,36 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries of this map that are among {@code elements}
      * @throws NullPointerException if {@code elements} is null
      */
-    public TreeMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) { return map.retainAll(elements); }
+    public TreeMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
+        return map.retainAll(elements);
+    }
 
     /**
      * @param predicate A test of an entry
      * @return the entries that pass {@code predicate} and those that fail it; either may be empty
      * @throws NullPointerException if {@code predicate} is null
      */
-    public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate) { return map.partition(predicate); }
+    public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.partition(predicate);
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#tail()}.
      *
      * @return all entries but the first; empty when {@code size()} is 1. See {@link #tailNonEmpty()}.
      */
-    public TreeMap<K, V> tail() { return map.tail(); }
+    public TreeMap<K, V> tail() {
+        return map.tail();
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#init()}.
      *
      * @return all entries but the last; empty when {@code size()} is 1. See {@link #initNonEmpty()}.
      */
-    public TreeMap<K, V> init() { return map.init(); }
+    public TreeMap<K, V> init() {
+        return map.init();
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#take(int)}.
@@ -816,7 +926,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param n A count
      * @return the entries of the {@code n} smallest keys; none if {@code n <= 0}
      */
-    public TreeMap<K, V> take(int n) { return map.take(n); }
+    public TreeMap<K, V> take(int n) {
+        return map.take(n);
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#takeRight(int)}.
@@ -824,7 +936,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param n A count
      * @return the entries of the {@code n} largest keys; none if {@code n <= 0}
      */
-    public TreeMap<K, V> takeRight(int n) { return map.takeRight(n); }
+    public TreeMap<K, V> takeRight(int n) {
+        return map.takeRight(n);
+    }
 
     /**
      * Complexity: O(k + log n) for a prefix of k entries, as {@link TreeMap#takeWhile(Predicate)}.
@@ -833,7 +947,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the leading entries that pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate) { return map.takeWhile(predicate); }
+    public TreeMap<K, V> takeWhile(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.takeWhile(predicate);
+    }
 
     /**
      * Complexity: O(k + log n) for a prefix of k entries, as {@link TreeMap#takeUntil(Predicate)}.
@@ -842,7 +958,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the leading entries that fail {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate) { return map.takeUntil(predicate); }
+    public TreeMap<K, V> takeUntil(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.takeUntil(predicate);
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#drop(int)}.
@@ -850,7 +968,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param n A count
      * @return all entries but those of the {@code n} smallest keys; all of them if {@code n <= 0}
      */
-    public TreeMap<K, V> drop(int n) { return map.drop(n); }
+    public TreeMap<K, V> drop(int n) {
+        return map.drop(n);
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#dropRight(int)}.
@@ -858,7 +978,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param n A count
      * @return all entries but those of the {@code n} largest keys; all of them if {@code n <= 0}
      */
-    public TreeMap<K, V> dropRight(int n) { return map.dropRight(n); }
+    public TreeMap<K, V> dropRight(int n) {
+        return map.dropRight(n);
+    }
 
     /**
      * Complexity: O(k + log n) for k dropped entries, as {@link TreeMap#dropWhile(Predicate)}.
@@ -867,7 +989,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries from the first one that fails {@code predicate} on
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate) { return map.dropWhile(predicate); }
+    public TreeMap<K, V> dropWhile(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.dropWhile(predicate);
+    }
 
     /**
      * Complexity: O(k + log n) for k dropped entries, as {@link TreeMap#dropUntil(Predicate)}.
@@ -876,7 +1000,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries from the first one that passes {@code predicate} on
      * @throws NullPointerException if {@code predicate} is null
      */
-    public TreeMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate) { return map.dropUntil(predicate); }
+    public TreeMap<K, V> dropUntil(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.dropUntil(predicate);
+    }
 
     /**
      * Complexity: O((n / size) log n), as {@link TreeMap#grouped(int)}.
@@ -885,7 +1011,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the blocks of {@code size} consecutive entries, each non-empty; only the last may be smaller
      * @throws IllegalArgumentException if {@code size} is not positive
      */
-    public Vector<NonEmptySortedMap<K, V>> grouped(int size) { return map.grouped(size).map(NonEmptySortedMap::new); }
+    public Vector<NonEmptySortedMap<K, V>> grouped(int size) {
+        return map.grouped(size).map(NonEmptySortedMap::new);
+    }
 
     /**
      * Complexity: O(n log n), as {@link TreeMap#sliding(int)}.
@@ -894,7 +1022,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the windows of {@code size} consecutive entries, each non-empty
      * @throws IllegalArgumentException if {@code size} is not positive
      */
-    public Vector<NonEmptySortedMap<K, V>> sliding(int size) { return map.sliding(size).map(NonEmptySortedMap::new); }
+    public Vector<NonEmptySortedMap<K, V>> sliding(int size) {
+        return map.sliding(size).map(NonEmptySortedMap::new);
+    }
 
     /**
      * Complexity: O((n / step) log n), as {@link TreeMap#sliding(int, int)}.
@@ -904,7 +1034,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the windows, each non-empty, with {@link Vector}'s window rule
      * @throws IllegalArgumentException if {@code size} or {@code step} is not positive
      */
-    public Vector<NonEmptySortedMap<K, V>> sliding(int size, int step) { return map.sliding(size, step).map(NonEmptySortedMap::new); }
+    public Vector<NonEmptySortedMap<K, V>> sliding(int size, int step) {
+        return map.sliding(size, step).map(NonEmptySortedMap::new);
+    }
 
     /**
      * Complexity: O(n + k log n) for k runs, as {@link TreeMap#slideBy(Function)}.
@@ -922,7 +1054,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      *
      * @return the entries paired with their rank in the comparator's order, from 0
      */
-    public NonEmptyVector<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() { return NonEmptyVector.unsafeFromVector(map.zipWithIndex()); }
+    public NonEmptyVector<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
+        return NonEmptyVector.unsafeFromVector(map.zipWithIndex());
+    }
 
     // -- total: what is partial on a TreeMap
 
@@ -931,14 +1065,18 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      *
      * @return the entry of the least key in the comparator's order
      */
-    public Tuple2<K, V> head() { return map.head(); }
+    public Tuple2<K, V> head() {
+        return map.head();
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#last()}.
      *
      * @return the entry of the greatest key in the comparator's order
      */
-    public Tuple2<K, V> last() { return map.last(); }
+    public Tuple2<K, V> last() {
+        return map.last();
+    }
 
     /**
      * The greatest entry in the natural order of the entries, as {@link TreeMap#max()}; the comparator is not
@@ -949,7 +1087,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the greatest entry
      * @throws ClassCastException if the keys or values are not {@link Comparable}
      */
-    public Tuple2<K, V> max() { return NonEmptyModule.max(map); }
+    public Tuple2<K, V> max() {
+        return NonEmptyModule.max(map);
+    }
 
     /**
      * The least entry in the natural order of the entries, as {@link TreeMap#min()}; the comparator is not consulted,
@@ -960,21 +1100,27 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the least entry
      * @throws ClassCastException if the keys or values are not {@link Comparable}
      */
-    public Tuple2<K, V> min() { return NonEmptyModule.min(map); }
+    public Tuple2<K, V> min() {
+        return NonEmptyModule.min(map);
+    }
 
     /**
      * @param comparator The order
      * @return the greatest entry under {@code comparator}; of several, the first in the order of the keys
      * @throws NullPointerException if {@code comparator} is null
      */
-    public Tuple2<K, V> maxBy(Comparator<? super Tuple2<K, V>> comparator) { return NonEmptyModule.max(map, comparator); }
+    public Tuple2<K, V> maxBy(Comparator<? super Tuple2<K, V>> comparator) {
+        return NonEmptyModule.max(map, comparator);
+    }
 
     /**
      * @param comparator The order
      * @return the least entry under {@code comparator}; of several, the first in the order of the keys
      * @throws NullPointerException if {@code comparator} is null
      */
-    public Tuple2<K, V> minBy(Comparator<? super Tuple2<K, V>> comparator) { return NonEmptyModule.min(map, comparator); }
+    public Tuple2<K, V> minBy(Comparator<? super Tuple2<K, V>> comparator) {
+        return NonEmptyModule.min(map, comparator);
+    }
 
     /**
      * @param f   Computes the key of an entry, once per entry
@@ -982,7 +1128,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entry with the greatest key; of several, the first in the order of the keys
      * @throws NullPointerException if {@code f} is null
      */
-    public <U extends Comparable<? super U>> Tuple2<K, V> maxBy(Function<? super Tuple2<K, V>, ? extends U> f) { return NonEmptyModule.maxBy(map, f); }
+    public <U extends Comparable<? super U>> Tuple2<K, V> maxBy(Function<? super Tuple2<K, V>, ? extends U> f) {
+        return NonEmptyModule.maxBy(map, f);
+    }
 
     /**
      * @param f   Computes the key of an entry, once per entry
@@ -990,7 +1138,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entry with the least key; of several, the first in the order of the keys
      * @throws NullPointerException if {@code f} is null
      */
-    public <U extends Comparable<? super U>> Tuple2<K, V> minBy(Function<? super Tuple2<K, V>, ? extends U> f) { return NonEmptyModule.minBy(map, f); }
+    public <U extends Comparable<? super U>> Tuple2<K, V> minBy(Function<? super Tuple2<K, V>, ? extends U> f) {
+        return NonEmptyModule.minBy(map, f);
+    }
 
     /**
      * Combines the entries with {@code op} from the left, in the order of their keys.
@@ -999,7 +1149,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the combined entries
      * @throws NullPointerException if {@code op} is null
      */
-    public Tuple2<K, V> reduce(BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> op) { return NonEmptyModule.reduce(map, op); }
+    public Tuple2<K, V> reduce(BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> op) {
+        return NonEmptyModule.reduce(map, op);
+    }
 
     /**
      * Maps every entry and combines the results, in one pass and in the order of the keys: {@code op} should be associative
@@ -1011,7 +1163,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the combined mapped values
      * @throws NullPointerException if {@code mapper} or {@code op} is null
      */
-    public <B extends @Nullable Object> B reduceMap(Function<? super Tuple2<K, V>, ? extends B> mapper, BiFunction<? super B, ? super B, ? extends B> op) {
+    public <B extends @Nullable Object> B reduceMap(
+            Function<? super Tuple2<K, V>, ? extends B> mapper, BiFunction<? super B, ? super B, ? extends B> op) {
         return NonEmptyModule.reduceMap(map, mapper, op);
     }
 
@@ -1021,7 +1174,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries folded in the order of the keys, starting from {@code zero}
      * @throws NullPointerException if {@code combine} is null
      */
-    public Tuple2<K, V> fold(Tuple2<K, V> zero, BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> combine) {
+    public Tuple2<K, V> fold(
+            Tuple2<K, V> zero, BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> combine) {
         return map.fold(zero, combine);
     }
 
@@ -1029,7 +1183,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the only entry
      * @throws java.util.NoSuchElementException if there is more than one entry
      */
-    public Tuple2<K, V> single() { return map.single(); }
+    public Tuple2<K, V> single() {
+        return map.single();
+    }
 
     /**
      * The number of entries.
@@ -1038,7 +1194,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      *
      * @return the number of entries, at least 1
      */
-    public int size() { return map.size(); }
+    public int size() {
+        return map.size();
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#get(Object)}.
@@ -1046,14 +1204,18 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param key A key
      * @return the value of {@code key}, if present
      */
-    public Option<V> get(K key) { return map.get(key); }
+    public Option<V> get(K key) {
+        return map.get(key);
+    }
 
     /**
      * @param key          A key
      * @param defaultValue The result when {@code key} is absent
      * @return the value of {@code key}, or {@code defaultValue}
      */
-    public V getOrElse(K key, V defaultValue) { return map.getOrElse(key, defaultValue); }
+    public V getOrElse(K key, V defaultValue) {
+        return map.getOrElse(key, defaultValue);
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#containsKey(Object)}.
@@ -1061,13 +1223,17 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param key A key
      * @return whether {@code key} is present
      */
-    public boolean containsKey(K key) { return map.containsKey(key); }
+    public boolean containsKey(K key) {
+        return map.containsKey(key);
+    }
 
     /**
      * @param value A value
      * @return whether a key is mapped to {@code value}; O(n)
      */
-    public boolean containsValue(V value) { return map.containsValue(value); }
+    public boolean containsValue(V value) {
+        return map.containsValue(value);
+    }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#contains(Tuple2)}.
@@ -1075,42 +1241,54 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param element An entry
      * @return whether this map has {@code element}'s key mapped to {@code element}'s value
      */
-    public boolean contains(Tuple2<K, V> element) { return map.contains(element); }
+    public boolean contains(Tuple2<K, V> element) {
+        return map.contains(element);
+    }
 
     /**
      * @param elements Entries
      * @return whether every one of {@code elements} is in this map
      * @throws NullPointerException if {@code elements} is null
      */
-    public boolean containsAll(Iterable<? extends Tuple2<K, V>> elements) { return map.containsAll(elements); }
+    public boolean containsAll(Iterable<? extends Tuple2<K, V>> elements) {
+        return map.containsAll(elements);
+    }
 
     /**
      * @param predicate A test
      * @return whether at least one entry passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public boolean exists(Predicate<? super Tuple2<K, V>> predicate) { return map.exists(predicate); }
+    public boolean exists(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.exists(predicate);
+    }
 
     /**
      * @param predicate A test
      * @return whether exactly one entry passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public boolean existsUnique(Predicate<? super Tuple2<K, V>> predicate) { return map.existsUnique(predicate); }
+    public boolean existsUnique(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.existsUnique(predicate);
+    }
 
     /**
      * @param predicate A test
      * @return whether every entry passes {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public boolean forAll(Predicate<? super Tuple2<K, V>> predicate) { return map.forAll(predicate); }
+    public boolean forAll(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.forAll(predicate);
+    }
 
     /**
      * @param predicate A test
      * @return how many entries pass {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
-    public int count(Predicate<? super Tuple2<K, V>> predicate) { return map.count(predicate); }
+    public int count(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.count(predicate);
+    }
 
     /**
      * @param zero The initial accumulator
@@ -1129,18 +1307,24 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @param action A side effect
      * @throws NullPointerException if {@code action} is null
      */
-    public void forEach(BiConsumer<K, V> action) { map.forEach(action); }
+    public void forEach(BiConsumer<K, V> action) {
+        map.forEach(action);
+    }
 
     /**
      * @return the entries' {@code toString()}s, concatenated
      */
-    public String mkString() { return map.mkString(); }
+    public String mkString() {
+        return map.mkString();
+    }
 
     /**
      * @param delimiter Put between entries
      * @return the entries' {@code toString()}s, joined by {@code delimiter}
      */
-    public String mkString(CharSequence delimiter) { return map.mkString(delimiter); }
+    public String mkString(CharSequence delimiter) {
+        return map.mkString(delimiter);
+    }
 
     /**
      * @param prefix    Put first
@@ -1159,7 +1343,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries collected, as {@code stream().collect(collector)} does
      * @throws NullPointerException if {@code collector} is null
      */
-    public <R extends @Nullable Object, A extends @Nullable Object> R collect(Collector<? super Tuple2<K, V>, A, R> collector) {
+    public <R extends @Nullable Object, A extends @Nullable Object> R collect(
+            Collector<? super Tuple2<K, V>, A, R> collector) {
         return map.collect(collector);
     }
 
@@ -1171,7 +1356,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries collected, as {@code stream().collect(supplier, accumulator, combiner)} does
      * @throws NullPointerException if an argument is null
      */
-    public <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
+    public <R extends @Nullable Object> R collect(
+            Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
         return map.collect(supplier, accumulator, combiner);
     }
 
@@ -1181,18 +1367,24 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * Complexity: O(log n) to create; a whole walk is O(n), in the comparator's order, as {@link TreeMap#iterator()}.
      */
     @Override
-    public java.util.Iterator<Tuple2<K, V>> iterator() { return map.iterator(); }
+    public java.util.Iterator<Tuple2<K, V>> iterator() {
+        return map.iterator();
+    }
 
     /**
      * @return the wrapped map's spliterator
      */
     @Override
-    public Spliterator<Tuple2<K, V>> spliterator() { return map.spliterator(); }
+    public Spliterator<Tuple2<K, V>> spliterator() {
+        return map.spliterator();
+    }
 
     /**
      * @return a sequential {@link java.util.stream.Stream} over the entries
      */
-    public java.util.stream.Stream<Tuple2<K, V>> stream() { return map.stream(); }
+    public java.util.stream.Stream<Tuple2<K, V>> stream() {
+        return map.stream();
+    }
 
     /**
      * An unmodifiable {@link java.util.Collection} view of the entries, the one {@link TreeMap#asJava()} gives.
@@ -1201,7 +1393,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      *
      * @return an unmodifiable view of the entries
      */
-    public java.util.Collection<Tuple2<K, V>> asJava() { return map.asJava(); }
+    public java.util.Collection<Tuple2<K, V>> asJava() {
+        return map.asJava();
+    }
 
     /**
      * An unmodifiable {@link java.util.NavigableMap} view of the entries, the one {@link TreeMap#asJavaMap()} gives: nothing is
@@ -1211,62 +1405,84 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      *
      * @return an unmodifiable {@code java.util.NavigableMap} view
      */
-    public java.util.NavigableMap<K, V> asJavaMap() { return map.asJavaMap(); }
+    public java.util.NavigableMap<K, V> asJavaMap() {
+        return map.asJavaMap();
+    }
 
     /**
      * @return the entries in a new array
      */
-    public Object[] toArray() { return map.toArray(); }
+    public Object[] toArray() {
+        return map.toArray();
+    }
 
     /**
      * @param arrayFactory Makes an array of the given length
      * @return the entries in a new array made by {@code arrayFactory}
      * @throws NullPointerException if {@code arrayFactory} is null
      */
-    public Tuple2<K, V>[] toArray(IntFunction<Tuple2<K, V>[]> arrayFactory) { return map.toArray(arrayFactory); }
+    public Tuple2<K, V>[] toArray(IntFunction<Tuple2<K, V>[]> arrayFactory) {
+        return map.toArray(arrayFactory);
+    }
 
     /**
      * @return the entries as a {@link Vector}, in the order of the keys
      */
-    public Vector<Tuple2<K, V>> toVector() { return map.toVector(); }
+    public Vector<Tuple2<K, V>> toVector() {
+        return map.toVector();
+    }
 
     /**
      * @return the entries as a {@link List}, in the order of the keys
      */
-    public List<Tuple2<K, V>> toList() { return map.toList(); }
+    public List<Tuple2<K, V>> toList() {
+        return map.toList();
+    }
 
     /**
      * @return the entries as a {@link Queue}, in the order of the keys
      */
-    public Queue<Tuple2<K, V>> toQueue() { return map.toQueue(); }
+    public Queue<Tuple2<K, V>> toQueue() {
+        return map.toQueue();
+    }
 
     /**
      * @return the entries as a {@link Stream}, in the order of the keys
      */
-    public Stream<Tuple2<K, V>> toStream() { return map.toStream(); }
+    public Stream<Tuple2<K, V>> toStream() {
+        return map.toStream();
+    }
 
     /**
      * @return the entries as a {@link HashSet}
      */
-    public Set<Tuple2<K, V>> toSet() { return map.toSet(); }
+    public Set<Tuple2<K, V>> toSet() {
+        return map.toSet();
+    }
 
     /**
      * @return the entries as a {@link LinkedHashSet}, in the order of the keys
      */
-    public Set<Tuple2<K, V>> toLinkedSet() { return map.toLinkedSet(); }
+    public Set<Tuple2<K, V>> toLinkedSet() {
+        return map.toLinkedSet();
+    }
 
     /**
      * @return the entries as a {@link TreeSet} in their natural order
      * @throws ClassCastException if the keys or values are not {@link Comparable}
      */
-    public SortedSet<Tuple2<K, V>> toSortedSet() { return map.toSortedSet(); }
+    public SortedSet<Tuple2<K, V>> toSortedSet() {
+        return map.toSortedSet();
+    }
 
     /**
      * @param comparator The order
      * @return the entries as a {@link TreeSet} ordered by {@code comparator}
      * @throws NullPointerException if {@code comparator} is null
      */
-    public SortedSet<Tuple2<K, V>> toSortedSet(Comparator<? super Tuple2<K, V>> comparator) { return map.toSortedSet(comparator); }
+    public SortedSet<Tuple2<K, V>> toSortedSet(Comparator<? super Tuple2<K, V>> comparator) {
+        return map.toSortedSet(comparator);
+    }
 
     /**
      * @param keyMapper   The key of an entry
@@ -1276,7 +1492,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link NonEmptyMap}; of two with the same key, the later wins
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptyMap<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptyMap<K2, V2> toMap(
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
         return NonEmptyMap.ofMapped(map, keyMapper, valueMapper, "NonEmptySortedMap.toMap");
     }
 
@@ -1287,7 +1505,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link NonEmptyMap}; of two with the same key, the later wins
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptyMap<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptyMap<K2, V2> toMap(
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         return NonEmptyMap.ofMappedEntries(map, f, "NonEmptySortedMap.toMap");
     }
 
@@ -1299,7 +1518,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link LinkedHashMap}, in the order of the keys
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
         return map.toLinkedMap(keyMapper, valueMapper);
     }
 
@@ -1310,9 +1531,11 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link LinkedHashMap}, in the order of the keys
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         Objects.requireNonNull(f, "f is null");
-        return map.toLinkedMap(element -> Objects.requireNonNull(f.apply(element), "NonEmptySortedMap.toLinkedMap: f returned null"));
+        return map.toLinkedMap(
+                element -> Objects.requireNonNull(f.apply(element), "NonEmptySortedMap.toLinkedMap: f returned null"));
     }
 
     /**
@@ -1323,8 +1546,11 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys
      * @throws NullPointerException if an argument is null or returns null
      */
-    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
-        return NonEmptySortedMap.ofMapped(Comparators.naturalComparator(), map, keyMapper, valueMapper, "NonEmptySortedMap.toSortedMap");
+    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+        return NonEmptySortedMap.ofMapped(
+                Comparators.naturalComparator(), map, keyMapper, valueMapper, "NonEmptySortedMap.toSortedMap");
     }
 
     /**
@@ -1334,8 +1560,10 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        return NonEmptySortedMap.ofMappedEntries(Comparators.naturalComparator(), map, f, "NonEmptySortedMap.toSortedMap");
+    public <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+        return NonEmptySortedMap.ofMappedEntries(
+                Comparators.naturalComparator(), map, f, "NonEmptySortedMap.toSortedMap");
     }
 
     /**
@@ -1347,7 +1575,10 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}
      * @throws NullPointerException if an argument is null or a mapper returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(
+            Comparator<? super K2> comparator,
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
         return NonEmptySortedMap.ofMapped(comparator, map, keyMapper, valueMapper, "NonEmptySortedMap.toSortedMap");
     }
 
@@ -1359,7 +1590,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the entries as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}
      * @throws NullPointerException if an argument is null or {@code f} returns null
      */
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptySortedMap<K2, V2> toSortedMap(
+            Comparator<? super K2> comparator,
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         return NonEmptySortedMap.ofMappedEntries(comparator, map, f, "NonEmptySortedMap.toSortedMap");
     }
 
@@ -1370,7 +1603,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return an entry that passes {@code predicate}, the first in the order of the keys
      * @throws NullPointerException if {@code predicate} is null
      */
-    public Option<Tuple2<K, V>> find(Predicate<? super Tuple2<K, V>> predicate) { return map.find(predicate); }
+    public Option<Tuple2<K, V>> find(Predicate<? super Tuple2<K, V>> predicate) {
+        return map.find(predicate);
+    }
 
     /**
      * Arranges the entries by a key that must be unique.
@@ -1380,9 +1615,11 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return {@code Some} of the map from each key to its entry, or {@code None} if two entries share a key
      * @throws NullPointerException if {@code getKey} is null
      */
-    public <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(Function<? super Tuple2<K, V>, ? extends K2> getKey) {
+    public <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(
+            Function<? super Tuple2<K, V>, ? extends K2> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return map.arrangeBy(element -> Objects.requireNonNull(getKey.apply(element), "NonEmptySortedMap.arrangeBy: getKey returned null"));
+        return map.arrangeBy(element ->
+                Objects.requireNonNull(getKey.apply(element), "NonEmptySortedMap.arrangeBy: getKey returned null"));
     }
 
     /**
@@ -1418,8 +1655,12 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     @Override
-    public int hashCode() { return map.hashCode(); }
+    public int hashCode() {
+        return map.hashCode();
+    }
 
     @Override
-    public String toString() { return map.mkString("NonEmptySortedMap(", ", ", ")"); }
+    public String toString() {
+        return map.mkString("NonEmptySortedMap(", ", ", ")");
+    }
 }

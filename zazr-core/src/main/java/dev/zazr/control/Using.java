@@ -59,8 +59,7 @@ import static dev.zazr.internal.Throwables.sneakyThrow;
 /// resource it was given before throwing (Scala's does not release it).
 public final class Using {
 
-    private Using() {
-    }
+    private Using() {}
 
     /// Obtains a resource from `resource`, passes it to `f` and closes it afterwards, whatever `f` did.
     ///
@@ -77,8 +76,8 @@ public final class Using {
     /// @return `Success` of the result of `f`, or a `Failure`; a `null` result is a `Failure` of a
     ///         [NullPointerException]
     /// @throws NullPointerException if `resource` or `f` is null
-    public static <R extends AutoCloseable, T extends @Nullable Object> Try<T> of(Callable<? extends R> resource,
-                                                                                 CheckedFunction1<? super R, ? extends T> f) {
+    public static <R extends AutoCloseable, T extends @Nullable Object> Try<T> of(
+            Callable<? extends R> resource, CheckedFunction1<? super R, ? extends T> f) {
         Objects.requireNonNull(resource, "resource is null");
         Objects.requireNonNull(f, "f is null");
         try {
@@ -129,8 +128,7 @@ public final class Using {
         private int size;
         private boolean closed;
 
-        private Manager() {
-        }
+        private Manager() {}
 
         /// Registers `resource`, closed by its `close()` when the block ends, and returns it.
         ///
@@ -187,7 +185,8 @@ public final class Using {
             size += 2;
         }
 
-        private <T extends @Nullable Object> @Nullable T manage(CheckedFunction1<? super Manager, ? extends T> f) throws Throwable {
+        private <T extends @Nullable Object> @Nullable T manage(CheckedFunction1<? super Manager, ? extends T> f)
+                throws Throwable {
             @Nullable T result = null;
             @Nullable Throwable toThrow = null;
             try {
@@ -233,8 +232,8 @@ public final class Using {
         }
     }
 
-    private static <R extends AutoCloseable, T extends @Nullable Object> T use(@Nullable R resource,
-                                                                              CheckedFunction1<? super R, ? extends T> f) throws Throwable {
+    private static <R extends AutoCloseable, T extends @Nullable Object> T use(
+            @Nullable R resource, CheckedFunction1<? super R, ? extends T> f) throws Throwable {
         if (resource == null) {
             throw new NullPointerException("Using.of: the resource is null");
         }

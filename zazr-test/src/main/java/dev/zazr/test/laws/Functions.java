@@ -2,7 +2,6 @@ package dev.zazr.test.laws;
 
 import dev.zazr.test.CheckConfig;
 import dev.zazr.test.Gen;
-
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -12,13 +11,14 @@ import java.util.function.Function;
  */
 final class Functions {
 
-    private Functions() {
-    }
+    private Functions() {}
 
     /// Integer functions `x -> (a * x + b) mod m`: affine, and folding onto a small range when `m` is small, so that
     /// a set's `map` merges elements. Elements that are not integers go through their hash code.
     static Gen<Function<Object, Object>> integers() {
-        return Gen.fromRandom(random -> new IntegerFunction(random.nextInt(21) - 10, random.nextInt(201) - 100,
+        return Gen.fromRandom(random -> new IntegerFunction(
+                random.nextInt(21) - 10,
+                random.nextInt(201) - 100,
                 random.nextInt(3) == 0 ? 1 + random.nextInt(7) : 0));
     }
 
@@ -60,7 +60,8 @@ final class Functions {
         @Override
         public F apply(Object x) {
             final long drawSeed = mix(seed + GOLDEN_GAMMA * Objects.hashCode(x));
-            return gen.runCollectN(1, new CheckConfig(1, size, drawSeed, CheckConfig.DEFAULT_MAX_DISCARDS)).head();
+            return gen.runCollectN(1, new CheckConfig(1, size, drawSeed, CheckConfig.DEFAULT_MAX_DISCARDS))
+                    .head();
         }
 
         @Override

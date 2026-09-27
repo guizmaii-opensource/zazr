@@ -73,7 +73,8 @@ public interface NonEmptyModule {
         }
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> T maxBy(Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> T maxBy(
+            Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         final java.util.Iterator<T> iterator = nonEmpty.iterator();
         T max = iterator.next();
@@ -89,7 +90,8 @@ public interface NonEmptyModule {
         return max;
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> T minBy(Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> T minBy(
+            Iterable<T> nonEmpty, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         final java.util.Iterator<T> iterator = nonEmpty.iterator();
         T min = iterator.next();
@@ -105,7 +107,8 @@ public interface NonEmptyModule {
         return min;
     }
 
-    static <T extends @Nullable Object> T reduce(Iterable<T> nonEmpty, BiFunction<? super T, ? super T, ? extends T> op) {
+    static <T extends @Nullable Object> T reduce(
+            Iterable<T> nonEmpty, BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
         final java.util.Iterator<T> iterator = nonEmpty.iterator();
         T result = iterator.next();
@@ -115,7 +118,9 @@ public interface NonEmptyModule {
         return result;
     }
 
-    static <T extends @Nullable Object, B extends @Nullable Object> B reduceMap(Iterable<T> nonEmpty, Function<? super T, ? extends B> mapper,
+    static <T extends @Nullable Object, B extends @Nullable Object> B reduceMap(
+            Iterable<T> nonEmpty,
+            Function<? super T, ? extends B> mapper,
             BiFunction<? super B, ? super B, ? extends B> op) {
         Objects.requireNonNull(mapper, "mapper is null");
         Objects.requireNonNull(op, "op is null");

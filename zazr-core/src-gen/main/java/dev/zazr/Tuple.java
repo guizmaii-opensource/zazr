@@ -58,7 +58,8 @@ public interface Tuple {
      * @param      entry A {@link java.util.Map.Entry}
      * @return a new {@code Tuple2} containing key and value of the given {@code entry}
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<T1, T2> fromEntry(Map.Entry<? extends T1, ? extends T2> entry) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<T1, T2> fromEntry(
+            Map.Entry<? extends T1, ? extends T2> entry) {
         Objects.requireNonNull(entry, "entry is null");
         return new Tuple2<>(entry.getKey(), entry.getValue());
     }
@@ -98,7 +99,8 @@ public interface Tuple {
      * @param t3 the 3rd element
      * @return a tuple of three elements.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<T1, T2, T3> of(T1 t1, T2 t2, T3 t3) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Tuple3<T1, T2, T3> of(T1 t1, T2 t2, T3 t3) {
         return new Tuple3<>(t1, t2, t3);
     }
 
@@ -115,7 +117,12 @@ public interface Tuple {
      * @param t4 the 4th element
      * @return a tuple of 4 elements.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Tuple4<T1, T2, T3, T4> of(T1 t1, T2 t2, T3 t3, T4 t4) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Tuple4<T1, T2, T3, T4> of(T1 t1, T2 t2, T3 t3, T4 t4) {
         return new Tuple4<>(t1, t2, t3, t4);
     }
 
@@ -134,7 +141,13 @@ public interface Tuple {
      * @param t5 the 5th element
      * @return a tuple of 5 elements.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Tuple5<T1, T2, T3, T4, T5> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Tuple5<T1, T2, T3, T4, T5> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) {
         return new Tuple5<>(t1, t2, t3, t4, t5);
     }
 
@@ -155,7 +168,14 @@ public interface Tuple {
      * @param t6 the 6th element
      * @return a tuple of 6 elements.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Tuple6<T1, T2, T3, T4, T5, T6> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Tuple6<T1, T2, T3, T4, T5, T6> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) {
         return new Tuple6<>(t1, t2, t3, t4, t5, t6);
     }
 
@@ -178,7 +198,15 @@ public interface Tuple {
      * @param t7 the 7th element
      * @return a tuple of 7 elements.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Tuple7<T1, T2, T3, T4, T5, T6, T7> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Tuple7<T1, T2, T3, T4, T5, T6, T7> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) {
         return new Tuple7<>(t1, t2, t3, t4, t5, t6, t7);
     }
 
@@ -203,7 +231,16 @@ public interface Tuple {
      * @param t8 the 8th element
      * @return a tuple of 8 elements.
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> of(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) {
         return new Tuple8<>(t1, t2, t3, t4, t5, t6, t7, t8);
     }
 
@@ -275,7 +312,8 @@ public interface Tuple {
      * @param o5 the 5th value to hash
      * @return the same result as {@link Objects#hash(Object...)}
      */
-    static int hash(@Nullable Object o1, @Nullable Object o2, @Nullable Object o3, @Nullable Object o4, @Nullable Object o5) {
+    static int hash(
+            @Nullable Object o1, @Nullable Object o2, @Nullable Object o3, @Nullable Object o4, @Nullable Object o5) {
         int result = 1;
         result = 31 * result + hash(o1);
         result = 31 * result + hash(o2);
@@ -296,7 +334,13 @@ public interface Tuple {
      * @param o6 the 6th value to hash
      * @return the same result as {@link Objects#hash(Object...)}
      */
-    static int hash(@Nullable Object o1, @Nullable Object o2, @Nullable Object o3, @Nullable Object o4, @Nullable Object o5, @Nullable Object o6) {
+    static int hash(
+            @Nullable Object o1,
+            @Nullable Object o2,
+            @Nullable Object o3,
+            @Nullable Object o4,
+            @Nullable Object o5,
+            @Nullable Object o6) {
         int result = 1;
         result = 31 * result + hash(o1);
         result = 31 * result + hash(o2);
@@ -319,7 +363,14 @@ public interface Tuple {
      * @param o7 the 7th value to hash
      * @return the same result as {@link Objects#hash(Object...)}
      */
-    static int hash(@Nullable Object o1, @Nullable Object o2, @Nullable Object o3, @Nullable Object o4, @Nullable Object o5, @Nullable Object o6, @Nullable Object o7) {
+    static int hash(
+            @Nullable Object o1,
+            @Nullable Object o2,
+            @Nullable Object o3,
+            @Nullable Object o4,
+            @Nullable Object o5,
+            @Nullable Object o6,
+            @Nullable Object o7) {
         int result = 1;
         result = 31 * result + hash(o1);
         result = 31 * result + hash(o2);
@@ -344,7 +395,15 @@ public interface Tuple {
      * @param o8 the 8th value to hash
      * @return the same result as {@link Objects#hash(Object...)}
      */
-    static int hash(@Nullable Object o1, @Nullable Object o2, @Nullable Object o3, @Nullable Object o4, @Nullable Object o5, @Nullable Object o6, @Nullable Object o7, @Nullable Object o8) {
+    static int hash(
+            @Nullable Object o1,
+            @Nullable Object o2,
+            @Nullable Object o3,
+            @Nullable Object o4,
+            @Nullable Object o5,
+            @Nullable Object o6,
+            @Nullable Object o7,
+            @Nullable Object o8) {
         int result = 1;
         result = 31 * result + hash(o1);
         result = 31 * result + hash(o2);
@@ -378,7 +437,8 @@ public interface Tuple {
      * @return the given {@code t} instance as narrowed type {@code Tuple2<T1, T2>}.
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<T1, T2> narrow(Tuple2<? extends T1, ? extends T2> t) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<T1, T2> narrow(
+            Tuple2<? extends T1, ? extends T2> t) {
         return (Tuple2<T1, T2>) t;
     }
 
@@ -392,7 +452,8 @@ public interface Tuple {
      * @return the given {@code t} instance as narrowed type {@code Tuple3<T1, T2, T3>}.
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<T1, T2, T3> narrow(Tuple3<? extends T1, ? extends T2, ? extends T3> t) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Tuple3<T1, T2, T3> narrow(Tuple3<? extends T1, ? extends T2, ? extends T3> t) {
         return (Tuple3<T1, T2, T3>) t;
     }
 
@@ -407,7 +468,12 @@ public interface Tuple {
      * @return the given {@code t} instance as narrowed type {@code Tuple4<T1, T2, T3, T4>}.
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Tuple4<T1, T2, T3, T4> narrow(Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4> t) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Tuple4<T1, T2, T3, T4> narrow(Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4> t) {
         return (Tuple4<T1, T2, T3, T4>) t;
     }
 
@@ -423,7 +489,14 @@ public interface Tuple {
      * @return the given {@code t} instance as narrowed type {@code Tuple5<T1, T2, T3, T4, T5>}.
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Tuple5<T1, T2, T3, T4, T5> narrow(Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5> t) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Tuple5<T1, T2, T3, T4, T5> narrow(
+                    Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5> t) {
         return (Tuple5<T1, T2, T3, T4, T5>) t;
     }
 
@@ -440,7 +513,15 @@ public interface Tuple {
      * @return the given {@code t} instance as narrowed type {@code Tuple6<T1, T2, T3, T4, T5, T6>}.
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Tuple6<T1, T2, T3, T4, T5, T6> narrow(Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6> t) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Tuple6<T1, T2, T3, T4, T5, T6> narrow(
+                    Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6> t) {
         return (Tuple6<T1, T2, T3, T4, T5, T6>) t;
     }
 
@@ -458,7 +539,24 @@ public interface Tuple {
      * @return the given {@code t} instance as narrowed type {@code Tuple7<T1, T2, T3, T4, T5, T6, T7>}.
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Tuple7<T1, T2, T3, T4, T5, T6, T7> narrow(Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7> t) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Tuple7<T1, T2, T3, T4, T5, T6, T7> narrow(
+                    Tuple7<
+                                    ? extends T1,
+                                    ? extends T2,
+                                    ? extends T3,
+                                    ? extends T4,
+                                    ? extends T5,
+                                    ? extends T6,
+                                    ? extends T7>
+                            t) {
         return (Tuple7<T1, T2, T3, T4, T5, T6, T7>) t;
     }
 
@@ -477,7 +575,26 @@ public interface Tuple {
      * @return the given {@code t} instance as narrowed type {@code Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>}.
      */
     @SuppressWarnings("unchecked")
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> narrow(Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8> t) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> narrow(
+                    Tuple8<
+                                    ? extends T1,
+                                    ? extends T2,
+                                    ? extends T3,
+                                    ? extends T4,
+                                    ? extends T5,
+                                    ? extends T6,
+                                    ? extends T7,
+                                    ? extends T8>
+                            t) {
         return (Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>) t;
     }
 
@@ -509,7 +626,8 @@ public interface Tuple {
      * @return a tuple of two {@code Vector}s.
      * @throws NullPointerException if {@code tuples}, a tuple or a component is null (a {@code Vector} holds no null)
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Vector<T1>, Vector<T2>> unzip2(Iterable<? extends Tuple2<? extends T1, ? extends T2>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Vector<T1>, Vector<T2>> unzip2(
+            Iterable<? extends Tuple2<? extends T1, ? extends T2>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Vector.Builder<T1> b1 = Vector.newBuilder();
         final Vector.Builder<T2> b2 = Vector.newBuilder();
@@ -531,7 +649,9 @@ public interface Tuple {
      * @return a tuple of three {@code Vector}s.
      * @throws NullPointerException if {@code tuples}, a tuple or a component is null (a {@code Vector} holds no null)
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Tuple3<Vector<T1>, Vector<T2>, Vector<T3>> unzip3(Iterable<? extends Tuple3<? extends T1, ? extends T2, ? extends T3>> tuples) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Tuple3<Vector<T1>, Vector<T2>, Vector<T3>> unzip3(
+                    Iterable<? extends Tuple3<? extends T1, ? extends T2, ? extends T3>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Vector.Builder<T1> b1 = Vector.newBuilder();
         final Vector.Builder<T2> b2 = Vector.newBuilder();
@@ -556,7 +676,13 @@ public interface Tuple {
      * @return a tuple of 4 {@code Vector}s.
      * @throws NullPointerException if {@code tuples}, a tuple or a component is null (a {@code Vector} holds no null)
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Tuple4<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>> unzip4(Iterable<? extends Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4>> tuples) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Tuple4<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>> unzip4(
+                    Iterable<? extends Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4>> tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Vector.Builder<T1> b1 = Vector.newBuilder();
         final Vector.Builder<T2> b2 = Vector.newBuilder();
@@ -584,7 +710,15 @@ public interface Tuple {
      * @return a tuple of 5 {@code Vector}s.
      * @throws NullPointerException if {@code tuples}, a tuple or a component is null (a {@code Vector} holds no null)
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Tuple5<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>> unzip5(Iterable<? extends Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5>> tuples) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Tuple5<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>> unzip5(
+                    Iterable<? extends Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5>>
+                            tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Vector.Builder<T1> b1 = Vector.newBuilder();
         final Vector.Builder<T2> b2 = Vector.newBuilder();
@@ -615,7 +749,24 @@ public interface Tuple {
      * @return a tuple of 6 {@code Vector}s.
      * @throws NullPointerException if {@code tuples}, a tuple or a component is null (a {@code Vector} holds no null)
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Tuple6<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>, Vector<T6>> unzip6(Iterable<? extends Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6>> tuples) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Tuple6<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>, Vector<T6>> unzip6(
+                    Iterable<
+                                    ? extends
+                                            Tuple6<
+                                                    ? extends T1,
+                                                    ? extends T2,
+                                                    ? extends T3,
+                                                    ? extends T4,
+                                                    ? extends T5,
+                                                    ? extends T6>>
+                            tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Vector.Builder<T1> b1 = Vector.newBuilder();
         final Vector.Builder<T2> b2 = Vector.newBuilder();
@@ -649,7 +800,26 @@ public interface Tuple {
      * @return a tuple of 7 {@code Vector}s.
      * @throws NullPointerException if {@code tuples}, a tuple or a component is null (a {@code Vector} holds no null)
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Tuple7<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>, Vector<T6>, Vector<T7>> unzip7(Iterable<? extends Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7>> tuples) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Tuple7<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>, Vector<T6>, Vector<T7>> unzip7(
+                    Iterable<
+                                    ? extends
+                                            Tuple7<
+                                                    ? extends T1,
+                                                    ? extends T2,
+                                                    ? extends T3,
+                                                    ? extends T4,
+                                                    ? extends T5,
+                                                    ? extends T6,
+                                                    ? extends T7>>
+                            tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Vector.Builder<T1> b1 = Vector.newBuilder();
         final Vector.Builder<T2> b2 = Vector.newBuilder();
@@ -658,7 +828,8 @@ public interface Tuple {
         final Vector.Builder<T5> b5 = Vector.newBuilder();
         final Vector.Builder<T6> b6 = Vector.newBuilder();
         final Vector.Builder<T7> b7 = Vector.newBuilder();
-        for (Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7> t : tuples) {
+        for (Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7>
+                t : tuples) {
             b1.add(t._1());
             b2.add(t._2());
             b3.add(t._3());
@@ -686,7 +857,29 @@ public interface Tuple {
      * @return a tuple of 8 {@code Vector}s.
      * @throws NullPointerException if {@code tuples}, a tuple or a component is null (a {@code Vector} holds no null)
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Tuple8<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>, Vector<T6>, Vector<T7>, Vector<T8>> unzip8(Iterable<? extends Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8>> tuples) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Tuple8<Vector<T1>, Vector<T2>, Vector<T3>, Vector<T4>, Vector<T5>, Vector<T6>, Vector<T7>, Vector<T8>>
+                    unzip8(
+                            Iterable<
+                                            ? extends
+                                                    Tuple8<
+                                                            ? extends T1,
+                                                            ? extends T2,
+                                                            ? extends T3,
+                                                            ? extends T4,
+                                                            ? extends T5,
+                                                            ? extends T6,
+                                                            ? extends T7,
+                                                            ? extends T8>>
+                                    tuples) {
         Objects.requireNonNull(tuples, "tuples is null");
         final Vector.Builder<T1> b1 = Vector.newBuilder();
         final Vector.Builder<T2> b2 = Vector.newBuilder();
@@ -696,7 +889,16 @@ public interface Tuple {
         final Vector.Builder<T6> b6 = Vector.newBuilder();
         final Vector.Builder<T7> b7 = Vector.newBuilder();
         final Vector.Builder<T8> b8 = Vector.newBuilder();
-        for (Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8> t : tuples) {
+        for (Tuple8<
+                        ? extends T1,
+                        ? extends T2,
+                        ? extends T3,
+                        ? extends T4,
+                        ? extends T5,
+                        ? extends T6,
+                        ? extends T7,
+                        ? extends T8>
+                t : tuples) {
             b1.add(t._1());
             b2.add(t._2());
             b3.add(t._3());
@@ -706,7 +908,7 @@ public interface Tuple {
             b7.add(t._7());
             b8.add(t._8());
         }
-        return Tuple.of(b1.result(), b2.result(), b3.result(), b4.result(), b5.result(), b6.result(), b7.result(), b8.result());
+        return Tuple.of(
+                b1.result(), b2.result(), b3.result(), b4.result(), b5.result(), b6.result(), b7.result(), b8.result());
     }
-
 }

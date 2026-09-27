@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class TreeMapTreeCopyTest {
 
     private static final long SEED = 20260925L;
-    private static final int[] SIZES = { 0, 1, 2, 3, 31, 32, 33, 1023, 1024, 1025 };
+    private static final int[] SIZES = {0, 1, 2, 3, 31, 32, 33, 1023, 1024, 1025};
 
     private static final Comparator<Integer> NATURAL = Comparator.naturalOrder();
     private static final Comparator<Integer> REVERSED = Comparator.reverseOrder();
@@ -63,7 +63,8 @@ public class TreeMapTreeCopyTest {
         final Random random = new Random(SEED);
         for (Comparator<Integer> order : orders()) {
             for (int size : SIZES) {
-                final TreeMap<Integer, String> map = randomMap(order, Math.min(size, order == MODULO ? 1000 : size), random);
+                final TreeMap<Integer, String> map =
+                        randomMap(order, Math.min(size, order == MODULO ? 1000 : size), random);
                 final SortedSet<Integer> keys = map.keySet();
                 final SortedSet<Integer> expected = keySetByRebuilding(map);
                 assertThat(keys).isEqualTo(expected);
@@ -89,8 +90,12 @@ public class TreeMapTreeCopyTest {
 
     @Test
     public void keySetHoldsTheKeyPutLastUnderACaseInsensitiveComparator() {
-        final TreeMap<String, Integer> map = TreeMap.<String, Integer> empty(String.CASE_INSENSITIVE_ORDER)
-                .put("b", 1).put("A", 2).put("c", 3).put("a", 4).put("B", 5);
+        final TreeMap<String, Integer> map = TreeMap.<String, Integer>empty(String.CASE_INSENSITIVE_ORDER)
+                .put("b", 1)
+                .put("A", 2)
+                .put("c", 3)
+                .put("a", 4)
+                .put("B", 5);
         final SortedSet<String> keys = map.keySet();
         assertThat(list(keys)).containsExactly("a", "B", "c");
         assertThat(list(keys)).isEqualTo(list(keySetByRebuilding(map)));
@@ -121,7 +126,8 @@ public class TreeMapTreeCopyTest {
         assertThat(list(map)).isEqualTo(entriesBefore);
         assertThat(keys.head()).isEqualTo(map.head()._1());
         assertThat(keys.last()).isEqualTo(map.last()._1());
-        assertThat(list(keys.take(10))).isEqualTo(list(Iterator.ofAll(map.take(10)).map(Tuple2::_1)));
+        assertThat(list(keys.take(10)))
+                .isEqualTo(list(Iterator.ofAll(map.take(10)).map(Tuple2::_1)));
     }
 
     @Test
@@ -129,7 +135,8 @@ public class TreeMapTreeCopyTest {
         final Random random = new Random(SEED);
         for (Comparator<Integer> order : orders()) {
             for (int size : SIZES) {
-                final TreeMap<Integer, String> map = randomMap(order, Math.min(size, order == MODULO ? 1000 : size), random);
+                final TreeMap<Integer, String> map =
+                        randomMap(order, Math.min(size, order == MODULO ? 1000 : size), random);
                 final java.util.List<String> calls = new ArrayList<>();
                 final TreeMap<Integer, Integer> actual = map.mapValues(v -> {
                     calls.add(v);
@@ -141,7 +148,8 @@ public class TreeMapTreeCopyTest {
                 assertThat(actual.comparator()).isSameAs(map.comparator());
                 assertThat(calls).as("called once per entry, in key order").isEqualTo(list(map.values()));
                 for (Tuple2<Integer, String> entry : map) {
-                    assertThat(actual.get(entry._1()).get()).isEqualTo(entry._2().length());
+                    assertThat(actual.get(entry._1()).get())
+                            .isEqualTo(entry._2().length());
                 }
             }
         }
@@ -152,7 +160,8 @@ public class TreeMapTreeCopyTest {
         final Random random = new Random(SEED);
         for (Comparator<Integer> order : orders()) {
             for (int size : SIZES) {
-                final TreeMap<Integer, String> map = randomMap(order, Math.min(size, order == MODULO ? 1000 : size), random);
+                final TreeMap<Integer, String> map =
+                        randomMap(order, Math.min(size, order == MODULO ? 1000 : size), random);
                 final java.util.List<Integer> calls = new ArrayList<>();
                 final TreeMap<Integer, String> actual = map.replaceAll((k, v) -> {
                     calls.add(k);
@@ -175,12 +184,16 @@ public class TreeMapTreeCopyTest {
 
     @Test
     public void mapValuesAndReplaceAllKeepTheKeysOfACaseInsensitiveMap() {
-        final TreeMap<String, Integer> map = TreeMap.<String, Integer> empty(String.CASE_INSENSITIVE_ORDER)
-                .put("b", 1).put("A", 2).put("c", 3).put("a", 4);
+        final TreeMap<String, Integer> map = TreeMap.<String, Integer>empty(String.CASE_INSENSITIVE_ORDER)
+                .put("b", 1)
+                .put("A", 2)
+                .put("c", 3)
+                .put("a", 4);
         assertThat(list(map.mapValues(v -> v * 10)))
                 .containsExactly(Tuple.of("a", 40), Tuple.of("b", 10), Tuple.of("c", 30));
         assertThat(list(map.replaceAll((k, v) -> k.charAt(0) * 100 + v)))
-                .containsExactly(Tuple.of("a", 'a' * 100 + 4), Tuple.of("b", 'b' * 100 + 1), Tuple.of("c", 'c' * 100 + 3));
+                .containsExactly(
+                        Tuple.of("a", 'a' * 100 + 4), Tuple.of("b", 'b' * 100 + 1), Tuple.of("c", 'c' * 100 + 3));
     }
 
     @Test
@@ -199,9 +212,11 @@ public class TreeMapTreeCopyTest {
     public void mapValuesAndReplaceAllRejectANullValue() {
         final TreeMap<Integer, String> map = TreeMap.of(1, "a", 2, "b", 3, "c");
         assertThatThrownBy(() -> map.mapValues(v -> v.equals("b") ? null : v))
-                .isInstanceOf(NullPointerException.class).hasMessage("TreeMap: value is null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("TreeMap: value is null");
         assertThatThrownBy(() -> map.replaceAll((k, v) -> k == 3 ? null : v))
-                .isInstanceOf(NullPointerException.class).hasMessage("TreeMap: value is null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("TreeMap: value is null");
         assertThatThrownBy(() -> map.mapValues(null)).isInstanceOf(NullPointerException.class);
     }
 

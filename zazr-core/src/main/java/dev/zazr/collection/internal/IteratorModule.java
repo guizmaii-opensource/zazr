@@ -23,7 +23,9 @@ public interface IteratorModule {
         private static class Cell<T extends @Nullable Object> {
 
             final Iterator<T> it;
-            @Nullable Cell<T> next;
+
+            @Nullable
+            Cell<T> next;
 
             Cell(Iterator<T> it) {
                 this.it = it;
@@ -70,7 +72,7 @@ public interface IteratorModule {
                 return curr != null;
             }
             hasNextCalculated = true;
-            while(true) {
+            while (true) {
                 if (curr != null) {
                     if (curr.hasNext()) {
                         return true;
@@ -150,10 +152,14 @@ public interface IteratorModule {
         static final EmptyIterator INSTANCE = new EmptyIterator();
 
         @Override
-        public boolean hasNext() { return false; }
+        public boolean hasNext() {
+            return false;
+        }
 
         @Override
-        public Object next() { throw new NoSuchElementException("EmptyIterator.next()"); }
+        public Object next() {
+            throw new NoSuchElementException("EmptyIterator.next()");
+        }
 
         @Override
         public String toString() {

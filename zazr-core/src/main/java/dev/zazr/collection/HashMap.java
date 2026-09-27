@@ -52,7 +52,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A {@link HashMap} Collector.
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> Collector<Tuple2<K, V>, Builder<K, V>, HashMap<K, V>> collector() {
+    public static <K extends @Nullable Object, V extends @Nullable Object>
+            Collector<Tuple2<K, V>, Builder<K, V>, HashMap<K, V>> collector() {
         final Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
         final BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
         final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
@@ -70,7 +71,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <T> Initial {@link java.util.stream.Stream} elements type
      * @return A {@link HashMap} Collector.
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object, T extends V> Collector<T, Builder<K, V>, HashMap<K, V>> collector(Function<? super T, ? extends K> keyMapper) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, T extends V>
+            Collector<T, Builder<K, V>, HashMap<K, V>> collector(Function<? super T, ? extends K> keyMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         return HashMap.collector(keyMapper, v -> v);
     }
@@ -86,12 +88,14 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <T> Initial {@link java.util.stream.Stream} elements type
      * @return A {@link HashMap} Collector.
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object> Collector<T, Builder<K, V>, HashMap<K, V>> collector(
-            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    public static <K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object>
+            Collector<T, Builder<K, V>, HashMap<K, V>> collector(
+                    Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         final Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
-        final BiConsumer<Builder<K, V>, T> accumulator = (builder, t) -> builder.put(keyMapper.apply(t), valueMapper.apply(t));
+        final BiConsumer<Builder<K, V>, T> accumulator =
+                (builder, t) -> builder.put(keyMapper.apply(t), valueMapper.apply(t));
         final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
         final Function<Builder<K, V>, HashMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
@@ -132,7 +136,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @return the same map viewed as {@code HashMap<K, V>}
      */
     @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> narrow(HashMap<? extends K, ? extends V> hashMap) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> narrow(
+            HashMap<? extends K, ? extends V> hashMap) {
         return (HashMap<K, V>) hashMap;
     }
 
@@ -144,8 +149,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V>   The value type
      * @return A new Map containing the given entry
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(Tuple2<? extends K, ? extends V> entry) {
-        return new HashMap<>(putChecked(MapNode.<K, V> empty(), entry._1(), entry._2()));
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            Tuple2<? extends K, ? extends V> entry) {
+        return new HashMap<>(putChecked(MapNode.<K, V>empty(), entry._1(), entry._2()));
     }
 
     /**
@@ -158,7 +164,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      *         back, not a copy
      */
     @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofAll(java.util.Map<? extends K, ? extends V> map) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofAll(
+            java.util.Map<? extends K, ? extends V> map) {
         Objects.requireNonNull(map, "map is null");
         if (JavaConverters.underlying(map) instanceof HashMap<?, ?> underlying) {
             return (HashMap<K, V>) underlying;
@@ -181,9 +188,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V>         The value type
      * @return A HashMap containing the mapped entries
      */
-    public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofAll(java.util.stream.Stream<? extends T> stream,
-                                                Function<? super T, ? extends K> keyMapper,
-                                                Function<? super T, ? extends V> valueMapper) {
+    public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object>
+            HashMap<K, V> ofAll(
+                    java.util.stream.Stream<? extends T> stream,
+                    Function<? super T, ? extends K> keyMapper,
+                    Function<? super T, ? extends V> valueMapper) {
         return Maps.ofStream(empty(), stream, keyMapper, valueMapper);
     }
 
@@ -197,8 +206,10 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V>         The value type
      * @return A HashMap containing the mapped entries
      */
-    public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofAll(java.util.stream.Stream<? extends T> stream,
-                                                Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper) {
+    public static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object>
+            HashMap<K, V> ofAll(
+                    java.util.stream.Stream<? extends T> stream,
+                    Function<? super T, Tuple2<? extends K, ? extends V>> entryMapper) {
         return Maps.ofStream(empty(), stream, entryMapper, "HashMap.ofAll: entryMapper returned null");
     }
 
@@ -212,7 +223,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @return A new Map containing the given entry
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K key, V value) {
-        return new HashMap<>(putChecked(MapNode.<K, V> empty(), key, value));
+        return new HashMap<>(putChecked(MapNode.<K, V>empty(), key, value));
     }
 
     /**
@@ -243,7 +254,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1, V v1, K k2, V v2, K k3, V v3) {
         return of(k1, v1, k2, v2).put(k3, v3);
     }
 
@@ -262,7 +274,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param v4  the value for k4
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
         return of(k1, v1, k2, v2, k3, v3).put(k4, v4);
     }
 
@@ -283,7 +296,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
         return of(k1, v1, k2, v2, k3, v3, k4, v4).put(k5, v5);
     }
 
@@ -306,7 +320,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
         return of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5).put(k6, v6);
     }
 
@@ -331,7 +346,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
         return of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6).put(k7, v7);
     }
 
@@ -358,7 +374,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
         return of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7).put(k8, v8);
     }
 
@@ -387,8 +404,27 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
-        return of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8).put(k9, v9);
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1,
+            V v1,
+            K k2,
+            V v2,
+            K k3,
+            V v3,
+            K k4,
+            V v4,
+            K k5,
+            V v5,
+            K k6,
+            V v6,
+            K k7,
+            V v7,
+            K k8,
+            V v8,
+            K k9,
+            V v9) {
+        return of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8)
+                .put(k9, v9);
     }
 
     /**
@@ -418,8 +454,29 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @param <V> The value type
      * @return A new Map containing the given entries
      */
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
-        return of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9).put(k10, v10);
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> of(
+            K k1,
+            V v1,
+            K k2,
+            V v2,
+            K k3,
+            V v3,
+            K k4,
+            V v4,
+            K k5,
+            V v5,
+            K k6,
+            V v6,
+            K k7,
+            V v7,
+            K k8,
+            V v8,
+            K k9,
+            V v9,
+            K k10,
+            V v10) {
+        return of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5, k6, v6, k7, v7, k8, v8, k9, v9)
+                .put(k10, v10);
     }
 
     /**
@@ -435,9 +492,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @throws NullPointerException if {@code f} is null or returns null
      */
     @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> tabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> tabulate(
+            int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(f, "f is null");
-        return ofEntries(Collections.tabulate(n, i -> Objects.requireNonNull(f.apply(i), "HashMap.tabulate: f returned null")));
+        return ofEntries(
+                Collections.tabulate(n, i -> Objects.requireNonNull(f.apply(i), "HashMap.tabulate: f returned null")));
     }
 
     /**
@@ -452,7 +511,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @throws NullPointerException if {@code s} is null or returns null
      */
     @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> fill(int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> fill(
+            int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
         Objects.requireNonNull(s, "s is null");
         return ofEntries(Collections.fill(n, () -> Objects.requireNonNull(s.get(), "HashMap.fill: s returned null")));
     }
@@ -466,7 +526,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @return A HashMap containing the given entries
      */
     @SafeVarargs
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(java.util.Map.Entry<? extends K, ? extends V> ... entries) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(
+            java.util.Map.Entry<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
         final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
@@ -485,7 +546,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * @return A HashMap containing the given entries
      */
     @SafeVarargs
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(Tuple2<? extends K, ? extends V> ... entries) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(
+            Tuple2<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
         final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (Tuple2<? extends K, ? extends V> entry : entries) {
@@ -505,7 +567,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      *         the {@link #asJava()} view of one)
      */
     @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(
+            Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         Objects.requireNonNull(entries, "entries is null");
         if (entries instanceof HashMap) {
             return (HashMap<K, V>) entries;
@@ -522,10 +585,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> mapBoth(
+            Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Iterator<Tuple2<K2, V2>> entries = Iterator.ofAll(this).map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
+        final Iterator<Tuple2<K2, V2>> entries =
+                Iterator.ofAll(this).map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
         return HashMap.ofEntries(entries);
     }
 
@@ -545,7 +610,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is present.
      */
     @Override
-    public Tuple2<Option<V>, HashMap<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public Tuple2<Option<V>, HashMap<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         return Maps.computeIfPresent(this, key, remappingFunction);
     }
 
@@ -675,10 +741,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> flatMap(
+            BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return foldLeft(HashMap.<K2, V2> empty(), (acc, entry) -> {
-            for (Tuple2<? extends K2, ? extends V2> mappedEntry : Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "HashMap.flatMap: mapper returned null")) {
+        return foldLeft(HashMap.<K2, V2>empty(), (acc, entry) -> {
+            for (Tuple2<? extends K2, ? extends V2> mappedEntry : Objects.requireNonNull(
+                    mapper.apply(entry._1(), entry._2()), "HashMap.flatMap: mapper returned null")) {
                 acc = acc.put(mappedEntry);
             }
             return acc;
@@ -713,7 +781,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public <C extends @Nullable Object> Map<C, HashMap<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier) {
+    public <C extends @Nullable Object> Map<C, HashMap<K, V>> groupBy(
+            Function<? super Tuple2<K, V>, ? extends C> classifier) {
         return Maps.groupBy(this, this::createFromEntries, classifier, "HashMap.groupBy: classifier returned null");
     }
 
@@ -748,18 +817,24 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> collect(
+            BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return foldLeft(HashMap.empty(), (acc, entry) -> {
-            final Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "HashMap.collect: mapper returned null");
+            final Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(
+                    mapper.apply(entry._1(), entry._2()), "HashMap.collect: mapper returned null");
             return collected.isDefined() ? acc.put(collected.get()) : acc;
         });
     }
 
     @Override
-    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
+    public <K2 extends @Nullable Object, V2 extends @Nullable Object> HashMap<K2, V2> map(
+            BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return foldLeft(HashMap.empty(), (acc, entry) -> acc.put(Objects.requireNonNull(mapper.apply(entry._1(), entry._2()), "HashMap.map: mapper returned null")));
+        return foldLeft(
+                HashMap.empty(),
+                (acc, entry) -> acc.put(Objects.requireNonNull(
+                        mapper.apply(entry._1(), entry._2()), "HashMap.map: mapper returned null")));
     }
 
     @Override
@@ -769,7 +844,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    public <K2 extends @Nullable Object> HashMap<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge) {
+    public <K2 extends @Nullable Object> HashMap<K2, V> mapKeys(
+            Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge) {
         return Collections.mapKeys(this, HashMap.empty(), keyMapper, valueMerge);
     }
 
@@ -812,8 +888,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * map is empty, or when this map is empty and that map is a HashMap, which is returned as is.
      */
     @Override
-    public <U extends V> HashMap<K, V> merge(Map<? extends K, U> that,
-                                             BiFunction<? super V, ? super U, ? extends V> collisionResolution) {
+    public <U extends V> HashMap<K, V> merge(
+            Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution) {
         return Maps.merge(this, this::createFromEntries, that, collisionResolution);
     }
 
@@ -825,7 +901,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public HashMap<K, V> orElse(Supplier<? extends Iterable<? extends Tuple2<K, V>>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? ofEntries(Objects.requireNonNull(supplier.get(), "HashMap.orElse: supplier returned null")) : this;
+        return isEmpty()
+                ? ofEntries(Objects.requireNonNull(supplier.get(), "HashMap.orElse: supplier returned null"))
+                : this;
     }
 
     @Override
@@ -876,8 +954,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * Complexity: effectively O(1): one lookup and one {@link #put(Object, Object)}.
      */
     @Override
-    public <U extends V> HashMap<K, V> put(Tuple2<? extends K, U> entry,
-                                           BiFunction<? super V, ? super U, ? extends V> merge) {
+    public <U extends V> HashMap<K, V> put(
+            Tuple2<? extends K, U> entry, BiFunction<? super V, ? super U, ? extends V> merge) {
         return Maps.put(this, entry, merge);
     }
 
@@ -1062,7 +1140,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      *
      * @return {@code Some(nonEmptyMap)} sharing this map's entries, or {@code None} if this map is empty
      */
-    public Option<NonEmptyMap<K, V>> toNonEmptyMap() { return NonEmptyMap.fromMap(this); }
+    public Option<NonEmptyMap<K, V>> toNonEmptyMap() {
+        return NonEmptyMap.fromMap(this);
+    }
 
     /**
      * {@inheritDoc}
@@ -1117,8 +1197,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
 
         private final HashMapBuilder<K, V> trie = new HashMapBuilder<>("HashMap.Builder");
 
-        private Builder() {
-        }
+        private Builder() {}
 
         /**
          * Puts one entry, replacing the entry of an equal key.
@@ -1198,20 +1277,23 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     // the bulk factories: a transient trie, with the null checks and messages of a persistent put
-    private static <K extends @Nullable Object, V extends @Nullable Object> void putChecked(HashMapBuilder<K, V> builder, K key, V value) {
+    private static <K extends @Nullable Object, V extends @Nullable Object> void putChecked(
+            HashMapBuilder<K, V> builder, K key, V value) {
         Objects.requireNonNull(key, "HashMap: key is null");
         Objects.requireNonNull(value, "HashMap: value is null");
         builder.put(key, value);
     }
 
     // a persistent put, with the null checks and messages of every put
-    private static <K extends @Nullable Object, V extends @Nullable Object> BitmapIndexedMapNode<K, V> putChecked(BitmapIndexedMapNode<K, V> trie, K key, V value) {
+    private static <K extends @Nullable Object, V extends @Nullable Object> BitmapIndexedMapNode<K, V> putChecked(
+            BitmapIndexedMapNode<K, V> trie, K key, V value) {
         Objects.requireNonNull(key, "HashMap: key is null");
         Objects.requireNonNull(value, "HashMap: value is null");
         return trie.updated(key, value);
     }
 
-    private static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> wrap(BitmapIndexedMapNode<K, V> trie) {
+    private static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> wrap(
+            BitmapIndexedMapNode<K, V> trie) {
         return trie.size() == 0 ? empty() : new HashMap<>(trie);
     }
 
@@ -1220,5 +1302,4 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     private HashMap<K, V> createFromEntries(Iterable<Tuple2<K, V>> tuples) {
         return HashMap.ofEntries(tuples);
     }
-
 }

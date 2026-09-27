@@ -5,8 +5,7 @@ import org.assertj.core.api.Assertions;
 
 public final class AssertionsExtensions {
 
-    private AssertionsExtensions() {
-    }
+    private AssertionsExtensions() {}
 
     public static ClassAssert assertThat(Class<?> clazz) {
         return new ClassAssert(clazz);

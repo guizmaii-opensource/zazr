@@ -22,7 +22,7 @@ public class RedBlackTreeTest {
     @SuppressWarnings("varargs")
     @SafeVarargs
     private static <T> RedBlackTree<T> of(T... values) {
-        return RedBlackTree.<T> of(Comparators.naturalComparator(), values);
+        return RedBlackTree.<T>of(Comparators.naturalComparator(), values);
     }
 
     // Rudimentary tests
@@ -73,7 +73,7 @@ public class RedBlackTreeTest {
 
     @Test
     public void shouldRecognizeNonContainedElementOfEmptyTree() {
-        assertThat(RedBlackTreeTest.<Integer> empty().contains(1)).isFalse();
+        assertThat(RedBlackTreeTest.<Integer>empty().contains(1)).isFalse();
     }
 
     @Test
@@ -125,12 +125,14 @@ public class RedBlackTreeTest {
 
     @Test
     public void shouldRejectNullElementOnInsert() {
-        assertThrows(NullPointerException.class, () -> RedBlackTreeTest.<Integer> empty().insert(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> RedBlackTreeTest.<Integer>empty().insert(null));
     }
 
     @Test
     public void shouldInsertNonNullIntoEmptyTree() {
-        final RedBlackTree<Integer> actual = RedBlackTreeTest.<Integer> empty().insert(2);
+        final RedBlackTree<Integer> actual = RedBlackTreeTest.<Integer>empty().insert(2);
         final RedBlackTree<Integer> expected = of(2);
         assertThat(Collections.areEqual(actual, expected)).isTrue();
     }
@@ -149,7 +151,7 @@ public class RedBlackTreeTest {
         // the tree of shouldInsert_2_1_4_5_9_3_6_7, built by the same insertions (`of` sorts, then builds a balanced
         // tree)
         RedBlackTree<Integer> testee = empty();
-        for (int value : new int[] { 2, 1, 4, 5, 9, 3, 6, 7 }) {
+        for (int value : new int[] {2, 1, 4, 5, 9, 3, 6, 7}) {
             testee = testee.insert(value);
         }
         assertThat(testee.toString()).isEqualTo("(B:4 (B:2 R:1 R:3) (R:6 B:5 (B:9 R:7)))");
@@ -235,7 +237,8 @@ public class RedBlackTreeTest {
         final RedBlackTree<Integer> t2 = range(1, 82);
         final Integer root = t2.value();
         assertThat(t1.contains(root)).isFalse();
-        final dev.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split = RedBlackTreeModule.Node.split(t1, root);
+        final dev.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split =
+                RedBlackTreeModule.Node.split(t1, root);
         final RedBlackTree<Integer> below = split._1().intersection(t2.left());
         final RedBlackTree<Integer> above = split._2().intersection(t2.right());
         assertThat(elements(below)).isEqualTo(elements(range(1, 20)));
@@ -324,8 +327,40 @@ public class RedBlackTreeTest {
     // the intersection is a valid tree of the common elements; its shape is not fixed
     @Test
     public void shouldPassIntersectionRegression3_Issue2098() {
-        final RedBlackTree<Integer> tree1 = of(1462193440, 0, 2147483647, -2147483648, 0, 637669539, -1612766076, -1, 1795938819, 1, 0, -420800448, -2147483648, 497885405, 0, 1084073832, 1, 1439964148, 1961646330);
-        final RedBlackTree<Integer> tree2 = of(-1, 1, 2147483647, -1434983536, -2147483648, -1452486079, 1365799971, 231691980, -1780534767, -2147483648, 1448658704, 0, 1526591298);
+        final RedBlackTree<Integer> tree1 = of(
+                1462193440,
+                0,
+                2147483647,
+                -2147483648,
+                0,
+                637669539,
+                -1612766076,
+                -1,
+                1795938819,
+                1,
+                0,
+                -420800448,
+                -2147483648,
+                497885405,
+                0,
+                1084073832,
+                1,
+                1439964148,
+                1961646330);
+        final RedBlackTree<Integer> tree2 = of(
+                -1,
+                1,
+                2147483647,
+                -1434983536,
+                -2147483648,
+                -1452486079,
+                1365799971,
+                231691980,
+                -1780534767,
+                -2147483648,
+                1448658704,
+                0,
+                1526591298);
         final RedBlackTree<Integer> actual = tree1.intersection(tree2);
         assertValid(actual);
         assertThat(elements(actual)).containsExactly(-2147483648, -1, 0, 1, 2147483647);
@@ -382,7 +417,6 @@ public class RedBlackTreeTest {
         final List<Integer> actual = testee.iterator().toList();
         assertThat(actual.toString()).isEqualTo("List(1, 2, 3, 4, 5, 6, 7)");
     }
-
 
     // rank split: splitAt, take, drop, slice
 
@@ -451,7 +485,8 @@ public class RedBlackTreeTest {
         for (RedBlackTree<Integer> tree : treesUpTo70()) {
             final java.util.List<Integer> all = elements(tree);
             for (int n = 0; n <= tree.size(); n++) {
-                final dev.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split = RedBlackTreeModule.Node.splitAt(tree, n);
+                final dev.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split =
+                        RedBlackTreeModule.Node.splitAt(tree, n);
                 assertValid(split._1());
                 assertValid(split._2());
                 assertThat(split._1().size()).isEqualTo(n);
@@ -513,7 +548,7 @@ public class RedBlackTreeTest {
 
     @Test
     public void shouldKeepTheComparatorOnAnEmptySlice() {
-        final RedBlackTree<Integer> tree = RedBlackTree.of(java.util.Comparator.<Integer> reverseOrder(), 1, 2, 3);
+        final RedBlackTree<Integer> tree = RedBlackTree.of(java.util.Comparator.<Integer>reverseOrder(), 1, 2, 3);
         assertThat(RedBlackTreeModule.Node.take(tree, 0).comparator()).isSameAs(tree.comparator());
         assertThat(RedBlackTreeModule.Node.drop(tree, 3).comparator()).isSameAs(tree.comparator());
         assertThat(RedBlackTreeModule.Node.slice(tree, 2, 1).comparator()).isSameAs(tree.comparator());
@@ -590,7 +625,10 @@ public class RedBlackTreeTest {
         private final java.util.Map<String, String> firstFailure = new java.util.TreeMap<>();
         private final java.util.Map<String, Integer> checks = new java.util.TreeMap<>();
 
-        void check(String operation, java.util.Set<Integer> expected, java.util.function.Supplier<RedBlackTree<Integer>> result) {
+        void check(
+                String operation,
+                java.util.Set<Integer> expected,
+                java.util.function.Supplier<RedBlackTree<Integer>> result) {
             checks.merge(operation, 1, Integer::sum);
             try {
                 final RedBlackTree<Integer> tree = result.get();
@@ -603,7 +641,9 @@ public class RedBlackTreeTest {
         }
 
         void assertNoFailure() {
-            assertThat(failures).as("failures out of %s checks, first failures: %s", checks, firstFailure).isEmpty();
+            assertThat(failures)
+                    .as("failures out of %s checks, first failures: %s", checks, firstFailure)
+                    .isEmpty();
         }
     }
 
@@ -611,7 +651,8 @@ public class RedBlackTreeTest {
         return new java.util.TreeSet<>(values);
     }
 
-    private static java.util.TreeSet<Integer> model(java.util.Comparator<Integer> order, java.util.Collection<Integer> values) {
+    private static java.util.TreeSet<Integer> model(
+            java.util.Comparator<Integer> order, java.util.Collection<Integer> values) {
         final java.util.TreeSet<Integer> model = new java.util.TreeSet<>(order);
         model.addAll(values);
         return model;
@@ -661,7 +702,8 @@ public class RedBlackTreeTest {
             counter.check("union", union, () -> t1.union(t2));
 
             // the results of difference and intersection used as inputs of the other operations
-            counter.check("difference then union", union, () -> t1.difference(t2).union(t2));
+            counter.check(
+                    "difference then union", union, () -> t1.difference(t2).union(t2));
             counter.check("intersection then insert", model(order, model2), () -> {
                 RedBlackTree<Integer> tree = t2.intersection(t1);
                 for (Integer value : model2) {
@@ -686,20 +728,26 @@ public class RedBlackTreeTest {
             final java.util.List<Integer> differenceList = new java.util.ArrayList<>(difference);
             final int rank = random.nextInt(differenceList.size() + 3) - 1;
             final int clamped = Math.max(0, Math.min(rank, differenceList.size()));
-            counter.check("take of a difference", model(order, differenceList.subList(0, clamped)),
+            counter.check(
+                    "take of a difference",
+                    model(order, differenceList.subList(0, clamped)),
                     () -> RedBlackTreeModule.Node.take(t1.difference(t2), rank));
-            counter.check("drop of a difference", model(order, differenceList.subList(clamped, differenceList.size())),
+            counter.check(
+                    "drop of a difference",
+                    model(order, differenceList.subList(clamped, differenceList.size())),
                     () -> RedBlackTreeModule.Node.drop(t1.difference(t2), rank));
             final java.util.List<Integer> intersectionList = new java.util.ArrayList<>(intersection);
             final int from = random.nextInt(intersectionList.size() + 2) - 1;
             final int until = random.nextInt(intersectionList.size() + 2);
             final int start = Math.max(0, from);
             final int end = Math.min(until, intersectionList.size());
-            counter.check("slice of an intersection",
+            counter.check(
+                    "slice of an intersection",
                     model(order, start < end ? intersectionList.subList(start, end) : java.util.List.of()),
                     () -> RedBlackTreeModule.Node.slice(t1.intersection(t2), from, until));
 
-            final dev.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split = RedBlackTreeModule.Node.split(t1, value);
+            final dev.zazr.Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> split =
+                    RedBlackTreeModule.Node.split(t1, value);
             counter.check("split left", model(order, model1.headSet(value)), split::_1);
             counter.check("split right", model(order, model1.tailSet(value, false)), split::_2);
 
@@ -707,8 +755,10 @@ public class RedBlackTreeTest {
             final java.util.TreeSet<Integer> joined = model(order, model1.headSet(value));
             joined.add(value);
             joined.addAll(model2.tailSet(value, false));
-            final RedBlackTree<Integer> left = RedBlackTreeModule.Node.split(t1, value)._1();
-            final RedBlackTree<Integer> right = RedBlackTreeModule.Node.split(t2, value)._2();
+            final RedBlackTree<Integer> left =
+                    RedBlackTreeModule.Node.split(t1, value)._1();
+            final RedBlackTree<Integer> right =
+                    RedBlackTreeModule.Node.split(t2, value)._2();
             counter.check("join", joined, () -> RedBlackTreeModule.Node.join(left, value, right));
             final java.util.TreeSet<Integer> merged = model(order, joined);
             merged.remove(value);
@@ -739,17 +789,22 @@ public class RedBlackTreeTest {
             }
             final RedBlackTreeModule.Node<Integer> taken = node;
             final java.util.TreeSet<Integer> expected = model(elements(taken));
-            counter.check("join of the children", expected,
+            counter.check(
+                    "join of the children",
+                    expected,
                     () -> RedBlackTreeModule.Node.join(taken.left, taken.value, taken.right));
             expected.remove(taken.value);
-            counter.check("merge of the children", expected,
-                    () -> RedBlackTreeModule.Node.merge(taken.left, taken.right));
+            counter.check(
+                    "merge of the children", expected, () -> RedBlackTreeModule.Node.merge(taken.left, taken.right));
             // a split half next to a child subtree, which can have a red root
-            final RedBlackTree<Integer> lower = RedBlackTreeModule.Node.split(tree, taken.value)._1();
+            final RedBlackTree<Integer> lower =
+                    RedBlackTreeModule.Node.split(tree, taken.value)._1();
             final java.util.TreeSet<Integer> lowerAndRight = model(model.headSet(taken.value));
             lowerAndRight.add(taken.value);
             lowerAndRight.addAll(elements(taken.right));
-            counter.check("join of a tree and a child", lowerAndRight,
+            counter.check(
+                    "join of a tree and a child",
+                    lowerAndRight,
                     () -> RedBlackTreeModule.Node.join(lower, taken.value, taken.right));
         }
         counter.assertNoFailure();
@@ -759,8 +814,8 @@ public class RedBlackTreeTest {
     // the path to 23 and a wrong blackHeight at the root
     @Test
     public void shouldSubtractIntoAValidTree() {
-        final RedBlackTree<Integer> t1 = RedBlackTree.ofAll(Comparators.naturalComparator(),
-                List.of(56, 31, 20, 10, 6, 42, 11, 28, 23));
+        final RedBlackTree<Integer> t1 =
+                RedBlackTree.ofAll(Comparators.naturalComparator(), List.of(56, 31, 20, 10, 6, 42, 11, 28, 23));
         final RedBlackTree<Integer> t2 = RedBlackTree.ofAll(Comparators.naturalComparator(), List.of(32, 19));
         final RedBlackTree<Integer> difference = t1.difference(t2);
         assertValid(difference);
@@ -773,7 +828,8 @@ public class RedBlackTreeTest {
 
     @Test
     public void shouldRemoveUnionAndAddOnATreeSetDifference() {
-        final TreeSet<Integer> difference = treeSet(56, 31, 20, 10, 6, 42, 11, 28, 23).diff(treeSet(32, 19));
+        final TreeSet<Integer> difference =
+                treeSet(56, 31, 20, 10, 6, 42, 11, 28, 23).diff(treeSet(32, 19));
         assertThat(javaList(difference)).containsExactly(6, 10, 11, 20, 23, 28, 31, 42, 56);
         // removing every element in order threw IllegalStateException
         TreeSet<Integer> removed = difference;
@@ -805,9 +861,8 @@ public class RedBlackTreeTest {
     @Test
     public void shouldRebuildTheTreeFromOfAllWithAnotherComparator() {
         final RedBlackTree<Integer> tree = of(3, 1, 2);
-        final RedBlackTree<Integer> reversed = RedBlackTree.ofAll(Comparator.<Integer> reverseOrder(), tree);
+        final RedBlackTree<Integer> reversed = RedBlackTree.ofAll(Comparator.<Integer>reverseOrder(), tree);
         assertThat(reversed).isNotSameAs(tree);
         assertThat(List.ofAll(reversed)).containsExactly(3, 2, 1);
     }
-
 }

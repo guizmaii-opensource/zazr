@@ -143,7 +143,8 @@ public class HashMapTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected <T extends Comparable<? super T>> IntMap<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
+    protected <T extends Comparable<? super T>> IntMap<T> ofJavaStream(
+            java.util.stream.Stream<? extends T> javaStream) {
         return ofAll(Vector.ofAll(javaStream));
     }
 
@@ -212,7 +213,11 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldNarrowMap() {
         final Map<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
         final Map<Number, Number> number2numberMap = Map.narrow(int2doubleMap);
-        final int actual = number2numberMap.put(new BigDecimal("2"), new BigDecimal("2.0")).values().sum().intValue();
+        final int actual = number2numberMap
+                .put(new BigDecimal("2"), new BigDecimal("2.0"))
+                .values()
+                .sum()
+                .intValue();
         assertThat(actual).isEqualTo(3);
     }
 
@@ -226,7 +231,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCollectWithKeyValueMappers() {
-            Map<Integer, String> map = java.util.stream.Stream.of(1, 2, 3).collect(collectorWithMappers(i -> i * 2, String::valueOf));
+            Map<Integer, String> map =
+                    java.util.stream.Stream.of(1, 2, 3).collect(collectorWithMappers(i -> i * 2, String::valueOf));
             assertThat(map).isEqualTo(mapOf(2, "1", 4, "2", 6, "3"));
         }
     }
@@ -255,15 +261,14 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldConstructFromJavaStream() {
         final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
         final Map<String, Integer> map = mapOf(javaStream, String::valueOf, Function.identity());
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map)
+                .isEqualTo(
+                        this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
     public void shouldConstructFromJavaStreamWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream()
-                , i -> Math.max(1, Math.min(i, 2))
-                , i -> String.valueOf(i + 1)
-        ))
+        assertThat(mapOf(Stream.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -272,14 +277,16 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldConstructFromJavaStreamEntries() {
         final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
         final Map<String, Integer> map = mapOf(javaStream, i -> Tuple.of(String.valueOf(i), i));
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map)
+                .isEqualTo(
+                        this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
     public void shouldConstructFromJavaStreamEntriesWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream(), i ->
-                Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))
-        ))
+        assertThat(mapOf(
+                        Stream.range(0, 4).stream(),
+                        i -> Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -288,7 +295,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldConstructFromUtilEntries() {
         final Map<Integer, String> actual = mapOfEntries(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"));
-        final Map<Integer, String> expected = this.<Integer, String>emptyMap().put(1, "1").put(2, "2").put(3, "3");
+        final Map<Integer, String> expected =
+                this.<Integer, String>emptyMap().put(1, "1").put(2, "2").put(3, "3");
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -296,9 +304,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldConstructFromUtilEntriesWithDuplicatedKeys() {
         assertThat(mapOfEntries(
-                asJavaEntry(1, "1"), asJavaEntry(1, "2"),
-                asJavaEntry(2, "3"), asJavaEntry(2, "4")
-        ))
+                        asJavaEntry(1, "1"), asJavaEntry(1, "2"),
+                        asJavaEntry(2, "3"), asJavaEntry(2, "4")))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -307,7 +314,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldConstructFromEntriesVararg() {
         final Map<String, Integer> actual = mapOfTuples(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected =
+                this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -315,26 +323,26 @@ public class HashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldConstructFromEntriesVarargWithDuplicatedKeys() {
         assertThat(mapOfTuples(
-                Map.entry(1, "1"), Map.entry(1, "2"),
-                Map.entry(2, "3"), Map.entry(2, "4")
-        ))
+                        Map.entry(1, "1"), Map.entry(1, "2"),
+                        Map.entry(2, "3"), Map.entry(2, "4")))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
 
     @Test
     public void shouldConstructFromEntriesIterable() {
-        final Map<String, Integer> actual = mapOfTuples(asList(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3)));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> actual =
+                mapOfTuples(asList(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3)));
+        final Map<String, Integer> expected =
+                this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFromEntriesIterableWithDuplicatedKeys() {
         assertThat(mapOfTuples(asList(
-                Map.entry(1, "1"), Map.entry(1, "2"),
-                Map.entry(2, "3"), Map.entry(2, "4")
-        )))
+                        Map.entry(1, "1"), Map.entry(1, "2"),
+                        Map.entry(2, "3"), Map.entry(2, "4"))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -342,29 +350,33 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFromPairs() {
         final Map<String, Integer> actual = mapOf("1", 1, "2", 2, "3", 3);
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected =
+                this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFromPairsWithDuplicatedKeys() {
         final Map<Integer, String> actual = mapOf(1, "1", 1, "2", 2, "3");
-        final Map<Integer, String> expected = this.<Integer, String>emptyMap().put(1, "2").put(2, "3");
+        final Map<Integer, String> expected =
+                this.<Integer, String>emptyMap().put(1, "2").put(2, "3");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructWithTabulate() {
         final Map<String, Integer> actual = mapTabulate(4, i -> Tuple.of(i.toString(), i));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("0", 0).put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected = this.<String, Integer>emptyMap()
+                .put("0", 0)
+                .put("1", 1)
+                .put("2", 2)
+                .put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructWithTabulateWithDuplicatedKeys() {
-        assertThat(mapTabulate(4, i ->
-                Tuple.of(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))
-        ))
+        assertThat(mapTabulate(4, i -> Tuple.of(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -373,16 +385,19 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldConstructWithFill() {
         AtomicInteger i = new AtomicInteger();
         final Map<String, Integer> actual = mapFill(4, () -> Tuple.of(String.valueOf(i.get()), i.getAndIncrement()));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("0", 0).put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected = this.<String, Integer>emptyMap()
+                .put("0", 0)
+                .put("1", 1)
+                .put("2", 2)
+                .put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructWithFillWithDuplicatedKeys() {
         AtomicInteger i = new AtomicInteger();
-        assertThat(mapFill(4, () ->
-                Tuple.of(Math.max(1, Math.min(i.get(), 2)), String.valueOf(i.getAndIncrement() + 1))
-        ))
+        assertThat(mapFill(
+                        4, () -> Tuple.of(Math.max(1, Math.min(i.get(), 2)), String.valueOf(i.getAndIncrement() + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -394,15 +409,19 @@ public class HashMapTest extends AbstractTraversableTest {
 
             // sequential collections
             assertThat(emptyMap().equals(dev.zazr.collection.HashMap.empty())).isTrue();
-            assertThat(mapOf(1, "a").equals(dev.zazr.collection.HashMap.of(1, "a"))).isTrue();
-            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(1, "a", 2, "b",3, "c"))).isTrue();
-            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(3, "c", 2, "b",1, "a"))).isTrue();
+            assertThat(mapOf(1, "a").equals(dev.zazr.collection.HashMap.of(1, "a")))
+                    .isTrue();
+            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(1, "a", 2, "b", 3, "c")))
+                    .isTrue();
+            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(3, "c", 2, "b", 1, "a")))
+                    .isTrue();
 
             // other classes
             assertThat(empty().equals(dev.zazr.collection.List.empty())).isFalse();
             assertThat(empty().equals(dev.zazr.collection.HashSet.empty())).isFalse();
 
-            assertThat(empty().equals(dev.zazr.collection.LinkedHashSet.empty())).isFalse();
+            assertThat(empty().equals(dev.zazr.collection.LinkedHashSet.empty()))
+                    .isFalse();
 
             assertThat(empty().equals(dev.zazr.collection.TreeSet.empty())).isFalse();
         }
@@ -418,8 +437,7 @@ public class HashMapTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class TojavamapTests {
-    }
+    class TojavamapTests {}
 
     @Nested
     class ContainsTests {
@@ -437,13 +455,15 @@ public class HashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRecognizeNotContainedKeyValuePair() {
-            final dev.zazr.collection.TreeMap<String, Integer> testee = dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
+            final dev.zazr.collection.TreeMap<String, Integer> testee =
+                    dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 0))).isFalse();
         }
 
         @Test
         public void shouldRecognizeContainedKeyValuePair() {
-            final dev.zazr.collection.TreeMap<String, Integer> testee = dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
+            final dev.zazr.collection.TreeMap<String, Integer> testee =
+                    dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 1))).isTrue();
         }
     }
@@ -454,11 +474,16 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldFlatMapUsingBiFunction() {
             final Map<Integer, Integer> testee = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33));
-            final Map<String, String> actual = testee
-                    .flatMap((k, v) -> dev.zazr.collection.List.of(Tuple.of(String.valueOf(k), String.valueOf(v)),
-                            Tuple.of(String.valueOf(k * 10), String.valueOf(v * 10))));
-            final Map<String, String> expected = mapOfTuples(Tuple.of("1", "11"), Tuple.of("10", "110"), Tuple.of("2", "22"),
-                    Tuple.of("20", "220"), Tuple.of("3", "33"), Tuple.of("30", "330"));
+            final Map<String, String> actual = testee.flatMap((k, v) -> dev.zazr.collection.List.of(
+                    Tuple.of(String.valueOf(k), String.valueOf(v)),
+                    Tuple.of(String.valueOf(k * 10), String.valueOf(v * 10))));
+            final Map<String, String> expected = mapOfTuples(
+                    Tuple.of("1", "11"),
+                    Tuple.of("10", "110"),
+                    Tuple.of("2", "22"),
+                    Tuple.of("20", "220"),
+                    Tuple.of("3", "33"),
+                    Tuple.of("30", "330"));
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -468,10 +493,11 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnKeySet() {
-            final dev.zazr.collection.Set<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).keySet();
+            final dev.zazr.collection.Set<Integer> actual = mapOfTuples(
+                            Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
+                    .keySet();
             assertThat(actual).isEqualTo(dev.zazr.collection.HashSet.of(1, 2, 3));
         }
-
     }
 
     // -- mapBoth
@@ -484,7 +510,11 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldMapBothNonEmpty() {
         final Stream<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
-        final Stream<Tuple2<Integer, String>> actual = emptyInt().put(1, "1").put(2, "2").mapBoth(i -> i + 1, s -> s + "!").toStream();
+        final Stream<Tuple2<Integer, String>> actual = emptyInt()
+                .put(1, "1")
+                .put(2, "2")
+                .mapBoth(i -> i + 1, s -> s + "!")
+                .toStream();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -495,24 +525,36 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnTuple2SetOfANonEmptyMap() {
-        assertThat(emptyInt().put(1, "1").put(2, "2").toSet()).isEqualTo(dev.zazr.collection.HashSet.of(Tuple.of(1, "1"), Tuple.of(2, "2")));
+        assertThat(emptyInt().put(1, "1").put(2, "2").toSet())
+                .isEqualTo(dev.zazr.collection.HashSet.of(Tuple.of(1, "1"), Tuple.of(2, "2")));
     }
 
     @Test
     public void shouldReturnModifiedKeysMap() {
-        final Map<String, String> actual = emptyIntString().put(1, "1").put(2, "2").mapKeys(k -> k * 12).mapKeys(Integer::toHexString).mapKeys(String::toUpperCase);
-        final Map<String, String> expected = this.<String, String> emptyMap().put("C", "1").put("18", "2");
+        final Map<String, String> actual = emptyIntString()
+                .put(1, "1")
+                .put(2, "2")
+                .mapKeys(k -> k * 12)
+                .mapKeys(Integer::toHexString)
+                .mapKeys(String::toUpperCase);
+        final Map<String, String> expected =
+                this.<String, String>emptyMap().put("C", "1").put("18", "2");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldReturnModifiedKeysMapWithNonUniqueMapper() {
         final Map<Integer, String> actual = emptyIntString()
-                .put(1, "1").put(2, "2").put(3, "3")
-                .mapKeys(k -> k * 118).mapKeys(Integer::toHexString).mapKeys(HashMapTest::md5).mapKeys(String::length);
+                .put(1, "1")
+                .put(2, "2")
+                .put(3, "3")
+                .mapKeys(k -> k * 118)
+                .mapKeys(Integer::toHexString)
+                .mapKeys(HashMapTest::md5)
+                .mapKeys(String::length);
         assertThat(actual).hasSize(1);
         assertThat(actual.values()).hasSize(1);
-        //In different cases (based on items order) transformed map may contain different values
+        // In different cases (based on items order) transformed map may contain different values
         assertThat(actual.values().head()).isIn("1", "2", "3");
     }
 
@@ -549,16 +591,26 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldReturnModifiedKeysMapWithNonUniqueMapperAndMergedValues() {
         final Map<Integer, String> actual = emptyIntString()
-                .put(1, "1").put(2, "2").put(3, "3")
-                .mapKeys(k -> k * 118).mapKeys(Integer::toHexString).mapKeys(HashMapTest::md5)//Unique key mappers
-                .mapKeys(String::length, (v1, v2) -> dev.zazr.collection.List.of(v1.split("#")).append(v2).sorted().mkString("#"));
+                .put(1, "1")
+                .put(2, "2")
+                .put(3, "3")
+                .mapKeys(k -> k * 118)
+                .mapKeys(Integer::toHexString)
+                .mapKeys(HashMapTest::md5) // Unique key mappers
+                .mapKeys(
+                        String::length,
+                        (v1, v2) -> dev.zazr.collection.List.of(v1.split("#"))
+                                .append(v2)
+                                .sorted()
+                                .mkString("#"));
         final Map<Integer, String> expected = emptyIntString().put(32, "1#2#3");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldReturnModifiedValuesMap() {
-        assertThat(emptyIntString().put(1, "1").put(2, "2").mapValues(Integer::parseInt)).isEqualTo(emptyInt().put(1, 1).put(2, 2));
+        assertThat(emptyIntString().put(1, "1").put(2, "2").mapValues(Integer::parseInt))
+                .isEqualTo(emptyInt().put(1, 1).put(2, 2));
     }
 
     // -- merge(Map)
@@ -569,7 +621,8 @@ public class HashMapTest extends AbstractTraversableTest {
         final Map<Integer, Integer> m2 = emptyIntInt().put(1, 1).put(4, 4);
         final Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
         assertThat(m1.merge(m2)).isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(4, 4));
-        assertThat(m1.merge(m3)).isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
+        assertThat(m1.merge(m3))
+                .isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
     }
 
     @Test
@@ -582,9 +635,9 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmpty() {
         final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
         if (map instanceof SortedMap) {
-            assertThat(this.<Integer, String> emptyMap().merge(map)).isEqualTo(map);
+            assertThat(this.<Integer, String>emptyMap().merge(map)).isEqualTo(map);
         } else {
-            assertThat(this.<Integer, String> emptyMap().merge(map)).isSameAs(map);
+            assertThat(this.<Integer, String>emptyMap().merge(map)).isSameAs(map);
         }
     }
 
@@ -597,8 +650,10 @@ public class HashMapTest extends AbstractTraversableTest {
         final Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
         assertThat(emptyIntInt().merge(m2, Math::max)).isEqualTo(m2);
         assertThat(m2.merge(emptyIntInt(), Math::max)).isEqualTo(m2);
-        assertThat(m1.merge(m2, Math::max)).isEqualTo(emptyIntInt().put(1, 2).put(2, 2).put(4, 4));
-        assertThat(m1.merge(m3, Math::max)).isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
+        assertThat(m1.merge(m2, Math::max))
+                .isEqualTo(emptyIntInt().put(1, 2).put(2, 2).put(4, 4));
+        assertThat(m1.merge(m3, Math::max))
+                .isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
     }
 
     @Test
@@ -611,9 +666,9 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmptyUsingCollisionResolution() {
         final Map<Integer, Integer> map = mapOf(1, 1, 2, 2, 3, 3);
         if (map instanceof SortedMap) {
-            assertThat(this.<Integer, Integer> emptyMap().merge(map, Math::max)).isEqualTo(map);
+            assertThat(this.<Integer, Integer>emptyMap().merge(map, Math::max)).isEqualTo(map);
         } else {
-            assertThat(this.<Integer, Integer> emptyMap().merge(map, Math::max)).isSameAs(map);
+            assertThat(this.<Integer, Integer>emptyMap().merge(map, Math::max)).isSameAs(map);
         }
     }
 
@@ -622,7 +677,8 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldIgnoreOrderOfEntriesWhenComparingForEquality() {
             final Map<?, ?> map1 = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
-            final Map<?, ?> map2 = emptyInt().put(3, 'c').put(2, 'b').put(1, 'a').remove(2).put(2, 'b');
+            final Map<?, ?> map2 =
+                    emptyInt().put(3, 'c').put(2, 'b').put(1, 'a').remove(2).put(2, 'b');
             assertThat(map1).isEqualTo(map2);
         }
     }
@@ -631,7 +687,8 @@ public class HashMapTest extends AbstractTraversableTest {
     class PutTests {
         @Test
         public void shouldPutTuple() {
-            assertThat(emptyIntInt().put(Tuple.of(1, 2))).isEqualTo(emptyIntInt().put(1, 2));
+            assertThat(emptyIntInt().put(Tuple.of(1, 2)))
+                    .isEqualTo(emptyIntInt().put(1, 2));
         }
 
         @Test
@@ -672,7 +729,8 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldRemoveAllKeys() {
             final Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
-            assertThat(src.removeAll(dev.zazr.collection.List.of(1, 3))).isEqualTo(emptyInt().put(2, 'b'));
+            assertThat(src.removeAll(dev.zazr.collection.List.of(1, 3)))
+                    .isEqualTo(emptyInt().put(2, 'b'));
             assertThat(src.removeAll(dev.zazr.collection.List.of(33))).isSameAs(src);
             assertThat(src.removeAll(dev.zazr.collection.List.empty())).isSameAs(src);
         }
@@ -695,7 +753,7 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         public void forEachByKeyValue() {
             final Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-            final int[] result = { 0 };
+            final int[] result = {0};
             map.forEach((k, v) -> {
                 result[0] += k + v;
             });
@@ -705,8 +763,8 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         public void forEachByKeyValueVisitsTheEntriesInIterationOrder() {
             // every node boundary, and keys of one hash in collision nodes
-            for (int size : new int[] { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 }) {
-                for (boolean colliding : new boolean[] { false, true }) {
+            for (int size : new int[] {0, 1, 2, 31, 32, 33, 1023, 1024, 1025}) {
+                for (boolean colliding : new boolean[] {false, true}) {
                     HashMap<Object, Integer> map = HashMap.empty();
                     for (int i = 0; i < size; i++) {
                         map = map.put(colliding ? new CollidingKey(i % 7, i) : Integer.valueOf(i), i);
@@ -721,11 +779,15 @@ public class HashMapTest extends AbstractTraversableTest {
                         iterated.add(entry._1());
                         iterated.add(entry._2());
                     }
-                    org.assertj.core.api.Assertions.assertThat(walked).isEqualTo(iterated).hasSize(2 * size);
+                    org.assertj.core.api.Assertions.assertThat(walked)
+                            .isEqualTo(iterated)
+                            .hasSize(2 * size);
                 }
             }
-            org.assertj.core.api.Assertions.assertThatThrownBy(() -> HashMap.of(1, 2).forEach((BiConsumer<Integer, Integer>) null))
-                    .isInstanceOf(NullPointerException.class).hasMessage("action is null");
+            org.assertj.core.api.Assertions.assertThatThrownBy(
+                            () -> HashMap.of(1, 2).forEach((BiConsumer<Integer, Integer>) null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("action is null");
         }
 
         // equal when the id is, with one of a few hash codes
@@ -739,7 +801,7 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         public void forEachByTuple() {
             final Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-            final int[] result = { 0 };
+            final int[] result = {0};
             map.forEach(t -> {
                 result[0] += t._1() + t._2();
             });
@@ -751,29 +813,25 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void putWithWasntPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(2, 3, (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(2, 3, (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 2).put(2, 3));
     }
 
     @Test
     public void putWithWasPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(1, 3, (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(1, 3, (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 5));
     }
 
     @Test
     public void putWithTupleWasntPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(Tuple.of(2, 3), (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(2, 3), (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 2).put(2, 3));
     }
 
     @Test
     public void putWithTupleWasPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(Tuple.of(1, 3), (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(1, 3), (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 5));
     }
 
@@ -789,7 +847,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldTabulateTheSeqCallingTheFunctionInTheRightOrder() {
         final LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
-        final Function<Integer, Tuple2<Long, Float>> f = i -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
+        final Function<Integer, Tuple2<Long, Float>> f =
+                i -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
         final Map<Long, Float> map = mapTabulate(3, f);
         assertThat(map).isEqualTo(mapOfTuples(new Tuple2<>(0l, 0f), new Tuple2<>(1l, 1f), new Tuple2<>(2l, 2f)));
     }
@@ -810,7 +869,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldFillTheSeqCallingTheSupplierInTheRightOrder() {
         final LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
-        final Supplier<Tuple2<Long, Float>> s = () -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
+        final Supplier<Tuple2<Long, Float>> s =
+                () -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
         final Map<Long, Float> actual = mapFill(3, s);
         assertThat(actual).isEqualTo(mapOfTuples(new Tuple2<>(0l, 0f), new Tuple2<>(1l, 1f), new Tuple2<>(2l, 2f)));
     }
@@ -836,14 +896,18 @@ public class HashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     @Test
     public void mapOfTuplesShouldReturnTheSingletonEmpty() {
-        if (!emptyMapShouldBeSingleton()) { return; }
+        if (!emptyMapShouldBeSingleton()) {
+            return;
+        }
         assertThat(mapOfTuples()).isSameAs(emptyMap());
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void mapOfEntriesShouldReturnTheSingletonEmpty() {
-        if (!emptyMapShouldBeSingleton()) { return; }
+        if (!emptyMapShouldBeSingleton()) {
+            return;
+        }
         assertThat(mapOfEntries()).isSameAs(emptyMap());
     }
 
@@ -853,23 +917,55 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldBiFilterWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.filter((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(0, "0").put(2, "2").put(4, "4").put(6, "6").put(8, "8").put(16, "10").put(18, "12"));
+            final Map<Integer, String> dst =
+                    src.filter((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(0, "0")
+                            .put(2, "2")
+                            .put(4, "4")
+                            .put(6, "6")
+                            .put(8, "8")
+                            .put(16, "10")
+                            .put(18, "12"));
         }
 
         @Test
         public void shouldKeyFilterWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Map<Integer, String> dst = src.filterKeys(k -> k % 2 == 0);
-            assertThat(dst).isEqualTo(emptyIntString().put(0, "0").put(2, "2").put(4, "4").put(6, "6").put(8, "8").put(10, "a").put(12, "c").put(14, "e").put(16, "10").put(18, "12"));
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(0, "0")
+                            .put(2, "2")
+                            .put(4, "4")
+                            .put(6, "6")
+                            .put(8, "8")
+                            .put(10, "a")
+                            .put(12, "c")
+                            .put(14, "e")
+                            .put(16, "10")
+                            .put(18, "12"));
         }
 
         @Test
         public void shouldValueFilterWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(10, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.filterValues(v -> isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(0, "0").put(1, "1").put(2, "2").put(3, "3").put(4, "4").put(5, "5").put(6, "6").put(7, "7").put(8, "8").put(9, "9"));
+            final Map<Integer, String> dst =
+                    src.filterValues(v -> isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(0, "0")
+                            .put(1, "1")
+                            .put(2, "2")
+                            .put(3, "3")
+                            .put(4, "4")
+                            .put(5, "5")
+                            .put(6, "6")
+                            .put(7, "7")
+                            .put(8, "8")
+                            .put(9, "9"));
         }
     }
 
@@ -879,23 +975,56 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldBiRejectWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.reject((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e").put(15, "f").put(17, "11").put(19, "13"));
+            final Map<Integer, String> dst =
+                    src.reject((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @Test
         public void shouldKeyRejectWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Map<Integer, String> dst = src.rejectKeys(k -> k % 2 == 0);
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(11, "b").put(13, "d").put(15, "f").put(17, "11").put(19, "13"));
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(11, "b")
+                            .put(13, "d")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @Test
         public void shouldValueRejectWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(15, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.rejectValues(v -> isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e"));
+            final Map<Integer, String> dst =
+                    src.rejectValues(v -> isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e"));
         }
     }
 
@@ -906,8 +1035,23 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldBiRemoveWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.removeAll((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e").put(15, "f").put(17, "11").put(19, "13"));
+            final Map<Integer, String> dst =
+                    src.removeAll((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @SuppressWarnings("deprecation")
@@ -915,7 +1059,18 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldKeyRemoveWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Map<Integer, String> dst = src.removeKeys(k -> k % 2 == 0);
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(11, "b").put(13, "d").put(15, "f").put(17, "11").put(19, "13"));
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(11, "b")
+                            .put(13, "d")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @SuppressWarnings("deprecation")
@@ -923,8 +1078,16 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldValueRemoveWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.removeValues(v -> isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e").put(15, "f"));
+            final Map<Integer, String> dst =
+                    src.removeValues(v -> isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e")
+                            .put(15, "f"));
         }
     }
 
@@ -934,7 +1097,8 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldComputeIfAbsent() {
             final Map<Integer, String> map = emptyIntString().put(1, "v");
             assertThat(map.computeIfAbsent(1, k -> "b")).isEqualTo(Tuple.of("v", map));
-            assertThat(map.computeIfAbsent(2, k -> "n")).isEqualTo(Tuple.of("n", emptyIntString().put(1, "v").put(2, "n")));
+            assertThat(map.computeIfAbsent(2, k -> "n"))
+                    .isEqualTo(Tuple.of("n", emptyIntString().put(1, "v").put(2, "n")));
         }
     }
 
@@ -943,7 +1107,8 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldComputeIfPresent() {
             final Map<Integer, String> map = emptyIntString().put(1, "v");
-            assertThat(map.computeIfPresent(1, (k, v) -> "b")).isEqualTo(Tuple.of(Option.some("b"), emptyIntString().put(1, "b")));
+            assertThat(map.computeIfPresent(1, (k, v) -> "b"))
+                    .isEqualTo(Tuple.of(Option.some("b"), emptyIntString().put(1, "b")));
             assertThat(map.computeIfPresent(2, (k, v) -> "n")).isEqualTo(Tuple.of(Option.none(), map));
         }
 
@@ -1040,10 +1205,11 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldPartitionInOneIteration() {
             final AtomicInteger count = new AtomicInteger(0);
             final Map<String, Integer> map = mapOf("1", 1, "2", 2, "3", 3);
-            final Tuple2<? extends Map<String, Integer>, ? extends Map<String, Integer>> results = map.partition(entry -> {
-                count.incrementAndGet();
-                return true;
-            });
+            final Tuple2<? extends Map<String, Integer>, ? extends Map<String, Integer>> results =
+                    map.partition(entry -> {
+                        count.incrementAndGet();
+                        return true;
+                    });
             assertThat(results._1()).isEqualTo(mapOf("1", 1, "2", 2, "3", 3));
             assertThat(results._2()).isEmpty();
             assertThat(count.get()).isEqualTo(3);
@@ -1054,12 +1220,14 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldHaveSizedSpliterator() {
-        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
+        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED))
+                .isTrue();
     }
 
     @Test
     public void shouldHaveDistinctSpliterator() {
-        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT)).isTrue();
+        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT))
+                .isTrue();
     }
 
     @Test
@@ -1080,28 +1248,37 @@ public class HashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectPutOfNullValue() {
-            assertThatNullPointerException().isThrownBy(() -> HashMapTest.this.<String, String>mapOf("k", "v").put("k", null));
+            assertThatNullPointerException()
+                    .isThrownBy(() ->
+                            HashMapTest.this.<String, String>mapOf("k", "v").put("k", null));
         }
 
         @Test
         public void shouldRejectPutWithMergeResultingInNull() {
-            assertThatNullPointerException().isThrownBy(() -> HashMapTest.this.<String, String>mapOf("k", "v").put("k", "w", (a, b) -> null));
+            assertThatNullPointerException()
+                    .isThrownBy(() ->
+                            HashMapTest.this.<String, String>mapOf("k", "v").put("k", "w", (a, b) -> null));
         }
 
         @Test
         public void shouldRejectComputeIfPresentWithNullResult() {
-            assertThatNullPointerException().isThrownBy(() -> HashMapTest.this.<String, String>mapOf("k", "v").computeIfPresent("k", (k, v) -> null));
+            assertThatNullPointerException()
+                    .isThrownBy(() ->
+                            HashMapTest.this.<String, String>mapOf("k", "v").computeIfPresent("k", (k, v) -> null));
         }
 
         @Test
         public void shouldRejectComputeIfAbsentWithNullResult() {
-            assertThatNullPointerException().isThrownBy(() -> HashMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> null));
+            assertThatNullPointerException()
+                    .isThrownBy(
+                            () -> HashMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> null));
         }
 
         @Test
         public void shouldRejectReplaceWithNullValue() {
             final Map<String, String> map = mapOf("k", "v");
-            assertThatNullPointerException().isThrownBy(() -> map.replace(Tuple.of("k", "v"), Tuple.<String, String>of("k", null)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> map.replace(Tuple.of("k", "v"), Tuple.<String, String>of("k", null)));
             assertThatNullPointerException().isThrownBy(() -> map.replaceAll((k, v) -> null));
         }
 
@@ -1134,14 +1311,16 @@ public class HashMapTest extends AbstractTraversableTest {
 
         @Test
         public void computeIfAbsentOnAbsentKeyComputes() {
-            final Tuple2<String, ? extends Map<String, String>> result = HashMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> "computed");
+            final Tuple2<String, ? extends Map<String, String>> result =
+                    HashMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> "computed");
             assertThat(result._1()).isEqualTo("computed");
         }
 
         @Test
         public void computeIfPresentOnAbsentKeyIsNoop() {
             final Map<String, String> map = mapOf("k", "v");
-            final Tuple2<Option<String>, ? extends Map<String, String>> result = map.computeIfPresent("missing", (k, v) -> "x");
+            final Tuple2<Option<String>, ? extends Map<String, String>> result =
+                    map.computeIfPresent("missing", (k, v) -> "x");
             assertThat(result._1()).isEqualTo(Option.none());
             assertThat(result._2()).isSameAs(map);
         }
@@ -1155,7 +1334,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
         @Test
         public void putWithMergeOnAbsentKeyPutsWithoutMerging() {
-            final Map<String, String> map = HashMapTest.this.<String, String>emptyMap().put("k", "v", (a, b) -> "merged");
+            final Map<String, String> map =
+                    HashMapTest.this.<String, String>emptyMap().put("k", "v", (a, b) -> "merged");
             assertThat(map).isEqualTo(mapOf("k", "v"));
         }
 
@@ -1171,8 +1351,10 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldCollectEntriesIntoAMapOfTheSameKind() {
         final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-        final Map<String, Integer> actual = map.collect((k, v) -> k % 2 == 1 ? Option.some(Tuple.of(v, k * 10)) : Option.none());
-        assertThat(actual).isEqualTo(this.<String, Integer>emptyMap().put("a", 10).put("c", 30));
+        final Map<String, Integer> actual =
+                map.collect((k, v) -> k % 2 == 1 ? Option.some(Tuple.of(v, k * 10)) : Option.none());
+        assertThat(actual)
+                .isEqualTo(this.<String, Integer>emptyMap().put("a", 10).put("c", 30));
         assertThat(actual.getClass()).isSameAs(map.getClass());
     }
 
@@ -1185,9 +1367,10 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldCollectNothingFromAnEmptyMap() {
         final AtomicInteger calls = new AtomicInteger();
         assertThat(this.<Integer, String>emptyMap().collect((k, v) -> {
-            calls.incrementAndGet();
-            return Option.some(Tuple.of(k, v));
-        })).isEqualTo(emptyMap());
+                    calls.incrementAndGet();
+                    return Option.some(Tuple.of(k, v));
+                }))
+                .isEqualTo(emptyMap());
         assertThat(calls.get()).isEqualTo(0);
     }
 
@@ -1236,7 +1419,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldBeAwareOfNonExistingUniqueElement() {
-        assertThat(this.<Integer, Integer>emptyMap().existsUnique(t -> t._2() == 1)).isFalse();
+        assertThat(this.<Integer, Integer>emptyMap().existsUnique(t -> t._2() == 1))
+                .isFalse();
     }
 
     @Test
@@ -1300,12 +1484,15 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldFoldNil() {
-        assertThat(this.<Integer, Integer>emptyMap().fold(entry(0, 0), HashMapTest::sumOfEntries)).isEqualTo(entry(0, 0));
+        assertThat(this.<Integer, Integer>emptyMap().fold(entry(0, 0), HashMapTest::sumOfEntries))
+                .isEqualTo(entry(0, 0));
     }
 
     @Test
     public void shouldThrowWhenFoldNullOperator() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>emptyMap().fold(null, null));
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap().fold(null, null));
     }
 
     @Test
@@ -1315,7 +1502,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldFoldMultipleElements() {
-        assertThat(entries(1, 2, 3).fold(entry(0, 0), HashMapTest::sumOfEntries)).isEqualTo(entry(3, 6));
+        assertThat(entries(1, 2, 3).fold(entry(0, 0), HashMapTest::sumOfEntries))
+                .isEqualTo(entry(3, 6));
     }
 
     // -- groupBy
@@ -1328,7 +1516,10 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldNonNilGroupByIdentity() {
         final Map<?, ?> actual = entries('a', 'b', 'c').groupBy(Tuple2::_2);
-        final Map<?, ?> expected = LinkedHashMap.empty().put('a', mapOf(0, 'a')).put('b', mapOf(1, 'b')).put('c', mapOf(2, 'c'));
+        final Map<?, ?> expected = LinkedHashMap.empty()
+                .put('a', mapOf(0, 'a'))
+                .put('b', mapOf(1, 'b'))
+                .put('c', mapOf(2, 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1348,14 +1539,19 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNonNilArrangeByIdentity() {
-        final Option<Map<Character, Tuple2<Integer, Character>>> actual = entries('a', 'b', 'c').arrangeBy(Tuple2::_2);
-        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', entry(0, 'a')).put('b', entry(1, 'b')).put('c', entry(2, 'c')));
+        final Option<Map<Character, Tuple2<Integer, Character>>> actual =
+                entries('a', 'b', 'c').arrangeBy(Tuple2::_2);
+        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty()
+                .put('a', entry(0, 'a'))
+                .put('b', entry(1, 'b'))
+                .put('c', entry(2, 'c')));
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldNonNilArrangeByEqual() {
-        final Option<Map<Integer, Tuple2<Integer, Character>>> actual = entries('a', 'b', 'c').arrangeBy(c -> 1);
+        final Option<Map<Integer, Tuple2<Integer, Character>>> actual =
+                entries('a', 'b', 'c').arrangeBy(c -> 1);
         final Option<Map<?, ?>> expected = Option.none();
         assertThat(actual).isEqualTo(expected);
     }
@@ -1384,7 +1580,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMaxOfByte() {
-        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).max()).isEqualTo(Option.some(entry((byte) 2, (byte) 2)));
+        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).max())
+                .isEqualTo(Option.some(entry((byte) 2, (byte) 2)));
     }
 
     @Test
@@ -1414,27 +1611,37 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMaxOfShort() {
-        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3).max()).isEqualTo(Option.some(entry((short) 3, (short) 3)));
+        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3)
+                        .max())
+                .isEqualTo(Option.some(entry((short) 3, (short) 3)));
     }
 
     @Test
     public void shouldComputeMaxOfBigInteger() {
-        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE).max()).isEqualTo(Option.some(entry(BigInteger.ONE, BigInteger.ONE)));
+        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE)
+                        .max())
+                .isEqualTo(Option.some(entry(BigInteger.ONE, BigInteger.ONE)));
     }
 
     @Test
     public void shouldComputeMaxOfBigDecimal() {
-        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE).max()).isEqualTo(Option.some(entry(BigDecimal.ONE, BigDecimal.ONE)));
+        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE)
+                        .max())
+                .isEqualTo(Option.some(entry(BigDecimal.ONE, BigDecimal.ONE)));
     }
 
     @Test
     public void shouldThrowNPEWhenMaxOfNullAndInt() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(null, 1).max());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(null, 1).max());
     }
 
     @Test
     public void shouldThrowNPEWhenMaxOfIntAndNull() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(1, null).max());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(1, null).max());
     }
 
     @Test
@@ -1450,12 +1657,20 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCalculateMaxOfDoublePositiveAndNegativeInfinity() {
-        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-").max().get()._1()).isEqualTo(Double.POSITIVE_INFINITY);
+        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-")
+                        .max()
+                        .get()
+                        ._1())
+                .isEqualTo(Double.POSITIVE_INFINITY);
     }
 
     @Test
     public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
-        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-").max().get()._1()).isEqualTo(Float.POSITIVE_INFINITY);
+        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-")
+                        .max()
+                        .get()
+                        ._1())
+                .isEqualTo(Float.POSITIVE_INFINITY);
     }
 
     /** A map whose keys are not mutually comparable (a Double and a Float), so that comparing its entries fails. */
@@ -1505,7 +1720,9 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenMaxByWithNullFunction() {
-        assertThrows(NullPointerException.class, () -> mapOf(1, 1).maxBy((Function<Tuple2<Integer, Integer>, Integer>) null));
+        assertThrows(
+                NullPointerException.class,
+                () -> mapOf(1, 1).maxBy((Function<Tuple2<Integer, Integer>, Integer>) null));
     }
 
     @Test
@@ -1527,9 +1744,10 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldCallMaxFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(entries(1, 2, 3).maxBy(t -> {
-            cnt[0]++;
-            return t._2();
-        })).isEqualTo(Option.some(entry(2, 3)));
+                    cnt[0]++;
+                    return t._2();
+                }))
+                .isEqualTo(Option.some(entry(2, 3)));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -1557,7 +1775,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMinOfByte() {
-        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).min()).isEqualTo(Option.some(entry((byte) 1, (byte) 1)));
+        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).min())
+                .isEqualTo(Option.some(entry((byte) 1, (byte) 1)));
     }
 
     @Test
@@ -1587,27 +1806,37 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMinOfShort() {
-        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3).min()).isEqualTo(Option.some(entry((short) 1, (short) 1)));
+        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3)
+                        .min())
+                .isEqualTo(Option.some(entry((short) 1, (short) 1)));
     }
 
     @Test
     public void shouldComputeMinOfBigInteger() {
-        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE).min()).isEqualTo(Option.some(entry(BigInteger.ZERO, BigInteger.ZERO)));
+        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE)
+                        .min())
+                .isEqualTo(Option.some(entry(BigInteger.ZERO, BigInteger.ZERO)));
     }
 
     @Test
     public void shouldComputeMinOfBigDecimal() {
-        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE).min()).isEqualTo(Option.some(entry(BigDecimal.ZERO, BigDecimal.ZERO)));
+        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE)
+                        .min())
+                .isEqualTo(Option.some(entry(BigDecimal.ZERO, BigDecimal.ZERO)));
     }
 
     @Test
     public void shouldThrowNPEWhenMinOfNullAndInt() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(null, 1).min());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(null, 1).min());
     }
 
     @Test
     public void shouldThrowNPEWhenMinOfIntAndNull() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(1, null).min());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(1, null).min());
     }
 
     @Test
@@ -1623,12 +1852,20 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCalculateMinOfDoublePositiveAndNegativeInfinity() {
-        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-").min().get()._1()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-")
+                        .min()
+                        .get()
+                        ._1())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     @Test
     public void shouldCalculateMinOfFloatPositiveAndNegativeInfinity() {
-        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-").min().get()._1()).isEqualTo(Float.NEGATIVE_INFINITY);
+        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-")
+                        .min()
+                        .get()
+                        ._1())
+                .isEqualTo(Float.NEGATIVE_INFINITY);
     }
 
     // -- minBy(Comparator)
@@ -1657,7 +1894,9 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenMinByWithNullFunction() {
-        assertThrows(NullPointerException.class, () -> mapOf(1, 1).minBy((Function<Tuple2<Integer, Integer>, Integer>) null));
+        assertThrows(
+                NullPointerException.class,
+                () -> mapOf(1, 1).minBy((Function<Tuple2<Integer, Integer>, Integer>) null));
     }
 
     @Test
@@ -1679,9 +1918,10 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldCallMinFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(entries(1, 2, 3).minBy(t -> {
-            cnt[0]++;
-            return t._2();
-        })).isEqualTo(Option.some(entry(0, 1)));
+                    cnt[0]++;
+                    return t._2();
+                }))
+                .isEqualTo(Option.some(entry(0, 1)));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -1695,7 +1935,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCaclEmptyOrElseEqualOther() {
-        assertThat(this.<Integer, Integer>emptyMap().orElse(asList(entry(1, 1), entry(2, 2)))).isEqualTo(mapOf(1, 1, 2, 2));
+        assertThat(this.<Integer, Integer>emptyMap().orElse(asList(entry(1, 1), entry(2, 2))))
+                .isEqualTo(mapOf(1, 1, 2, 2));
     }
 
     @Test
@@ -1713,7 +1954,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCaclEmptyOrElseEqualSupplier() {
-        assertThat(this.<Integer, Integer>emptyMap().orElse(() -> asList(entry(1, 1), entry(2, 2)))).isEqualTo(mapOf(1, 1, 2, 2));
+        assertThat(this.<Integer, Integer>emptyMap().orElse(() -> asList(entry(1, 1), entry(2, 2))))
+                .isEqualTo(mapOf(1, 1, 2, 2));
     }
 
     @Test
@@ -1738,8 +1980,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldPartitionIntsInOddAndEvenHavingOddAndEvenNumbers() {
         assertThat(entries(1, 2, 3, 4).partition(t -> t._2() % 2 != 0))
-                .isEqualTo(Tuple.of(mapOfTuples(Tuple.of(0, 1), Tuple.of(2, 3)),
-                        mapOfTuples(Tuple.of(1, 2), Tuple.of(3, 4))));
+                .isEqualTo(Tuple.of(
+                        mapOfTuples(Tuple.of(0, 1), Tuple.of(2, 3)), mapOfTuples(Tuple.of(1, 2), Tuple.of(3, 4))));
     }
 
     @Test
@@ -1756,12 +1998,15 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenReduceOptionNil() {
-        assertThat(this.<Integer, Integer>emptyMap().reduceOption(HashMapTest::sumOfEntries)).isSameAs(Option.none());
+        assertThat(this.<Integer, Integer>emptyMap().reduceOption(HashMapTest::sumOfEntries))
+                .isSameAs(Option.none());
     }
 
     @Test
     public void shouldThrowWhenReduceOptionNullOperator() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>emptyMap().reduceOption(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap().reduceOption(null));
     }
 
     @Test
@@ -1773,12 +2018,16 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenReduceNil() {
-        assertThrows(NoSuchElementException.class, () -> this.<Integer, Integer>emptyMap().reduce(HashMapTest::sumOfEntries));
+        assertThrows(
+                NoSuchElementException.class,
+                () -> this.<Integer, Integer>emptyMap().reduce(HashMapTest::sumOfEntries));
     }
 
     @Test
     public void shouldThrowWhenReduceNullOperator() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>emptyMap().reduce(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap().reduce(null));
     }
 
     @Test
@@ -1790,14 +2039,16 @@ public class HashMapTest extends AbstractTraversableTest {
     public void shouldReduceEntriesOfOneAndTwoElementMaps() {
         assertThat(entries(7).reduce(HashMapTest::sumOfEntries)).isEqualTo(entry(0, 7));
         assertThat(entries(7, 8).reduce(HashMapTest::sumOfEntries)).isEqualTo(entry(1, 15));
-        assertThat(entries(7, 8).fold(entry(100, 100), HashMapTest::sumOfEntries)).isEqualTo(entry(101, 115));
+        assertThat(entries(7, 8).fold(entry(100, 100), HashMapTest::sumOfEntries))
+                .isEqualTo(entry(101, 115));
     }
 
     // -- replace(entry, entry)
 
     @Test
     public void shouldReplaceElementOfNilUsingCurrNew() {
-        assertThat(this.<Integer, Integer>emptyMap().replace(entry(0, 1), entry(0, 2))).isEqualTo(emptyMap());
+        assertThat(this.<Integer, Integer>emptyMap().replace(entry(0, 1), entry(0, 2)))
+                .isEqualTo(emptyMap());
     }
 
     @Test
@@ -1812,7 +2063,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldReplaceElementOfNonNilUsingCurrNewWhenOneOccurrenceExists() {
-        assertThat(entries(0, 1, 2).replace(entry(1, 1), entry(1, 3))).isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2)));
+        assertThat(entries(0, 1, 2).replace(entry(1, 1), entry(1, 3)))
+                .isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2)));
     }
 
     @Test
@@ -1824,7 +2076,8 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReplaceAllElementsOfNilUsingCurrNew() {
-        assertThat(this.<Integer, Integer>emptyMap().replaceAll(entry(0, 1), entry(0, 2))).isEqualTo(emptyMap());
+        assertThat(this.<Integer, Integer>emptyMap().replaceAll(entry(0, 1), entry(0, 2)))
+                .isEqualTo(emptyMap());
     }
 
     @Test
@@ -1836,7 +2089,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldReplaceAllElementsOfNonNilUsingCurrNew() {
         // a map holds an entry once, so replaceAll replaces that one entry
-        assertThat(entries(0, 1, 2, 1).replaceAll(entry(1, 1), entry(1, 3))).isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2), entry(3, 1)));
+        assertThat(entries(0, 1, 2, 1).replaceAll(entry(1, 1), entry(1, 3)))
+                .isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2), entry(3, 1)));
     }
 
     // -- retainAll
@@ -1946,22 +2200,28 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPropagateWhatTheTapActionThrows() {
-        assertThrows(IllegalStateException.class, () -> entries(1, 2).tap(t -> {
-            throw new IllegalStateException();
-        }).size());
+        assertThrows(
+                IllegalStateException.class,
+                () -> entries(1, 2)
+                        .tap(t -> {
+                            throw new IllegalStateException();
+                        })
+                        .size());
     }
 
     // -- collect(Collector)
 
     @Test
     public void shouldCollectWithACollector() {
-        final java.util.List<Tuple2<Integer, Integer>> actual = entries(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        final java.util.List<Tuple2<Integer, Integer>> actual =
+                entries(1, 2, 3).collect(java.util.stream.Collectors.toList());
         assertThat(actual).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
     }
 
     @Test
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Tuple2<Integer, Integer>> actual = entries(1, 2, 3).collect(ArrayList<Tuple2<Integer, Integer>>::new, ArrayList::add, ArrayList::addAll);
+        final ArrayList<Tuple2<Integer, Integer>> actual =
+                entries(1, 2, 3).collect(ArrayList<Tuple2<Integer, Integer>>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
     }
 
@@ -1970,7 +2230,7 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertNilToJavaArray() {
         final Object[] actual = emptyMap().toArray();
-        assertThat(actual).isEqualTo(new Object[]{});
+        assertThat(actual).isEqualTo(new Object[] {});
     }
 
     @Test
@@ -1984,7 +2244,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertToHashMap() {
         assertThat(entries(9, 5, 1).toMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(HashMap.of(1, 1, 5, 5, 9, 9));
-        assertThat(this.<Integer, Integer>emptyMap().toMap(t -> Tuple.of(t._2(), t._2()))).isSameAs(HashMap.empty());
+        assertThat(this.<Integer, Integer>emptyMap().toMap(t -> Tuple.of(t._2(), t._2())))
+                .isSameAs(HashMap.empty());
     }
 
     @Test
@@ -1994,8 +2255,10 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertToLinkedMap() {
-        assertThat(entries(1, 5, 9).toLinkedMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
-        assertThat(this.<Integer, Integer>emptyMap().toLinkedMap(t -> Tuple.of(t._2(), t._2()))).isSameAs(LinkedHashMap.empty());
+        assertThat(entries(1, 5, 9).toLinkedMap(t -> Tuple.of(t._2(), t._2())))
+                .isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(this.<Integer, Integer>emptyMap().toLinkedMap(t -> Tuple.of(t._2(), t._2())))
+                .isSameAs(LinkedHashMap.empty());
     }
 
     @Test
@@ -2006,7 +2269,8 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertToSortedMap() {
         assertThat(entries(9, 5, 1).toSortedMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
-        assertThat(this.<Integer, Integer>emptyMap().toSortedMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(TreeMap.empty());
+        assertThat(this.<Integer, Integer>emptyMap().toSortedMap(t -> Tuple.of(t._2(), t._2())))
+                .isEqualTo(TreeMap.empty());
     }
 
     @Test
@@ -2017,13 +2281,15 @@ public class HashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertToSortedMapWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(entries(9, 5, 1).toSortedMap(comparator, t -> Tuple.of(t._2(), t._2()))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(entries(9, 5, 1).toSortedMap(comparator, t -> Tuple.of(t._2(), t._2())))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @Test
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(entries(9, 5, 1).toSortedMap(comparator, Tuple2::_2, Tuple2::_2)).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(entries(9, 5, 1).toSortedMap(comparator, Tuple2::_2, Tuple2::_2))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @Test
@@ -2037,20 +2303,23 @@ public class HashMapTest extends AbstractTraversableTest {
         final Map<Integer, Integer> value = entries(3, 7, 1, 15, 0);
         final Set<Tuple2<Integer, Integer>> set = value.toLinkedSet();
         assertThat(set).isEqualTo(value.toList().foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
-        Assertions.assertThat(new java.util.ArrayList<>(set.asJava())).isEqualTo(new java.util.ArrayList<>(value.asJava()));
+        Assertions.assertThat(new java.util.ArrayList<>(set.asJava()))
+                .isEqualTo(new java.util.ArrayList<>(value.asJava()));
         assertThat(emptyMap().toLinkedSet()).isSameAs(LinkedHashSet.empty());
     }
 
     @Test
     public void shouldConvertToSortedSetWithoutComparatorOnComparable() {
-        assertThat(entries(3, 7, 1, 15, 0).toSortedSet()).isEqualTo(TreeSet.of(entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
+        assertThat(entries(3, 7, 1, 15, 0).toSortedSet())
+                .isEqualTo(TreeSet.of(entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
     }
 
     @Test
     public void shouldConvertToSortedSet() {
         final Comparator<Tuple2<Integer, Integer>> comparator = Comparator.comparingInt(t -> Integer.bitCount(t._2()));
         assertThat(entries(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
-                .isEqualTo(TreeSet.of(comparator.reversed(), entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
+                .isEqualTo(TreeSet.of(
+                        comparator.reversed(), entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
     }
 
     @Test
@@ -2066,15 +2335,20 @@ public class HashMapTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnValuesVector() {
-            final Vector<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).values();
+            final Vector<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
+                    .values();
             assertThat(actual).isEqualTo(Vector.of(11, 22, 33));
         }
 
         @Test
         public void shouldReturnValuesInTheIterationOrderOfTheMap() {
             final Map<Integer, String> map = mapOf(3, "c", 1, "a", 2, "b");
-            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava())).isEqualTo(new java.util.ArrayList<>(map.toList().map(Tuple2::_2).asJava()));
-            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava())).isEqualTo(new java.util.ArrayList<>(map.keySet().toList().map(k -> map.get(k).get()).asJava()));
+            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava()))
+                    .isEqualTo(new java.util.ArrayList<>(
+                            map.toList().map(Tuple2::_2).asJava()));
+            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava()))
+                    .isEqualTo(new java.util.ArrayList<>(
+                            map.keySet().toList().map(k -> map.get(k).get()).asJava()));
         }
 
         @Test
@@ -2100,12 +2374,14 @@ public class HashMapTest extends AbstractTraversableTest {
         }
     }
 
-        @Test
-        public void shouldRefuseClearOnAnEmptyJavaView() {
-            // unlike a java.util.List view, whose clear() on an empty list is a no-op as in the JDK's AbstractList,
-            // the Collection view throws on every mutator, as Collections.unmodifiableCollection does
-            assertThrows(UnsupportedOperationException.class, () -> HashMap.<Integer, Integer>empty().asJava().clear());
-        }
+    @Test
+    public void shouldRefuseClearOnAnEmptyJavaView() {
+        // unlike a java.util.List view, whose clear() on an empty list is a no-op as in the JDK's AbstractList,
+        // the Collection view throws on every mutator, as Collections.unmodifiableCollection does
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> HashMap.<Integer, Integer>empty().asJava().clear());
+    }
 
     // -- HashMap
 
@@ -2121,11 +2397,13 @@ public class HashMapTest extends AbstractTraversableTest {
         return HashMap.empty();
     }
 
-    protected <K extends Comparable<? super K>, V, T extends V> Collector<T, ?, ? extends Map<K, V>> collectorWithMapper(Function<? super T, ? extends K> keyMapper) {
+    protected <K extends Comparable<? super K>, V, T extends V>
+            Collector<T, ?, ? extends Map<K, V>> collectorWithMapper(Function<? super T, ? extends K> keyMapper) {
         return HashMap.collector(keyMapper);
     }
 
-    protected <K extends Comparable<? super K>, V, T> Collector<T, ?, ? extends Map<K, V>> collectorWithMappers(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    protected <K extends Comparable<? super K>, V, T> Collector<T, ?, ? extends Map<K, V>> collectorWithMappers(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return HashMap.collector(keyMapper, valueMapper);
     }
 
@@ -2135,17 +2413,20 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @SuppressWarnings("varargs")
     @SafeVarargs
-    protected final <K extends Comparable<? super K>, V> HashMap<K, V> mapOfTuples(Tuple2<? extends K, ? extends V>... entries) {
+    protected final <K extends Comparable<? super K>, V> HashMap<K, V> mapOfTuples(
+            Tuple2<? extends K, ? extends V>... entries) {
         return HashMap.ofEntries(entries);
     }
 
-    protected <K extends Comparable<? super K>, V> Map<K, V> mapOfTuples(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+    protected <K extends Comparable<? super K>, V> Map<K, V> mapOfTuples(
+            Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         return HashMap.ofEntries(entries);
     }
 
     @SuppressWarnings("varargs")
     @SafeVarargs
-    protected final <K extends Comparable<? super K>, V> HashMap<K, V> mapOfEntries(java.util.Map.Entry<? extends K, ? extends V>... entries) {
+    protected final <K extends Comparable<? super K>, V> HashMap<K, V> mapOfEntries(
+            java.util.Map.Entry<? extends K, ? extends V>... entries) {
         return HashMap.ofEntries(entries);
     }
 
@@ -2161,19 +2442,25 @@ public class HashMapTest extends AbstractTraversableTest {
         return HashMap.of(k1, v1, k2, v2, k3, v3);
     }
 
-    protected <T, K extends Comparable<? super K>, V> Map<K, V> mapOf(java.util.stream.Stream<? extends T> stream, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    protected <T, K extends Comparable<? super K>, V> Map<K, V> mapOf(
+            java.util.stream.Stream<? extends T> stream,
+            Function<? super T, ? extends K> keyMapper,
+            Function<? super T, ? extends V> valueMapper) {
         return HashMap.ofAll(stream, keyMapper, valueMapper);
     }
 
-    protected <T, K extends Comparable<? super K>, V> Map<K, V> mapOf(java.util.stream.Stream<? extends T> stream, Function<? super T, Tuple2<? extends K, ? extends V>> f) {
+    protected <T, K extends Comparable<? super K>, V> Map<K, V> mapOf(
+            java.util.stream.Stream<? extends T> stream, Function<? super T, Tuple2<? extends K, ? extends V>> f) {
         return HashMap.ofAll(stream, f);
     }
 
-    protected <K extends Comparable<? super K>, V> HashMap<K, V> mapTabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
+    protected <K extends Comparable<? super K>, V> HashMap<K, V> mapTabulate(
+            int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         return HashMap.tabulate(n, f);
     }
 
-    protected <K extends Comparable<? super K>, V> HashMap<K, V> mapFill(int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
+    protected <K extends Comparable<? super K>, V> HashMap<K, V> mapFill(
+            int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
         return HashMap.fill(n, s);
     }
 
@@ -2183,7 +2470,11 @@ public class HashMapTest extends AbstractTraversableTest {
         public void shouldNarrowHashMap() {
             final HashMap<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
             final HashMap<Number, Number> number2numberMap = HashMap.narrow(int2doubleMap);
-            final int actual = number2numberMap.put(new BigDecimal("2"), new BigDecimal("2.0")).values().sum().intValue();
+            final int actual = number2numberMap
+                    .put(new BigDecimal("2"), new BigDecimal("2.0"))
+                    .values()
+                    .sum()
+                    .intValue();
             assertThat(actual).isEqualTo(3);
         }
 
@@ -2200,12 +2491,14 @@ public class HashMapTest extends AbstractTraversableTest {
     class SpecificTests {
         @Test
         public void shouldRejectNullKeyOnPut() {
-            Assertions.assertThatNullPointerException().isThrownBy(() -> HashMap.empty().put(null, 1));
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> HashMap.empty().put(null, 1));
         }
 
         @Test
         public void shouldRejectNullValueOnPut() {
-            Assertions.assertThatNullPointerException().isThrownBy(() -> HashMap.<Integer, Integer>empty().put(1, null));
+            Assertions.assertThatNullPointerException()
+                    .isThrownBy(() -> HashMap.<Integer, Integer>empty().put(1, null));
         }
 
         @Test
@@ -2238,8 +2531,10 @@ public class HashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldEqualsIgnoreOrder() {
-            HashMap<String, Integer> map = HashMap.<String, Integer> empty().put("Aa", 1).put("BB", 2);
-            HashMap<String, Integer> map2 = HashMap.<String, Integer> empty().put("BB", 2).put("Aa", 1);
+            HashMap<String, Integer> map =
+                    HashMap.<String, Integer>empty().put("Aa", 1).put("BB", 2);
+            HashMap<String, Integer> map2 =
+                    HashMap.<String, Integer>empty().put("BB", 2).put("Aa", 1);
             Assertions.assertThat(map.hashCode()).isEqualTo(map2.hashCode());
             Assertions.assertThat(map).isEqualTo(map2);
         }
@@ -2249,12 +2544,14 @@ public class HashMapTest extends AbstractTraversableTest {
     class SpliteratorTests {
         @Test
         public void shouldNotHaveSortedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED))
+                    .isFalse();
         }
 
         @Test
         public void shouldNotHaveOrderedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isFalse();
         }
     }
 
@@ -2264,7 +2561,7 @@ public class HashMapTest extends AbstractTraversableTest {
     class NoPositionalMembersTests {
         @Test
         public void shouldDeclareNoPositionalMemberOnTheHashTypeNorItsInterface() {
-            for (Class<?> type : java.util.List.<Class<?>> of(HashMap.class, Map.class)) {
+            for (Class<?> type : java.util.List.<Class<?>>of(HashMap.class, Map.class)) {
                 final java.util.Set<String> names = new java.util.HashSet<>();
                 for (java.lang.reflect.Method method : type.getMethods()) {
                     names.add(method.getName());

@@ -29,6 +29,7 @@ public class Euler04Test {
                 .filter(t -> t._1() <= t._2())
                 .map(t -> t._1() * t._2())
                 .filter(Utils::isPalindrome)
-                .max().get();
+                .max()
+                .get();
     }
 }

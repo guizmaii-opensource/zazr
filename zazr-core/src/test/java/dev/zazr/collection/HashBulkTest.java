@@ -73,7 +73,7 @@ public class HashBulkTest {
         assertThat(left.union(set(0, 100, 3))).isSameAs(left);
         assertThat(left.addAll(set(0, 100, 3))).isSameAs(left);
         assertThat(left.union(HashSet.empty())).isSameAs(left);
-        assertThat(HashSet.<Key> empty().union(right)).isSameAs(right);
+        assertThat(HashSet.<Key>empty().union(right)).isSameAs(right);
         // the argument holds everything: its elements, but the receiver's where they are equal
         final HashSet<Key> small = set(0, 10, 4);
         final HashSet<Key> all = small.union(right.addAll(set(0, 10, 5)));
@@ -93,7 +93,7 @@ public class HashBulkTest {
         assertThat(left.removeAll(set(1000, 1100, 2))).isSameAs(left);
         assertThat(left.removeAll(HashSet.empty())).isSameAs(left);
         assertThat(left.removeAll(set(0, 300, 9))).isSameAs(HashSet.empty());
-        assertThat(HashSet.<Key> empty().removeAll(right)).isSameAs(HashSet.empty());
+        assertThat(HashSet.<Key>empty().removeAll(right)).isSameAs(HashSet.empty());
     }
 
     @Test
@@ -104,8 +104,12 @@ public class HashBulkTest {
         assertThat(set.filter(k -> false)).isSameAs(HashSet.empty());
         assertThat(set.reject(k -> k.id % 3 == 0)).hasSize(200);
         assertThat(set.filter(k -> k.id % 3 == 0)).hasSize(100).allMatch(k -> k.id % 3 == 0);
-        assertThatThrownBy(() -> set.filter(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
-        assertThatThrownBy(() -> set.reject(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
+        assertThatThrownBy(() -> set.filter(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate is null");
+        assertThatThrownBy(() -> set.reject(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate is null");
     }
 
     @Test
@@ -115,9 +119,11 @@ public class HashBulkTest {
         assertThat(set.containsAll(set(100, 200, 2))).isTrue();
         assertThat(set.containsAll(set(250, 350, 2))).isFalse();
         assertThat(set.containsAll(HashSet.empty())).isTrue();
-        assertThat(HashSet.<Key> empty().containsAll(set)).isFalse();
+        assertThat(HashSet.<Key>empty().containsAll(set)).isFalse();
         assertThat(set.containsAll(java.util.List.of(new Key(5, 0)))).isTrue();
-        assertThatThrownBy(() -> set.containsAll(null)).isInstanceOf(NullPointerException.class).hasMessage("elements is null");
+        assertThatThrownBy(() -> set.containsAll(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("elements is null");
     }
 
     @Test
@@ -170,7 +176,7 @@ public class HashBulkTest {
         assertThat(left.merge(map(10, 20, 3))).isSameAs(left);
         assertThat(map(0, 1, 1).merge(map(0, 1, 2))).isEqualTo(map(0, 1, 1));
         assertThat(left.merge(HashMap.empty())).isSameAs(left);
-        assertThat(HashMap.<Key, Integer> empty().merge(right)).isSameAs(right);
+        assertThat(HashMap.<Key, Integer>empty().merge(right)).isSameAs(right);
     }
 
     @Test
@@ -189,9 +195,12 @@ public class HashBulkTest {
         for (Tuple2<Key, Integer> entry : map.filterKeys(k -> k.id == 7)) {
             assertThat(entry._1().tag).isEqualTo(9);
         }
-        assertThatThrownBy(() -> map.filterKeys(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
+        assertThatThrownBy(() -> map.filterKeys(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate is null");
         assertThatThrownBy(() -> map.filter((java.util.function.BiPredicate<Key, Integer>) null))
-                .isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate is null");
     }
 
     @Test
@@ -202,9 +211,14 @@ public class HashBulkTest {
         mapped.forEach((k, v) -> assertThat(v).isEqualTo("v1"));
         assertThat(map.mapValues(v -> v)).isSameAs(map);
         assertThat(map.replaceAll((k, v) -> k.id)).allMatch(t -> t._2() == t._1().id);
-        assertThatThrownBy(() -> map.mapValues(v -> null)).isInstanceOf(NullPointerException.class).hasMessage("HashMap: value is null");
-        assertThatThrownBy(() -> map.mapValues(null)).isInstanceOf(NullPointerException.class).hasMessage("valueMapper is null");
-        assertThatThrownBy(() -> HashMap.<Key, Integer> empty().replaceAll(null)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> map.mapValues(v -> null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("HashMap: value is null");
+        assertThatThrownBy(() -> map.mapValues(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("valueMapper is null");
+        assertThatThrownBy(() -> HashMap.<Key, Integer>empty().replaceAll(null))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("function is null");
     }
 

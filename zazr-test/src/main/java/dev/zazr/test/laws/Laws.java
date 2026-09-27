@@ -2,7 +2,6 @@ package dev.zazr.test.laws;
 
 import dev.zazr.collection.Vector;
 import dev.zazr.test.CheckConfig;
-
 import java.util.Objects;
 
 /**
@@ -123,7 +122,8 @@ public final class Laws<S> {
     public void assertSatisfied(S subject, CheckConfig config) {
         final Vector<LawResult> failures = check(subject, config).filter(result -> !result.isSatisfied());
         if (!failures.isEmpty()) {
-            throw new AssertionError(failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
+            throw new AssertionError(
+                    failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
         }
     }
 

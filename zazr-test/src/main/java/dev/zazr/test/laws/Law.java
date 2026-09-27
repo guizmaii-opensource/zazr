@@ -3,7 +3,6 @@ package dev.zazr.test.laws;
 import dev.zazr.test.Check;
 import dev.zazr.test.CheckConfig;
 import dev.zazr.test.CheckResult;
-
 import java.util.Objects;
 import java.util.function.BiFunction;
 

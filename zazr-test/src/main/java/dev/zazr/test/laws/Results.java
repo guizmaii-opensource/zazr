@@ -10,8 +10,7 @@ import java.util.function.Supplier;
  */
 final class Results {
 
-    private Results() {
-    }
+    private Results() {}
 
     /// True when both values are equal; otherwise throws with both sides.
     static boolean equal(Object left, Object right) {

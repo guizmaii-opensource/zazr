@@ -23,8 +23,7 @@ import org.jspecify.annotations.Nullable;
  */
 final class VectorStatics {
 
-    private VectorStatics() {
-    }
+    private VectorStatics() {}
 
     static final int BITS = 5;
     static final int WIDTH = 1 << BITS;
@@ -70,7 +69,7 @@ final class VectorStatics {
     }
 
     static Object[] wrap1(Object x) {
-        return new Object[] { x };
+        return new Object[] {x};
     }
 
     static Object[] copyUpdate(Object[] a1, int idx1, Object elem) {
@@ -148,7 +147,8 @@ final class VectorStatics {
 
     /* maps a leaf; returns a itself when f returns every element unchanged (by identity), so that the leaf stays shared */
     @SuppressWarnings("unchecked")
-    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1(Object[] a, Function<? super A, ? extends B> f) {
+    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1(
+            Object[] a, Function<? super A, ? extends B> f) {
         for (int i = 0; i < a.length; i++) {
             final Object v1 = a[i];
             final Object v2 = mapped(f.apply((A) v1));
@@ -160,7 +160,8 @@ final class VectorStatics {
     }
 
     @SuppressWarnings("unchecked")
-    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1Rest(Object[] a, Function<? super A, ? extends B> f, int at, Object v2) {
+    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems1Rest(
+            Object[] a, Function<? super A, ? extends B> f, int at, Object v2) {
         final Object[] ac = new Object[a.length];
         if (at > 0) {
             System.arraycopy(a, 0, ac, 0, at);
@@ -173,7 +174,8 @@ final class VectorStatics {
     }
 
     /* maps an array of dimension n (1 for a leaf); returns a itself when nothing under it changed */
-    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems(int n, Object[] a, Function<? super A, ? extends B> f) {
+    static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElems(
+            int n, Object[] a, Function<? super A, ? extends B> f) {
         if (n == 1) {
             return mapElems1(a, f);
         }
@@ -187,7 +189,8 @@ final class VectorStatics {
         return a;
     }
 
-    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElemsRest(int n, Object[] a, Function<? super A, ? extends B> f, int at, Object[] v2) {
+    private static <A extends @Nullable Object, B extends @Nullable Object> Object[] mapElemsRest(
+            int n, Object[] a, Function<? super A, ? extends B> f, int at, Object[] v2) {
         final Object[] ac = new Object[a.length];
         if (at > 0) {
             System.arraycopy(a, 0, ac, 0, at);

@@ -9,8 +9,7 @@ import dev.zazr.test.Gen;
  */
 public final class NonEmptyVectorLaws {
 
-    private NonEmptyVectorLaws() {
-    }
+    private NonEmptyVectorLaws() {}
 
     /**
      * {@code head()} never throws and returns the first element of the iteration and of {@code toVector()}.
@@ -18,9 +17,14 @@ public final class NonEmptyVectorLaws {
      * @return the law, checked against a generator of non-empty vectors
      */
     public static Law<Gen<NonEmptyVector<?>>> nonEmptyVectorHeadIsTotal() {
-        return Law.of("nonEmptyVectorHeadIsTotal", (values, config) -> Check.evaluate(config, values,
-                nev -> Results.equal(nev.head(), nev.iterator().next()) && Results.equal(nev.head(), nev.toVector().head())
-                        && Results.check(nev.size() >= 1, () -> nev + " has size " + nev.size())));
+        return Law.of(
+                "nonEmptyVectorHeadIsTotal",
+                (values, config) -> Check.evaluate(
+                        config,
+                        values,
+                        nev -> Results.equal(nev.head(), nev.iterator().next())
+                                && Results.equal(nev.head(), nev.toVector().head())
+                                && Results.check(nev.size() >= 1, () -> nev + " has size " + nev.size())));
     }
 
     /**
@@ -29,8 +33,10 @@ public final class NonEmptyVectorLaws {
      * @return the law, checked against a generator of non-empty vectors
      */
     public static Law<Gen<NonEmptyVector<?>>> nonEmptyVectorEqualsVectorSymmetry() {
-        return Law.of("nonEmptyVectorEqualsVectorSymmetry", (values, config) -> Check.evaluate(config, values,
-                nev -> EqualityLaws.consistent(nev, nev.toVector())));
+        return Law.of(
+                "nonEmptyVectorEqualsVectorSymmetry",
+                (values, config) ->
+                        Check.evaluate(config, values, nev -> EqualityLaws.consistent(nev, nev.toVector())));
     }
 
     /**

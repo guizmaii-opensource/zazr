@@ -2,7 +2,6 @@ package dev.zazr.test;
 
 import dev.zazr.Tuple;
 import dev.zazr.control.Option;
-
 import java.util.Objects;
 
 /**
@@ -81,8 +80,7 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
      */
     default void assertIsSatisfied() {
         switch (this) {
-            case Satisfied ignored -> {
-            }
+            case Satisfied ignored -> {}
             case Falsified falsified -> throw new AssertionError(falsified.describe());
             case Erroneous erroneous -> throw new AssertionError(erroneous.describe(), erroneous.cause());
         }
@@ -209,11 +207,12 @@ public sealed interface CheckResult permits CheckResult.Satisfied, CheckResult.F
 
         @Override
         public boolean equals(Object o) {
-            return o == this || (o instanceof Erroneous that
-                    && this.sampleNumber == that.sampleNumber
-                    && this.seed == that.seed
-                    && sameCauses(this.cause, that.cause)
-                    && this.sample.equals(that.sample));
+            return o == this
+                    || (o instanceof Erroneous that
+                            && this.sampleNumber == that.sampleNumber
+                            && this.seed == that.seed
+                            && sameCauses(this.cause, that.cause)
+                            && this.sample.equals(that.sample));
         }
 
         @Override

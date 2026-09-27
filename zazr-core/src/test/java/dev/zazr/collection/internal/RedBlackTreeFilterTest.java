@@ -20,7 +20,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class RedBlackTreeFilterTest {
 
     private static final long SEED = 20260925L;
-    private static final int[] SIZES = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 31, 32, 33, 63, 64, 65, 127, 128, 129, 1023, 1024, 1025 };
+    private static final int[] SIZES = {
+        0, 1, 2, 3, 4, 5, 7, 8, 9, 31, 32, 33, 63, 64, 65, 127, 128, 129, 1023, 1024, 1025
+    };
 
     private static final Comparator<Integer> NATURAL = Comparators.naturalComparator();
     private static final Comparator<Integer> REVERSED = NATURAL.reversed();
@@ -113,7 +115,8 @@ public class RedBlackTreeFilterTest {
             assertThat(result).isSameAs(source);
         }
         final int dropped = source.size() - expected.size();
-        assertThat(freshNodes(result, source)).as("new nodes of %s from %s", result, source)
+        assertThat(freshNodes(result, source))
+                .as("new nodes of %s from %s", result, source)
                 .isLessThanOrEqualTo(dropped * 3 * (height(source) + 1));
     }
 
@@ -130,15 +133,20 @@ public class RedBlackTreeFilterTest {
             calls.add(element);
             return keep.test(element);
         });
-        assertThat(calls).as("the predicate is called once per element, in order").isEqualTo(before);
+        assertThat(calls)
+                .as("the predicate is called once per element, in order")
+                .isEqualTo(before);
         assertKept(filtered, source, kept);
 
         calls.clear();
-        final Tuple2<RedBlackTree<T>, RedBlackTree<T>> partition = RedBlackTreeModule.Node.partition(source, element -> {
-            calls.add(element);
-            return keep.test(element);
-        });
-        assertThat(calls).as("the predicate is called once per element, in order").isEqualTo(before);
+        final Tuple2<RedBlackTree<T>, RedBlackTree<T>> partition =
+                RedBlackTreeModule.Node.partition(source, element -> {
+                    calls.add(element);
+                    return keep.test(element);
+                });
+        assertThat(calls)
+                .as("the predicate is called once per element, in order")
+                .isEqualTo(before);
         assertKept(partition._1(), source, kept);
         assertKept(partition._2(), source, rejected);
 
@@ -193,7 +201,7 @@ public class RedBlackTreeFilterTest {
     @Test
     public void shouldDropEachSingleElement() {
         final Random random = new Random(SEED + 2);
-        for (int size : new int[] { 1, 2, 3, 31, 32, 33, 64, 65 }) {
+        for (int size : new int[] {1, 2, 3, 31, 32, 33, 64, 65}) {
             for (RedBlackTree<Integer> source : sources(NATURAL, size, random)) {
                 for (Integer dropped : elements(source)) {
                     check(source, element -> !element.equals(dropped));
@@ -210,9 +218,11 @@ public class RedBlackTreeFilterTest {
         for (int i = 0; i < size; i++) {
             sorted[i] = i;
         }
-        final RedBlackTree<Integer> source = RedBlackTreeModule.Node.fromOrdered(new RedBlackTreeModule.Empty<>(NATURAL), sorted, size);
-        for (int dropped : new int[] { 0, 1, size / 3, size / 2, size - 2, size - 1 }) {
-            final RedBlackTree<Integer> filtered = RedBlackTreeModule.Node.filter(source, element -> element != dropped);
+        final RedBlackTree<Integer> source =
+                RedBlackTreeModule.Node.fromOrdered(new RedBlackTreeModule.Empty<>(NATURAL), sorted, size);
+        for (int dropped : new int[] {0, 1, size / 3, size / 2, size - 2, size - 1}) {
+            final RedBlackTree<Integer> filtered =
+                    RedBlackTreeModule.Node.filter(source, element -> element != dropped);
             assertValid(filtered);
             assertThat(filtered.size()).isEqualTo(size - 1);
             // one element dropped: new nodes only along a few paths from the root, everything else shared
@@ -259,7 +269,8 @@ public class RedBlackTreeFilterTest {
         final RedBlackTree<String> tree = source;
         check(tree, s -> Character.isUpperCase(s.charAt(0)));
         check(tree, s -> s.length() > 4);
-        assertThat(elements(RedBlackTreeModule.Node.filter(tree, s -> s.startsWith("A")))).containsExactly("ALPHA");
+        assertThat(elements(RedBlackTreeModule.Node.filter(tree, s -> s.startsWith("A"))))
+                .containsExactly("ALPHA");
     }
 
     @Test
@@ -274,9 +285,11 @@ public class RedBlackTreeFilterTest {
             }
             return (element & 1) == 0;
         };
-        assertThatThrownBy(() -> RedBlackTreeModule.Node.filter(source, throwing)).hasMessage("boom");
+        assertThatThrownBy(() -> RedBlackTreeModule.Node.filter(source, throwing))
+                .hasMessage("boom");
         calls.set(0);
-        assertThatThrownBy(() -> RedBlackTreeModule.Node.partition(source, throwing)).hasMessage("boom");
+        assertThatThrownBy(() -> RedBlackTreeModule.Node.partition(source, throwing))
+                .hasMessage("boom");
         assertValid(source);
         assertThat(elements(source)).isEqualTo(before);
     }
@@ -285,7 +298,8 @@ public class RedBlackTreeFilterTest {
     public void shouldReturnTheEmptyTreeItselfForAnEmptySource() {
         final RedBlackTree<Integer> empty = RedBlackTree.empty(NATURAL);
         assertThat(RedBlackTreeModule.Node.filter(empty, element -> true)).isSameAs(empty);
-        final Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> partition = RedBlackTreeModule.Node.partition(empty, element -> true);
+        final Tuple2<RedBlackTree<Integer>, RedBlackTree<Integer>> partition =
+                RedBlackTreeModule.Node.partition(empty, element -> true);
         assertThat(partition._1()).isSameAs(empty);
         assertThat(partition._2()).isSameAs(empty);
     }
@@ -309,8 +323,14 @@ public class RedBlackTreeFilterTest {
             assertThat(comparisons.get()).isZero();
             assertValid(withMin);
             assertValid(withMax);
-            assertThat(elements(withMin)).isEqualTo(java.util.stream.IntStream.rangeClosed(0, size).boxed().toList());
-            assertThat(elements(withMax)).isEqualTo(java.util.stream.IntStream.rangeClosed(1, size + 1).boxed().toList());
+            assertThat(elements(withMin))
+                    .isEqualTo(java.util.stream.IntStream.rangeClosed(0, size)
+                            .boxed()
+                            .toList());
+            assertThat(elements(withMax))
+                    .isEqualTo(java.util.stream.IntStream.rangeClosed(1, size + 1)
+                            .boxed()
+                            .toList());
         }
     }
 }

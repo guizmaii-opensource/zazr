@@ -32,7 +32,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Thread)
 public class HashMapSetBenchmark {
 
-    @Param({ "10", "1000", "100000" })
+    @Param({"10", "1000", "100000"})
     public int size;
 
     private Integer[] present;

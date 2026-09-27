@@ -27,11 +27,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class RadixVectorTest {
 
     /* the sizes around the width of one leaf and of one Vector2 */
-    private static final int[] SMALL_SIZES = { 0, 1, 2, 31, 32, 33, 63, 64, 65, 992, 993, 1023, 1024, 1025, 1056 };
+    private static final int[] SMALL_SIZES = {0, 1, 2, 31, 32, 33, 63, 64, 65, 992, 993, 1023, 1024, 1025, 1056};
     /* the sizes around the capacity of a Vector3 (32 768 = 32^3) */
-    private static final int[] MEDIUM_SIZES = { 32735, 32736, 32737, 32767, 32768, 32769 };
+    private static final int[] MEDIUM_SIZES = {32735, 32736, 32737, 32767, 32768, 32769};
     /* the sizes around the capacity of a Vector4 (2^20 = 32^4) */
-    private static final int[] LARGE_SIZES = { (1 << 20) - 1, 1 << 20, (1 << 20) + 1 };
+    private static final int[] LARGE_SIZES = {(1 << 20) - 1, 1 << 20, (1 << 20) + 1};
 
     // ---------------------------------------------------------------------------------------------------------------
     // random operation sequences
@@ -69,7 +69,7 @@ public class RadixVectorTest {
     public void randomSequencesAroundVector3Capacity() {
         int seed = 100_000;
         for (int size : MEDIUM_SIZES) {
-            for (History history : new History[] { History.BUILDER, History.APPENDS, History.PREPENDS, History.SLICED }) {
+            for (History history : new History[] {History.BUILDER, History.APPENDS, History.PREPENDS, History.SLICED}) {
                 final Run run = new Run(seed++);
                 runSequence(run, size, history, 60, 70_000);
             }
@@ -80,7 +80,7 @@ public class RadixVectorTest {
     public void randomSequencesAroundVector4Capacity() {
         int seed = 200_000;
         for (int size : LARGE_SIZES) {
-            for (History history : new History[] { History.BUILDER, History.SLICED }) {
+            for (History history : new History[] {History.BUILDER, History.SLICED}) {
                 final Run run = new Run(seed++);
                 runSequence(run, size, history, 25, 1 << 21);
             }
@@ -238,9 +238,9 @@ public class RadixVectorTest {
     public void appendedAllAndPrependedAllBetweenEveryPairOfShapes() {
         final Run run = new Run(300_000);
         final List<Pair> fixtures = new ArrayList<>();
-        final int[] sizes = { 0, 1, 2, 31, 32, 33, 64, 1023, 1024, 1025, 2000, 32768, 32769 };
+        final int[] sizes = {0, 1, 2, 31, 32, 33, 64, 1023, 1024, 1025, 2000, 32768, 32769};
         for (int size : sizes) {
-            for (History history : new History[] { History.BUILDER, History.PREPENDS, History.SLICED }) {
+            for (History history : new History[] {History.BUILDER, History.PREPENDS, History.SLICED}) {
                 if (size > 2000 && history == History.PREPENDS) {
                     continue;
                 }
@@ -269,7 +269,7 @@ public class RadixVectorTest {
     public void appendedAllOfBigVectorsAtEveryAlignment() {
         final Run run = new Run(350_000);
         final List<Pair> rights = new ArrayList<>();
-        for (int size : new int[] { 3000, 70_000 }) {
+        for (int size : new int[] {3000, 70_000}) {
             rights.add(run.checked(() -> build(run, size, History.BUILDER)));
             rights.add(run.checked(() -> {
                 final Pair p = build(run, size + 37, History.BUILDER);
@@ -278,7 +278,7 @@ public class RadixVectorTest {
         }
         // a Vector5 right side: alignTo pads the prefix of dimension 4, and leftAlignPrefix shifts it back
         final Pair vector5 = run.checked(() -> build(run, (1 << 20) + 1, History.BUILDER));
-        for (int size : new int[] { (1 << 20) - 32780, (1 << 20) - 1057, (1 << 20) - 100 }) {
+        for (int size : new int[] {(1 << 20) - 32780, (1 << 20) - 1057, (1 << 20) - 100}) {
             final Pair left = run.checked(() -> build(run, size, History.BUILDER));
             run.checked(() -> {
                 run.log("appendedAll " + left.label + " ++ " + vector5.label);
@@ -289,9 +289,9 @@ public class RadixVectorTest {
         }
         for (Pair right : rights) {
             final int k = right.v.length();
-            for (int delta : new int[] { -64, -33, -32, -1, 0, 1, 31, 32, 64, 1024, 1025, 32768, 32800 }) {
+            for (int delta : new int[] {-64, -33, -32, -1, 0, 1, 31, 32, 64, 1024, 1025, 32768, 32800}) {
                 final int size = k + delta;
-                for (History history : new History[] { History.BUILDER, History.SLICED }) {
+                for (History history : new History[] {History.BUILDER, History.SLICED}) {
                     final Pair left = run.checked(() -> build(run, size, history));
                     run.checked(() -> {
                         run.log("appendedAll " + left.label + " ++ " + right.label);
@@ -313,22 +313,26 @@ public class RadixVectorTest {
     @Test
     public void appendedAllAlignsOnTheBiggerVectorAndSharesItsLeaves() {
         final Run run = new Run(360_000);
-        for (int big : new int[] { 5_000, 70_000 }) {
+        for (int big : new int[] {5_000, 70_000}) {
             final Pair right = run.checked(() -> build(run, big, History.BUILDER));
-            for (int small : new int[] { 200, 1000, 1057, 2100 }) {
+            for (int small : new int[] {200, 1000, 1057, 2100}) {
                 if (small >= big - 64 || small < (big >>> 5)) {
                     continue;
                 }
-                for (History history : new History[] { History.BUILDER, History.PREPENDS, History.SLICED }) {
+                for (History history : new History[] {History.BUILDER, History.PREPENDS, History.SLICED}) {
                     final Pair left = run.checked(() -> build(run, small, history));
-                    final Pair appended = run.checked(() -> run.record(left.r.appendedAll(right.r), left.v.appendAll(right.v)));
-                    final Pair prepended = run.checked(() -> run.record(right.r.prependedAll(left.r), right.v.prependAll(left.v)));
+                    final Pair appended =
+                            run.checked(() -> run.record(left.r.appendedAll(right.r), left.v.appendAll(right.v)));
+                    final Pair prepended =
+                            run.checked(() -> run.record(right.r.prependedAll(left.r), right.v.prependAll(left.v)));
                     final java.util.Set<Object[]> rightLeaves = leaves(right.r);
                     for (Pair p : List.of(appended, prepended)) {
                         final java.util.Set<Object[]> shared = leaves(p.r);
                         shared.retainAll(rightLeaves);
                         // all of the big vector's full leaves but the ones at the seams
-                        assertThat(shared.size()).as("%s ++ %s", left.label, right.label).isGreaterThanOrEqualTo(big / WIDTH - 2);
+                        assertThat(shared.size())
+                                .as("%s ++ %s", left.label, right.label)
+                                .isGreaterThanOrEqualTo(big / WIDTH - 2);
                     }
                 }
             }
@@ -360,7 +364,7 @@ public class RadixVectorTest {
     public void slicesLandingInEveryPrefixDataAndSuffix() {
         final Run run = new Run(400_000);
         final List<Pair> fixtures = new ArrayList<>();
-        for (int size : new int[] { 0, 1, 2, 31, 32, 33, 64, 1023, 1024, 1025, 2000, 32767, 32768, 32769, 40_000 }) {
+        for (int size : new int[] {0, 1, 2, 31, 32, 33, 64, 1023, 1024, 1025, 2000, 32767, 32768, 32769, 40_000}) {
             for (History history : History.values()) {
                 if (size > 2000 && history != History.BUILDER && history != History.SLICED) {
                     continue;
@@ -430,7 +434,7 @@ public class RadixVectorTest {
     @Test
     public void levelTransitionsByAppendAndPrepend() {
         final Run run = new Run(500_000);
-        for (boolean append : new boolean[] { true, false }) {
+        for (boolean append : new boolean[] {true, false}) {
             RadixVector<Integer> r = RadixVector.empty();
             VectorModel<Integer> v = VectorModel.empty();
             int depth = 0;
@@ -455,7 +459,7 @@ public class RadixVectorTest {
             assertThat(transitions).hasSize(4);
         }
         // Vector4 to Vector5, both ways, from a builder-made vector whose data is full
-        for (boolean append : new boolean[] { true, false }) {
+        for (boolean append : new boolean[] {true, false}) {
             final Pair start = run.checked(() -> build(run, (1 << 20) - 5, History.BUILDER));
             assertThat(start.r).isInstanceOf(RadixVector.Vector4.class);
             Pair p = start;
@@ -464,8 +468,9 @@ public class RadixVectorTest {
                 p = run.checked(() -> {
                     final Integer x = run.fresh();
                     run.log(append ? "appended" : "prepended");
-                    return append ? run.record(current.r.appended(x), current.v.append(x))
-                                  : run.record(current.r.prepended(x), current.v.prepend(x));
+                    return append
+                            ? run.record(current.r.appended(x), current.v.append(x))
+                            : run.record(current.r.prepended(x), current.v.prepend(x));
                 });
             }
             assertThat(p.r).isInstanceOf(RadixVector.Vector5.class);
@@ -506,7 +511,7 @@ public class RadixVectorTest {
         for (int i = 0; i < 40; i++) {
             forty.add(-100 - i);
         }
-        for (int dropped : new int[] { 0, 1, 1057 }) {
+        for (int dropped : new int[] {0, 1, 1057}) {
             final RadixVector<Integer> start = appended.drop(dropped);
             final RadixVector<Integer> extended = start.appendedAll(forty);
             assertThat(extended).isInstanceOf(RadixVector.Vector6.class);
@@ -539,7 +544,7 @@ public class RadixVectorTest {
                 assertThat(updated.get(at - 1)).isEqualTo(w.get(at - 1));
             }
         }
-        for (int lo : new int[] { 1, 31, 33, 1025, 32769, (1 << 20) + 1, (1 << 25) - 7 }) {
+        for (int lo : new int[] {1, 31, 33, 1025, 32769, (1 << 20) + 1, (1 << 25) - 7}) {
             final RadixVector<Integer> dropped = w.drop(lo);
             checkShape(dropped);
             assertThat(dropped.length()).isEqualTo(n - lo);
@@ -558,7 +563,8 @@ public class RadixVectorTest {
             checkShape(t);
         }
         assertThat(t.length()).isEqualTo(n - 80);
-        final RadixVector<Integer> small = RadixVector.ofAll(new Object[] { 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24 });
+        final RadixVector<Integer> small =
+                RadixVector.ofAll(new Object[] {7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
         final RadixVector<Integer> bulk = w.appendedAll(small).prependedAll(small);
         checkShape(bulk);
         assertThat(bulk.length()).isEqualTo(n + 2 * small.length());
@@ -623,7 +629,7 @@ public class RadixVectorTest {
         assertThatThrownBy(r::tail).isInstanceOf(UnsupportedOperationException.class);
         assertThat(r.iterator().hasNext()).isFalse();
         assertThat(r.reverseIterator().hasNext()).isFalse();
-        for (int k : new int[] { Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE }) {
+        for (int k : new int[] {Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE}) {
             assertThat(r.take(k).length()).isZero();
             assertThat(r.drop(k).length()).isZero();
             assertThat(r.takeRight(k).length()).isZero();
@@ -635,9 +641,11 @@ public class RadixVectorTest {
     @Test
     public void extremeArgumentsBehaveLikeVector() {
         final Run run = new Run(600_000);
-        for (int size : new int[] { 1, 33, 1025, 32769 }) {
+        for (int size : new int[] {1, 33, 1025, 32769}) {
             final Pair p = run.checked(() -> build(run, size, History.BUILDER));
-            for (int k : new int[] { Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -1, 0, 1, size - 1, size, size + 1, Integer.MAX_VALUE }) {
+            for (int k : new int[] {
+                Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -1, 0, 1, size - 1, size, size + 1, Integer.MAX_VALUE
+            }) {
                 run.checked(() -> {
                     run.log("extreme " + k);
                     run.record(p.r.take(k), p.v.take(k));
@@ -659,7 +667,7 @@ public class RadixVectorTest {
         final RadixVector<Integer> one = RadixVector.of(1);
         final RadixVector<Integer> big = RadixVector.ofAll(sequence(0, 100));
         assertThatThrownBy(() -> RadixVector.of((Integer) null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> RadixVector.ofAll(new Object[] { 1, null })).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> RadixVector.ofAll(new Object[] {1, null})).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> RadixVector.ofAll(nullAt(100, 70))).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> one.appended(null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> big.prepended(null)).isInstanceOf(NullPointerException.class);
@@ -669,12 +677,12 @@ public class RadixVectorTest {
         assertThatThrownBy(() -> big.appendedAll(withNull)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> big.prependedAll(withNull)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> one.appendedAll(withNull)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> RadixVector.<Integer> newBuilder().add(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> RadixVector.<Integer>newBuilder().add(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     public void callerArraysAreCopiedNotAdopted() {
-        final String[] strings = { "a", "b", "c" };
+        final String[] strings = {"a", "b", "c"};
         final RadixVector<Object> r = RadixVector.ofAll(strings);
         strings[0] = "z";
         assertThat(r.get(0)).isEqualTo("a");
@@ -697,7 +705,7 @@ public class RadixVectorTest {
         assertThat(built.length()).isEqualTo(100);
         assertThatThrownBy(() -> builder.add(1)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.addAll(List.of(1))).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> builder.addArray(new Object[] { 1 }, 0, 1)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.addArray(new Object[] {1}, 0, 1)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
         for (int i = 0; i < 100; i++) {
@@ -712,7 +720,7 @@ public class RadixVectorTest {
     /* a rejected element leaves the builder as it was: it goes on, and its result holds exactly what was added */
     @Test
     public void builderIsUnchangedByARejectedElement() {
-        for (int n : new int[] { 0, 1, 31, 32, 33, 1023, 1024, 1025, 32768 }) {
+        for (int n : new int[] {0, 1, 31, 32, 33, 1023, 1024, 1025, 32768}) {
             for (int path = 0; path < 10; path++) {
                 // paths 0..4 build right after the rejection; 5..9 add more elements first
                 final VectorBuilder<Integer> builder = RadixVector.newBuilder();
@@ -724,14 +732,16 @@ public class RadixVectorTest {
                 final List<Integer> withNull = new ArrayList<>(java.util.Arrays.asList(n, n + 1, null, n + 2));
                 final int p = path % 5;
                 assertThatThrownBy(() -> {
-                    switch (p) {
-                        case 0 -> builder.add(null);
-                        case 1 -> builder.addAll(withNull);
-                        case 2 -> builder.addAll(oneShot(withNull));
-                        case 3 -> builder.addArray(withNull.toArray(), 0, withNull.size());
-                        default -> builder.addAll(java.util.Collections.singletonList((Integer) null));
-                    }
-                }).as("n = %d, path %d", n, p).isInstanceOf(NullPointerException.class);
+                            switch (p) {
+                                case 0 -> builder.add(null);
+                                case 1 -> builder.addAll(withNull);
+                                case 2 -> builder.addAll(oneShot(withNull));
+                                case 3 -> builder.addArray(withNull.toArray(), 0, withNull.size());
+                                default -> builder.addAll(java.util.Collections.singletonList((Integer) null));
+                            }
+                        })
+                        .as("n = %d, path %d", n, p)
+                        .isInstanceOf(NullPointerException.class);
                 if (p == 1 || p == 2) {
                     // a plain Iterable is added element by element: the elements before the null are kept
                     expected.add(n);
@@ -800,7 +810,7 @@ public class RadixVectorTest {
         assertThatThrownBy(() -> builder.add(1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> builder.addAll(one)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> builder.addAll(oneList)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> builder.addArray(new Object[] { 1 }, 0, 1)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> builder.addArray(new Object[] {1}, 0, 1)).isInstanceOf(IllegalArgumentException.class);
         assertThat(builder.size()).isEqualTo(Integer.MAX_VALUE);
         checkMaxLength(builder.result(), 0);
         final VectorBuilder<Integer> almost = RadixVector.newBuilder();
@@ -813,13 +823,14 @@ public class RadixVectorTest {
 
         // a vector whose front was dropped keeps the free slots in front of its prefix, which count among the 2^31
         // positions of the tree: it holds k fewer elements, and so does a builder started from it
-        for (int k : new int[] { 1000, 1 << 20 }) {
+        for (int k : new int[] {1000, 1 << 20}) {
             final RadixVector<Integer> dropped = full.drop(k);
             assertThat(dropped.length()).isEqualTo(Integer.MAX_VALUE - k);
             final VectorBuilder<Integer> padded = RadixVector.newBuilder();
             padded.addAll(dropped);
             assertThatThrownBy(() -> padded.add(0)).isInstanceOf(IllegalArgumentException.class);
-            assertThatThrownBy(() -> padded.addArray(new Object[] { 0 }, 0, 1)).isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> padded.addArray(new Object[] {0}, 0, 1))
+                    .isInstanceOf(IllegalArgumentException.class);
             assertThat(padded.size()).isEqualTo(Integer.MAX_VALUE - k);
             final RadixVector<Integer> built = padded.result();
             assertThat(built.length()).isEqualTo(Integer.MAX_VALUE - k);
@@ -873,11 +884,13 @@ public class RadixVectorTest {
 
         // the alignTo branch, through every kind of prefix of the same elements
         final Object[] elements = sequence(1_000_000, 1_000_000 + 5160);
-        final RadixVector<Integer> dropped = RadixVector.<Integer> ofAll(elements).drop(40);
+        final RadixVector<Integer> dropped =
+                RadixVector.<Integer>ofAll(elements).drop(40);
         final List<Integer> list = new ArrayList<>();
         dropped.forEach(list::add);
         final RadixVector<Integer> y = full.take(Integer.MAX_VALUE - dropped.length());
-        final List<Iterable<Integer>> prefixes = List.of(dropped, RadixVector.ofAll(list.toArray()), list, oneShot(list));
+        final List<Iterable<Integer>> prefixes =
+                List.of(dropped, RadixVector.ofAll(list.toArray()), list, oneShot(list));
         for (Iterable<Integer> prefix : prefixes) {
             final RadixVector<Integer> r = y.prependedAll(prefix);
             assertThat(r.length()).isEqualTo(Integer.MAX_VALUE);
@@ -943,7 +956,7 @@ public class RadixVectorTest {
     public void nearTheLimitEveryArgumentKindAgrees() {
         final RadixVector<Integer> half = sharedLeafVector(1 << 30);
         final RadixVector<Integer> full = half.appendedAll(half.init());
-        for (int k : new int[] { 1, 14, 40 }) {
+        for (int k : new int[] {1, 14, 40}) {
             final List<Integer> elements = new ArrayList<>();
             for (int i = 0; i < k; i++) {
                 elements.add(-1 - i);
@@ -952,7 +965,9 @@ public class RadixVectorTest {
             final RadixVector<Integer> freeFront = full.drop(k);
             final RadixVector<Integer> freeBack = full.dropRight(k);
             for (Iterable<Integer> suffix : kinds(elements)) {
-                assertThatThrownBy(() -> freeFront.appendedAll(suffix)).as("k = %d", k).isInstanceOf(IllegalArgumentException.class);
+                assertThatThrownBy(() -> freeFront.appendedAll(suffix))
+                        .as("k = %d", k)
+                        .isInstanceOf(IllegalArgumentException.class);
             }
             for (Iterable<Integer> suffix : kinds(elements)) {
                 final RadixVector<Integer> r = freeBack.appendedAll(suffix);
@@ -966,7 +981,9 @@ public class RadixVectorTest {
             final RadixVector<Integer> front = full.drop(32);
             if (k > 32) {
                 for (Iterable<Integer> prefix : kinds(elements)) {
-                    assertThatThrownBy(() -> front.prependedAll(prefix)).as("k = %d", k).isInstanceOf(IllegalArgumentException.class);
+                    assertThatThrownBy(() -> front.prependedAll(prefix))
+                            .as("k = %d", k)
+                            .isInstanceOf(IllegalArgumentException.class);
                 }
                 continue;
             }
@@ -1019,7 +1036,7 @@ public class RadixVectorTest {
         final RadixVector<Integer> p = full.slice(1024, 1024 + (1 << 30) + 4096);
         assertThat(p).isInstanceOf(RadixVector.Vector6.class);
         assertThat(((RadixVector.Vector6<Integer>) p).len12345).isEqualTo((1 << 25) - 1024);
-        for (int total : new int[] { Integer.MAX_VALUE - 1024, Integer.MAX_VALUE - 1023 }) {
+        for (int total : new int[] {Integer.MAX_VALUE - 1024, Integer.MAX_VALUE - 1023}) {
             final RadixVector<Integer> x = full.take(total - p.length());
             final RadixVector<Integer> r = x.prependedAll(p);
             assertThat(r.length()).isEqualTo(total);
@@ -1120,7 +1137,9 @@ public class RadixVectorTest {
             assertThat(v.get(at)).isEqualTo(blockElement(at, blockSize, base));
             for (int other = at % blockSize; other < v.length(); other += blockSize) {
                 if (other != at) {
-                    assertThat(u.get(other)).as("block of %d after updated(%d)", other, at).isEqualTo(blockElement(other, blockSize, base));
+                    assertThat(u.get(other))
+                            .as("block of %d after updated(%d)", other, at)
+                            .isEqualTo(blockElement(other, blockSize, base));
                 }
             }
         }
@@ -1147,8 +1166,8 @@ public class RadixVectorTest {
     @Test
     public void builderStartingFromAVectorNeverWritesIntoIt() {
         final Run run = new Run(700_000);
-        for (int size : new int[] { 1, 32, 33, 64, 1024, 1056, 32768, 32800 }) {
-            for (History history : new History[] { History.BUILDER, History.PREPENDS, History.SLICED }) {
+        for (int size : new int[] {1, 32, 33, 64, 1024, 1056, 32768, 32800}) {
+            for (History history : new History[] {History.BUILDER, History.PREPENDS, History.SLICED}) {
                 final Pair p = run.checked(() -> build(run, size, history));
                 run.checked(() -> {
                     run.log("builder from " + p.label);
@@ -1170,7 +1189,7 @@ public class RadixVectorTest {
     @Test
     public void ofAllOfAnIterable() {
         final Run run = new Run(800_000);
-        for (int size : new int[] { 0, 1, 32, 33, 1025, 5000 }) {
+        for (int size : new int[] {0, 1, 32, 33, 1025, 5000}) {
             final List<Integer> list = new ArrayList<>();
             for (int i = 0; i < size; i++) {
                 list.add(run.fresh());
@@ -1187,7 +1206,15 @@ public class RadixVectorTest {
     // ---------------------------------------------------------------------------------------------------------------
     // building values through different histories
 
-    private enum History { BUILDER, BUILDER_CHUNKS, OF_ALL, APPENDS, PREPENDS, ALTERNATING, SLICED }
+    private enum History {
+        BUILDER,
+        BUILDER_CHUNKS,
+        OF_ALL,
+        APPENDS,
+        PREPENDS,
+        ALTERNATING,
+        SLICED
+    }
 
     private static Pair build(Run run, int size, History history) {
         final Random rnd = run.rnd;
@@ -1260,7 +1287,8 @@ public class RadixVectorTest {
             case SLICED -> {
                 final int before = rnd.nextInt(rnd.nextBoolean() ? 40 : 2000);
                 final int after = rnd.nextInt(rnd.nextBoolean() ? 40 : 2000);
-                final Pair whole = build(run, before + size + after, rnd.nextBoolean() ? History.BUILDER : History.OF_ALL);
+                final Pair whole =
+                        build(run, before + size + after, rnd.nextBoolean() ? History.BUILDER : History.OF_ALL);
                 return run.record(whole.r.slice(before, before + size), whole.v.slice(before, before + size), label);
             }
             default -> throw new IllegalStateException();
@@ -1270,7 +1298,11 @@ public class RadixVectorTest {
     // ---------------------------------------------------------------------------------------------------------------
     // operands of appendedAll and prependedAll
 
-    private enum Kind { RADIX, LIST, ONE_SHOT }
+    private enum Kind {
+        RADIX,
+        LIST,
+        ONE_SHOT
+    }
 
     private record Operand(Kind kind, Pair pair) {
 
@@ -1296,13 +1328,18 @@ public class RadixVectorTest {
         }
     }
 
-    private static final int[] OPERAND_SIZES = { 0, 1, 2, 5, 10, 14, 15, 16, 31, 32, 33, 64, 100, 1000, 1024, 1025, 3000 };
+    private static final int[] OPERAND_SIZES = {0, 1, 2, 5, 10, 14, 15, 16, 31, 32, 33, 64, 100, 1000, 1024, 1025, 3000
+    };
 
     private static Operand operand(Run run) {
         final Random rnd = run.rnd;
-        final int size = (rnd.nextInt(60) == 0) ? 32769 : (rnd.nextBoolean() ? OPERAND_SIZES[rnd.nextInt(OPERAND_SIZES.length)] : rnd.nextInt(2000));
+        final int size = (rnd.nextInt(60) == 0)
+                ? 32769
+                : (rnd.nextBoolean() ? OPERAND_SIZES[rnd.nextInt(OPERAND_SIZES.length)] : rnd.nextInt(2000));
         final Kind kind = Kind.values()[rnd.nextInt(Kind.values().length)];
-        final History history = (kind == Kind.RADIX && size <= 3000) ? History.values()[rnd.nextInt(History.values().length)] : History.BUILDER;
+        final History history = (kind == Kind.RADIX && size <= 3000)
+                ? History.values()[rnd.nextInt(History.values().length)]
+                : History.BUILDER;
         return new Operand(kind, build(run, size, history));
     }
 
@@ -1343,8 +1380,7 @@ public class RadixVectorTest {
     // ---------------------------------------------------------------------------------------------------------------
     // the run: seed, trail of operations, and every value reached
 
-    private record Pair(RadixVector<Integer> r, VectorModel<Integer> v, String label) {
-    }
+    private record Pair(RadixVector<Integer> r, VectorModel<Integer> v, String label) {}
 
     private static final class Run {
 
@@ -1408,7 +1444,8 @@ public class RadixVectorTest {
             }
             if (re != null || ve != null) {
                 if (re == null || ve == null || re.getClass() != ve.getClass()) {
-                    throw new AssertionError("different outcomes: radix " + (re == null ? "succeeded" : re) + ", vector " + (ve == null ? "succeeded" : ve));
+                    throw new AssertionError("different outcomes: radix " + (re == null ? "succeeded" : re)
+                            + ", vector " + (ve == null ? "succeeded" : ve));
                 }
                 return old;
             }
@@ -1419,7 +1456,8 @@ public class RadixVectorTest {
             try {
                 return action.get();
             } catch (AssertionError | RuntimeException e) {
-                throw new AssertionError("seed " + seed + ", step " + step + ", last operations " + trail + ": " + e, e);
+                throw new AssertionError(
+                        "seed " + seed + ", step " + step + ", last operations " + trail + ": " + e, e);
             }
         }
 
@@ -1429,7 +1467,8 @@ public class RadixVectorTest {
                 try {
                     check(p);
                 } catch (AssertionError | RuntimeException e) {
-                    throw new AssertionError("seed " + seed + ": value " + p.label + " changed after it was built: " + e, e);
+                    throw new AssertionError(
+                            "seed " + seed + ": value " + p.label + " changed after it was built: " + e, e);
                 }
             }
         }
@@ -1457,7 +1496,8 @@ public class RadixVectorTest {
                 }
                 final RadixVector<Integer> u = r.updated(i, marker);
                 if (u.getClass() != r.getClass() || u.length() != n || !marker.equals(u.get(i))) {
-                    throw new AssertionError(shapeOf(r) + "(" + n + "): updated(" + i + ") does not hold the element there");
+                    throw new AssertionError(
+                            shapeOf(r) + "(" + n + "): updated(" + i + ") does not hold the element there");
                 }
                 for (int j = Math.max(0, i - 1); j <= Math.min(n - 1, i + 1); j++) {
                     if (j != i && !r.get(j).equals(u.get(j))) {
@@ -1466,7 +1506,8 @@ public class RadixVectorTest {
                 }
                 for (int t = 0; t < r.vectorSliceCount(); t++) {
                     if (u.vectorSlicePrefixLength(t) != r.vectorSlicePrefixLength(t)) {
-                        throw new AssertionError(shapeOf(r) + "(" + n + "): updated(" + i + ") changes the slice lengths");
+                        throw new AssertionError(
+                                shapeOf(r) + "(" + n + "): updated(" + i + ") changes the slice lengths");
                     }
                 }
             }
@@ -1490,7 +1531,8 @@ public class RadixVectorTest {
         }
         if (re != null || ve != null) {
             if (re == null || ve == null || re.getClass() != ve.getClass()) {
-                throw new AssertionError("different outcomes: radix " + (re == null ? r : re) + ", vector " + (ve == null ? v : ve));
+                throw new AssertionError(
+                        "different outcomes: radix " + (re == null ? r : re) + ", vector " + (ve == null ? v : ve));
             }
         } else if (!java.util.Objects.equals(r, v)) {
             throw new AssertionError("different results: radix " + r + ", vector " + v);
@@ -1527,7 +1569,7 @@ public class RadixVectorTest {
         if (it.hasNext()) {
             throw new AssertionError("iterator goes beyond " + n);
         }
-        final int[] index = { 0 };
+        final int[] index = {0};
         r.forEach(x -> {
             final int i = index[0]++;
             if (i >= n || !expected[i].equals(x)) {
@@ -1604,36 +1646,54 @@ public class RadixVectorTest {
         final int depth = depth(r);
         switch (r) {
             case RadixVector.Vector0<?> v0 -> {
-                assertInvariant(c == 0 && v0.length() == 0 && v0.prefix1.length == 0 && v0.suffix1.length == 0, r, "Vector0 is empty");
+                assertInvariant(
+                        c == 0 && v0.length() == 0 && v0.prefix1.length == 0 && v0.suffix1.length == 0,
+                        r,
+                        "Vector0 is empty");
                 assertInvariant(r == RadixVector.empty(), r, "Vector0 is a singleton");
                 return;
             }
-            case RadixVector.Vector1<?> v1 -> assertInvariant(c == 1 && v1.length() >= 1 && v1.length() <= WIDTH, r, "Vector1 holds 1 to 32 elements");
+            case RadixVector.Vector1<?> v1 ->
+                assertInvariant(
+                        c == 1 && v1.length() >= 1 && v1.length() <= WIDTH, r, "Vector1 holds 1 to 32 elements");
             case RadixVector.Vector2<?> v -> {
                 assertInvariant(c == 3, r, "slice count");
                 assertInvariant(v.len1 == v.prefix1.length, r, "len1");
             }
             case RadixVector.Vector3<?> v -> {
                 assertInvariant(c == 5, r, "slice count");
-                assertInvariant(v.len1 == v.prefix1.length && v.len12 == v.len1 + v.prefix2.length * WIDTH, r, "len1, len12");
+                assertInvariant(
+                        v.len1 == v.prefix1.length && v.len12 == v.len1 + v.prefix2.length * WIDTH, r, "len1, len12");
             }
             case RadixVector.Vector4<?> v -> {
                 assertInvariant(c == 7, r, "slice count");
-                assertInvariant(v.len1 == v.prefix1.length && v.len12 == v.len1 + v.prefix2.length * WIDTH
-                                && v.len123 == v.len12 + v.prefix3.length * WIDTH * WIDTH, r, "len1, len12, len123");
+                assertInvariant(
+                        v.len1 == v.prefix1.length
+                                && v.len12 == v.len1 + v.prefix2.length * WIDTH
+                                && v.len123 == v.len12 + v.prefix3.length * WIDTH * WIDTH,
+                        r,
+                        "len1, len12, len123");
             }
             case RadixVector.Vector5<?> v -> {
                 assertInvariant(c == 9, r, "slice count");
-                assertInvariant(v.len1 == v.prefix1.length && v.len12 == v.len1 + v.prefix2.length * WIDTH
+                assertInvariant(
+                        v.len1 == v.prefix1.length
+                                && v.len12 == v.len1 + v.prefix2.length * WIDTH
                                 && v.len123 == v.len12 + v.prefix3.length * (1 << 10)
-                                && v.len1234 == v.len123 + v.prefix4.length * (1 << 15), r, "len1 .. len1234");
+                                && v.len1234 == v.len123 + v.prefix4.length * (1 << 15),
+                        r,
+                        "len1 .. len1234");
             }
             case RadixVector.Vector6<?> v -> {
                 assertInvariant(c == 11, r, "slice count");
-                assertInvariant(v.len1 == v.prefix1.length && v.len12 == v.len1 + v.prefix2.length * WIDTH
+                assertInvariant(
+                        v.len1 == v.prefix1.length
+                                && v.len12 == v.len1 + v.prefix2.length * WIDTH
                                 && v.len123 == v.len12 + v.prefix3.length * (1 << 10)
                                 && v.len1234 == v.len123 + v.prefix4.length * (1 << 15)
-                                && v.len12345 == v.len1234 + v.prefix5.length * (1 << 20), r, "len1 .. len12345");
+                                && v.len12345 == v.len1234 + v.prefix5.length * (1 << 20),
+                        r,
+                        "len1 .. len12345");
             }
         }
         if (r instanceof RadixVector.BigVector<?> big) {
@@ -1646,18 +1706,25 @@ public class RadixVectorTest {
             final Object[] slice = r.vectorSlice(i);
             assertInvariant(slice.getClass() == Object[].class, r, "slice " + i + " is an Object[]");
             if (dim == 1) {
-                assertInvariant(slice.length >= 1 && slice.length <= WIDTH, r, "slice " + i + " (a leaf) holds 1 to 32 elements");
+                assertInvariant(
+                        slice.length >= 1 && slice.length <= WIDTH,
+                        r,
+                        "slice " + i + " (a leaf) holds 1 to 32 elements");
                 checkLeaf(slice, r);
                 count += slice.length;
             } else {
                 final int max = (dim == depth) ? (depth == 6 ? 2 * WIDTH - 2 : WIDTH - 2) : WIDTH - 1;
-                assertInvariant(slice.length <= max, r, "slice " + i + " of dimension " + dim + " holds at most " + max);
+                assertInvariant(
+                        slice.length <= max, r, "slice " + i + " of dimension " + dim + " holds at most " + max);
                 for (Object child : slice) {
                     checkFull(dim - 1, child, r);
                 }
                 count += (long) slice.length << (5 * (dim - 1));
             }
-            assertInvariant(r.vectorSlicePrefixLength(i) == count, r, "vectorSlicePrefixLength(" + i + ") = " + r.vectorSlicePrefixLength(i) + ", counted " + count);
+            assertInvariant(
+                    r.vectorSlicePrefixLength(i) == count,
+                    r,
+                    "vectorSlicePrefixLength(" + i + ") = " + r.vectorSlicePrefixLength(i) + ", counted " + count);
         }
         assertInvariant(count == r.length(), r, "length " + r.length() + ", counted " + count);
         final long capacity = capacity(depth);
@@ -1679,8 +1746,10 @@ public class RadixVectorTest {
     }
 
     private static void checkFull(int level, Object a, RadixVector<?> r) {
-        assertInvariant(a instanceof Object[] array && array.getClass() == Object[].class && array.length == WIDTH, r,
-            "an inner array of level " + level + " is a full Object[]");
+        assertInvariant(
+                a instanceof Object[] array && array.getClass() == Object[].class && array.length == WIDTH,
+                r,
+                "an inner array of level " + level + " is a full Object[]");
         final Object[] array = (Object[]) a;
         if (level == 1) {
             checkLeaf(array, r);

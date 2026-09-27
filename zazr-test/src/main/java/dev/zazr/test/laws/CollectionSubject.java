@@ -3,7 +3,6 @@ package dev.zazr.test.laws;
 import dev.zazr.collection.List;
 import dev.zazr.control.Option;
 import dev.zazr.test.Gen;
-
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
@@ -22,9 +21,13 @@ import java.util.function.ToIntFunction;
  * @param <T>     the element type (the entry type of a map)
  * @param <F>     the collection type
  */
-public record CollectionSubject<T, F extends Iterable<T>>(Gen<F> values, Function<Iterable<T>, F> ofAll,
-                                                          ToIntFunction<F> size, Function<F, List<T>> toList,
-                                                          boolean ordered, Option<IterationOrder<T>> order) {
+public record CollectionSubject<T, F extends Iterable<T>>(
+        Gen<F> values,
+        Function<Iterable<T>, F> ofAll,
+        ToIntFunction<F> size,
+        Function<F, List<T>> toList,
+        boolean ordered,
+        Option<IterationOrder<T>> order) {
 
     /**
      * Creates a subject.
@@ -55,8 +58,12 @@ public record CollectionSubject<T, F extends Iterable<T>>(Gen<F> values, Functio
      * @param ordered whether equality depends on the iteration order
      * @throws NullPointerException if an argument is null
      */
-    public CollectionSubject(Gen<F> values, Function<Iterable<T>, F> ofAll, ToIntFunction<F> size,
-                             Function<F, List<T>> toList, boolean ordered) {
+    public CollectionSubject(
+            Gen<F> values,
+            Function<Iterable<T>, F> ofAll,
+            ToIntFunction<F> size,
+            Function<F, List<T>> toList,
+            boolean ordered) {
         this(values, ofAll, size, toList, ordered, Option.none());
     }
 }

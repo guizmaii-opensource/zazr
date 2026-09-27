@@ -101,7 +101,7 @@ public class LazyTest {
         @Test
         public void shouldEvaluateOnTap() {
             final Lazy<Integer> lazy = Lazy.of(() -> 1);
-            final int[] effect = { 0 };
+            final int[] effect = {0};
             lazy.tap(i -> effect[0] = i);
             assertThat(effect[0]).isEqualTo(1);
             assertThat(lazy.isEvaluated()).isTrue();
@@ -208,7 +208,9 @@ public class LazyTest {
         @Test
         public void shouldRejectANullLazyReturnedByTheMapperOnEvaluation() {
             final Lazy<Integer> result = Lazy.of(() -> 1).flatMap(i -> null);
-            assertThatThrownBy(result::get).isInstanceOf(NullPointerException.class).hasMessage("Lazy.flatMap: mapper returned null");
+            assertThatThrownBy(result::get)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("Lazy.flatMap: mapper returned null");
             assertThat(result.isEvaluated()).isFalse();
         }
     }
@@ -264,10 +266,12 @@ public class LazyTest {
                 final java.util.List<CompletableFuture<Object>> results = new ArrayList<>();
                 try (var executor = java.util.concurrent.Executors.newFixedThreadPool(threads)) {
                     for (int t = 0; t < threads; t++) {
-                        results.add(CompletableFuture.supplyAsync(() -> {
-                            Try.run(start::await);
-                            return lazy.get();
-                        }, executor));
+                        results.add(CompletableFuture.supplyAsync(
+                                () -> {
+                                    Try.run(start::await);
+                                    return lazy.get();
+                                },
+                                executor));
                     }
                     start.countDown();
                     final Object first = results.get(0).get();
@@ -290,38 +294,45 @@ public class LazyTest {
                 return 1;
             });
             new Thread(() -> {
-                Try.run(() -> Thread.sleep(100));
-                new Thread(() -> {
-                    Try.run(() -> Thread.sleep(100));
-                    lock.set(false);
-                }).start();
-                isEvaluated.compareAndSet(false, lazy.isEvaluated());
-                lazy.get();
-            }).start();
+                        Try.run(() -> Thread.sleep(100));
+                        new Thread(() -> {
+                                    Try.run(() -> Thread.sleep(100));
+                                    lock.set(false);
+                                })
+                                .start();
+                        isEvaluated.compareAndSet(false, lazy.isEvaluated());
+                        lazy.get();
+                    })
+                    .start();
             assertThat(isEvaluated.get()).isFalse();
             assertThat(lazy.get()).isEqualTo(1);
         }
 
         @Test
-        @SuppressWarnings({ "StatementWithEmptyBody", "rawtypes" })
+        @SuppressWarnings({"StatementWithEmptyBody", "rawtypes"})
         public void shouldBeConsistentFromMultipleThreads() throws Exception {
             for (int i = 0; i < 100; i++) {
                 final AtomicBoolean canProceed = new AtomicBoolean(false);
-                final Vector<CompletableFuture<Void>> futures = Vector.range(0, 10).map(j -> {
-                    final AtomicBoolean isEvaluated = new AtomicBoolean(false);
-                    final Integer expected = ((j % 2) == 1) ? null : j;
-                    Lazy<Integer> lazy = Lazy.of(() -> {
-                        assertThat(isEvaluated.getAndSet(true)).isFalse();
-                        return expected;
-                    });
-                    return Tuple.of(lazy, expected);
-                }).flatMap(t -> range(0, 5).map(j -> runAsync(() -> {
-                            while (!canProceed.get()) { /* busy wait */ }
-                            assertThat(t._1().get()).isEqualTo(t._2());
-                        }))
-                );
+                final Vector<CompletableFuture<Void>> futures = Vector.range(0, 10)
+                        .map(j -> {
+                            final AtomicBoolean isEvaluated = new AtomicBoolean(false);
+                            final Integer expected = ((j % 2) == 1) ? null : j;
+                            Lazy<Integer> lazy = Lazy.of(() -> {
+                                assertThat(isEvaluated.getAndSet(true)).isFalse();
+                                return expected;
+                            });
+                            return Tuple.of(lazy, expected);
+                        })
+                        .flatMap(t -> range(0, 5)
+                                .map(j -> runAsync(() -> {
+                                    while (!canProceed.get()) {
+                                        /* busy wait */
+                                    }
+                                    assertThat(t._1().get()).isEqualTo(t._2());
+                                })));
 
-                final CompletableFuture all = CompletableFuture.allOf(new java.util.ArrayList<>(futures.asJava()).toArray(new CompletableFuture<?>[0]));
+                final CompletableFuture all = CompletableFuture.allOf(
+                        new java.util.ArrayList<>(futures.asJava()).toArray(new CompletableFuture<?>[0]));
                 canProceed.set(true);
                 all.join();
             }
@@ -330,7 +341,7 @@ public class LazyTest {
 
     @Nested
     class EqualsTests {
-        @SuppressWarnings({ "EqualsBetweenInconvertibleTypes", "EqualsWithItself" })
+        @SuppressWarnings({"EqualsBetweenInconvertibleTypes", "EqualsWithItself"})
         @Test
         public void shouldDetectEqualObject() {
             assertThat(Lazy.of(() -> 1).equals("")).isFalse();
@@ -340,11 +351,12 @@ public class LazyTest {
             assertThat(same.equals(same)).isTrue();
         }
 
-        @SuppressWarnings({ "EqualsBetweenInconvertibleTypes", "EqualsWithItself" })
+        @SuppressWarnings({"EqualsBetweenInconvertibleTypes", "EqualsWithItself"})
         @Test
         public void shouldUseDefaultEqualsSemanticsForArrays() {
             assertThat(Lazy.of(() -> new Integer[] {1}).equals("")).isFalse();
-            assertThat(Lazy.of(() -> new Integer[] {1}).equals(Lazy.of(() -> new Integer[] {1}))).isFalse();
+            assertThat(Lazy.of(() -> new Integer[] {1}).equals(Lazy.of(() -> new Integer[] {1})))
+                    .isFalse();
             final Lazy<Integer[]> same = Lazy.of(() -> new Integer[] {1});
             assertThat(same.equals(same)).isTrue();
         }
@@ -481,11 +493,21 @@ public class LazyTest {
         @Test
         public void shouldRejectNulls() {
             final Lazy<Integer> lazy = Lazy.of(() -> 1);
-            assertThatThrownBy(() -> lazy.zip(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
-            assertThatThrownBy(() -> lazy.zipWith(null, Integer::sum)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
-            assertThatThrownBy(() -> lazy.zipWith(Lazy.of(() -> 2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> lazy.zipLeft(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
-            assertThatThrownBy(() -> lazy.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> lazy.zip(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
+            assertThatThrownBy(() -> lazy.zipWith(null, Integer::sum))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
+            assertThatThrownBy(() -> lazy.zipWith(Lazy.of(() -> 2), null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("f is null");
+            assertThatThrownBy(() -> lazy.zipLeft(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
+            assertThatThrownBy(() -> lazy.zipRight(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
         }
     }
 
@@ -534,9 +556,13 @@ public class LazyTest {
 
         @Test
         public void shouldRejectNulls() {
-            assertThatThrownBy(() -> Lazy.flatten(null)).isInstanceOf(NullPointerException.class).hasMessage("nested is null");
-            final Lazy<Integer> flat = Lazy.flatten(Lazy.<Lazy<Integer>> of(() -> null));
-            assertThatThrownBy(flat::get).isInstanceOf(NullPointerException.class).hasMessage("Lazy.flatten: the outer Lazy holds null");
+            assertThatThrownBy(() -> Lazy.flatten(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("nested is null");
+            final Lazy<Integer> flat = Lazy.flatten(Lazy.<Lazy<Integer>>of(() -> null));
+            assertThatThrownBy(flat::get)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("Lazy.flatten: the outer Lazy holds null");
             assertThat(flat.isEvaluated()).isFalse();
         }
 
@@ -549,7 +575,9 @@ public class LazyTest {
                 }
                 return 7;
             })));
-            assertThatThrownBy(flat::get).isInstanceOf(IllegalStateException.class).hasMessage("first");
+            assertThatThrownBy(flat::get)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("first");
             assertThat(flat.get()).isEqualTo(7);
         }
     }

@@ -40,16 +40,21 @@ public class Euler27Test {
 
     @Test
     public void shouldSolveProblem27() {
-        assertThat(numberOfConsecutivePrimesProducedByFormulaWithCoefficients(1, 41)).isEqualTo(40);
-        assertThat(numberOfConsecutivePrimesProducedByFormulaWithCoefficients(-79, 1601)).isEqualTo(80);
+        assertThat(numberOfConsecutivePrimesProducedByFormulaWithCoefficients(1, 41))
+                .isEqualTo(40);
+        assertThat(numberOfConsecutivePrimesProducedByFormulaWithCoefficients(-79, 1601))
+                .isEqualTo(80);
 
         assertThat(productOfCoefficientsWithMostConsecutivePrimes(-999, 999)).isEqualTo(-59231);
     }
 
-    private static int productOfCoefficientsWithMostConsecutivePrimes(int coefficientsLowerBound, int coefficientsUpperBound) {
+    private static int productOfCoefficientsWithMostConsecutivePrimes(
+            int coefficientsLowerBound, int coefficientsUpperBound) {
         final List<Integer> coefficients = List.rangeClosed(coefficientsLowerBound, coefficientsUpperBound);
-        return coefficients.flatMap(a -> coefficients.map(b -> Tuple.of(a, b)))
-                .map(c -> Tuple.of(c._1(), c._2(), numberOfConsecutivePrimesProducedByFormulaWithCoefficients(c._1(), c._2())))
+        return coefficients
+                .flatMap(a -> coefficients.map(b -> Tuple.of(a, b)))
+                .map(c -> Tuple.of(
+                        c._1(), c._2(), numberOfConsecutivePrimesProducedByFormulaWithCoefficients(c._1(), c._2())))
                 .fold(Tuple.of(0, 0, -1), (n, m) -> n._3() >= m._3() ? n : m)
                 .apply((a, b, p) -> a * b);
     }

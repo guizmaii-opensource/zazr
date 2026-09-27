@@ -35,7 +35,7 @@ public class ComparatorsTest {
             final Comparator<Integer> integers = naturalComparator();
             final Comparator<String> strings = naturalComparator();
             assertThat(integers).isEqualTo(strings);
-            assertThat(integers).isNotEqualTo(Comparator.<Integer> reverseOrder());
+            assertThat(integers).isNotEqualTo(Comparator.<Integer>reverseOrder());
         }
 
         // The natural comparator is a single instance, so any constant satisfies the hashCode contract: this only

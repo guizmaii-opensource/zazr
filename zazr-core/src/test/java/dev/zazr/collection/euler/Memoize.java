@@ -15,8 +15,7 @@ import java.util.function.Function;
  */
 final class Memoize {
 
-    private Memoize() {
-    }
+    private Memoize() {}
 
     static <A, R> Function<A, R> of(Function<A, R> f) {
         final ConcurrentHashMap<A, R> cache = new ConcurrentHashMap<>();

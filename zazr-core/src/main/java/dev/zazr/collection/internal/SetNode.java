@@ -14,8 +14,7 @@ import org.jspecify.annotations.Nullable;
 public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNode<SetNode<T>>
         permits BitmapIndexedSetNode, HashCollisionSetNode {
 
-    SetNode() {
-    }
+    SetNode() {}
 
     /// The root of the empty set.
     @SuppressWarnings("unchecked")
@@ -64,8 +63,11 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
         if (a == b) {
             return true;
         } else if (a instanceof BitmapIndexedSetNode<?> x && b instanceof BitmapIndexedSetNode<?> y) {
-            if (x.keyHashSum != y.keyHashSum || x.dataMap != y.dataMap || x.nodeMap != y.nodeMap || x.size != y.size
-                || !java.util.Arrays.equals(x.hashes, y.hashes)) {
+            if (x.keyHashSum != y.keyHashSum
+                    || x.dataMap != y.dataMap
+                    || x.nodeMap != y.nodeMap
+                    || x.size != y.size
+                    || !java.util.Arrays.equals(x.hashes, y.hashes)) {
                 return false;
             }
             final int payload = Integer.bitCount(x.dataMap);

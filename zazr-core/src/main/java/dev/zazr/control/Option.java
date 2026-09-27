@@ -107,12 +107,14 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of all the mapped values, or {@code None} if one mapping is {@code None}
      * @throws NullPointerException if {@code values} or {@code mapper} is null
      */
-    static <T extends @Nullable Object, U extends @Nullable Object> Option<Vector<U>> forEach(Iterable<? extends T> values, Function<? super T, ? extends Option<? extends U>> mapper) {
+    static <T extends @Nullable Object, U extends @Nullable Object> Option<Vector<U>> forEach(
+            Iterable<? extends T> values, Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
         final Vector.Builder<U> builder = Vector.newBuilder();
         for (T value : values) {
-            final Option<? extends U> mapped = Objects.requireNonNull(mapper.apply(value), "Option.forEach: mapper returned null");
+            final Option<? extends U> mapped =
+                    Objects.requireNonNull(mapper.apply(value), "Option.forEach: mapper returned null");
             if (mapped.isEmpty()) {
                 return Option.none();
             }
@@ -327,7 +329,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     @SuppressWarnings("unchecked")
     default Option<T> orElse(Supplier<? extends Option<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? (Option<T>) Objects.requireNonNull(supplier.get(), "Option.orElse: supplier returned null") : this;
+        return isEmpty()
+                ? (Option<T>) Objects.requireNonNull(supplier.get(), "Option.orElse: supplier returned null")
+                : this;
     }
 
     /**
@@ -404,7 +408,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     @SuppressWarnings("unchecked")
     default <U extends @Nullable Object> Option<U> flatMap(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? none() : (Option<U>) Objects.requireNonNull(mapper.apply(get()), "Option.flatMap: mapper returned null");
+        return isEmpty()
+                ? none()
+                : (Option<U>) Objects.requireNonNull(mapper.apply(get()), "Option.flatMap: mapper returned null");
     }
 
     /**
@@ -429,7 +435,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     @SuppressWarnings("unchecked")
     default <U extends @Nullable Object> Option<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? none() : (Option<U>) Objects.requireNonNull(mapper.apply(get()), "Option.collect: mapper returned null");
+        return isEmpty()
+                ? none()
+                : (Option<U>) Objects.requireNonNull(mapper.apply(get()), "Option.collect: mapper returned null");
     }
 
     /**
@@ -445,7 +453,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default <U extends @Nullable Object> Option<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? none() : some(Objects.requireNonNull(mapper.apply(get()), "Option.map: mapper returned null"));
+        return isEmpty()
+                ? none()
+                : some(Objects.requireNonNull(mapper.apply(get()), "Option.map: mapper returned null"));
     }
 
     /**
@@ -462,7 +472,11 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default <U extends @Nullable Object> Try<U> mapTry(CheckedFunction1<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return isEmpty() ? Try.failure(new NoSuchElementException("No value present")) : Try.success(get()).mapTry(value -> Objects.requireNonNull(mapper.apply(value), "Option.mapTry: mapper returned null"));
+        return isEmpty()
+                ? Try.failure(new NoSuchElementException("No value present"))
+                : Try.success(get())
+                        .mapTry(value ->
+                                Objects.requireNonNull(mapper.apply(value), "Option.mapTry: mapper returned null"));
     }
 
     /**
@@ -531,7 +545,8 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if either side is {@code None}
      * @throws NullPointerException if {@code that} or {@code f} is null, or if {@code f} returns null
      */
-    default <U extends @Nullable Object, V extends @Nullable Object> Option<V> zipWith(Option<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
+    default <U extends @Nullable Object, V extends @Nullable Object> Option<V> zipWith(
+            Option<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(f, "f is null");
         if (isEmpty() || that.isEmpty()) {
@@ -580,7 +595,8 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Option<Tuple2<T1, T2>> zip(Option<? extends T1> o1, Option<? extends T2> o2) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object> Option<Tuple2<T1, T2>> zip(
+            Option<? extends T1> o1, Option<? extends T2> o2) {
         return zipWith(o1, o2, Tuple::of);
     }
 
@@ -599,7 +615,8 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(
+            Option<? extends T1> o1, Option<? extends T2> o2, BiFunction<? super T1, ? super T2, ? extends R> f) {
         Objects.requireNonNull(o1, "o1 is null");
         Objects.requireNonNull(o2, "o2 is null");
         Objects.requireNonNull(f, "f is null");
@@ -623,7 +640,8 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Option<Tuple3<T1, T2, T3>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3) {
+    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Option<Tuple3<T1, T2, T3>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3) {
         return zipWith(o1, o2, o3, Tuple::of);
     }
 
@@ -644,7 +662,16 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Option<R> zipWith(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
         Objects.requireNonNull(o1, "o1 is null");
         Objects.requireNonNull(o2, "o2 is null");
         Objects.requireNonNull(o3, "o3 is null");
@@ -671,7 +698,16 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Option<Tuple4<T1, T2, T3, T4>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Option<Tuple4<T1, T2, T3, T4>> zip(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4) {
         return zipWith(o1, o2, o3, o4, Tuple::of);
     }
 
@@ -694,7 +730,18 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Option<R> zipWith(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
         Objects.requireNonNull(o1, "o1 is null");
         Objects.requireNonNull(o2, "o2 is null");
         Objects.requireNonNull(o3, "o3 is null");
@@ -703,7 +750,8 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
         if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty()) {
             return none();
         }
-        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get()), "Option.zipWith: f returned null"));
+        return some(Objects.requireNonNull(
+                f.apply(o1.get(), o2.get(), o3.get(), o4.get()), "Option.zipWith: f returned null"));
     }
 
     /**
@@ -724,7 +772,18 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Option<Tuple5<T1, T2, T3, T4, T5>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Option<Tuple5<T1, T2, T3, T4, T5>> zip(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5) {
         return zipWith(o1, o2, o3, o4, o5, Tuple::of);
     }
 
@@ -749,7 +808,20 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Option<R> zipWith(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5,
+                    Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
         Objects.requireNonNull(o1, "o1 is null");
         Objects.requireNonNull(o2, "o2 is null");
         Objects.requireNonNull(o3, "o3 is null");
@@ -759,7 +831,8 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
         if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty()) {
             return none();
         }
-        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get()), "Option.zipWith: f returned null"));
+        return some(Objects.requireNonNull(
+                f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get()), "Option.zipWith: f returned null"));
     }
 
     /**
@@ -782,7 +855,20 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Option<Tuple6<T1, T2, T3, T4, T5, T6>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Option<Tuple6<T1, T2, T3, T4, T5, T6>> zip(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5,
+                    Option<? extends T6> o6) {
         return zipWith(o1, o2, o3, o4, o5, o6, Tuple::of);
     }
 
@@ -809,7 +895,22 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Option<R> zipWith(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5,
+                    Option<? extends T6> o6,
+                    Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
         Objects.requireNonNull(o1, "o1 is null");
         Objects.requireNonNull(o2, "o2 is null");
         Objects.requireNonNull(o3, "o3 is null");
@@ -820,7 +921,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
         if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty() || o6.isEmpty()) {
             return none();
         }
-        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get()), "Option.zipWith: f returned null"));
+        return some(Objects.requireNonNull(
+                f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get()),
+                "Option.zipWith: f returned null"));
     }
 
     /**
@@ -845,7 +948,22 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Option<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Option<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5,
+                    Option<? extends T6> o6,
+                    Option<? extends T7> o7) {
         return zipWith(o1, o2, o3, o4, o5, o6, o7, Tuple::of);
     }
 
@@ -874,7 +992,33 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Option<R> zipWith(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5,
+                    Option<? extends T6> o6,
+                    Option<? extends T7> o7,
+                    Function7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(o1, "o1 is null");
         Objects.requireNonNull(o2, "o2 is null");
         Objects.requireNonNull(o3, "o3 is null");
@@ -883,10 +1027,18 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
         Objects.requireNonNull(o6, "o6 is null");
         Objects.requireNonNull(o7, "o7 is null");
         Objects.requireNonNull(f, "f is null");
-        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty() || o6.isEmpty() || o7.isEmpty()) {
+        if (o1.isEmpty()
+                || o2.isEmpty()
+                || o3.isEmpty()
+                || o4.isEmpty()
+                || o5.isEmpty()
+                || o6.isEmpty()
+                || o7.isEmpty()) {
             return none();
         }
-        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get(), o7.get()), "Option.zipWith: f returned null"));
+        return some(Objects.requireNonNull(
+                f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get(), o7.get()),
+                "Option.zipWith: f returned null"));
     }
 
     /**
@@ -913,7 +1065,24 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the tuple of the values, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Option<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7, Option<? extends T8> o8) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Option<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5,
+                    Option<? extends T6> o6,
+                    Option<? extends T7> o7,
+                    Option<? extends T8> o8) {
         return zipWith(o1, o2, o3, o4, o5, o6, o7, o8, Tuple::of);
     }
 
@@ -944,7 +1113,36 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      * @return {@code Some} of the combined value, or {@code None} if any argument is {@code None}
      * @throws NullPointerException if any argument is null, or if {@code f} returns null
      */
-    static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Option<R> zipWith(Option<? extends T1> o1, Option<? extends T2> o2, Option<? extends T3> o3, Option<? extends T4> o4, Option<? extends T5> o5, Option<? extends T6> o6, Option<? extends T7> o7, Option<? extends T8> o8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+    static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Option<R> zipWith(
+                    Option<? extends T1> o1,
+                    Option<? extends T2> o2,
+                    Option<? extends T3> o3,
+                    Option<? extends T4> o4,
+                    Option<? extends T5> o5,
+                    Option<? extends T6> o6,
+                    Option<? extends T7> o7,
+                    Option<? extends T8> o8,
+                    Function8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(o1, "o1 is null");
         Objects.requireNonNull(o2, "o2 is null");
         Objects.requireNonNull(o3, "o3 is null");
@@ -954,10 +1152,19 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
         Objects.requireNonNull(o7, "o7 is null");
         Objects.requireNonNull(o8, "o8 is null");
         Objects.requireNonNull(f, "f is null");
-        if (o1.isEmpty() || o2.isEmpty() || o3.isEmpty() || o4.isEmpty() || o5.isEmpty() || o6.isEmpty() || o7.isEmpty() || o8.isEmpty()) {
+        if (o1.isEmpty()
+                || o2.isEmpty()
+                || o3.isEmpty()
+                || o4.isEmpty()
+                || o5.isEmpty()
+                || o6.isEmpty()
+                || o7.isEmpty()
+                || o8.isEmpty()) {
             return none();
         }
-        return some(Objects.requireNonNull(f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get(), o7.get(), o8.get()), "Option.zipWith: f returned null"));
+        return some(Objects.requireNonNull(
+                f.apply(o1.get(), o2.get(), o3.get(), o4.get(), o5.get(), o6.get(), o7.get(), o8.get()),
+                "Option.zipWith: f returned null"));
     }
 
     // -- conversions
@@ -974,7 +1181,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default <L extends @Nullable Object> Either<L, T> toEither(Supplier<? extends L> leftSupplier) {
         Objects.requireNonNull(leftSupplier, "leftSupplier is null");
-        return isEmpty() ? Either.left(Objects.requireNonNull(leftSupplier.get(), "Option.toEither: leftSupplier returned null")) : Either.right(get());
+        return isEmpty()
+                ? Either.left(Objects.requireNonNull(leftSupplier.get(), "Option.toEither: leftSupplier returned null"))
+                : Either.right(get());
     }
 
     /**
@@ -988,7 +1197,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default Try<T> toTry(Supplier<? extends Throwable> ifEmpty) {
         Objects.requireNonNull(ifEmpty, "ifEmpty is null");
-        return isEmpty() ? Try.failure(Objects.requireNonNull(ifEmpty.get(), "Option.toTry: ifEmpty returned null")) : Try.success(get());
+        return isEmpty()
+                ? Try.failure(Objects.requireNonNull(ifEmpty.get(), "Option.toTry: ifEmpty returned null"))
+                : Try.success(get());
     }
 
     /**
@@ -1003,7 +1214,10 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     default <E extends @Nullable Object> Validation<E, T> toValidation(Supplier<? extends E> invalidSupplier) {
         Objects.requireNonNull(invalidSupplier, "invalidSupplier is null");
-        return isEmpty() ? Validation.invalid(Objects.requireNonNull(invalidSupplier.get(), "Option.toValidation: invalidSupplier returned null")) : Validation.valid(get());
+        return isEmpty()
+                ? Validation.invalid(Objects.requireNonNull(
+                        invalidSupplier.get(), "Option.toValidation: invalidSupplier returned null"))
+                : Validation.valid(get());
     }
 
     /**

@@ -32,14 +32,38 @@ public class JavaConvertersTest {
     public static java.util.List<Data> data() {
         return asList(
 
-          // -- immutable classes
+                // -- immutable classes
 
-          new Data("java.util.Arrays$ArrayList", new ListFactory(java.util.Arrays::asList), IMMUTABLE, GENERIC, NULLABLE),
-          new Data(List.class.getName(), new ListFactory(ts -> List.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
-          new Data(Queue.class.getName(), new ListFactory(ts -> Queue.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
-          new Data(Stream.class.getName(), new ListFactory(ts -> Stream.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE),
-          new Data(Vector.class.getName(), new ListFactory(ts -> Vector.of(ts).asJava()), IMMUTABLE, GENERIC, NON_NULLABLE)
-        );
+                new Data(
+                        "java.util.Arrays$ArrayList",
+                        new ListFactory(java.util.Arrays::asList),
+                        IMMUTABLE,
+                        GENERIC,
+                        NULLABLE),
+                new Data(
+                        List.class.getName(),
+                        new ListFactory(ts -> List.of(ts).asJava()),
+                        IMMUTABLE,
+                        GENERIC,
+                        NON_NULLABLE),
+                new Data(
+                        Queue.class.getName(),
+                        new ListFactory(ts -> Queue.of(ts).asJava()),
+                        IMMUTABLE,
+                        GENERIC,
+                        NON_NULLABLE),
+                new Data(
+                        Stream.class.getName(),
+                        new ListFactory(ts -> Stream.of(ts).asJava()),
+                        IMMUTABLE,
+                        GENERIC,
+                        NON_NULLABLE),
+                new Data(
+                        Vector.class.getName(),
+                        new ListFactory(ts -> Vector.of(ts).asJava()),
+                        IMMUTABLE,
+                        GENERIC,
+                        NON_NULLABLE));
     }
 
     private ListFactory listFactory;
@@ -55,7 +79,8 @@ public class JavaConvertersTest {
         }
 
         @Override
-        public java.util.stream.Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext extensionContext) {
+        public java.util.stream.Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
+                ExtensionContext extensionContext) {
             return data().stream().map(data -> new TestTemplateInvocationContext() {
                 @Override
                 public String getDisplayName(int invocationIndex) {
@@ -83,7 +108,12 @@ public class JavaConvertersTest {
         private final ElementType elementType;
         private final ElementNullability elementNullability;
 
-        private Data(String name, ListFactory listFactory, ChangePolicy changePolicy, ElementType elementType, ElementNullability elementNullability) {
+        private Data(
+                String name,
+                ListFactory listFactory,
+                ChangePolicy changePolicy,
+                ElementType elementType,
+                ElementNullability elementNullability) {
             this.name = name;
             this.listFactory = listFactory;
             this.changePolicy = changePolicy;
@@ -203,13 +233,15 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenAddingElementAtNonExistingIndexToNonEmpty() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            // should throw for eagerly evaluated collections
-            list.add(2, '9');
-            // afterburner for lazy persistent collections
-            list.size();
-        }, IndexOutOfBoundsException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    // should throw for eagerly evaluated collections
+                    list.add(2, '9');
+                    // afterburner for lazy persistent collections
+                    list.size();
+                },
+                IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
@@ -299,14 +331,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowNPEWhenAddingAllNullCollectionAtFirstIndexToEmpty() {
-        assertThatThrownBy(() -> empty().addAll(0, null))
-          .isInstanceOf(mutatorFailure(NullPointerException.class));
+        assertThatThrownBy(() -> empty().addAll(0, null)).isInstanceOf(mutatorFailure(NullPointerException.class));
     }
 
     @TestTemplate
     public void shouldThrowNPEWhenAddingAllNullCollectionAtFirstIndexToNonEmpty() {
-        assertThatThrownBy(() -> of('1').addAll(0, null))
-          .isInstanceOf(mutatorFailure(NullPointerException.class));
+        assertThatThrownBy(() -> of('1').addAll(0, null)).isInstanceOf(mutatorFailure(NullPointerException.class));
     }
 
     @TestTemplate
@@ -326,13 +356,15 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenAddingAllCollectionElementsAtNonExistingIndexToNonEmpty() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            // should throw for eagerly evaluated collections
-            list.addAll(2, asList('1', '2', '3'));
-            // afterburner for lazy persistent collections
-            list.size();
-        }, IndexOutOfBoundsException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    // should throw for eagerly evaluated collections
+                    list.addAll(2, asList('1', '2', '3'));
+                    // afterburner for lazy persistent collections
+                    list.size();
+                },
+                IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
@@ -426,14 +458,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingContainsAllNullWhenEmpty() {
-        assertThatThrownBy(() -> empty().containsAll(null))
-          .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> empty().containsAll(null)).isInstanceOf(NullPointerException.class);
     }
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingContainsAllNullWhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').containsAll(null))
-          .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> of('1').containsAll(null)).isInstanceOf(NullPointerException.class);
     }
 
     @TestTemplate
@@ -539,26 +569,22 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenEmptyGetWithNegativeIndex() {
-        assertThatThrownBy(() -> empty().get(-1))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> empty().get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenEmptyGetWithIndexEqualsSize() {
-        assertThatThrownBy(() -> empty().get(0))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> empty().get(0)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenNonEmptyGetWithNegativeIndex() {
-        assertThatThrownBy(() -> of('1').get(-1))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> of('1').get(-1)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenNonEmptyGetWithIndexEqualsSize() {
-        assertThatThrownBy(() -> of('1').get(1))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> of('1').get(1)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
@@ -586,11 +612,13 @@ public class JavaConvertersTest {
     @TestTemplate
     public void shouldThrowInsteadOfLoopingInfinitelyWhenComputingHashCodeOfListThatContainsItself() {
         if (elementType == GENERIC) {
-            ifSupported(() -> {
-                final java.util.List<Object> list = empty();
-                list.add(list);
-                list.hashCode();
-            }, StackOverflowError.class);
+            ifSupported(
+                    () -> {
+                        final java.util.List<Object> list = empty();
+                        list.add(list);
+                        list.hashCode();
+                    },
+                    StackOverflowError.class);
         }
     }
 
@@ -661,8 +689,7 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingNextOnIteratorWhenEmpty() {
-        assertThatThrownBy(() -> empty().iterator().next())
-          .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> empty().iterator().next()).isInstanceOf(NoSuchElementException.class);
     }
 
     @TestTemplate
@@ -697,7 +724,7 @@ public class JavaConvertersTest {
     @TestTemplate
     public void shouldPerformNoSideEffectForEachRemainingOfEmpty() {
         final java.util.List<Character> actual = new java.util.ArrayList<>();
-        this.<Character> empty().<Character> iterator().forEachRemaining(actual::add);
+        this.<Character>empty().<Character>iterator().forEachRemaining(actual::add);
         assertThat(actual.isEmpty()).isTrue();
     }
 
@@ -721,28 +748,34 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenRemovingElementFromListWhileIteratingForEachRemaining() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final java.util.Iterator<Character> iterator = list.iterator();
-            iterator.forEachRemaining(list::remove);
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final java.util.Iterator<Character> iterator = list.iterator();
+                    iterator.forEachRemaining(list::remove);
+                },
+                ConcurrentModificationException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenAddingElementFromListWhileIteratingForEachRemaining() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final java.util.Iterator<Character> iterator = list.iterator();
-            iterator.forEachRemaining(list::add);
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final java.util.Iterator<Character> iterator = list.iterator();
+                    iterator.forEachRemaining(list::add);
+                },
+                ConcurrentModificationException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenRemovingElementFromIteratorWhileIteratingForEachRemaining() {
-        ifSupported(() -> {
-            final java.util.Iterator<Character> iterator = of('1', '2').iterator();
-            iterator.forEachRemaining(e -> iterator.remove());
-        }, IllegalStateException.class);
+        ifSupported(
+                () -> {
+                    final java.util.Iterator<Character> iterator = of('1', '2').iterator();
+                    iterator.forEachRemaining(e -> iterator.remove());
+                },
+                IllegalStateException.class);
     }
 
     // -- iterator().remove()
@@ -759,23 +792,27 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingRemoveTwiceOnNonEmptyIteratorAfterHavingCalledNext() {
-        ifSupported(() -> {
-            final java.util.Iterator<Character> iter = of('1', '2', '3').iterator();
-            iter.next();
-            iter.remove();
-            iter.remove(); // should fail
-        }, IllegalStateException.class);
+        ifSupported(
+                () -> {
+                    final java.util.Iterator<Character> iter = of('1', '2', '3').iterator();
+                    iter.next();
+                    iter.remove();
+                    iter.remove(); // should fail
+                },
+                IllegalStateException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenModifyingListWhileIteratingAndRemoving() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1', '2', '3');
-            final java.util.Iterator<Character> iter = list.iterator();
-            iter.next();
-            list.add('4');
-            iter.remove();
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1', '2', '3');
+                    final java.util.Iterator<Character> iter = list.iterator();
+                    iter.next();
+                    list.add('4');
+                    iter.remove();
+                },
+                ConcurrentModificationException.class);
     }
 
     @TestTemplate
@@ -893,7 +930,8 @@ public class JavaConvertersTest {
         if (elementType == GENERIC) {
             ifSupported(() -> {
                 final java.util.List<Character> list = of('1');
-                @SuppressWarnings("unchecked") final ListIterator<Object> listIterator = (ListIterator<Object>) (Object) list.listIterator();
+                @SuppressWarnings("unchecked")
+                final ListIterator<Object> listIterator = (ListIterator<Object>) (Object) list.listIterator();
                 listIterator.add("x");
                 assertThat(list).isEqualTo(asList("x", '1'));
             });
@@ -963,8 +1001,7 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingNextOnListIteratorWhenEmpty() {
-        assertThatThrownBy(() -> empty().listIterator().next())
-          .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> empty().listIterator().next()).isInstanceOf(NoSuchElementException.class);
     }
 
     @TestTemplate
@@ -989,24 +1026,28 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingListIteratorNextAndListElementWasRemoved() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final ListIterator<Character> listIterator = list.listIterator();
-            assertThat(listIterator.hasNext()).isTrue();
-            list.remove(0);
-            listIterator.next();
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final ListIterator<Character> listIterator = list.listIterator();
+                    assertThat(listIterator.hasNext()).isTrue();
+                    list.remove(0);
+                    listIterator.next();
+                },
+                ConcurrentModificationException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenCallingListIteratorNextAndListElementWasAdded() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final ListIterator<Character> listIterator = list.listIterator();
-            assertThat(listIterator.hasNext()).isTrue();
-            list.add('2');
-            listIterator.next();
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final ListIterator<Character> listIterator = list.listIterator();
+                    assertThat(listIterator.hasNext()).isTrue();
+                    list.add('2');
+                    listIterator.next();
+                },
+                ConcurrentModificationException.class);
     }
 
     // -- listIterator().nextIndex()
@@ -1053,14 +1094,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingPreviousOnListIteratorWhenEmpty() {
-        assertThatThrownBy(() -> empty().listIterator().previous())
-          .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> empty().listIterator().previous()).isInstanceOf(NoSuchElementException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenCallingPreviousOnListIteratorWhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').listIterator().previous())
-          .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> of('1').listIterator().previous()).isInstanceOf(NoSuchElementException.class);
     }
 
     @TestTemplate
@@ -1097,28 +1136,32 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingListIteratorPreviousAndListElementWasRemoved() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final ListIterator<Character> listIterator = list.listIterator();
-            assertThat(listIterator.hasPrevious()).isFalse();
-            listIterator.next();
-            assertThat(listIterator.hasPrevious()).isTrue();
-            list.remove(0);
-            listIterator.previous();
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final ListIterator<Character> listIterator = list.listIterator();
+                    assertThat(listIterator.hasPrevious()).isFalse();
+                    listIterator.next();
+                    assertThat(listIterator.hasPrevious()).isTrue();
+                    list.remove(0);
+                    listIterator.previous();
+                },
+                ConcurrentModificationException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenCallingListIteratorPreviousAndListElementWasAdded() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final ListIterator<Character> listIterator = list.listIterator();
-            assertThat(listIterator.hasPrevious()).isFalse();
-            listIterator.next();
-            assertThat(listIterator.hasPrevious()).isTrue();
-            list.add('2');
-            listIterator.previous();
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final ListIterator<Character> listIterator = list.listIterator();
+                    assertThat(listIterator.hasPrevious()).isFalse();
+                    listIterator.next();
+                    assertThat(listIterator.hasPrevious()).isTrue();
+                    list.add('2');
+                    listIterator.previous();
+                },
+                ConcurrentModificationException.class);
     }
 
     // -- listIterator.previousIndex()
@@ -1336,14 +1379,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenListIteratorAtNegativeIndexWhenEmpty() {
-        assertThatThrownBy(() -> empty().listIterator(-1))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> empty().listIterator(-1)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenListIteratorAtNegativeIndexWhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').listIterator(-1))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> of('1').listIterator(-1)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
@@ -1358,14 +1399,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenListIteratorAtIndexGreaterSizeWhenEmpty() {
-        assertThatThrownBy(() -> empty().listIterator(1))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> empty().listIterator(1)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenListIteratorAtIndexGreaterSizeWhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').listIterator(2))
-          .isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> of('1').listIterator(2)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     // -- listIterator(int).hasNext()
@@ -1391,8 +1430,7 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingNextOnListIteratorAtFirstIndexWhenEmpty() {
-        assertThatThrownBy(() -> empty().listIterator(0).next())
-          .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> empty().listIterator(0).next()).isInstanceOf(NoSuchElementException.class);
     }
 
     @TestTemplate
@@ -1465,14 +1503,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingPreviousOnListIteratorAtIndex0WhenEmpty() {
-        assertThatThrownBy(() -> empty().listIterator(0).previous())
-          .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> empty().listIterator(0).previous()).isInstanceOf(NoSuchElementException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenCallingPreviousOnListIteratorAtIndex0WhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').listIterator(0).previous())
-          .isInstanceOf(NoSuchElementException.class);
+        assertThatThrownBy(() -> of('1').listIterator(0).previous()).isInstanceOf(NoSuchElementException.class);
     }
 
     @TestTemplate
@@ -1505,24 +1541,28 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingListIteratorAtIndex1PreviousAndListElementWasRemoved() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final ListIterator<Character> listIterator = list.listIterator(1);
-            assertThat(listIterator.hasPrevious()).isTrue();
-            list.remove(0);
-            listIterator.previous();
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final ListIterator<Character> listIterator = list.listIterator(1);
+                    assertThat(listIterator.hasPrevious()).isTrue();
+                    list.remove(0);
+                    listIterator.previous();
+                },
+                ConcurrentModificationException.class);
     }
 
     @TestTemplate
     public void shouldThrowWhenCallingListIteratorAtIndex1PreviousAndListElementWasAdded() {
-        ifSupported(() -> {
-            final java.util.List<Character> list = of('1');
-            final ListIterator<Character> listIterator = list.listIterator(1);
-            assertThat(listIterator.hasPrevious()).isTrue();
-            list.add('2');
-            listIterator.previous();
-        }, ConcurrentModificationException.class);
+        ifSupported(
+                () -> {
+                    final java.util.List<Character> list = of('1');
+                    final ListIterator<Character> listIterator = list.listIterator(1);
+                    assertThat(listIterator.hasPrevious()).isTrue();
+                    list.add('2');
+                    listIterator.previous();
+                },
+                ConcurrentModificationException.class);
     }
 
     // -- listIterator.previousIndex()
@@ -1852,14 +1892,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingRemoveAllNullWhenEmpty() {
-        assertThatThrownBy(() -> empty().removeAll(null))
-          .isInstanceOf(mutatorFailure(NullPointerException.class));
+        assertThatThrownBy(() -> empty().removeAll(null)).isInstanceOf(mutatorFailure(NullPointerException.class));
     }
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingRemoveAllNullWhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').removeAll(null))
-          .isInstanceOf(mutatorFailure(NullPointerException.class));
+        assertThatThrownBy(() -> of('1').removeAll(null)).isInstanceOf(mutatorFailure(NullPointerException.class));
     }
 
     @TestTemplate
@@ -1867,7 +1905,6 @@ public class JavaConvertersTest {
         ifSupported(() -> {
             final java.util.List<Character> list = of('1');
             assertThat(list.removeAll(asList('2'))).isFalse();
-
         });
     }
 
@@ -1920,7 +1957,8 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowWhenEmptyReplaceAllGivenNullUnaryOperator() {
-        assertThatThrownBy(() -> this.<Character> empty().replaceAll(null)).isInstanceOf(mutatorFailure(NullPointerException.class));
+        assertThatThrownBy(() -> this.<Character>empty().replaceAll(null))
+                .isInstanceOf(mutatorFailure(NullPointerException.class));
     }
 
     @TestTemplate
@@ -1941,14 +1979,12 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingRetainAllNullWhenEmpty() {
-        assertThatThrownBy(() -> empty().retainAll(null))
-          .isInstanceOf(mutatorFailure(NullPointerException.class));
+        assertThatThrownBy(() -> empty().retainAll(null)).isInstanceOf(mutatorFailure(NullPointerException.class));
     }
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingRetainAllNullWhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').retainAll(null))
-          .isInstanceOf(mutatorFailure(NullPointerException.class));
+        assertThatThrownBy(() -> of('1').retainAll(null)).isInstanceOf(mutatorFailure(NullPointerException.class));
     }
 
     // -- retainAll(Collection) tests
@@ -1984,7 +2020,6 @@ public class JavaConvertersTest {
             assertThat(list.retainAll(asList('1'))).isFalse();
             assertThat(list).isEqualTo(asList());
         });
-
     }
 
     @TestTemplate
@@ -2104,8 +2139,9 @@ public class JavaConvertersTest {
         final Spliterator<Object> spliterator = empty().spliterator();
         assertThat(spliterator).isNotNull();
         assertThat(spliterator.tryAdvance(e -> {
-            throw new AssertionError("spliterator reports element for empty collection: " + e);
-        })).isFalse();
+                    throw new AssertionError("spliterator reports element for empty collection: " + e);
+                }))
+                .isFalse();
     }
 
     @TestTemplate
@@ -2114,8 +2150,9 @@ public class JavaConvertersTest {
         assertThat(spliterator).isNotNull();
         assertThat(spliterator.tryAdvance(e -> assertThat(e).isEqualTo('1'))).isTrue();
         assertThat(spliterator.tryAdvance(e -> {
-            throw new AssertionError("spliterator reports element for empty collection: " + e);
-        })).isFalse();
+                    throw new AssertionError("spliterator reports element for empty collection: " + e);
+                }))
+                .isFalse();
     }
 
     @TestTemplate
@@ -2225,46 +2262,45 @@ public class JavaConvertersTest {
 
     @TestTemplate
     public void shouldConvertNonEmptyToArray() {
-        assertThat(of('1').toArray()).isEqualTo(new Object[] { '1' });
+        assertThat(of('1').toArray()).isEqualTo(new Object[] {'1'});
     }
 
     // -- toArray(T[])
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingToArrayNullWhenEmpty() {
-        assertThatThrownBy(() -> empty().toArray((Object[]) null))
-          .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> empty().toArray((Object[]) null)).isInstanceOf(NullPointerException.class);
     }
 
     @TestTemplate
     public void shouldThrowNPEWhenCallingToArrayNullWhenNotEmpty() {
-        assertThatThrownBy(() -> of('1').toArray((Object[]) null))
-          .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> of('1').toArray((Object[]) null)).isInstanceOf(NullPointerException.class);
     }
 
     @TestTemplate
     public void shouldConvertEmptyToArrayPassingArrayOfCorrectSize() {
-        assertThat(this.<Character> empty().toArray(new Character[0])).isEqualTo(new Character[0]);
+        assertThat(this.<Character>empty().toArray(new Character[0])).isEqualTo(new Character[0]);
     }
 
     @TestTemplate
     public void shouldConvertEmptyToArrayPassingArrayOfGreaterSize() {
-        assertThat(this.<Character> empty().toArray(new Character[] { 'x' })).isEqualTo(new Character[] { null });
+        assertThat(this.<Character>empty().toArray(new Character[] {'x'})).isEqualTo(new Character[] {null});
     }
 
     @TestTemplate
     public void shouldConvertNonEmptyToArrayPassingArrayOfCorrectSize() {
-        assertThat(of('1', '2').toArray(new Character[2])).isEqualTo(new Character[] { '1', '2' });
+        assertThat(of('1', '2').toArray(new Character[2])).isEqualTo(new Character[] {'1', '2'});
     }
 
     @TestTemplate
     public void shouldConvertNonEmptyToArrayPassingArrayOfGreaterSize() {
-        assertThat(of('1', '2').toArray(new Character[] { 'a', 'b', 'c', 'd' })).isEqualTo(new Character[] { '1', '2', null, 'd' });
+        assertThat(of('1', '2').toArray(new Character[] {'a', 'b', 'c', 'd'}))
+                .isEqualTo(new Character[] {'1', '2', null, 'd'});
     }
 
     @TestTemplate
     public void shouldConvertNonEmptyToArrayPassingArrayOfSmallerSize() {
-        assertThat(of('1', '2').toArray(new Character[1])).isEqualTo(new Character[] { '1', '2' });
+        assertThat(of('1', '2').toArray(new Character[1])).isEqualTo(new Character[] {'1', '2'});
     }
 
     // --- helpers
@@ -2296,15 +2332,18 @@ public class JavaConvertersTest {
                 Assertions.fail("Operation should throw " + UnsupportedOperationException.class.getName());
             }
             if (expectedExceptionTypes.length > 0) {
-                Assertions.fail("Expected one of " + List.of(expectedExceptionTypes).map(Class::getName).mkString("[", ", ", "]"));
+                Assertions.fail("Expected one of "
+                        + List.of(expectedExceptionTypes).map(Class::getName).mkString("[", ", ", "]"));
             }
         } catch (Throwable x) {
             if (changePolicy == IMMUTABLE) {
                 if (!(x instanceof UnsupportedOperationException)) {
-                    final boolean isJavaCollection = empty().getClass().getName().startsWith("java.util.");
+                    final boolean isJavaCollection =
+                            empty().getClass().getName().startsWith("java.util.");
                     // DEV-NOTE: Java's collections throw UnsupportedOperationException inconsistently
                     if (!isJavaCollection) {
-                        Assertions.fail("Operation should throw " + UnsupportedOperationException.class.getName() + " but found " + x.getClass().getName() + ":\n" + x.getMessage());
+                        Assertions.fail("Operation should throw " + UnsupportedOperationException.class.getName()
+                                + " but found " + x.getClass().getName() + ":\n" + x.getMessage());
                     }
                 }
             } else {
@@ -2334,14 +2373,17 @@ public class JavaConvertersTest {
     }
 
     enum ChangePolicy {
-        IMMUTABLE, MUTABLE;
+        IMMUTABLE,
+        MUTABLE;
     }
 
     enum ElementType {
-        FIXED, GENERIC;
+        FIXED,
+        GENERIC;
     }
 
     enum ElementNullability {
-        NULLABLE, NON_NULLABLE;
+        NULLABLE,
+        NON_NULLABLE;
     }
 }

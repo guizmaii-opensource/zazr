@@ -20,7 +20,11 @@ final class NonEmptyChecks {
 
     /* the wrapper types whose instances must never be empty */
     static final java.util.List<Class<?>> NON_EMPTY_TYPES = java.util.List.of(
-            NonEmptyVector.class, NonEmptySet.class, NonEmptySortedSet.class, NonEmptyMap.class, NonEmptySortedMap.class);
+            NonEmptyVector.class,
+            NonEmptySet.class,
+            NonEmptySortedSet.class,
+            NonEmptyMap.class,
+            NonEmptySortedMap.class);
 
     /* the signature of a method as the tables key it: name(SimpleParameterType, ...) */
     static String signature(Method method) {
@@ -79,8 +83,9 @@ final class NonEmptyChecks {
                 assertEveryNonEmptyCollectionIsNonEmpty(t._3(), call);
             }
             case Option<?> option -> option.forEach(value -> assertEveryNonEmptyCollectionIsNonEmpty(value, call));
-            case Iterable<?> iterable -> iterable.forEach(element -> assertEveryNonEmptyCollectionIsNonEmpty(element, call));
-            default -> { }
+            case Iterable<?> iterable ->
+                iterable.forEach(element -> assertEveryNonEmptyCollectionIsNonEmpty(element, call));
+            default -> {}
         }
     }
 
@@ -99,7 +104,9 @@ final class NonEmptyChecks {
     static java.util.Set<String> publicInstanceMethodSignatures(Class<?> type) {
         final java.util.Set<String> signatures = new TreeSet<>();
         for (Method method : type.getMethods()) {
-            if (!Modifier.isStatic(method.getModifiers()) && !method.isSynthetic() && !method.isBridge()
+            if (!Modifier.isStatic(method.getModifiers())
+                    && !method.isSynthetic()
+                    && !method.isBridge()
                     && method.getDeclaringClass() != Object.class) {
                 signatures.add(signature(method));
             }

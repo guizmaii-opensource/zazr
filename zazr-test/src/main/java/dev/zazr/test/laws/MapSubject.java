@@ -1,7 +1,6 @@
 package dev.zazr.test.laws;
 
 import dev.zazr.test.Gen;
-
 import java.util.function.Function;
 
 /**

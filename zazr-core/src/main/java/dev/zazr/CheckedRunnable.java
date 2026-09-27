@@ -37,11 +37,10 @@ public interface CheckedRunnable {
      *
      * @throws Exception if an error occurs during execution
      */
-
     void run() throws Exception;
 
     /**
-     * Returns an unchecked {@link Runnable} that <em>sneakily throws</em> any exception 
+     * Returns an unchecked {@link Runnable} that <em>sneakily throws</em> any exception
      * encountered during execution of this unit of work.
      *
      * @return a {@link Runnable} that may throw any {@link Throwable} without declaring it
@@ -50,7 +49,7 @@ public interface CheckedRunnable {
         return () -> {
             try {
                 run();
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 sneakyThrow(x);
             }
         };

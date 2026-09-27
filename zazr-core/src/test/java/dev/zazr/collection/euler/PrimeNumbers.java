@@ -10,8 +10,7 @@ final class PrimeNumbers {
 
     private static final Set<Integer> PRIMES_2_000_000 = Sieve.fillSieve(2_000_000, TreeSet.empty());
 
-    private PrimeNumbers() {
-    }
+    private PrimeNumbers() {}
 
     static Stream<Integer> primes() {
         return Stream.ofAll(PRIMES_2_000_000);
@@ -22,8 +21,7 @@ final class PrimeNumbers {
             return HashMap.empty();
         } else {
             return primeFactors(num)
-                    .map(p -> HashMap.of(Tuple.of(p, 1L))
-                            .merge(factorization(num / p), (a, b) -> a + b))
+                    .map(p -> HashMap.of(Tuple.of(p, 1L)).merge(factorization(num / p), (a, b) -> a + b))
                     .headOption()
                     .getOrElse(HashMap::empty);
         }

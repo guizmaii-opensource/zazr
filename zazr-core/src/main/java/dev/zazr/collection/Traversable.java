@@ -3,7 +3,6 @@ package dev.zazr.collection;
 import dev.zazr.collection.internal.Collections;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.TraversableModule;
-
 import dev.zazr.control.Option;
 import java.util.Objects;
 import java.util.Spliterator;

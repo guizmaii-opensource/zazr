@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 public class NonEmptySetTest {
 
-    static final int[] SIZES = { 1, 2, 31, 32, 33, 1023, 1024, 1025 };
+    static final int[] SIZES = {1, 2, 31, 32, 33, 1023, 1024, 1025};
 
     /* (size, set) */
     static Stream<Arguments> sets() {
@@ -41,10 +41,14 @@ public class NonEmptySetTest {
     /* an element whose hash is shared by four values, so that sets of them hold collision leaves */
     record Colliding(int value) implements Comparable<Colliding> {
         @Override
-        public int hashCode() { return value >> 2; }
+        public int hashCode() {
+            return value >> 2;
+        }
 
         @Override
-        public int compareTo(Colliding that) { return Integer.compare(value, that.value); }
+        public int compareTo(Colliding that) {
+            return Integer.compare(value, that.value);
+        }
     }
 
     static HashSet<Colliding> colliding(int n) {
@@ -57,7 +61,7 @@ public class NonEmptySetTest {
 
     /* a one-shot iterable: a second iterator() throws, so an operation that reads its argument twice fails */
     static <A> Iterable<A> once(Iterable<A> elements) {
-        final boolean[] read = { false };
+        final boolean[] read = {false};
         return () -> {
             if (read[0]) {
                 throw new IllegalStateException("read twice");
@@ -78,7 +82,9 @@ public class NonEmptySetTest {
                 final Integer[] tail = Vector.range(1, n).toArray(Integer[]::new);
                 assertThat(NonEmptySet.of(0, tail).toSet()).isEqualTo(HashSet.range(0, n));
                 assertThat(NonEmptySet.of(0, tail).size()).isEqualTo(n);
-                assertThat(NonEmptySet.of(0, Vector.range(0, n).toArray(Integer[]::new)).size()).isEqualTo(n);
+                assertThat(NonEmptySet.of(0, Vector.range(0, n).toArray(Integer[]::new))
+                                .size())
+                        .isEqualTo(n);
             }
         }
 
@@ -86,10 +92,15 @@ public class NonEmptySetTest {
         public void shouldBuildFromHeadAndIterableTail() {
             for (int n : SIZES) {
                 final HashSet<Integer> expected = HashSet.range(0, n);
-                assertThat(NonEmptySet.fromIterable(0, HashSet.range(1, n)).toSet()).isEqualTo(expected);
-                assertThat(NonEmptySet.fromIterable(0, once(Vector.range(0, n))).toSet()).isEqualTo(expected);
-                assertThat(NonEmptySet.fromIterable(0, List.<Integer> empty()).toSet()).isEqualTo(HashSet.of(0));
-                assertThat(NonEmptySet.fromIterable(new Colliding(0), once(colliding(n))).toSet()).isEqualTo(colliding(n));
+                assertThat(NonEmptySet.fromIterable(0, HashSet.range(1, n)).toSet())
+                        .isEqualTo(expected);
+                assertThat(NonEmptySet.fromIterable(0, once(Vector.range(0, n))).toSet())
+                        .isEqualTo(expected);
+                assertThat(NonEmptySet.fromIterable(0, List.<Integer>empty()).toSet())
+                        .isEqualTo(HashSet.of(0));
+                assertThat(NonEmptySet.fromIterable(new Colliding(0), once(colliding(n)))
+                                .toSet())
+                        .isEqualTo(colliding(n));
             }
         }
 
@@ -98,7 +109,9 @@ public class NonEmptySetTest {
             final NonEmptySet<Integer> x = NonEmptySet.of(1);
             final NonEmptySet<Integer> y = NonEmptySet.of(2, 3);
             assertThat(NonEmptySet.of(x, y).size()).isEqualTo(2);
-            assertThat(NonEmptySet.of(java.util.List.of(1), java.util.List.of(2, 3)).size()).isEqualTo(2);
+            assertThat(NonEmptySet.of(java.util.List.of(1), java.util.List.of(2, 3))
+                            .size())
+                    .isEqualTo(2);
             assertThat(NonEmptySet.fromIterable(x, Vector.of(y)).size()).isEqualTo(2);
         }
 
@@ -121,61 +134,104 @@ public class NonEmptySetTest {
 
         @Test
         public void shouldReturnNoneFromEmptyInput() {
-            assertThat(NonEmptySet.fromSet(HashSet.<Integer> empty())).isEqualTo(Option.none());
-            assertThat(HashSet.<Integer> empty().toNonEmptySet()).isEqualTo(Option.none());
-            assertThat(NonEmptySet.fromIterable(HashSet.<Integer> empty())).isEqualTo(Option.none());
-            assertThat(NonEmptySet.fromIterable(java.util.List.<Integer> of())).isEqualTo(Option.none());
-            assertThat(NonEmptySet.fromIterable(once(List.<Integer> empty()))).isEqualTo(Option.none());
+            assertThat(NonEmptySet.fromSet(HashSet.<Integer>empty())).isEqualTo(Option.none());
+            assertThat(HashSet.<Integer>empty().toNonEmptySet()).isEqualTo(Option.none());
+            assertThat(NonEmptySet.fromIterable(HashSet.<Integer>empty())).isEqualTo(Option.none());
+            assertThat(NonEmptySet.fromIterable(java.util.List.<Integer>of())).isEqualTo(Option.none());
+            assertThat(NonEmptySet.fromIterable(once(List.<Integer>empty()))).isEqualTo(Option.none());
         }
 
         @Test
         public void shouldCopyANonEmptyIterable() {
             for (int n : SIZES) {
                 final HashSet<Integer> expected = HashSet.range(0, n);
-                assertThat(NonEmptySet.fromIterable(once(Vector.range(0, n).appendAll(Vector.range(0, n)))).get().toSet()).isEqualTo(expected);
-                assertThat(NonEmptySet.fromIterable(new java.util.ArrayList<>(expected.asJava())).get().toSet()).isEqualTo(expected);
-                assertThat(NonEmptySet.fromIterable(colliding(n).toList()).get().toSet()).isEqualTo(colliding(n));
+                assertThat(NonEmptySet.fromIterable(once(Vector.range(0, n).appendAll(Vector.range(0, n))))
+                                .get()
+                                .toSet())
+                        .isEqualTo(expected);
+                assertThat(NonEmptySet.fromIterable(new java.util.ArrayList<>(expected.asJava()))
+                                .get()
+                                .toSet())
+                        .isEqualTo(expected);
+                assertThat(NonEmptySet.fromIterable(colliding(n).toList()).get().toSet())
+                        .isEqualTo(colliding(n));
             }
         }
 
         @Test
         public void shouldThrowOnUnsafeFromEmptySet() {
             assertThatIllegalArgumentException()
-              .isThrownBy(() -> NonEmptySet.unsafeFromSet(HashSet.empty()))
-              .withMessage("NonEmptySet.unsafeFromSet: set is empty");
+                    .isThrownBy(() -> NonEmptySet.unsafeFromSet(HashSet.empty()))
+                    .withMessage("NonEmptySet.unsafeFromSet: set is empty");
         }
 
         @Test
         public void shouldRejectNullsNamingTheType() {
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.of(null)).withMessage("NonEmptySet: head is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.of(1, (Integer[]) null)).withMessage("NonEmptySet: tail is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.of(1, 2, null)).withMessage("NonEmptySet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.fromIterable(null, Vector.of(1))).withMessage("NonEmptySet: head is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.fromIterable(1, (Iterable<Integer>) null)).withMessage("NonEmptySet: tail is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.fromIterable(1, Arrays.asList(2, null))).withMessage("NonEmptySet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.single(null)).withMessage("NonEmptySet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.fromSet(null)).withMessage("NonEmptySet.fromSet: set is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.fromIterable(null)).withMessage("NonEmptySet.fromIterable: iterable is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.fromIterable(Arrays.asList(1, null))).withMessage("NonEmptySet: element is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.unsafeFromSet(null)).withMessage("NonEmptySet.unsafeFromSet: set is null");
-            assertThatNullPointerException().isThrownBy(() -> NonEmptySet.flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.of(null))
+                    .withMessage("NonEmptySet: head is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.of(1, (Integer[]) null))
+                    .withMessage("NonEmptySet: tail is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.of(1, 2, null))
+                    .withMessage("NonEmptySet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.fromIterable(null, Vector.of(1)))
+                    .withMessage("NonEmptySet: head is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.fromIterable(1, (Iterable<Integer>) null))
+                    .withMessage("NonEmptySet: tail is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.fromIterable(1, Arrays.asList(2, null)))
+                    .withMessage("NonEmptySet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.single(null))
+                    .withMessage("NonEmptySet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.fromSet(null))
+                    .withMessage("NonEmptySet.fromSet: set is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.fromIterable(null))
+                    .withMessage("NonEmptySet.fromIterable: iterable is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.fromIterable(Arrays.asList(1, null)))
+                    .withMessage("NonEmptySet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.unsafeFromSet(null))
+                    .withMessage("NonEmptySet.unsafeFromSet: set is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> NonEmptySet.flatten(null))
+                    .withMessage("nested is null");
         }
 
         @Test
         public void shouldRejectNullArguments() {
             final NonEmptySet<Integer> nes = NonEmptySet.of(1, 2);
-            assertThatNullPointerException().isThrownBy(() -> nes.add(null)).withMessage("NonEmptySet.add: element is null");
-            assertThatNullPointerException().isThrownBy(() -> nes.replace(null, 1)).withMessage("NonEmptySet.replace: currentElement is null");
-            assertThatNullPointerException().isThrownBy(() -> nes.replace(3, null)).withMessage("NonEmptySet.replace: newElement is null");
-            assertThatNullPointerException().isThrownBy(() -> nes.replaceAll(3, null)).withMessage("NonEmptySet.replace: newElement is null");
-            assertThatNullPointerException().isThrownBy(() -> nes.as(null)).withMessage("NonEmptySet.as: value is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.add(null))
+                    .withMessage("NonEmptySet.add: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.replace(null, 1))
+                    .withMessage("NonEmptySet.replace: currentElement is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.replace(3, null))
+                    .withMessage("NonEmptySet.replace: newElement is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.replaceAll(3, null))
+                    .withMessage("NonEmptySet.replace: newElement is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.as(null))
+                    .withMessage("NonEmptySet.as: value is null");
             assertThatNullPointerException().isThrownBy(() -> nes.addAll(Arrays.asList(3, null)));
             assertThatNullPointerException().isThrownBy(() -> nes.addAll(null));
             assertThatNullPointerException().isThrownBy(() -> nes.union(null));
             assertThatNullPointerException().isThrownBy(() -> nes.map(i -> null));
             assertThatNullPointerException().isThrownBy(() -> nes.map(null));
             assertThatNullPointerException().isThrownBy(() -> nes.flatMap(null));
-            assertThatNullPointerException().isThrownBy(() -> nes.flatMap(i -> null)).withMessage("NonEmptySet.flatMap: mapper returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.flatMap(i -> null))
+                    .withMessage("NonEmptySet.flatMap: mapper returned null");
             assertThatNullPointerException().isThrownBy(() -> nes.tap(null));
             assertThatNullPointerException().isThrownBy(() -> nes.groupBy(null));
             assertThatNullPointerException().isThrownBy(() -> nes.groupBy(i -> null));
@@ -187,13 +243,27 @@ public class NonEmptySetTest {
             assertThatNullPointerException().isThrownBy(() -> nes.reduceMap(null, Integer::sum));
             assertThatNullPointerException().isThrownBy(() -> nes.reduceMap(i -> i, null));
             assertThatNullPointerException().isThrownBy(() -> nes.fold(0, null));
-            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> null, i -> i)).withMessage("NonEmptySet.toMap: keyMapper returned null");
-            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> i, i -> null)).withMessage("NonEmptySet.toMap: valueMapper returned null");
-            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> null)).withMessage("NonEmptySet.toMap: f returned null");
-            assertThatNullPointerException().isThrownBy(() -> nes.toMap(i -> Tuple.of(null, i))).withMessage("NonEmptySet.toMap: f returned an entry with a null key");
-            assertThatNullPointerException().isThrownBy(() -> nes.toSortedMap(i -> Tuple.of(i, null))).withMessage("NonEmptySet.toSortedMap: f returned an entry with a null value");
-            assertThatNullPointerException().isThrownBy(() -> nes.toSortedMap(null, i -> i, i -> i)).withMessage("comparator is null");
-            assertThatNullPointerException().isThrownBy(() -> nes.toSortedMap(Comparator.<Integer> naturalOrder(), i -> i, null)).withMessage("valueMapper is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.toMap(i -> null, i -> i))
+                    .withMessage("NonEmptySet.toMap: keyMapper returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.toMap(i -> i, i -> null))
+                    .withMessage("NonEmptySet.toMap: valueMapper returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.toMap(i -> null))
+                    .withMessage("NonEmptySet.toMap: f returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.toMap(i -> Tuple.of(null, i)))
+                    .withMessage("NonEmptySet.toMap: f returned an entry with a null key");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.toSortedMap(i -> Tuple.of(i, null)))
+                    .withMessage("NonEmptySet.toSortedMap: f returned an entry with a null value");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.toSortedMap(null, i -> i, i -> i))
+                    .withMessage("comparator is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> nes.toSortedMap(Comparator.<Integer>naturalOrder(), i -> i, null))
+                    .withMessage("valueMapper is null");
         }
     }
 
@@ -215,7 +285,7 @@ public class NonEmptySetTest {
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldAddAllAndUnion(int n, HashSet<Integer> set) {
             final NonEmptySet<Integer> nes = nes(set);
-            for (int m : new int[] { 0, 1, 32, 33, 1025 }) {
+            for (int m : new int[] {0, 1, 32, 33, 1025}) {
                 final HashSet<Integer> that = HashSet.range(n / 2, n / 2 + m);
                 assertThat(nes.addAll(that).toSet()).isEqualTo(set.addAll(that));
                 assertThat(nes.addAll(once(that.toVector())).toSet()).isEqualTo(set.addAll(that));
@@ -243,10 +313,12 @@ public class NonEmptySetTest {
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldFlatMapToNonEmptySets(int n, HashSet<Integer> set) {
             final NonEmptySet<Integer> nes = nes(set);
-            assertThat(nes.flatMap(i -> NonEmptySet.of(i, -i - 1)).toSet()).isEqualTo(set.flatMap(i -> HashSet.of(i, -i - 1)));
+            assertThat(nes.flatMap(i -> NonEmptySet.of(i, -i - 1)).toSet())
+                    .isEqualTo(set.flatMap(i -> HashSet.of(i, -i - 1)));
             assertThat(nes.flatMap(i -> NonEmptySet.of(i, -i - 1)).size()).isEqualTo(2 * n);
             assertThat(nes.flatMap(i -> NonEmptySet.of(0)).toSet()).isEqualTo(HashSet.of(0));
-            assertThat(nes.flatMap(i -> nes(HashSet.range(i, i + 33))).toSet()).isEqualTo(set.flatMap(i -> HashSet.range(i, i + 33)));
+            assertThat(nes.flatMap(i -> nes(HashSet.range(i, i + 33))).toSet())
+                    .isEqualTo(set.flatMap(i -> HashSet.range(i, i + 33)));
         }
 
         @ParameterizedTest
@@ -275,7 +347,8 @@ public class NonEmptySetTest {
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldGroupByIntoNonEmptyGroups(int n, HashSet<Integer> set) {
             final NonEmptySet<Integer> nes = nes(set);
-            for (Function<Integer, Integer> classifier : java.util.List.<Function<Integer, Integer>> of(i -> 0, i -> i % 3, i -> i)) {
+            for (Function<Integer, Integer> classifier :
+                    java.util.List.<Function<Integer, Integer>>of(i -> 0, i -> i % 3, i -> i)) {
                 final NonEmptyMap<Integer, NonEmptySet<Integer>> groups = nes.groupBy(classifier);
                 assertThat(groups.mapValues(NonEmptySet::toSet).toMap()).isEqualTo(set.groupBy(classifier));
                 assertThat(groups.values().forAll(group -> group.size() >= 1)).isTrue();
@@ -294,10 +367,12 @@ public class NonEmptySetTest {
             assertThat(nes.filter(i -> false)).isEmpty();
             assertThat(nes.reject(i -> i % 2 == 0)).isEqualTo(set.reject(i -> i % 2 == 0));
             assertThat(nes.reject(i -> true)).isEmpty();
-            assertThat(nes.collect(i -> i % 2 == 0 ? Option.some(-i) : Option.none())).isEqualTo(set.collect(i -> i % 2 == 0 ? Option.some(-i) : Option.none()));
+            assertThat(nes.collect(i -> i % 2 == 0 ? Option.some(-i) : Option.none()))
+                    .isEqualTo(set.collect(i -> i % 2 == 0 ? Option.some(-i) : Option.none()));
             assertThat(nes.collect(i -> Option.none())).isEmpty();
-            assertThat(nes.flatMapAll(i -> i % 2 == 0 ? List.of(i, -i - 1) : List.<Integer> empty())).isEqualTo(set.flatMap(i -> i % 2 == 0 ? List.of(i, -i - 1) : List.<Integer> empty()));
-            assertThat(nes.flatMapAll(i -> List.<Integer> empty())).isEmpty();
+            assertThat(nes.flatMapAll(i -> i % 2 == 0 ? List.of(i, -i - 1) : List.<Integer>empty()))
+                    .isEqualTo(set.flatMap(i -> i % 2 == 0 ? List.of(i, -i - 1) : List.<Integer>empty()));
+            assertThat(nes.flatMapAll(i -> List.<Integer>empty())).isEmpty();
         }
 
         @ParameterizedTest
@@ -319,7 +394,7 @@ public class NonEmptySetTest {
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldIntersectAndDiff(int n, HashSet<Integer> set) {
             final NonEmptySet<Integer> nes = nes(set);
-            for (int m : new int[] { 0, 1, 32, 33, 1025 }) {
+            for (int m : new int[] {0, 1, 32, 33, 1025}) {
                 final HashSet<Integer> that = HashSet.range(n / 2, n / 2 + m);
                 assertThat(nes.intersect(that)).isEqualTo(set.intersect(that));
                 assertThat(nes.diff(that)).isEqualTo(set.diff(that));
@@ -336,9 +411,11 @@ public class NonEmptySetTest {
             assertThat(nes.partition(i -> i % 2 == 0)).isEqualTo(set.partition(i -> i % 2 == 0));
             assertThat(nes.partition(i -> true)._2()).isEmpty();
             assertThat(nes.partition(i -> false)._1()).isEmpty();
-            final Function<Integer, Either<String, Integer>> f = i -> i % 3 == 0 ? Either.left("x" + i) : Either.right(i);
+            final Function<Integer, Either<String, Integer>> f =
+                    i -> i % 3 == 0 ? Either.left("x" + i) : Either.right(i);
             assertThat(nes.partitionMap(f)).isEqualTo(set.partitionMap(f));
-            assertThat(nes.partitionMap(i -> Either.<String, Integer> right(i))._1()).isEmpty();
+            assertThat(nes.partitionMap(i -> Either.<String, Integer>right(i))._1())
+                    .isEmpty();
         }
     }
 
@@ -369,17 +446,21 @@ public class NonEmptySetTest {
             assertThat(doubles.max()).isEqualTo(doubles.toSet().max().get()).isNaN();
             final NonEmptySet<Float> floats = NonEmptySet.of(1.0f, Float.NaN);
             assertThat(floats.min()).isEqualTo(floats.toSet().min().get()).isNaN();
-            assertThatThrownBy(() -> NonEmptySet.of(new Object(), new Object()).max()).isInstanceOf(ClassCastException.class);
+            assertThatThrownBy(() -> NonEmptySet.of(new Object(), new Object()).max())
+                    .isInstanceOf(ClassCastException.class);
         }
 
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldReduceAndFold(int n, HashSet<Integer> set) {
             final NonEmptySet<Integer> nes = nes(set);
-            assertThat(nes.reduce(Integer::sum)).isEqualTo(set.reduce(Integer::sum)).isEqualTo(n * (n - 1) / 2);
+            assertThat(nes.reduce(Integer::sum))
+                    .isEqualTo(set.reduce(Integer::sum))
+                    .isEqualTo(n * (n - 1) / 2);
             assertThat(nes.reduceMap(i -> (long) i, Long::sum)).isEqualTo((long) n * (n - 1) / 2);
             assertThat(nes.fold(0, Integer::sum)).isEqualTo(n * (n - 1) / 2);
-            assertThat(nes.foldLeft("", (s, i) -> s + i).length()).isEqualTo(set.foldLeft("", (s, i) -> s + i).length());
+            assertThat(nes.foldLeft("", (s, i) -> s + i).length())
+                    .isEqualTo(set.foldLeft("", (s, i) -> s + i).length());
             assertThat(nes.sum()).isEqualTo(set.sum());
             assertThat(nes.product()).isEqualTo(set.product());
             assertThat(nes.average()).isEqualTo(set.average().get());
@@ -417,10 +498,13 @@ public class NonEmptySetTest {
             final NonEmptySet<Integer> nes = nes(set);
             final java.util.List<Integer> iterated = new java.util.ArrayList<>();
             nes.forEach(iterated::add);
-            assertThat(iterated).isEqualTo(new java.util.ArrayList<>(set.toVector().asJava()));
+            assertThat(iterated)
+                    .isEqualTo(new java.util.ArrayList<>(set.toVector().asJava()));
             assertThat(nes.iterator()).toIterable().containsExactlyElementsOf(set);
-            assertThat(nes.spliterator().characteristics()).isEqualTo(set.spliterator().characteristics());
-            assertThat(nes.spliterator().hasCharacteristics(Spliterator.DISTINCT)).isTrue();
+            assertThat(nes.spliterator().characteristics())
+                    .isEqualTo(set.spliterator().characteristics());
+            assertThat(nes.spliterator().hasCharacteristics(Spliterator.DISTINCT))
+                    .isTrue();
             assertThat(nes.spliterator().getExactSizeIfKnown()).isEqualTo(n);
             assertThat(nes.stream().collect(Collectors.toSet())).isEqualTo(set.asJava());
             assertThat(nes.asJava()).isEqualTo(set.asJava());
@@ -429,7 +513,9 @@ public class NonEmptySetTest {
             assertThat(nes.mkString(", ")).isEqualTo(set.mkString(", "));
             assertThat(nes.mkString("<", ", ", ">")).isEqualTo(set.mkString("<", ", ", ">"));
             assertThat(nes.collect(Collectors.toList())).isEqualTo(set.collect(Collectors.toList()));
-            assertThat(nes.<java.util.ArrayList<Integer>> collect(java.util.ArrayList::new, java.util.ArrayList::add, java.util.ArrayList::addAll)).isEqualTo(new java.util.ArrayList<>(set.toVector().asJava()));
+            assertThat(nes.<java.util.ArrayList<Integer>>collect(
+                            java.util.ArrayList::new, java.util.ArrayList::add, java.util.ArrayList::addAll))
+                    .isEqualTo(new java.util.ArrayList<>(set.toVector().asJava()));
             assertThat(nes.toArray()).isEqualTo(set.toArray());
             assertThat(nes.toArray(Integer[]::new)).isEqualTo(set.toArray(Integer[]::new));
             assertThat(nes.toVector()).isEqualTo(set.toVector());
@@ -444,9 +530,16 @@ public class NonEmptySetTest {
             assertThat(nes.toLinkedMap(i -> i, i -> -i)).isEqualTo(set.toLinkedMap(i -> i, i -> -i));
             assertThat(nes.toLinkedMap(i -> Tuple.of(i, -i))).isEqualTo(set.toLinkedMap(i -> Tuple.of(i, -i)));
             assertThat(nes.toSortedMap(i -> i, i -> -i).toSortedMap()).isEqualTo(set.toSortedMap(i -> i, i -> -i));
-            assertThat(nes.toSortedMap(i -> Tuple.of(i, -i)).toSortedMap()).isEqualTo(set.toSortedMap(i -> Tuple.of(i, -i)));
-            assertThat(nes.toSortedMap(Comparator.<Integer> reverseOrder(), i -> i, i -> -i).head()._1()).isEqualTo(n - 1);
-            assertThat(nes.toSortedMap(Comparator.<Integer> reverseOrder(), i -> Tuple.of(i, -i)).head()._1()).isEqualTo(n - 1);
+            assertThat(nes.toSortedMap(i -> Tuple.of(i, -i)).toSortedMap())
+                    .isEqualTo(set.toSortedMap(i -> Tuple.of(i, -i)));
+            assertThat(nes.toSortedMap(Comparator.<Integer>reverseOrder(), i -> i, i -> -i)
+                            .head()
+                            ._1())
+                    .isEqualTo(n - 1);
+            assertThat(nes.toSortedMap(Comparator.<Integer>reverseOrder(), i -> Tuple.of(i, -i))
+                            .head()
+                            ._1())
+                    .isEqualTo(n - 1);
         }
     }
 
@@ -471,13 +564,16 @@ public class NonEmptySetTest {
                 assertThat(nes.union(colliding(n + 3)).toSet()).isEqualTo(colliding(n + 3));
                 assertThat(nes.intersect(colliding(n / 2))).isEqualTo(colliding(n / 2));
                 assertThat(nes.diff(colliding(n))).isEmpty();
-                assertThat(nes.replace(new Colliding(0), new Colliding(-4)).toSet()).isEqualTo(set.replace(new Colliding(0), new Colliding(-4)));
+                assertThat(nes.replace(new Colliding(0), new Colliding(-4)).toSet())
+                        .isEqualTo(set.replace(new Colliding(0), new Colliding(-4)));
                 assertThat(nes.max()).isEqualTo(new Colliding(n - 1));
                 assertThat(nes.min()).isEqualTo(new Colliding(0));
                 assertThat(nes.map(c -> c.value() >> 2).toSet()).isEqualTo(HashSet.range(0, (n + 3) / 4));
                 assertThat(nes.groupBy(Colliding::hashCode).size()).isEqualTo((n + 3) / 4);
                 assertThat(nes.filter(c -> c.value() % 4 == 0)).isEqualTo(set.filter(c -> c.value() % 4 == 0));
-                assertThat(nes).isEqualTo(NonEmptySet.fromIterable(set.toVector().reverse()).get());
+                assertThat(nes)
+                        .isEqualTo(NonEmptySet.fromIterable(set.toVector().reverse())
+                                .get());
             }
         }
     }
@@ -493,25 +589,50 @@ public class NonEmptySetTest {
 
         /* signature -> calls of that overload, with arguments chosen to shrink the result as far as they can */
         static java.util.Map<String, Function<NonEmptySet<Integer>, java.util.List<Object>>> calls() {
-            final java.util.Map<String, Function<NonEmptySet<Integer>, java.util.List<Object>>> calls = new java.util.HashMap<>();
+            final java.util.Map<String, Function<NonEmptySet<Integer>, java.util.List<Object>>> calls =
+                    new java.util.HashMap<>();
             // constructors and narrowings
-            calls.put("of(Object, Object[])", s -> java.util.List.of(NonEmptySet.of(s.max()), NonEmptySet.of(s.max(), s.max(), s.max())));
+            calls.put(
+                    "of(Object, Object[])",
+                    s -> java.util.List.of(NonEmptySet.of(s.max()), NonEmptySet.of(s.max(), s.max(), s.max())));
             calls.put("single(Object)", s -> java.util.List.of(NonEmptySet.single(s.max())));
-            calls.put("fromIterable(Object, Iterable)", s -> java.util.List.of(NonEmptySet.fromIterable(s.max(), java.util.List.of()), NonEmptySet.fromIterable(s.max(), s)));
-            calls.put("fromIterable(Iterable)", s -> java.util.List.of(NonEmptySet.fromIterable(s), NonEmptySet.fromIterable(s.asJava()), NonEmptySet.fromIterable(List.empty())));
-            calls.put("fromSet(HashSet)", s -> java.util.List.of(NonEmptySet.fromSet(s.toSet()), NonEmptySet.fromSet(HashSet.empty())));
+            calls.put(
+                    "fromIterable(Object, Iterable)",
+                    s -> java.util.List.of(
+                            NonEmptySet.fromIterable(s.max(), java.util.List.of()),
+                            NonEmptySet.fromIterable(s.max(), s)));
+            calls.put(
+                    "fromIterable(Iterable)",
+                    s -> java.util.List.of(
+                            NonEmptySet.fromIterable(s),
+                            NonEmptySet.fromIterable(s.asJava()),
+                            NonEmptySet.fromIterable(List.empty())));
+            calls.put(
+                    "fromSet(HashSet)",
+                    s -> java.util.List.of(NonEmptySet.fromSet(s.toSet()), NonEmptySet.fromSet(HashSet.empty())));
             calls.put("unsafeFromSet(HashSet)", s -> java.util.List.of(NonEmptySet.unsafeFromSet(s.toSet())));
-            calls.put("flatten(NonEmptySet)", s -> java.util.List.of(NonEmptySet.flatten(NonEmptySet.single(s)), NonEmptySet.flatten(s.map(NonEmptySet::single))));
+            calls.put(
+                    "flatten(NonEmptySet)",
+                    s -> java.util.List.of(
+                            NonEmptySet.flatten(NonEmptySet.single(s)),
+                            NonEmptySet.flatten(s.map(NonEmptySet::single))));
             // at least one element is left
             calls.put("add(Object)", s -> java.util.List.of(s.add(0), s.add(-1)));
-            calls.put("addAll(Iterable)", s -> java.util.List.of(s.addAll(List.empty()), s.addAll(HashSet.empty()), s.addAll(s)));
-            calls.put("union(Set)", s -> java.util.List.of(s.union(HashSet.empty()), s.union(TreeSet.empty()), s.union(s.toSet())));
+            calls.put(
+                    "addAll(Iterable)",
+                    s -> java.util.List.of(s.addAll(List.empty()), s.addAll(HashSet.empty()), s.addAll(s)));
+            calls.put(
+                    "union(Set)",
+                    s -> java.util.List.of(s.union(HashSet.empty()), s.union(TreeSet.empty()), s.union(s.toSet())));
             calls.put("map(Function)", s -> java.util.List.of(s.map(i -> 0), s.map(i -> i)));
             calls.put("flatMap(Function)", s -> java.util.List.of(s.flatMap(i -> NonEmptySet.single(0))));
             calls.put("as(Object)", s -> java.util.List.of(s.as("x")));
-            calls.put("replace(Object, Object)", s -> java.util.List.of(s.replace(s.max(), s.min()), s.replace(-2, -1)));
-            calls.put("replaceAll(Object, Object)", s -> java.util.List.of(s.replaceAll(s.max(), s.min()), s.replaceAll(-2, -1)));
-            calls.put("tap(Consumer)", s -> java.util.List.of(s.tap(i -> { })));
+            calls.put(
+                    "replace(Object, Object)", s -> java.util.List.of(s.replace(s.max(), s.min()), s.replace(-2, -1)));
+            calls.put(
+                    "replaceAll(Object, Object)",
+                    s -> java.util.List.of(s.replaceAll(s.max(), s.min()), s.replaceAll(-2, -1)));
+            calls.put("tap(Consumer)", s -> java.util.List.of(s.tap(i -> {})));
             // non-empty sets inside another type
             calls.put("groupBy(Function)", s -> java.util.List.of(s.groupBy(i -> 0), s.groupBy(i -> i)));
             // conversions to maps: a non-empty source gives a non-empty map, even when every key is the same
@@ -519,8 +640,12 @@ public class NonEmptySetTest {
             calls.put("toMap(Function)", s -> java.util.List.of(s.toMap(i -> Tuple.of(0, i))));
             calls.put("toSortedMap(Function, Function)", s -> java.util.List.of(s.toSortedMap(i -> 0, i -> i)));
             calls.put("toSortedMap(Function)", s -> java.util.List.of(s.toSortedMap(i -> Tuple.of(0, i))));
-            calls.put("toSortedMap(Comparator, Function, Function)", s -> java.util.List.of(s.toSortedMap(Comparator.<Integer> reverseOrder(), i -> 0, i -> i)));
-            calls.put("toSortedMap(Comparator, Function)", s -> java.util.List.of(s.toSortedMap(Comparator.<Integer> reverseOrder(), i -> Tuple.of(0, i))));
+            calls.put(
+                    "toSortedMap(Comparator, Function, Function)",
+                    s -> java.util.List.of(s.toSortedMap(Comparator.<Integer>reverseOrder(), i -> 0, i -> i)));
+            calls.put(
+                    "toSortedMap(Comparator, Function)",
+                    s -> java.util.List.of(s.toSortedMap(Comparator.<Integer>reverseOrder(), i -> Tuple.of(0, i))));
             return calls;
         }
 
@@ -550,19 +675,27 @@ public class NonEmptySetTest {
 
         static final java.util.Set<String> DELIBERATELY_ABSENT = java.util.Set.of(
                 // the Option forms of what is total on a non-empty set
-                "reduceOption(BiFunction)", "singleOption()",
+                "reduceOption(BiFunction)",
+                "singleOption()",
                 // constant on a non-empty set: false, true, this, Some(this)
-                "isEmpty()", "nonEmpty()", "orElse(Iterable)", "orElse(Supplier)", "toNonEmptySet()"
-        );
+                "isEmpty()",
+                "nonEmpty()",
+                "orElse(Iterable)",
+                "orElse(Supplier)",
+                "toNonEmptySet()");
 
         @Test
         public void shouldHaveEveryHashSetMethodButTheDeliberateAbsences() {
-            assertThat(NonEmptyChecks.missing(HashSet.class, NonEmptySet.class)).containsExactlyInAnyOrderElementsOf(DELIBERATELY_ABSENT);
+            assertThat(NonEmptyChecks.missing(HashSet.class, NonEmptySet.class))
+                    .containsExactlyInAnyOrderElementsOf(DELIBERATELY_ABSENT);
         }
 
         @Test
         public void shouldHaveTheStaticFlatten() throws NoSuchMethodException {
-            assertThat(java.lang.reflect.Modifier.isStatic(NonEmptySet.class.getMethod("flatten", NonEmptySet.class).getModifiers())).isTrue();
+            assertThat(java.lang.reflect.Modifier.isStatic(NonEmptySet.class
+                            .getMethod("flatten", NonEmptySet.class)
+                            .getModifiers()))
+                    .isTrue();
         }
     }
 
@@ -572,12 +705,14 @@ public class NonEmptySetTest {
         @Test
         public void shouldFlattenNestedNonEmptySets() {
             for (int n : SIZES) {
-                final NonEmptySet<NonEmptySet<Integer>> nested = nes(HashSet.range(0, n)).map(i -> nes(HashSet.range(i, i + 3)));
+                final NonEmptySet<NonEmptySet<Integer>> nested =
+                        nes(HashSet.range(0, n)).map(i -> nes(HashSet.range(i, i + 3)));
                 final NonEmptySet<Integer> flat = NonEmptySet.flatten(nested);
                 assertThat(flat.toSet()).isEqualTo(HashSet.range(0, n + 2));
             }
-            final NonEmptySet<Number> covariant = NonEmptySet.flatten(NonEmptySet.of(NonEmptySet.of(1), NonEmptySet.of(2.0)));
-            assertThat(covariant.toSet()).isEqualTo(HashSet.<Number> of(1, 2.0));
+            final NonEmptySet<Number> covariant =
+                    NonEmptySet.flatten(NonEmptySet.of(NonEmptySet.of(1), NonEmptySet.of(2.0)));
+            assertThat(covariant.toSet()).isEqualTo(HashSet.<Number>of(1, 2.0));
         }
     }
 
@@ -588,7 +723,8 @@ public class NonEmptySetTest {
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldBeEqualToANonEmptySetWithTheSameElements(int n, HashSet<Integer> set) {
             final NonEmptySet<Integer> nes = nes(set);
-            final NonEmptySet<Integer> copy = NonEmptySet.fromIterable(set.toVector().reverse()).get();
+            final NonEmptySet<Integer> copy =
+                    NonEmptySet.fromIterable(set.toVector().reverse()).get();
             assertThat(nes).isEqualTo(nes);
             assertThat(nes).isEqualTo(copy);
             assertThat(nes.hashCode()).isEqualTo(copy.hashCode());
@@ -599,7 +735,8 @@ public class NonEmptySetTest {
             assertThat(nes).isNotEqualTo(null);
             assertThat(nes).isNotEqualTo(set.toVector());
             // sets are equal to sets, whatever the representation
-            final NonEmptySortedSet<Integer> sorted = NonEmptySortedSet.unsafeFromSortedSet(TreeSet.ofAll(Comparator.reverseOrder(), set));
+            final NonEmptySortedSet<Integer> sorted =
+                    NonEmptySortedSet.unsafeFromSortedSet(TreeSet.ofAll(Comparator.reverseOrder(), set));
             assertThat(nes).isEqualTo(sorted);
             assertThat(sorted).isEqualTo(nes);
             assertThat(nes.hashCode()).isEqualTo(sorted.hashCode());
@@ -609,7 +746,8 @@ public class NonEmptySetTest {
         @Test
         public void shouldStringify() {
             assertThat(NonEmptySet.of(1).toString()).isEqualTo("NonEmptySet(1)");
-            assertThat(nes(HashSet.range(0, 33)).toString()).isEqualTo(HashSet.range(0, 33).mkString("NonEmptySet(", ", ", ")"));
+            assertThat(nes(HashSet.range(0, 33)).toString())
+                    .isEqualTo(HashSet.range(0, 33).mkString("NonEmptySet(", ", ", ")"));
         }
     }
 }

@@ -9,8 +9,7 @@ import dev.zazr.control.Option;
  */
 final class Runner {
 
-    private Runner() {
-    }
+    private Runner() {}
 
     /**
      * The size of the pass that starts after {@code done} samples: it grows linearly from 0 for the first sample to
@@ -36,7 +35,7 @@ final class Runner {
     static <A> void passes(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
         final int samples = config.samples();
         final Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
-        final int[] delivered = { 0 };
+        final int[] delivered = {0};
         long emptyInARow = 0;
         while (delivered[0] < samples) {
             final int before = delivered[0];
@@ -78,7 +77,8 @@ final class Runner {
      * Checks {@code body} against the samples of {@code gen}: {@code config.samples()} of them, or every value of
      * one pass at the configured size when {@code all} is true.
      */
-    static <T extends Tuple> CheckResult check(CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, Boolean> body, boolean all) {
+    static <T extends Tuple> CheckResult check(
+            CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, Boolean> body, boolean all) {
         final long seed = config.seed();
         final State state = new State();
         final Gen.Sink<T> sink = sample -> {
@@ -105,11 +105,13 @@ final class Runner {
     }
 
     /// The failure of one sample, or null when it passed.
-    private static <T extends Tuple> CheckResult evaluate(int sampleNumber, long seed, T sample, CheckedFunction1<? super T, Boolean> body) {
+    private static <T extends Tuple> CheckResult evaluate(
+            int sampleNumber, long seed, T sample, CheckedFunction1<? super T, Boolean> body) {
         try {
             final Boolean holds = body.apply(sample);
             if (holds == null) {
-                return new CheckResult.Erroneous(sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));
+                return new CheckResult.Erroneous(
+                        sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));
             }
             return holds ? null : new CheckResult.Falsified(sampleNumber, seed, sample, Option.none());
         } catch (AssertionError failure) {

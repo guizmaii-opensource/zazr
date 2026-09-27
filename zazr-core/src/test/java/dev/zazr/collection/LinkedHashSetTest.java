@@ -65,7 +65,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected <T extends Comparable<? super T>> LinkedHashSet<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
+    protected <T extends Comparable<? super T>> LinkedHashSet<T> ofJavaStream(
+            java.util.stream.Stream<? extends T> javaStream) {
         return LinkedHashSet.ofAll(javaStream);
     }
 
@@ -177,7 +178,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldKeepOrder() {
-        final List<Integer> actual = LinkedHashSet.<Integer> empty().add(3).add(2).add(1).toList();
+        final List<Integer> actual =
+                LinkedHashSet.<Integer>empty().add(3).add(2).add(1).toList();
         assertThat(actual).isEqualTo(List.of(3, 2, 1));
     }
 
@@ -240,12 +242,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class LinkedHashSetSpliteratorTests {
         @Test
         public void shouldNotHaveSortedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED))
+                    .isFalse();
         }
 
         @Test
         public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isTrue();
         }
     }
 
@@ -258,7 +262,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingAverageOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").average());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").average());
     }
 
     @TestTemplate
@@ -325,12 +330,18 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateAverageOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     @TestTemplate
     public void shouldCalculateAverageOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     // -- existsUnique
@@ -450,7 +461,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectTheKeptElementsInOrder() {
-        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none())).isEqualTo(of("e2", "e4"));
+        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none()))
+                .isEqualTo(of("e2", "e4"));
     }
 
     @TestTemplate
@@ -465,10 +477,12 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldCallTheCollectMapperOncePerElement() {
         final AtomicInteger calls = new AtomicInteger();
-        of(1, 2, 3).collect(i -> {
-            calls.incrementAndGet();
-            return i == 2 ? Option.none() : Option.some(i);
-        }).size();
+        of(1, 2, 3)
+                .collect(i -> {
+                    calls.incrementAndGet();
+                    return i == 2 ? Option.none() : Option.some(i);
+                })
+                .size();
         assertThat(calls.get()).isEqualTo(3);
     }
 
@@ -477,8 +491,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, HashSet...)
         final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
-          .isInstanceOf(NullPointerException.class)
-          .hasMessage(type + ".collect: mapper returned null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(type + ".collect: mapper returned null");
     }
 
     @TestTemplate
@@ -519,7 +533,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldNonNilGroupByIdentity() {
         final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected = LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
+        final Map<?, ?> expected =
+                LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -540,7 +555,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
         final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
+        final Option<Map<?, ?>> expected =
+                Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -645,13 +661,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMaxOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max()
-          .get()).isEqualTo(Double.POSITIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Double.POSITIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get()).isEqualTo(Float.POSITIVE_INFINITY);
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Float.POSITIVE_INFINITY);
     }
 
     // -- maxBy(Comparator)
@@ -702,9 +719,10 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     public void shouldCallMaxFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(of(1, 2, 3).maxBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(3));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(3));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -802,14 +820,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMinOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMinOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     // -- minBy(Comparator)
@@ -860,9 +878,10 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     public void shouldCallMinFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(of(1, 2, 3).minBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(1));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(1));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -939,7 +958,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingProductOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").product());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").product());
     }
 
     @TestTemplate
@@ -1122,7 +1142,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingSumOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
     }
 
     @TestTemplate
@@ -1219,9 +1240,12 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldPropagateWhatTheTapActionThrows() {
-        assertThrows(IllegalStateException.class, () -> of(1, 2).tap(i -> {
-            throw new IllegalStateException();
-        }).size());
+        assertThrows(
+                IllegalStateException.class,
+                () -> of(1, 2).tap(i -> {
+                            throw new IllegalStateException();
+                        })
+                        .size());
     }
 
     // -- collect(Collector)
@@ -1234,7 +1258,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        final ArrayList<Integer> actual =
+                of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -1293,7 +1318,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedMapTwoFunctions() {
-        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity())).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity()))
+                .isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
@@ -1304,19 +1330,22 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctions() {
-        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity())).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i)))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity())).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
@@ -1341,13 +1370,15 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {
-        assertThrows(ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
+        assertThrows(
+                ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
     }
 
     @TestTemplate
     public void shouldConvertToSortedSet() {
         final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
-        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed())).isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
+                .isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
     }
 
     @TestTemplate
@@ -1495,57 +1526,73 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             assertThat(rangeClosedBy('a', 'c', 1)).isEqualTo(of('a', 'b', 'c'));
             assertThat(rangeClosedBy('a', 'e', 2)).isEqualTo(of('a', 'c', 'e'));
             assertThat(rangeClosedBy('a', 'f', 2)).isEqualTo(of('a', 'c', 'e'));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 2)));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 2)));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
             assertThat(rangeClosedBy('c', 'a', -1)).isEqualTo(of('c', 'b', 'a'));
             assertThat(rangeClosedBy('e', 'a', -2)).isEqualTo(of('e', 'c', 'a'));
             assertThat(rangeClosedBy('e', (char) ('a' - 1), -2)).isEqualTo(of('e', 'c', 'a'));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 2)));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 2)));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0, 3.0));
             assertThat(rangeClosedBy(1.0, 5.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
             assertThat(rangeClosedBy(1.0, 6.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
-            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 2.0E307));
+            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 2.0E307));
             assertThat(rangeClosedBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0, 1.0));
             assertThat(rangeClosedBy(5.0, 1.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
             assertThat(rangeClosedBy(5.0, 0.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
-            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
 
             // int
             assertThat(rangeClosedBy(1, 3, 1)).isEqualTo(of(1, 2, 3));
             assertThat(rangeClosedBy(1, 5, 2)).isEqualTo(of(1, 3, 5));
             assertThat(rangeClosedBy(1, 6, 2)).isEqualTo(of(1, 3, 5));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
             assertThat(rangeClosedBy(3, 1, -1)).isEqualTo(of(3, 2, 1));
             assertThat(rangeClosedBy(5, 1, -2)).isEqualTo(of(5, 3, 1));
             assertThat(rangeClosedBy(5, 0, -2)).isEqualTo(of(5, 3, 1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
 
             // long
             assertThat(rangeClosedBy(1L, 3L, 1)).isEqualTo(of(1L, 2L, 3L));
             assertThat(rangeClosedBy(1L, 5L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(1L, 6L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(Long.MAX_VALUE - 2, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
+            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
             assertThat(rangeClosedBy(3L, 1L, -1)).isEqualTo(of(3L, 2L, 1L));
             assertThat(rangeClosedBy(5L, 1L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(5L, 0L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE + 2, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
+            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
         }
 
         @Test
         public void shouldCreateRangeClosedByWhereFromAndToEqualMIN_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3))
+                    .isEqualTo(of(Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 1)).isEqualTo(of(-Double.MAX_VALUE));
@@ -1570,10 +1617,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByWhereFromAndToEqualMAX_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3))
+                    .isEqualTo(of(Character.MAX_VALUE));
 
             // double
             assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, 1)).isEqualTo(of(Double.MAX_VALUE));
@@ -1598,17 +1649,26 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByStartingAtTypeBoundary() {
 
             // int
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE)).isEqualTo(of(Integer.MAX_VALUE, -1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
+                    .isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE))
+                    .isEqualTo(of(Integer.MAX_VALUE, -1));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5))
+                    .isEqualTo(of(Integer.MIN_VALUE));
 
             // long
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE)).isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE)).isEqualTo(of(Long.MAX_VALUE, -1L));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+                    .isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE))
+                    .isEqualTo(of(Long.MAX_VALUE, -1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 1, 5L)).isEqualTo(of(Long.MIN_VALUE));
         }
     }
@@ -1726,18 +1786,24 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             assertThat(rangeBy('a', 'd', 2)).isEqualTo(of('a', 'c'));
             assertThat(rangeBy('c', 'a', -1)).isEqualTo(of('c', 'b'));
             assertThat(rangeBy('d', 'a', -2)).isEqualTo(of('d', 'b'));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3)));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
 
             // double
             assertThat(rangeBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0));
             assertThat(rangeBy(1.0, 4.0, 2.0)).isEqualTo(of(1.0, 3.0));
             assertThat(rangeBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0));
             assertThat(rangeBy(4.0, 1.0, -2.0)).isEqualTo(of(4.0, 2.0));
-            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 3.0E307));
-            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
+            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 3.0E307));
+            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
 
             // int
             assertThat(rangeBy(1, 3, 1)).isEqualTo(of(1, 2));
@@ -1745,9 +1811,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             assertThat(rangeBy(3, 1, -1)).isEqualTo(of(3, 2));
             assertThat(rangeBy(4, 1, -2)).isEqualTo(of(4, 2));
             assertThat(rangeBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3));
-            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
             assertThat(rangeBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3));
-            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
 
             // long
             assertThat(rangeBy(1L, 3L, 1L)).isEqualTo(of(1L, 2L));
@@ -1755,9 +1823,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             assertThat(rangeBy(3L, 1L, -1L)).isEqualTo(of(3L, 2L));
             assertThat(rangeBy(4L, 1L, -2L)).isEqualTo(of(4L, 2L));
             assertThat(rangeBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3));
-            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
             assertThat(rangeBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3));
-            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
         }
 
         @Test
@@ -1874,14 +1944,18 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             // int
             assertThat(rangeBy(5, Integer.MIN_VALUE, 1)).isEmpty();
             assertThat(rangeBy(5, Integer.MAX_VALUE, -1)).isEmpty();
-            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
-            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
 
             // long
             assertThat(rangeBy(5L, Long.MIN_VALUE, 1L)).isEmpty();
             assertThat(rangeBy(5L, Long.MAX_VALUE, -1L)).isEmpty();
-            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
-            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
         }
 
         // double special cases
@@ -1933,9 +2007,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class FillIntSupplierTests {
         @Test
         public void shouldReturnSingleAfterFillWithConstant() {
-            assertThat(fill(17, () -> 7))
-                    .hasSize(1)
-                    .isEqualTo(of(7));
+            assertThat(fill(17, () -> 7)).hasSize(1).isEqualTo(of(7));
         }
     }
 
@@ -2071,10 +2143,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionInOneIteration() {
             final AtomicInteger count = new AtomicInteger(0);
-            final Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3).partition(i -> {
-                count.incrementAndGet();
-                return true;
-            });
+            final Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3)
+                    .partition(i -> {
+                        count.incrementAndGet();
+                        return true;
+                    });
             assertThat(results._1()).isEqualTo(of(1, 2, 3));
             assertThat(results._2()).isEqualTo(of());
             assertThat(count.get()).isEqualTo(3);
@@ -2143,12 +2216,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class SpliteratorTests {
         @Test
         public void shouldHaveSizedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED))
+                    .isTrue();
         }
 
         @Test
         public void shouldHaveDistinctSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT))
+                    .isTrue();
         }
 
         @Test
@@ -2174,12 +2249,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullOnAdd() {
-            assertThatNullPointerException().isThrownBy(() -> LinkedHashSetTest.this.<Integer>empty().add(null));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashSetTest.this.<Integer>empty().add(null));
         }
 
         @Test
         public void shouldRejectNullOnAddAll() {
-            assertThatNullPointerException().isThrownBy(() -> LinkedHashSetTest.this.<Integer>empty().addAll(java.util.Arrays.asList(1, null)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashSetTest.this.<Integer>empty().addAll(java.util.Arrays.asList(1, null)));
         }
     }
 
@@ -2188,7 +2265,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertNilToJavaArray() {
         final Integer[] actual = LinkedHashSetTest.this.<Integer>empty().toArray(Integer[]::new);
-        final Integer[] expected = new Integer[]{};
+        final Integer[] expected = new Integer[] {};
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2222,7 +2299,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         public void shouldFoldWithACommutativeOperation() {
             assertThat(of(1, 2, 3, 4).fold(0, Integer::sum)).isEqualTo(10);
             assertThat(of(1, 2, 3, 4).fold(1, (a, b) -> a * b)).isEqualTo(24);
-            assertThat(LinkedHashSetTest.this.<Integer>empty().fold(7, Integer::sum)).isEqualTo(7);
+            assertThat(LinkedHashSetTest.this.<Integer>empty().fold(7, Integer::sum))
+                    .isEqualTo(7);
         }
 
         @Test
@@ -2231,8 +2309,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             assertThat(of(1, 2, 3, 4).reduce(Math::max)).isEqualTo(4);
             assertThat(of(5).reduce(Integer::sum)).isEqualTo(5);
             assertThat(of(1, 2, 3, 4).reduceOption(Integer::sum)).isEqualTo(Option.some(10));
-            assertThat(LinkedHashSetTest.this.<Integer>empty().reduceOption(Integer::sum)).isEqualTo(Option.none());
-            assertThrows(NoSuchElementException.class, () -> LinkedHashSetTest.this.<Integer>empty().reduce(Integer::sum));
+            assertThat(LinkedHashSetTest.this.<Integer>empty().reduceOption(Integer::sum))
+                    .isEqualTo(Option.none());
+            assertThrows(
+                    NoSuchElementException.class,
+                    () -> LinkedHashSetTest.this.<Integer>empty().reduce(Integer::sum));
         }
 
         @Test
@@ -2297,8 +2378,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     @Nested
     class PositionalTests {
 
-        private static final int[] WINDOW_SIZES = { 1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE };
-        private static final int[] WINDOW_STEPS = { 1, 2, 3, 70, 71, Integer.MAX_VALUE };
+        private static final int[] WINDOW_SIZES = {1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE};
+        private static final int[] WINDOW_STEPS = {1, 2, 3, 70, 71, Integer.MAX_VALUE};
 
         private java.util.List<LinkedHashSet<Integer>> receivers() {
             final LinkedHashSet<Integer> five = mk(5, 3, 9, 1, 7);
@@ -2311,10 +2392,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             for (int i = 10; i < 45; i++) {
                 atThreshold = atThreshold.remove(i);
             }
-            final java.util.List<Integer> shuffled = new java.util.ArrayList<>(Vector.range(0, 70).asJava());
+            final java.util.List<Integer> shuffled =
+                    new java.util.ArrayList<>(Vector.range(0, 70).asJava());
             java.util.Collections.shuffle(shuffled, new java.util.Random(72));
             return java.util.List.of(
-                    LinkedHashSet.<Integer> empty(),
+                    LinkedHashSet.<Integer>empty(),
                     mk(7),
                     five,
                     five.add(3),
@@ -2330,7 +2412,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         }
 
         private int[] counts(int size) {
-            return new int[] { Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE };
+            return new int[] {Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE};
         }
 
         // Vector's own takeRight/dropRight compute length - n, so the reference is given an n that cannot overflow
@@ -2339,7 +2421,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         }
 
         // `actual` holds exactly `expected`, in order, and behaves as a LinkedHashSet built from it
-        private void assertValid(LinkedHashSet<Integer> receiver, LinkedHashSet<Integer> actual, Vector<Integer> expected) {
+        private void assertValid(
+                LinkedHashSet<Integer> receiver, LinkedHashSet<Integer> actual, Vector<Integer> expected) {
             assertEquals(expected, actual.toVector());
             assertEquals(expected.size(), actual.size());
             if (expected.isEmpty()) {
@@ -2391,8 +2474,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             for (LinkedHashSet<Integer> receiver : receivers()) {
                 final Vector<Integer> elements = receiver.toVector();
                 if (elements.isEmpty()) {
-                    assertEquals("head of empty LinkedHashSet", assertThrows(NoSuchElementException.class, receiver::head).getMessage());
-                    assertEquals("last of empty LinkedHashSet", assertThrows(NoSuchElementException.class, receiver::last).getMessage());
+                    assertEquals(
+                            "head of empty LinkedHashSet",
+                            assertThrows(NoSuchElementException.class, receiver::head)
+                                    .getMessage());
+                    assertEquals(
+                            "last of empty LinkedHashSet",
+                            assertThrows(NoSuchElementException.class, receiver::last)
+                                    .getMessage());
                     assertEquals(Option.none(), receiver.headOption());
                     assertEquals(Option.none(), receiver.lastOption());
                 } else {
@@ -2413,8 +2502,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             for (LinkedHashSet<Integer> receiver : receivers()) {
                 final Vector<Integer> elements = receiver.toVector();
                 if (elements.isEmpty()) {
-                    assertEquals("tail of empty LinkedHashSet", assertThrows(UnsupportedOperationException.class, receiver::tail).getMessage());
-                    assertEquals("init of empty LinkedHashSet", assertThrows(UnsupportedOperationException.class, receiver::init).getMessage());
+                    assertEquals(
+                            "tail of empty LinkedHashSet",
+                            assertThrows(UnsupportedOperationException.class, receiver::tail)
+                                    .getMessage());
+                    assertEquals(
+                            "init of empty LinkedHashSet",
+                            assertThrows(UnsupportedOperationException.class, receiver::init)
+                                    .getMessage());
                     assertEquals(Option.none(), receiver.tailOption());
                     assertEquals(Option.none(), receiver.initOption());
                 } else {
@@ -2432,8 +2527,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldTakeAndDropWhileOrUntilAPredicateHolds() {
-            final java.util.List<java.util.function.Predicate<Integer>> predicates = java.util.List.of(
-                    e -> true, e -> false, e -> e < 5, e -> e >= 5, e -> e % 2 == 1, e -> e != 40);
+            final java.util.List<java.util.function.Predicate<Integer>> predicates =
+                    java.util.List.of(e -> true, e -> false, e -> e < 5, e -> e >= 5, e -> e % 2 == 1, e -> e != 40);
             for (LinkedHashSet<Integer> receiver : receivers()) {
                 final Vector<Integer> elements = receiver.toVector();
                 for (java.util.function.Predicate<Integer> predicate : predicates) {
@@ -2447,7 +2542,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                     assertValid(receiver, dropUntil, elements.dropUntil(predicate));
                 }
                 // the walk stops at the first element that ends the prefix
-                final int[] calls = { 0 };
+                final int[] calls = {0};
                 receiver.takeWhile(e -> {
                     calls[0]++;
                     return false;
@@ -2496,25 +2591,42 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSlideFollowingTheWindowRules() {
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)), mk(1, 2, 3, 4).sliding(3).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(4, 5)), mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(5)), mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)), mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)),
+                    mk(1, 2, 3, 4).sliding(3).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(4, 5)),
+                    mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(5)),
+                    mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)),
+                    mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
                     mk(1, 2, 3, 4, 5, 6).sliding(3, 2).map(this::keys));
             assertEquals(Vector.of(Vector.of(1)), mk(1, 2, 3).sliding(1, 3).map(this::keys));
             assertEquals(Vector.of(Vector.of(1, 2)), mk(1, 2).sliding(5).map(this::keys));
             assertEquals(Vector.of(Vector.of(1)), mk(1).sliding(1).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)), mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)),
+                    mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
                     mk(1, 2, 3, 10, 12, 20, 29).slideBy(e -> e / 10).map(this::keys));
             // a huge step or size does not overflow the window start
-            assertEquals(Vector.of(Vector.range(0, 3)), mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
-            assertEquals(Vector.of(Vector.range(0, 40)),
-                    mk(Vector.range(0, 40)).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE).map(this::keys));
-            assertTrue(LinkedHashSet.<Integer> empty().sliding(1).isEmpty());
-            assertTrue(LinkedHashSet.<Integer> empty().sliding(2, 3).isEmpty());
-            assertTrue(LinkedHashSet.<Integer> empty().grouped(2).isEmpty());
+            assertEquals(
+                    Vector.of(Vector.range(0, 3)),
+                    mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.range(0, 40)),
+                    mk(Vector.range(0, 40))
+                            .sliding(Integer.MAX_VALUE, Integer.MAX_VALUE)
+                            .map(this::keys));
+            assertTrue(LinkedHashSet.<Integer>empty().sliding(1).isEmpty());
+            assertTrue(LinkedHashSet.<Integer>empty().sliding(2, 3).isEmpty());
+            assertTrue(LinkedHashSet.<Integer>empty().grouped(2).isEmpty());
         }
 
         @Test
@@ -2544,7 +2656,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                 for (int i = 0; i < runs.size(); i++) {
                     assertValid(receiver, runs.get(i), expected.get(i));
                 }
-                assertEquals(receiver.isEmpty() ? 0 : 1, receiver.slideBy(e -> "same").size());
+                assertEquals(
+                        receiver.isEmpty() ? 0 : 1,
+                        receiver.slideBy(e -> "same").size());
                 assertEquals(receiver.size(), receiver.slideBy(e -> e).size());
                 assertThrows(NullPointerException.class, () -> receiver.slideBy(null));
             }
@@ -2552,29 +2666,65 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldDeclareThePositionalMembersWithTheOwnType() throws Exception {
-            for (String name : new String[] { "init", "tail" }) {
-                assertEquals(LinkedHashSet.class, LinkedHashSet.class.getDeclaredMethod(name).getReturnType());
+            for (String name : new String[] {"init", "tail"}) {
+                assertEquals(
+                        LinkedHashSet.class,
+                        LinkedHashSet.class.getDeclaredMethod(name).getReturnType());
             }
-            for (String name : new String[] { "take", "takeRight", "drop", "dropRight" }) {
-                assertEquals(LinkedHashSet.class, LinkedHashSet.class.getDeclaredMethod(name, int.class).getReturnType());
+            for (String name : new String[] {"take", "takeRight", "drop", "dropRight"}) {
+                assertEquals(
+                        LinkedHashSet.class,
+                        LinkedHashSet.class.getDeclaredMethod(name, int.class).getReturnType());
             }
-            for (String name : new String[] { "takeWhile", "takeUntil", "dropWhile", "dropUntil" }) {
-                assertEquals(LinkedHashSet.class, LinkedHashSet.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
+            for (String name : new String[] {"takeWhile", "takeUntil", "dropWhile", "dropUntil"}) {
+                assertEquals(
+                        LinkedHashSet.class,
+                        LinkedHashSet.class
+                                .getDeclaredMethod(name, java.util.function.Predicate.class)
+                                .getReturnType());
             }
-            assertEquals("dev.zazr.control.Option<dev.zazr.collection.LinkedHashSet<T>>",
-                    LinkedHashSet.class.getDeclaredMethod("tailOption").getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.control.Option<dev.zazr.collection.LinkedHashSet<T>>",
-                    LinkedHashSet.class.getDeclaredMethod("initOption").getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
-                    LinkedHashSet.class.getDeclaredMethod("grouped", int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
-                    LinkedHashSet.class.getDeclaredMethod("sliding", int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
-                    LinkedHashSet.class.getDeclaredMethod("sliding", int.class, int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
-                    LinkedHashSet.class.getDeclaredMethod("slideBy", Function.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.Tuple2<T, java.lang.Integer>>",
-                    LinkedHashSet.class.getDeclaredMethod("zipWithIndex").getGenericReturnType().getTypeName());
+            assertEquals(
+                    "dev.zazr.control.Option<dev.zazr.collection.LinkedHashSet<T>>",
+                    LinkedHashSet.class
+                            .getDeclaredMethod("tailOption")
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.control.Option<dev.zazr.collection.LinkedHashSet<T>>",
+                    LinkedHashSet.class
+                            .getDeclaredMethod("initOption")
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
+                    LinkedHashSet.class
+                            .getDeclaredMethod("grouped", int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
+                    LinkedHashSet.class
+                            .getDeclaredMethod("sliding", int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
+                    LinkedHashSet.class
+                            .getDeclaredMethod("sliding", int.class, int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.LinkedHashSet<T>>",
+                    LinkedHashSet.class
+                            .getDeclaredMethod("slideBy", Function.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.Tuple2<T, java.lang.Integer>>",
+                    LinkedHashSet.class
+                            .getDeclaredMethod("zipWithIndex")
+                            .getGenericReturnType()
+                            .getTypeName());
             final java.util.Set<String> declared = new java.util.HashSet<>();
             for (java.lang.reflect.Method method : LinkedHashSet.class.getDeclaredMethods()) {
                 declared.add(method.getName());
@@ -2612,7 +2762,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                     shapes.add("markers");
                 }
             }
-            assertEquals(java.util.Set.of("offset", "offset and markers", "markers", "markers at the rebuild threshold"), shapes);
+            assertEquals(
+                    java.util.Set.of("offset", "offset and markers", "markers", "markers at the rebuild threshold"),
+                    shapes);
         }
 
         private int representation(LinkedHashSet<Integer> receiver, String field) throws Exception {
@@ -2653,21 +2805,26 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
-                final Tuple2<LinkedHashSet<String>, LinkedHashSet<Integer>> actual = source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
-                final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> expected = source.partition(i -> i % 3 == 0);
+                final Tuple2<LinkedHashSet<String>, LinkedHashSet<Integer>> actual =
+                        source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
+                final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> expected =
+                        source.partition(i -> i % 3 == 0);
                 assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
                 assertThat(actual._2()).isEqualTo(expected._2());
                 assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
-                assertThat(source.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(source, LinkedHashSet.empty()));
-                assertThat(source.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(LinkedHashSet.empty(), source));
+                assertThat(source.partitionMap(i -> Either.<Integer, String>left(i)))
+                        .isEqualTo(Tuple.of(source, LinkedHashSet.empty()));
+                assertThat(source.partitionMap(i -> Either.<String, Integer>right(i)))
+                        .isEqualTo(Tuple.of(LinkedHashSet.empty(), source));
             }
         }
 
         @Test
         public void shouldKeepEqualValuesOnceOnEachSide() {
-            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual = LinkedHashSet.range(0, 33).partitionMap(i -> i % 2 == 0 ? Either.left(i % 5) : Either.right(i % 3));
+            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual =
+                    LinkedHashSet.range(0, 33).partitionMap(i -> i % 2 == 0 ? Either.left(i % 5) : Either.right(i % 3));
             assertThat(actual).isEqualTo(Tuple.of(LinkedHashSet.of(0, 1, 2, 3, 4), LinkedHashSet.of(0, 1, 2)));
             assertThat(actual._1().size()).isEqualTo(5);
             assertThat(actual._2().size()).isEqualTo(3);
@@ -2675,7 +2832,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCallTheFunctionOncePerElementInIterationOrder() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
                 final java.util.List<Integer> seen = new ArrayList<>();
                 source.partitionMap(i -> {
@@ -2688,20 +2845,32 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnTheEmptyLinkedHashSetForAnEmptySide() {
-            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> none = LinkedHashSet.<Integer> empty().partitionMap(Either::left);
+            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> none =
+                    LinkedHashSet.<Integer>empty().partitionMap(Either::left);
             assertSame(LinkedHashSet.empty(), none._1());
             assertSame(LinkedHashSet.empty(), none._2());
-            assertSame(LinkedHashSet.empty(), LinkedHashSet.of(1, 2).partitionMap(Either::<Integer, Integer> left)._2());
-            assertSame(LinkedHashSet.empty(), LinkedHashSet.of(1, 2).partitionMap(Either::<Integer, Integer> right)._1());
+            assertSame(
+                    LinkedHashSet.empty(),
+                    LinkedHashSet.of(1, 2)
+                            .partitionMap(Either::<Integer, Integer>left)
+                            ._2());
+            assertSame(
+                    LinkedHashSet.empty(),
+                    LinkedHashSet.of(1, 2)
+                            .partitionMap(Either::<Integer, Integer>right)
+                            ._1());
         }
 
         @Test
         public void shouldRejectNullFunctionAndNullEither() {
-            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.of(1).partitionMap(null)).withMessage("f is null");
-            for (int n : new int[] { 1, 32, 33 }) {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashSet.of(1).partitionMap(null))
+                    .withMessage("f is null");
+            for (int n : new int[] {1, 32, 33}) {
                 final int last = n - 1;
                 assertThatNullPointerException()
-                        .isThrownBy(() -> LinkedHashSet.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                        .isThrownBy(() -> LinkedHashSet.range(0, n)
+                                .partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)))
                         .withMessage("LinkedHashSet.partitionMap: f returned null");
             }
         }
@@ -2712,43 +2881,58 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final LinkedHashSet<Integer> inner = LinkedHashSet.range(0, n);
                 assertThat(LinkedHashSet.flatten(List.of(inner))).isEqualTo(inner);
                 assertThat(LinkedHashSet.flatten(List.of(inner, inner))).isEqualTo(inner);
-                assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.range(0, n / 2), LinkedHashSet.range(n / 2, n)))).isEqualTo(inner);
-                assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.<Integer> empty(), inner, LinkedHashSet.<Integer> empty()))).isEqualTo(inner);
-                assertThat(LinkedHashSet.flatten(java.util.List.of(Vector.range(0, n), List.range(0, n)))).isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.range(0, n / 2), LinkedHashSet.range(n / 2, n))))
+                        .isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(
+                                List.of(LinkedHashSet.<Integer>empty(), inner, LinkedHashSet.<Integer>empty())))
+                        .isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(java.util.List.of(Vector.range(0, n), List.range(0, n))))
+                        .isEqualTo(inner);
                 // n inner iterables of one element each
-                assertThat(LinkedHashSet.flatten(inner.toVector().map(LinkedHashSet::of))).isEqualTo(inner);
+                assertThat(LinkedHashSet.flatten(inner.toVector().map(LinkedHashSet::of)))
+                        .isEqualTo(inner);
             }
         }
 
         @Test
         public void shouldFlattenEmptiesToTheEmptyLinkedHashSet() {
-            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.<LinkedHashSet<Integer>> empty()));
-            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.of(LinkedHashSet.<Integer> empty())));
-            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.of(LinkedHashSet.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of())));
-            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(java.util.List.<java.util.List<Integer>> of()));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.<LinkedHashSet<Integer>>empty()));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(List.of(LinkedHashSet.<Integer>empty())));
+            assertSame(
+                    LinkedHashSet.empty(),
+                    LinkedHashSet.flatten(List.of(
+                            LinkedHashSet.<Integer>empty(), Vector.<Integer>empty(), java.util.List.<Integer>of())));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.flatten(java.util.List.<java.util.List<Integer>>of()));
         }
 
         @Test
         public void shouldWidenTheElementType() {
-            final LinkedHashSet<Number> numbers = LinkedHashSet.flatten(List.of(LinkedHashSet.of(1), LinkedHashSet.of(2.0)));
-            assertThat(numbers).isEqualTo(LinkedHashSet.<Number> of(1, 2.0));
+            final LinkedHashSet<Number> numbers =
+                    LinkedHashSet.flatten(List.of(LinkedHashSet.of(1), LinkedHashSet.of(2.0)));
+            assertThat(numbers).isEqualTo(LinkedHashSet.<Number>of(1, 2.0));
         }
 
         @Test
         public void shouldReadOneShotIterablesOnce() {
-            assertThat(LinkedHashSet.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3, 1)))).isEqualTo(LinkedHashSet.of(1, 2, 3));
-            assertSame(LinkedHashSet.empty(), LinkedHashSet.<Integer> flatten(oneShotOf()));
+            assertThat(LinkedHashSet.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3, 1))))
+                    .isEqualTo(LinkedHashSet.of(1, 2, 3));
+            assertSame(LinkedHashSet.empty(), LinkedHashSet.<Integer>flatten(oneShotOf()));
         }
 
         @Test
         public void shouldRejectNulls() {
-            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(null)).withMessage("nested is null");
-            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(java.util.Arrays.asList(LinkedHashSet.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> LinkedHashSet.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("LinkedHashSet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashSet.flatten(null))
+                    .withMessage("nested is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashSet.flatten(java.util.Arrays.asList(LinkedHashSet.of(1), null)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LinkedHashSet.flatten(List.of(java.util.Arrays.asList(1, null))))
+                    .withMessage("LinkedHashSet: element is null");
         }
     }
 
@@ -2766,16 +2950,23 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldKeepEqualValuesAtTheirFirstPosition() {
             // 3 -> 0, 1 -> 1, 4 -> 1, 6 -> 0, 2 -> 2: each value keeps the position of its first occurrence
-            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual = LinkedHashSet.of(3, 1, 4, 6, 2).partitionMap(i -> Either.left(i % 3));
+            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual =
+                    LinkedHashSet.of(3, 1, 4, 6, 2).partitionMap(i -> Either.left(i % 3));
             assertThat(actual._1().toVector()).isEqualTo(Vector.of(0, 1, 2));
-            assertThat(actual._1().toVector()).isEqualTo(LinkedHashSet.ofAll(List.of(3, 1, 4, 6, 2).map(i -> i % 3)).toVector());
+            assertThat(actual._1().toVector())
+                    .isEqualTo(LinkedHashSet.ofAll(List.of(3, 1, 4, 6, 2).map(i -> i % 3))
+                            .toVector());
         }
 
         @Test
         public void shouldFlattenInOrderOfFirstOccurrence() {
-            final LinkedHashSet<Integer> flat = LinkedHashSet.flatten(List.of(List.of(3, 1), List.of(2, 3), List.of(), List.of(1, 4)));
+            final LinkedHashSet<Integer> flat =
+                    LinkedHashSet.flatten(List.of(List.of(3, 1), List.of(2, 3), List.of(), List.of(1, 4)));
             assertThat(flat.toVector()).isEqualTo(Vector.of(3, 1, 2, 4));
-            assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.range(0, 33).toVector().reverse())).toVector()).isEqualTo(Vector.range(0, 33).reverse());
+            assertThat(LinkedHashSet.flatten(List.of(
+                                    LinkedHashSet.range(0, 33).toVector().reverse()))
+                            .toVector())
+                    .isEqualTo(Vector.range(0, 33).reverse());
         }
     }
 }

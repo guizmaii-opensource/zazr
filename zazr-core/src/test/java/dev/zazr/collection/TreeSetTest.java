@@ -70,7 +70,7 @@ public class TreeSetTest extends AbstractTraversableTest {
     @SafeVarargs
     @SuppressWarnings("varargs")
     protected final <T> TreeSet<T> of(T... elements) {
-        return TreeSet.<T> of(Comparators.naturalComparator(), elements);
+        return TreeSet.<T>of(Comparators.naturalComparator(), elements);
     }
 
     @Override
@@ -79,7 +79,8 @@ public class TreeSetTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected <T extends Comparable<? super T>> TreeSet<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
+    protected <T extends Comparable<? super T>> TreeSet<T> ofJavaStream(
+            java.util.stream.Stream<? extends T> javaStream) {
         return TreeSet.ofAll(javaStream);
     }
 
@@ -198,7 +199,8 @@ public class TreeSetTest extends AbstractTraversableTest {
     class CollectorTests {
         @Test
         public void shouldCollectEmpty() {
-            final TreeSet<Integer> actual = java.util.stream.Stream.<Integer>empty().collect(TreeSet.collector());
+            final TreeSet<Integer> actual =
+                    java.util.stream.Stream.<Integer>empty().collect(TreeSet.collector());
             assertThat(actual).isEmpty();
         }
 
@@ -214,9 +216,9 @@ public class TreeSetTest extends AbstractTraversableTest {
     class ConstructTests {
         @Test
         public void shouldConstructEmptySetWithExplicitComparator() {
-            final TreeSet<Integer> ts = TreeSet.<Integer> of(Comparators.naturalComparator()
-                .reversed())
-                .addAll(Vector.of(1, 2, 3));
+            final TreeSet<Integer> ts = TreeSet.<Integer>of(
+                            Comparators.naturalComparator().reversed())
+                    .addAll(Vector.of(1, 2, 3));
             assertThat(ts.toVector()).isEqualTo(Vector.of(3, 2, 1));
         }
 
@@ -229,7 +231,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldConstructStreamFromNonEmptyJavaStream() {
-            final TreeSet<Integer> actual = TreeSet.ofAll(Comparators.naturalComparator(), java.util.stream.Stream.of(1, 2, 3));
+            final TreeSet<Integer> actual =
+                    TreeSet.ofAll(Comparators.naturalComparator(), java.util.stream.Stream.of(1, 2, 3));
             final TreeSet<Integer> expected = of(1, 2, 3);
             assertThat(actual).isEqualTo(expected);
         }
@@ -264,21 +267,22 @@ public class TreeSetTest extends AbstractTraversableTest {
     class TreeSetAddallTests {
         @Test
         public void shouldKeepComparator() {
-            final List<Integer> actual = TreeSet.empty(inverseIntComparator()).addAll(TreeSet.of(1, 2, 3)).toList();
+            final List<Integer> actual = TreeSet.empty(inverseIntComparator())
+                    .addAll(TreeSet.of(1, 2, 3))
+                    .toList();
             final List<Integer> expected = List.of(3, 2, 1);
             assertThat(actual).isEqualTo(expected);
         }
     }
-    
 
     @Nested
     class TreeSetRemoveallTests {
         @Test
         public void shouldKeepComparatorOnRemoveAll() {
-            final TreeSet<Integer> ts = TreeSet.of(Comparators.naturalComparator()
-                .reversed(), 1, 2, 3)
-                .removeAll(Vector.of(1, 2, 3))
-                .addAll(Vector.of(4, 5, 6));
+            final TreeSet<Integer> ts = TreeSet.of(
+                            Comparators.naturalComparator().reversed(), 1, 2, 3)
+                    .removeAll(Vector.of(1, 2, 3))
+                    .addAll(Vector.of(4, 5, 6));
             assertThat(ts.toVector()).isEqualTo(Vector.of(6, 5, 4));
         }
     }
@@ -316,7 +320,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeepComparatorOnUnionOfEmptyWithTreeSetWithDifferentComparator() {
-            final TreeSet<Integer> actual = TreeSet.empty(inverseIntComparator()).union(TreeSet.of(1, 2, 3));
+            final TreeSet<Integer> actual =
+                    TreeSet.empty(inverseIntComparator()).union(TreeSet.of(1, 2, 3));
             assertThat(actual.toList()).isEqualTo(List.of(3, 2, 1));
         }
     }
@@ -385,7 +390,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPreserveComparatorOnConvertToSortedSetWithoutDistinctComparator() {
-            final TreeSet<Integer> value = TreeSet.of(Comparators.naturalComparator().reversed(), 1, 2, 3);
+            final TreeSet<Integer> value =
+                    TreeSet.of(Comparators.naturalComparator().reversed(), 1, 2, 3);
             assertThat(value.toSortedSet().mkString(",")).isEqualTo("3,2,1");
         }
     }
@@ -408,12 +414,15 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRejectNullElementOnOf() {
-        assertThatNullPointerException().isThrownBy(() -> of(nullsFirst(Comparators.naturalComparator()), (Integer) null));
+        assertThatNullPointerException()
+                .isThrownBy(() -> of(nullsFirst(Comparators.naturalComparator()), (Integer) null));
     }
 
     @Test
     public void shouldRejectNullElementOnAdd() {
-        assertThatNullPointerException().isThrownBy(() -> TreeSet.<Integer>empty(nullsFirst(Comparators.naturalComparator())).add(null));
+        assertThatNullPointerException()
+                .isThrownBy(() -> TreeSet.<Integer>empty(nullsFirst(Comparators.naturalComparator()))
+                        .add(null));
     }
 
     @Nested
@@ -422,19 +431,25 @@ public class TreeSetTest extends AbstractTraversableTest {
         @Test
         public void shouldCollectWithAComparator() {
             final TreeSet<String> actual = TreeSet.of(1, 2, 3)
-              .collect(java.util.Comparator.reverseOrder(), i -> i == 2 ? Option.<String>none() : Option.some("v" + i));
+                    .collect(
+                            java.util.Comparator.reverseOrder(),
+                            i -> i == 2 ? Option.<String>none() : Option.some("v" + i));
             assertThat(actual.mkString()).isEqualTo("v3v1");
             assertThat(actual.comparator().compare("a", "b")).isGreaterThan(0);
         }
 
         @Test
         public void shouldCollectWithTheNaturalOrder() {
-            assertThat(TreeSet.of(3, 1, 2).collect(i -> i == 2 ? Option.<String>none() : Option.some("v" + i)).mkString()).isEqualTo("v1v3");
+            assertThat(TreeSet.of(3, 1, 2)
+                            .collect(i -> i == 2 ? Option.<String>none() : Option.some("v" + i))
+                            .mkString())
+                    .isEqualTo("v1v3");
         }
 
         @Test
         public void shouldThrowOnCollectWithNullComparator() {
-            org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> TreeSet.of(1).collect(null, i -> Option.some(i)));
+            org.junit.jupiter.api.Assertions.assertThrows(
+                    NullPointerException.class, () -> TreeSet.of(1).collect(null, i -> Option.some(i)));
         }
     }
 
@@ -447,7 +462,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingAverageOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").average());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").average());
     }
 
     @TestTemplate
@@ -509,12 +525,18 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateAverageOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     @TestTemplate
     public void shouldCalculateAverageOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     // -- existsUnique
@@ -634,7 +656,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectTheKeptElementsInOrder() {
-        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none())).isEqualTo(of("e2", "e4"));
+        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none()))
+                .isEqualTo(of("e2", "e4"));
     }
 
     @TestTemplate
@@ -649,10 +672,12 @@ public class TreeSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldCallTheCollectMapperOncePerElement() {
         final AtomicInteger calls = new AtomicInteger();
-        of(1, 2, 3).collect(i -> {
-            calls.incrementAndGet();
-            return i == 2 ? Option.none() : Option.some(i);
-        }).size();
+        of(1, 2, 3)
+                .collect(i -> {
+                    calls.incrementAndGet();
+                    return i == 2 ? Option.none() : Option.some(i);
+                })
+                .size();
         assertThat(calls.get()).isEqualTo(3);
     }
 
@@ -661,8 +686,8 @@ public class TreeSetTest extends AbstractTraversableTest {
         // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, HashSet...)
         final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
-          .isInstanceOf(NullPointerException.class)
-          .hasMessage(type + ".collect: mapper returned null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(type + ".collect: mapper returned null");
     }
 
     @TestTemplate
@@ -703,7 +728,8 @@ public class TreeSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldNonNilGroupByIdentity() {
         final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected = LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
+        final Map<?, ?> expected =
+                LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -724,7 +750,8 @@ public class TreeSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
         final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
+        final Option<Map<?, ?>> expected =
+                Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -829,13 +856,14 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMaxOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max()
-          .get()).isEqualTo(Double.POSITIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Double.POSITIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get()).isEqualTo(Float.POSITIVE_INFINITY);
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Float.POSITIVE_INFINITY);
     }
 
     // -- maxBy(Comparator)
@@ -886,9 +914,10 @@ public class TreeSetTest extends AbstractTraversableTest {
     public void shouldCallMaxFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(of(1, 2, 3).maxBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(3));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(3));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -986,14 +1015,14 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMinOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMinOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     // -- minBy(Comparator)
@@ -1044,9 +1073,10 @@ public class TreeSetTest extends AbstractTraversableTest {
     public void shouldCallMinFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(of(1, 2, 3).minBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(1));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(1));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -1123,7 +1153,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingProductOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").product());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").product());
     }
 
     @TestTemplate
@@ -1306,7 +1337,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingSumOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
     }
 
     @TestTemplate
@@ -1403,9 +1435,12 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldPropagateWhatTheTapActionThrows() {
-        assertThrows(IllegalStateException.class, () -> of(1, 2).tap(i -> {
-            throw new IllegalStateException();
-        }).size());
+        assertThrows(
+                IllegalStateException.class,
+                () -> of(1, 2).tap(i -> {
+                            throw new IllegalStateException();
+                        })
+                        .size());
     }
 
     // -- collect(Collector)
@@ -1418,7 +1453,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        final ArrayList<Integer> actual =
+                of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -1477,7 +1513,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedMapTwoFunctions() {
-        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity())).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity()))
+                .isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
@@ -1488,19 +1525,22 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctions() {
-        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity())).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i)))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity())).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
@@ -1526,7 +1566,8 @@ public class TreeSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldConvertToSortedSet() {
         final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
-        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed())).isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
+                .isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
     }
 
     @TestTemplate
@@ -1674,57 +1715,73 @@ public class TreeSetTest extends AbstractTraversableTest {
             assertThat(rangeClosedBy('a', 'c', 1)).isEqualTo(of('a', 'b', 'c'));
             assertThat(rangeClosedBy('a', 'e', 2)).isEqualTo(of('a', 'c', 'e'));
             assertThat(rangeClosedBy('a', 'f', 2)).isEqualTo(of('a', 'c', 'e'));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 2)));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 2)));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
             assertThat(rangeClosedBy('c', 'a', -1)).isEqualTo(of('c', 'b', 'a'));
             assertThat(rangeClosedBy('e', 'a', -2)).isEqualTo(of('e', 'c', 'a'));
             assertThat(rangeClosedBy('e', (char) ('a' - 1), -2)).isEqualTo(of('e', 'c', 'a'));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 2)));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 2)));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0, 3.0));
             assertThat(rangeClosedBy(1.0, 5.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
             assertThat(rangeClosedBy(1.0, 6.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
-            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 2.0E307));
+            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 2.0E307));
             assertThat(rangeClosedBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0, 1.0));
             assertThat(rangeClosedBy(5.0, 1.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
             assertThat(rangeClosedBy(5.0, 0.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
-            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
 
             // int
             assertThat(rangeClosedBy(1, 3, 1)).isEqualTo(of(1, 2, 3));
             assertThat(rangeClosedBy(1, 5, 2)).isEqualTo(of(1, 3, 5));
             assertThat(rangeClosedBy(1, 6, 2)).isEqualTo(of(1, 3, 5));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
             assertThat(rangeClosedBy(3, 1, -1)).isEqualTo(of(3, 2, 1));
             assertThat(rangeClosedBy(5, 1, -2)).isEqualTo(of(5, 3, 1));
             assertThat(rangeClosedBy(5, 0, -2)).isEqualTo(of(5, 3, 1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
 
             // long
             assertThat(rangeClosedBy(1L, 3L, 1)).isEqualTo(of(1L, 2L, 3L));
             assertThat(rangeClosedBy(1L, 5L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(1L, 6L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(Long.MAX_VALUE - 2, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
+            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
             assertThat(rangeClosedBy(3L, 1L, -1)).isEqualTo(of(3L, 2L, 1L));
             assertThat(rangeClosedBy(5L, 1L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(5L, 0L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE + 2, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
+            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
         }
 
         @Test
         public void shouldCreateRangeClosedByWhereFromAndToEqualMIN_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3))
+                    .isEqualTo(of(Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 1)).isEqualTo(of(-Double.MAX_VALUE));
@@ -1749,10 +1806,14 @@ public class TreeSetTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByWhereFromAndToEqualMAX_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3))
+                    .isEqualTo(of(Character.MAX_VALUE));
 
             // double
             assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, 1)).isEqualTo(of(Double.MAX_VALUE));
@@ -1777,17 +1838,26 @@ public class TreeSetTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByStartingAtTypeBoundary() {
 
             // int
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE)).isEqualTo(of(Integer.MAX_VALUE, -1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
+                    .isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE))
+                    .isEqualTo(of(Integer.MAX_VALUE, -1));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5))
+                    .isEqualTo(of(Integer.MIN_VALUE));
 
             // long
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE)).isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE)).isEqualTo(of(Long.MAX_VALUE, -1L));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+                    .isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE))
+                    .isEqualTo(of(Long.MAX_VALUE, -1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 1, 5L)).isEqualTo(of(Long.MIN_VALUE));
         }
     }
@@ -1905,18 +1975,24 @@ public class TreeSetTest extends AbstractTraversableTest {
             assertThat(rangeBy('a', 'd', 2)).isEqualTo(of('a', 'c'));
             assertThat(rangeBy('c', 'a', -1)).isEqualTo(of('c', 'b'));
             assertThat(rangeBy('d', 'a', -2)).isEqualTo(of('d', 'b'));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3)));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
 
             // double
             assertThat(rangeBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0));
             assertThat(rangeBy(1.0, 4.0, 2.0)).isEqualTo(of(1.0, 3.0));
             assertThat(rangeBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0));
             assertThat(rangeBy(4.0, 1.0, -2.0)).isEqualTo(of(4.0, 2.0));
-            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 3.0E307));
-            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
+            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 3.0E307));
+            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
 
             // int
             assertThat(rangeBy(1, 3, 1)).isEqualTo(of(1, 2));
@@ -1924,9 +2000,11 @@ public class TreeSetTest extends AbstractTraversableTest {
             assertThat(rangeBy(3, 1, -1)).isEqualTo(of(3, 2));
             assertThat(rangeBy(4, 1, -2)).isEqualTo(of(4, 2));
             assertThat(rangeBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3));
-            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
             assertThat(rangeBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3));
-            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
 
             // long
             assertThat(rangeBy(1L, 3L, 1L)).isEqualTo(of(1L, 2L));
@@ -1934,9 +2012,11 @@ public class TreeSetTest extends AbstractTraversableTest {
             assertThat(rangeBy(3L, 1L, -1L)).isEqualTo(of(3L, 2L));
             assertThat(rangeBy(4L, 1L, -2L)).isEqualTo(of(4L, 2L));
             assertThat(rangeBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3));
-            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
             assertThat(rangeBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3));
-            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
         }
 
         @Test
@@ -2053,14 +2133,18 @@ public class TreeSetTest extends AbstractTraversableTest {
             // int
             assertThat(rangeBy(5, Integer.MIN_VALUE, 1)).isEmpty();
             assertThat(rangeBy(5, Integer.MAX_VALUE, -1)).isEmpty();
-            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
-            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
 
             // long
             assertThat(rangeBy(5L, Long.MIN_VALUE, 1L)).isEmpty();
             assertThat(rangeBy(5L, Long.MAX_VALUE, -1L)).isEmpty();
-            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
-            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
         }
 
         // double special cases
@@ -2102,9 +2186,7 @@ public class TreeSetTest extends AbstractTraversableTest {
     class FillIntSupplierTests {
         @Test
         public void shouldReturnSingleAfterFillWithConstant() {
-            assertThat(fill(17, () -> 7))
-                    .hasSize(1)
-                    .isEqualTo(of(7));
+            assertThat(fill(17, () -> 7)).hasSize(1).isEqualTo(of(7));
         }
     }
 
@@ -2240,10 +2322,11 @@ public class TreeSetTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionInOneIteration() {
             final AtomicInteger count = new AtomicInteger(0);
-            final Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3).partition(i -> {
-                count.incrementAndGet();
-                return true;
-            });
+            final Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3)
+                    .partition(i -> {
+                        count.incrementAndGet();
+                        return true;
+                    });
             assertThat(results._1()).isEqualTo(of(1, 2, 3));
             assertThat(results._2()).isEqualTo(of());
             assertThat(count.get()).isEqualTo(3);
@@ -2312,12 +2395,14 @@ public class TreeSetTest extends AbstractTraversableTest {
     class SpliteratorTests {
         @Test
         public void shouldHaveSizedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED))
+                    .isTrue();
         }
 
         @Test
         public void shouldHaveDistinctSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT))
+                    .isTrue();
         }
 
         @Test
@@ -2343,12 +2428,14 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullOnAdd() {
-            assertThatNullPointerException().isThrownBy(() -> TreeSetTest.this.<Integer>empty().add(null));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> TreeSetTest.this.<Integer>empty().add(null));
         }
 
         @Test
         public void shouldRejectNullOnAddAll() {
-            assertThatNullPointerException().isThrownBy(() -> TreeSetTest.this.<Integer>empty().addAll(java.util.Arrays.asList(1, null)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> TreeSetTest.this.<Integer>empty().addAll(java.util.Arrays.asList(1, null)));
         }
     }
 
@@ -2394,14 +2481,14 @@ public class TreeSetTest extends AbstractTraversableTest {
 
     @Test
     @Disabled("a sorted set returns itself from toSortedSet(), so nothing can throw")
-    public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {
-    }
+    public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {}
 
     @Nested
     class SortedSetSpliteratorTests {
         @Test
         public void shouldHaveSortedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED))
+                    .isTrue();
         }
 
         @Test
@@ -2420,7 +2507,11 @@ public class TreeSetTest extends AbstractTraversableTest {
             // java.util.stream sorts, as the reported comparator is not the natural order
             assertThat(set.stream().sorted().toList()).isEqualTo(java.util.List.of(1, 2, 3));
             assertThat(set.stream().sorted(reversed).toList()).isEqualTo(java.util.List.of(3, 2, 1));
-            assertThat(TreeSet.of(reversed, 3, 1, 2).stream().parallel().sorted().toList()).isEqualTo(java.util.List.of(1, 2, 3));
+            assertThat(TreeSet.of(reversed, 3, 1, 2).stream()
+                            .parallel()
+                            .sorted()
+                            .toList())
+                    .isEqualTo(java.util.List.of(1, 2, 3));
         }
 
         @Test
@@ -2432,14 +2523,20 @@ public class TreeSetTest extends AbstractTraversableTest {
             };
             assertThat(TreeSet.ofAll(that)).isEqualTo(TreeSet.of(1, 2, 3));
             assertThat(walks.get()).isEqualTo(1);
-            assertThat(TreeSet.ofAll(java.util.stream.Stream.of(2, 1)::iterator)).isEqualTo(TreeSet.of(1, 2));
-            assertThat(new java.util.ArrayList<>(TreeSet.ofAll(reverseOrder(), java.util.stream.Stream.of(1, 2)::iterator).asJava())).isEqualTo(java.util.List.of(2, 1));
-            assertThat(TreeSet.ofAll(java.util.stream.Stream.<Integer>empty()::iterator)).isEqualTo(TreeSet.empty());
+            assertThat(TreeSet.ofAll(java.util.stream.Stream.of(2, 1)::iterator))
+                    .isEqualTo(TreeSet.of(1, 2));
+            assertThat(new java.util.ArrayList<>(
+                            TreeSet.ofAll(reverseOrder(), java.util.stream.Stream.of(1, 2)::iterator)
+                                    .asJava()))
+                    .isEqualTo(java.util.List.of(2, 1));
+            assertThat(TreeSet.ofAll(java.util.stream.Stream.<Integer>empty()::iterator))
+                    .isEqualTo(TreeSet.empty());
         }
 
         @Test
         public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isTrue();
         }
     }
 
@@ -2448,7 +2545,7 @@ public class TreeSetTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertNilToJavaArray() {
         final Integer[] actual = TreeSetTest.this.<Integer>empty().toArray(Integer[]::new);
-        final Integer[] expected = new Integer[]{};
+        final Integer[] expected = new Integer[] {};
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2491,8 +2588,11 @@ public class TreeSetTest extends AbstractTraversableTest {
             assertThat(of(1, 2, 3, 4).reduce(Math::max)).isEqualTo(4);
             assertThat(of(5).reduce(Integer::sum)).isEqualTo(5);
             assertThat(of(1, 2, 3, 4).reduceOption(Integer::sum)).isEqualTo(Option.some(10));
-            assertThat(TreeSetTest.this.<Integer>empty().reduceOption(Integer::sum)).isEqualTo(Option.none());
-            assertThrows(NoSuchElementException.class, () -> TreeSetTest.this.<Integer>empty().reduce(Integer::sum));
+            assertThat(TreeSetTest.this.<Integer>empty().reduceOption(Integer::sum))
+                    .isEqualTo(Option.none());
+            assertThrows(
+                    NoSuchElementException.class,
+                    () -> TreeSetTest.this.<Integer>empty().reduce(Integer::sum));
         }
 
         @Test
@@ -2543,7 +2643,8 @@ public class TreeSetTest extends AbstractTraversableTest {
         @Test
         public void shouldFoldInComparatorOrder() {
             assertThat(of(3, 1, 2).foldLeft("", (acc, x) -> acc + x)).isEqualTo("123");
-            assertThat(of(reverseOrder(), 3, 1, 2).foldLeft("", (acc, x) -> acc + x)).isEqualTo("321");
+            assertThat(of(reverseOrder(), 3, 1, 2).foldLeft("", (acc, x) -> acc + x))
+                    .isEqualTo("321");
             assertThat(of(3, 1, 2).reduce((a, b) -> a * 10 + b)).isEqualTo(123);
         }
 
@@ -2559,12 +2660,12 @@ public class TreeSetTest extends AbstractTraversableTest {
     @Nested
     class PositionalTests {
 
-        private static final int[] WINDOW_SIZES = { 1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE };
-        private static final int[] WINDOW_STEPS = { 1, 2, 3, 70, 71, Integer.MAX_VALUE };
+        private static final int[] WINDOW_SIZES = {1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE};
+        private static final int[] WINDOW_STEPS = {1, 2, 3, 70, 71, Integer.MAX_VALUE};
 
         private java.util.List<TreeSet<Integer>> receivers() {
             return java.util.List.of(
-                    TreeSet.<Integer> empty(),
+                    TreeSet.<Integer>empty(),
                     TreeSet.of(7),
                     mk(5, 3, 9, 1, 7),
                     mkReversed(5, 3, 9, 1, 7),
@@ -2574,7 +2675,7 @@ public class TreeSetTest extends AbstractTraversableTest {
         }
 
         private int[] counts(int size) {
-            return new int[] { Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE };
+            return new int[] {Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE};
         }
 
         // Vector's own takeRight/dropRight compute length - n, so the reference is given an n that cannot overflow
@@ -2591,7 +2692,9 @@ public class TreeSetTest extends AbstractTraversableTest {
                 assertTrue(actual.contains(element));
             }
             // the result is a tree like any other: an insertion and a removal land in order
-            assertEquals(TreeSet.ofAll(receiver.comparator(), expected.append(1000)).toVector(), actual.add(1000).toVector());
+            assertEquals(
+                    TreeSet.ofAll(receiver.comparator(), expected.append(1000)).toVector(),
+                    actual.add(1000).toVector());
             if (!expected.isEmpty()) {
                 assertEquals(expected.tail(), actual.remove(expected.head()).toVector());
                 assertEquals(expected.init(), actual.remove(expected.last()).toVector());
@@ -2631,8 +2734,14 @@ public class TreeSetTest extends AbstractTraversableTest {
             for (TreeSet<Integer> receiver : receivers()) {
                 final Vector<Integer> elements = receiver.toVector();
                 if (elements.isEmpty()) {
-                    assertEquals("head of empty TreeSet", assertThrows(NoSuchElementException.class, receiver::head).getMessage());
-                    assertEquals("last of empty TreeSet", assertThrows(NoSuchElementException.class, receiver::last).getMessage());
+                    assertEquals(
+                            "head of empty TreeSet",
+                            assertThrows(NoSuchElementException.class, receiver::head)
+                                    .getMessage());
+                    assertEquals(
+                            "last of empty TreeSet",
+                            assertThrows(NoSuchElementException.class, receiver::last)
+                                    .getMessage());
                     assertEquals(Option.none(), receiver.headOption());
                     assertEquals(Option.none(), receiver.lastOption());
                 } else {
@@ -2653,8 +2762,14 @@ public class TreeSetTest extends AbstractTraversableTest {
             for (TreeSet<Integer> receiver : receivers()) {
                 final Vector<Integer> elements = receiver.toVector();
                 if (elements.isEmpty()) {
-                    assertEquals("tail of empty TreeSet", assertThrows(UnsupportedOperationException.class, receiver::tail).getMessage());
-                    assertEquals("init of empty TreeSet", assertThrows(UnsupportedOperationException.class, receiver::init).getMessage());
+                    assertEquals(
+                            "tail of empty TreeSet",
+                            assertThrows(UnsupportedOperationException.class, receiver::tail)
+                                    .getMessage());
+                    assertEquals(
+                            "init of empty TreeSet",
+                            assertThrows(UnsupportedOperationException.class, receiver::init)
+                                    .getMessage());
                     assertEquals(Option.none(), receiver.tailOption());
                     assertEquals(Option.none(), receiver.initOption());
                 } else {
@@ -2672,8 +2787,8 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldTakeAndDropWhileOrUntilAPredicateHolds() {
-            final java.util.List<java.util.function.Predicate<Integer>> predicates = java.util.List.of(
-                    e -> true, e -> false, e -> e < 5, e -> e >= 5, e -> e % 2 == 1, e -> e != 40);
+            final java.util.List<java.util.function.Predicate<Integer>> predicates =
+                    java.util.List.of(e -> true, e -> false, e -> e < 5, e -> e >= 5, e -> e % 2 == 1, e -> e != 40);
             for (TreeSet<Integer> receiver : receivers()) {
                 final Vector<Integer> elements = receiver.toVector();
                 for (java.util.function.Predicate<Integer> predicate : predicates) {
@@ -2687,7 +2802,7 @@ public class TreeSetTest extends AbstractTraversableTest {
                     assertValid(receiver, dropUntil, elements.dropUntil(predicate));
                 }
                 // the walk stops at the first element that ends the prefix
-                final int[] calls = { 0 };
+                final int[] calls = {0};
                 receiver.takeWhile(e -> {
                     calls[0]++;
                     return false;
@@ -2736,25 +2851,42 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSlideFollowingTheWindowRules() {
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)), mk(1, 2, 3, 4).sliding(3).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(4, 5)), mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(5)), mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)), mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)),
+                    mk(1, 2, 3, 4).sliding(3).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(4, 5)),
+                    mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(5)),
+                    mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)),
+                    mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
                     mk(1, 2, 3, 4, 5, 6).sliding(3, 2).map(this::keys));
             assertEquals(Vector.of(Vector.of(1)), mk(1, 2, 3).sliding(1, 3).map(this::keys));
             assertEquals(Vector.of(Vector.of(1, 2)), mk(1, 2).sliding(5).map(this::keys));
             assertEquals(Vector.of(Vector.of(1)), mk(1).sliding(1).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)), mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)),
+                    mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
                     mk(1, 2, 3, 10, 12, 20, 29).slideBy(e -> e / 10).map(this::keys));
             // a huge step or size does not overflow the window start
-            assertEquals(Vector.of(Vector.range(0, 3)), mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
-            assertEquals(Vector.of(Vector.range(0, 40)),
-                    mk(Vector.range(0, 40)).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE).map(this::keys));
-            assertTrue(TreeSet.<Integer> empty().sliding(1).isEmpty());
-            assertTrue(TreeSet.<Integer> empty().sliding(2, 3).isEmpty());
-            assertTrue(TreeSet.<Integer> empty().grouped(2).isEmpty());
+            assertEquals(
+                    Vector.of(Vector.range(0, 3)),
+                    mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.range(0, 40)),
+                    mk(Vector.range(0, 40))
+                            .sliding(Integer.MAX_VALUE, Integer.MAX_VALUE)
+                            .map(this::keys));
+            assertTrue(TreeSet.<Integer>empty().sliding(1).isEmpty());
+            assertTrue(TreeSet.<Integer>empty().sliding(2, 3).isEmpty());
+            assertTrue(TreeSet.<Integer>empty().grouped(2).isEmpty());
         }
 
         @Test
@@ -2784,7 +2916,9 @@ public class TreeSetTest extends AbstractTraversableTest {
                 for (int i = 0; i < runs.size(); i++) {
                     assertValid(receiver, runs.get(i), expected.get(i));
                 }
-                assertEquals(receiver.isEmpty() ? 0 : 1, receiver.slideBy(e -> "same").size());
+                assertEquals(
+                        receiver.isEmpty() ? 0 : 1,
+                        receiver.slideBy(e -> "same").size());
                 assertEquals(receiver.size(), receiver.slideBy(e -> e).size());
                 assertThrows(NullPointerException.class, () -> receiver.slideBy(null));
             }
@@ -2792,32 +2926,74 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldDeclareThePositionalMembersWithTheOwnType() throws Exception {
-            for (String name : new String[] { "init", "tail" }) {
-                assertEquals(TreeSet.class, TreeSet.class.getDeclaredMethod(name).getReturnType());
-                assertEquals(SortedSet.class, SortedSet.class.getDeclaredMethod(name).getReturnType());
+            for (String name : new String[] {"init", "tail"}) {
+                assertEquals(
+                        TreeSet.class, TreeSet.class.getDeclaredMethod(name).getReturnType());
+                assertEquals(
+                        SortedSet.class, SortedSet.class.getDeclaredMethod(name).getReturnType());
             }
-            for (String name : new String[] { "take", "takeRight", "drop", "dropRight" }) {
-                assertEquals(TreeSet.class, TreeSet.class.getDeclaredMethod(name, int.class).getReturnType());
-                assertEquals(SortedSet.class, SortedSet.class.getDeclaredMethod(name, int.class).getReturnType());
+            for (String name : new String[] {"take", "takeRight", "drop", "dropRight"}) {
+                assertEquals(
+                        TreeSet.class,
+                        TreeSet.class.getDeclaredMethod(name, int.class).getReturnType());
+                assertEquals(
+                        SortedSet.class,
+                        SortedSet.class.getDeclaredMethod(name, int.class).getReturnType());
             }
-            for (String name : new String[] { "takeWhile", "takeUntil", "dropWhile", "dropUntil" }) {
-                assertEquals(TreeSet.class, TreeSet.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
-                assertEquals(SortedSet.class, SortedSet.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
+            for (String name : new String[] {"takeWhile", "takeUntil", "dropWhile", "dropUntil"}) {
+                assertEquals(
+                        TreeSet.class,
+                        TreeSet.class
+                                .getDeclaredMethod(name, java.util.function.Predicate.class)
+                                .getReturnType());
+                assertEquals(
+                        SortedSet.class,
+                        SortedSet.class
+                                .getDeclaredMethod(name, java.util.function.Predicate.class)
+                                .getReturnType());
             }
-            assertEquals("dev.zazr.control.Option<dev.zazr.collection.TreeSet<T>>",
-                    TreeSet.class.getDeclaredMethod("tailOption").getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.control.Option<dev.zazr.collection.TreeSet<T>>",
-                    TreeSet.class.getDeclaredMethod("initOption").getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
-                    TreeSet.class.getDeclaredMethod("grouped", int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
-                    TreeSet.class.getDeclaredMethod("sliding", int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
-                    TreeSet.class.getDeclaredMethod("sliding", int.class, int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
-                    TreeSet.class.getDeclaredMethod("slideBy", Function.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.Tuple2<T, java.lang.Integer>>",
-                    TreeSet.class.getDeclaredMethod("zipWithIndex").getGenericReturnType().getTypeName());
+            assertEquals(
+                    "dev.zazr.control.Option<dev.zazr.collection.TreeSet<T>>",
+                    TreeSet.class
+                            .getDeclaredMethod("tailOption")
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.control.Option<dev.zazr.collection.TreeSet<T>>",
+                    TreeSet.class
+                            .getDeclaredMethod("initOption")
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
+                    TreeSet.class
+                            .getDeclaredMethod("grouped", int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
+                    TreeSet.class
+                            .getDeclaredMethod("sliding", int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
+                    TreeSet.class
+                            .getDeclaredMethod("sliding", int.class, int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeSet<T>>",
+                    TreeSet.class
+                            .getDeclaredMethod("slideBy", Function.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.Tuple2<T, java.lang.Integer>>",
+                    TreeSet.class
+                            .getDeclaredMethod("zipWithIndex")
+                            .getGenericReturnType()
+                            .getTypeName());
             final java.util.Set<String> declared = new java.util.HashSet<>();
             for (java.lang.reflect.Method method : SortedSet.class.getDeclaredMethods()) {
                 declared.add(method.getName());
@@ -2832,7 +3008,9 @@ public class TreeSetTest extends AbstractTraversableTest {
             assertEquals(Vector.of(2, 1), reversed.takeRight(2).toVector());
             assertEquals(Vector.of(3, 2, 1), reversed.drop(2).toVector());
             assertEquals(Vector.of(5, 4, 3), reversed.takeWhile(x -> x > 2).toVector());
-            assertEquals(Vector.of(Vector.of(5, 4), Vector.of(3, 2), Vector.of(1)), reversed.grouped(2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(5, 4), Vector.of(3, 2), Vector.of(1)),
+                    reversed.grouped(2).map(this::keys));
             assertSame(reversed.comparator(), reversed.take(0).comparator());
             assertSame(reversed.comparator(), reversed.drop(9).comparator());
             // the comparator keeps ordering what is added to a result
@@ -2873,20 +3051,29 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenInNaturalOrderAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final TreeSet<Integer> expected = TreeSet.range(0, n);
                 final Vector<Integer> descending = Vector.range(0, n).reverse();
-                assertEquals(expected.toVector(), TreeSet.flatten(List.of(descending)).toVector());
-                assertEquals(expected.toVector(), TreeSet.flatten(List.of(descending, Vector.range(0, n))).toVector());
-                assertEquals(expected.toVector(), TreeSet.flatten(List.of(Vector.range(n / 2, n), List.<Integer> empty(), List.range(0, n / 2))).toVector());
-                assertEquals(expected.toVector(), TreeSet.flatten(descending.map(List::of)).toVector());
+                assertEquals(
+                        expected.toVector(),
+                        TreeSet.flatten(List.of(descending)).toVector());
+                assertEquals(
+                        expected.toVector(),
+                        TreeSet.flatten(List.of(descending, Vector.range(0, n))).toVector());
+                assertEquals(
+                        expected.toVector(),
+                        TreeSet.flatten(List.of(Vector.range(n / 2, n), List.<Integer>empty(), List.range(0, n / 2)))
+                                .toVector());
+                assertEquals(
+                        expected.toVector(),
+                        TreeSet.flatten(descending.map(List::of)).toVector());
             }
         }
 
         @Test
         public void shouldFlattenWithAComparatorAtEveryBoundary() {
             final Comparator<Integer> reversed = reverseOrder();
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final TreeSet<Integer> flat = TreeSet.flatten(reversed, List.of(Vector.range(0, n), List.range(0, n)));
                 assertEquals(Vector.range(0, n).reverse(), flat.toVector());
                 assertSame(reversed, flat.comparator());
@@ -2900,29 +3087,48 @@ public class TreeSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenEmpties() {
-            assertTrue(TreeSet.flatten(List.<List<Integer>> empty()).isEmpty());
-            assertTrue(TreeSet.flatten(List.of(List.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of())).isEmpty());
+            assertTrue(TreeSet.flatten(List.<List<Integer>>empty()).isEmpty());
+            assertTrue(TreeSet.flatten(
+                            List.of(List.<Integer>empty(), Vector.<Integer>empty(), java.util.List.<Integer>of()))
+                    .isEmpty());
             final Comparator<Integer> reversed = reverseOrder();
-            final TreeSet<Integer> empty = TreeSet.flatten(reversed, List.<List<Integer>> empty());
+            final TreeSet<Integer> empty = TreeSet.flatten(reversed, List.<List<Integer>>empty());
             assertTrue(empty.isEmpty());
             assertSame(reversed, empty.comparator());
-            assertSame(reversed, TreeSet.flatten(reversed, List.of(List.<Integer> empty())).comparator());
+            assertSame(
+                    reversed,
+                    TreeSet.flatten(reversed, List.of(List.<Integer>empty())).comparator());
         }
 
         @Test
         public void shouldReadOneShotIterablesOnce() {
-            assertEquals(Vector.of(1, 2, 3), TreeSet.flatten(oneShotOf(oneShotOf(3, 1), oneShotOf(), oneShotOf(2, 1))).toVector());
-            assertEquals(Vector.of(3, 2, 1), TreeSet.flatten(reverseOrder(), oneShotOf(oneShotOf(3, 1), oneShotOf(2))).toVector());
-            assertTrue(TreeSet.<Integer> flatten(oneShotOf()).isEmpty());
+            assertEquals(
+                    Vector.of(1, 2, 3),
+                    TreeSet.flatten(oneShotOf(oneShotOf(3, 1), oneShotOf(), oneShotOf(2, 1)))
+                            .toVector());
+            assertEquals(
+                    Vector.of(3, 2, 1),
+                    TreeSet.flatten(reverseOrder(), oneShotOf(oneShotOf(3, 1), oneShotOf(2)))
+                            .toVector());
+            assertTrue(TreeSet.<Integer>flatten(oneShotOf()).isEmpty());
         }
 
         @Test
         public void shouldRejectNulls() {
-            assertThatNullPointerException().isThrownBy(() -> TreeSet.<Integer> flatten(null)).withMessage("nested is null");
-            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(null, List.of(List.of(1)))).withMessage("comparator is null");
-            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(Comparator.<Integer> naturalOrder(), null)).withMessage("nested is null");
-            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(java.util.Arrays.asList(List.of(1), null)));
-            assertThatNullPointerException().isThrownBy(() -> TreeSet.flatten(List.of(java.util.Arrays.asList(1, null)))).withMessage("TreeSet.flatten: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> TreeSet.<Integer>flatten(null))
+                    .withMessage("nested is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> TreeSet.flatten(null, List.of(List.of(1))))
+                    .withMessage("comparator is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> TreeSet.flatten(Comparator.<Integer>naturalOrder(), null))
+                    .withMessage("nested is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> TreeSet.flatten(java.util.Arrays.asList(List.of(1), null)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> TreeSet.flatten(List.of(java.util.Arrays.asList(1, null))))
+                    .withMessage("TreeSet.flatten: element is null");
         }
     }
 }

@@ -43,64 +43,91 @@ public abstract class AbstractTraversableTest {
         }
 
         @Override
-        public java.util.stream.Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext extensionContext) {
-            return java.util.stream.Stream.of(new TestTemplateInvocationContext() {
-            });
+        public java.util.stream.Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
+                ExtensionContext extensionContext) {
+            return java.util.stream.Stream.of(new TestTemplateInvocationContext() {});
         }
     }
 
     /** The names of the members {@link Traversable} declares (design 3.7), instance methods only. */
     static final java.util.Set<String> TRAVERSABLE_MEMBERS = java.util.Set.of(
-            "iterator", "size", "isEmpty", "nonEmpty", "contains", "containsAll", "exists", "forAll", "count", "find",
-            "foldLeft", "mkString", "forEach", "toVector", "toList", "toSet", "stream", "toArray", "asJava", "spliterator");
+            "iterator",
+            "size",
+            "isEmpty",
+            "nonEmpty",
+            "contains",
+            "containsAll",
+            "exists",
+            "forAll",
+            "count",
+            "find",
+            "foldLeft",
+            "mkString",
+            "forEach",
+            "toVector",
+            "toList",
+            "toSet",
+            "stream",
+            "toArray",
+            "asJava",
+            "spliterator");
 
     /**
      * The positional members the ordered sets and maps declare ({@code SortedSet}, {@code SortedMap},
      * {@code LinkedHashSet}, {@code LinkedHashMap}) and the hash-ordered ones must not (design 3.7).
      */
     static final java.util.Set<String> ORDERED_POSITIONAL_MEMBERS = java.util.Set.of(
-            "head", "headOption", "last", "lastOption", "init", "initOption", "tail", "tailOption", "take", "takeRight",
-            "takeWhile", "takeUntil", "drop", "dropRight", "dropWhile", "dropUntil", "zipWithIndex", "sliding", "grouped",
+            "head",
+            "headOption",
+            "last",
+            "lastOption",
+            "init",
+            "initOption",
+            "tail",
+            "tailOption",
+            "take",
+            "takeRight",
+            "takeWhile",
+            "takeUntil",
+            "drop",
+            "dropRight",
+            "dropWhile",
+            "dropUntil",
+            "zipWithIndex",
+            "sliding",
+            "grouped",
             "slideBy");
 
     protected <T> IterableAssert<T> assertThat(Iterable<T> actual) {
-        return new IterableAssert<T>(actual) {
-        };
+        return new IterableAssert<T>(actual) {};
     }
 
     protected <T> ObjectAssert<T> assertThat(T actual) {
-        return new ObjectAssert<T>(actual) {
-        };
+        return new ObjectAssert<T>(actual) {};
     }
 
     protected <T> ObjectArrayAssert<T> assertThat(T[] actual) {
-        return new ObjectArrayAssert<T>(actual) {
-        };
+        return new ObjectArrayAssert<T>(actual) {};
     }
 
     protected BooleanAssert assertThat(Boolean actual) {
-        return new BooleanAssert(actual) {
-        };
+        return new BooleanAssert(actual) {};
     }
 
     protected DoubleAssert assertThat(Double actual) {
-        return new DoubleAssert(actual) {
-        };
+        return new DoubleAssert(actual) {};
     }
 
     protected IntegerAssert assertThat(Integer actual) {
-        return new IntegerAssert(actual) {
-        };
+        return new IntegerAssert(actual) {};
     }
 
     protected LongAssert assertThat(Long actual) {
-        return new LongAssert(actual) {
-        };
+        return new LongAssert(actual) {};
     }
 
     protected StringAssert assertThat(String actual) {
-        return new StringAssert(actual) {
-        };
+        return new StringAssert(actual) {};
     }
 
     /** The simple names of every interface above {@code type}, so that a test can state the whole supertype chain. */
@@ -149,7 +176,8 @@ public abstract class AbstractTraversableTest {
 
     protected abstract <T> Traversable<T> ofAll(Iterable<? extends T> elements);
 
-    protected abstract <T extends Comparable<? super T>> Traversable<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream);
+    protected abstract <T extends Comparable<? super T>> Traversable<T> ofJavaStream(
+            java.util.stream.Stream<? extends T> javaStream);
 
     protected abstract Traversable<Boolean> ofAll(boolean... elements);
 
@@ -179,7 +207,8 @@ public abstract class AbstractTraversableTest {
         final java.util.Set<String> staticMembers = new java.util.HashSet<>();
         for (java.lang.reflect.Method method : Traversable.class.getDeclaredMethods()) {
             if (!method.isSynthetic()) {
-                (java.lang.reflect.Modifier.isStatic(method.getModifiers()) ? staticMembers : instanceMembers).add(method.getName());
+                (java.lang.reflect.Modifier.isStatic(method.getModifiers()) ? staticMembers : instanceMembers)
+                        .add(method.getName());
             }
         }
         assertThat(instanceMembers).isEqualTo(TRAVERSABLE_MEMBERS);
@@ -456,9 +485,10 @@ public abstract class AbstractTraversableTest {
     public void shouldThrowWhenCallingNextTooOftenOnNonEmptyIterator() {
         final java.util.Iterator<Integer> iterator = of(1).iterator();
         assertThatThrownBy(() -> {
-            iterator.next();
-            iterator.next();
-        }).isInstanceOf(NoSuchElementException.class);
+                    iterator.next();
+                    iterator.next();
+                })
+                .isInstanceOf(NoSuchElementException.class);
     }
 
     // -- mkString()
@@ -523,7 +553,8 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldHaveImmutableSpliterator() {
-        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.IMMUTABLE)).isTrue();
+        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.IMMUTABLE))
+                .isTrue();
     }
 
     // -- equals
@@ -674,7 +705,8 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldParallelStreamAndCollectNil() {
         testCollector(() -> {
-            final Traversable<?> actual = java.util.stream.Stream.empty().parallel().collect(collector());
+            final Traversable<?> actual =
+                    java.util.stream.Stream.empty().parallel().collect(collector());
             assertThat(actual).isEmpty();
         });
     }
@@ -682,8 +714,8 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldParallelStreamAndCollectNonNil() {
         testCollector(() -> {
-            final Traversable<?> actual = java.util.stream.Stream.of(1, 2, 3).parallel()
-              .collect(this.<Object>collector());
+            final Traversable<?> actual =
+                    java.util.stream.Stream.of(1, 2, 3).parallel().collect(this.<Object>collector());
             assertThat(actual).isEqualTo(of(1, 2, 3));
         });
     }
@@ -828,7 +860,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToJavaArray() {
-        assertThat(of(1, 2, 3).toArray()).isEqualTo(new Object[]{1, 2, 3});
+        assertThat(of(1, 2, 3).toArray()).isEqualTo(new Object[] {1, 2, 3});
         assertThat(empty().toArray()).isEmpty();
     }
 

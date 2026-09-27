@@ -4,14 +4,14 @@ package dev.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import dev.zazr.collection.List;
 import dev.zazr.collection.Vector;
 import java.util.Comparator;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Tuple1Test {
 
@@ -35,8 +35,8 @@ public class Tuple1Test {
 
     @Test
     public void shouldUpdate1() {
-      final Tuple1<Integer> tuple = createIntTuple(1).update1(42);
-      assertThat(tuple._1()).isEqualTo(42);
+        final Tuple1<Integer> tuple = createIntTuple(1).update1(42);
+        assertThat(tuple._1()).isEqualTo(42);
     }
 
     @Test
@@ -77,30 +77,30 @@ public class Tuple1Test {
 
     @Test
     public void shouldMapComponents() {
-      final Tuple1<Object> tuple = createTuple();
-      final Function<Object, Object> f1 = Function.identity();
-      final Tuple1<Object> actual = tuple.map(f1);
-      assertThat(actual).isEqualTo(tuple);
+        final Tuple1<Object> tuple = createTuple();
+        final Function<Object, Object> f1 = Function.identity();
+        final Tuple1<Object> actual = tuple.map(f1);
+        assertThat(actual).isEqualTo(tuple);
     }
 
     @Test
     public void shouldReturnTuple1OfUnzip1() {
-      final List<Tuple1<Integer>> iterable = List.of(Tuple.of(2));
-      final Tuple1<Vector<Integer>> expected = Tuple.of(Vector.of(2));
-      assertThat(Tuple.unzip1(iterable)).isEqualTo(expected);
+        final List<Tuple1<Integer>> iterable = List.of(Tuple.of(2));
+        final Tuple1<Vector<Integer>> expected = Tuple.of(Vector.of(2));
+        assertThat(Tuple.unzip1(iterable)).isEqualTo(expected);
     }
 
     @Test
     public void shouldUnzip1Nothing() {
-      final Tuple1<Vector<Integer>> expected = Tuple.of(Vector.empty());
-      assertThat(Tuple.unzip1(List.<Tuple1<Integer>> empty())).isEqualTo(expected);
-      assertThat(Tuple.unzip1(List.<Tuple1<Integer>> empty())._1()).isSameAs(Vector.empty());
+        final Tuple1<Vector<Integer>> expected = Tuple.of(Vector.empty());
+        assertThat(Tuple.unzip1(List.<Tuple1<Integer>>empty())).isEqualTo(expected);
+        assertThat(Tuple.unzip1(List.<Tuple1<Integer>>empty())._1()).isSameAs(Vector.empty());
     }
 
     @Test
     public void shouldRejectNullOnUnzip1() {
-      assertThrows(NullPointerException.class, () -> Tuple.unzip1(null));
-      assertThrows(NullPointerException.class, () -> Tuple.unzip1(List.of(Tuple.of((Integer) null))));
+        assertThrows(NullPointerException.class, () -> Tuple.unzip1(null));
+        assertThrows(NullPointerException.class, () -> Tuple.unzip1(List.of(Tuple.of((Integer) null))));
     }
 
     @Test
@@ -140,29 +140,35 @@ public class Tuple1Test {
 
     @Test
     public void shouldConcatTuple4() {
-        final Tuple5<Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1).concat(Tuple.of(2, 3, 4, 5));
+        final Tuple5<Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1).concat(Tuple.of(2, 3, 4, 5));
         final Tuple5<Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple5() {
-        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1).concat(Tuple.of(2, 3, 4, 5, 6));
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1).concat(Tuple.of(2, 3, 4, 5, 6));
         final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple6() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1).concat(Tuple.of(2, 3, 4, 5, 6, 7));
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7);
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1).concat(Tuple.of(2, 3, 4, 5, 6, 7));
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+                Tuple.of(1, 2, 3, 4, 5, 6, 7);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple7() {
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1).concat(Tuple.of(2, 3, 4, 5, 6, 7, 8));
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
+        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1).concat(Tuple.of(2, 3, 4, 5, 6, 7, 8));
+        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+                Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
         assertThat(actual).isEqualTo(expected);
     }
 

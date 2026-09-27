@@ -34,10 +34,11 @@ public class Euler35Test {
     }
 
     private static boolean isPrime(int n) {
-        return n == 2 || n % 2 != 0 &&
-                Stream.rangeClosedBy(3, (int) Math.sqrt(n), 2)
-                        .find(x -> n % x == 0)
-                        .isEmpty();
+        return n == 2
+                || n % 2 != 0
+                        && Stream.rangeClosedBy(3, (int) Math.sqrt(n), 2)
+                                .find(x -> n % x == 0)
+                                .isEmpty();
     }
 
     private static List<Integer> rotations(int n) {
@@ -47,5 +48,4 @@ public class Euler35Test {
                 .map(s -> Integer.valueOf(s.mkString()))
                 .toList();
     }
-
 }

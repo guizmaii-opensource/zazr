@@ -103,7 +103,8 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
-    @Nullable Tuple2<K, V> getEntry(K key, int hash, int shift) {
+    @Nullable
+    Tuple2<K, V> getEntry(K key, int hash, int shift) {
         if (this.hash == hash) {
             final int index = indexOf(key);
             return index >= 0 ? Tuple.of(getKey(index), getValue(index)) : null;
@@ -140,8 +141,14 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
         } else if (content.length == 4) {
             // one entry left: a node of the root level, to be inlined by the parent
             final int other = 1 - index;
-            return new BitmapIndexedMapNode<>(null, bitposFrom(maskFrom(this.hash, 0)), 0,
-                    new Object[] { getKey(other), getValue(other) }, new int[] { this.hash }, 1, this.hash);
+            return new BitmapIndexedMapNode<>(
+                    null,
+                    bitposFrom(maskFrom(this.hash, 0)),
+                    0,
+                    new Object[] {getKey(other), getValue(other)},
+                    new int[] {this.hash},
+                    1,
+                    this.hash);
         } else {
             final Object[] dst = new Object[content.length - 2];
             System.arraycopy(content, 0, dst, 0, 2 * index);
@@ -194,8 +201,8 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
             return MapNode.empty();
         } else if (length == 2) {
             // one entry left: a node of the root level, to be inlined by the parent
-            return new BitmapIndexedMapNode<>(null, bitposFrom(maskFrom(hash, 0)), 0, new Object[] { kept[0], kept[1] },
-                    new int[] { hash }, 1, hash);
+            return new BitmapIndexedMapNode<>(
+                    null, bitposFrom(maskFrom(hash, 0)), 0, new Object[] {kept[0], kept[1]}, new int[] {hash}, 1, hash);
         } else {
             return new HashCollisionMapNode<>(hash, java.util.Arrays.copyOf(kept, length));
         }

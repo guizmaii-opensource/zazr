@@ -29,8 +29,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class JavaConverters {
 
-    private JavaConverters() {
-    }
+    private JavaConverters() {}
 
     /**
      * Implemented by every view. {@link #underlying()} gives the persistent value whose elements the view shows, in
@@ -44,7 +43,8 @@ public final class JavaConverters {
          *
          * @return the persistent value, or {@code null}
          */
-        @Nullable Object underlying();
+        @Nullable
+        Object underlying();
     }
 
     /**
@@ -82,7 +82,8 @@ public final class JavaConverters {
      *
      * @param <T> the element type
      */
-    abstract static class UnmodifiableCollection<T extends @Nullable Object> extends AbstractCollection<T> implements View {
+    abstract static class UnmodifiableCollection<T extends @Nullable Object> extends AbstractCollection<T>
+            implements View {
 
         @Override
         public final boolean add(T element) {
@@ -207,7 +208,8 @@ public final class JavaConverters {
      * @param <T> the element type
      * @param <C> the sequence type
      */
-    public abstract static class ListView<T extends @Nullable Object, C extends Traversable<T>> extends UnmodifiableCollection<T> implements java.util.List<T> {
+    public abstract static class ListView<T extends @Nullable Object, C extends Traversable<T>>
+            extends UnmodifiableCollection<T> implements java.util.List<T> {
 
         final C delegate;
         final boolean reversed;
@@ -475,7 +477,8 @@ public final class JavaConverters {
          * iterator, so a forward walk costs what iterating the sequence costs; moving backward, and every move on a
          * reversed view, is a positional {@code get}.
          */
-        private static final class ListIterator<T extends @Nullable Object, C extends Traversable<T>> implements java.util.ListIterator<T> {
+        private static final class ListIterator<T extends @Nullable Object, C extends Traversable<T>>
+                implements java.util.ListIterator<T> {
 
             private final ListView<T, C> list;
             private int cursor;
@@ -572,19 +575,29 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(Vector<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(Vector<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(Vector<T> delegate) { return delegate.last(); }
+        T delegateLast(Vector<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(Vector<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(Vector<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(Vector<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(Vector<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        Vector<T> delegateSubSequence(Vector<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        Vector<T> delegateSubSequence(Vector<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
         java.util.Iterator<T> delegateIteratorFrom(Vector<T> delegate, int index) {
@@ -612,7 +625,9 @@ public final class JavaConverters {
         }
 
         @Override
-        ListView<T, Vector<T>> view(Vector<T> delegate, boolean reversed) { return new VectorListView<>(delegate, reversed); }
+        ListView<T, Vector<T>> view(Vector<T> delegate, boolean reversed) {
+            return new VectorListView<>(delegate, reversed);
+        }
     }
 
     /** The view over a {@link List}: a positional read walks the cons cells up to the index. */
@@ -623,28 +638,44 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(List<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(List<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(List<T> delegate) { return delegate.last(); }
+        T delegateLast(List<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(List<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(List<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(List<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(List<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        List<T> delegateSubSequence(List<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        List<T> delegateSubSequence(List<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
-        java.util.Iterator<T> delegateIteratorFrom(List<T> delegate, int index) { return delegate.drop(index).iterator(); }
+        java.util.Iterator<T> delegateIteratorFrom(List<T> delegate, int index) {
+            return delegate.drop(index).iterator();
+        }
 
         @Override
-        java.util.Iterator<T> delegateReverseIterator(List<T> delegate) { return delegate.reverse().iterator(); }
+        java.util.Iterator<T> delegateReverseIterator(List<T> delegate) {
+            return delegate.reverse().iterator();
+        }
 
         @Override
-        ListView<T, List<T>> view(List<T> delegate, boolean reversed) { return new ListListView<>(delegate, reversed); }
+        ListView<T, List<T>> view(List<T> delegate, boolean reversed) {
+            return new ListListView<>(delegate, reversed);
+        }
     }
 
     /** The view over a {@link Queue}. */
@@ -655,28 +686,44 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(Queue<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(Queue<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(Queue<T> delegate) { return delegate.last(); }
+        T delegateLast(Queue<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(Queue<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(Queue<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(Queue<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(Queue<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        Queue<T> delegateSubSequence(Queue<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        Queue<T> delegateSubSequence(Queue<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
-        java.util.Iterator<T> delegateIteratorFrom(Queue<T> delegate, int index) { return delegate.drop(index).iterator(); }
+        java.util.Iterator<T> delegateIteratorFrom(Queue<T> delegate, int index) {
+            return delegate.drop(index).iterator();
+        }
 
         @Override
-        java.util.Iterator<T> delegateReverseIterator(Queue<T> delegate) { return delegate.reverse().iterator(); }
+        java.util.Iterator<T> delegateReverseIterator(Queue<T> delegate) {
+            return delegate.reverse().iterator();
+        }
 
         @Override
-        ListView<T, Queue<T>> view(Queue<T> delegate, boolean reversed) { return new QueueListView<>(delegate, reversed); }
+        ListView<T, Queue<T>> view(Queue<T> delegate, boolean reversed) {
+            return new QueueListView<>(delegate, reversed);
+        }
     }
 
     /**
@@ -695,27 +742,43 @@ public final class JavaConverters {
         }
 
         @Override
-        T delegateGet(Stream<T> delegate, int index) { return delegate.get(index); }
+        T delegateGet(Stream<T> delegate, int index) {
+            return delegate.get(index);
+        }
 
         @Override
-        T delegateLast(Stream<T> delegate) { return delegate.last(); }
+        T delegateLast(Stream<T> delegate) {
+            return delegate.last();
+        }
 
         @Override
-        int delegateIndexOf(Stream<T> delegate, T element) { return delegate.indexOf(element); }
+        int delegateIndexOf(Stream<T> delegate, T element) {
+            return delegate.indexOf(element);
+        }
 
         @Override
-        int delegateLastIndexOf(Stream<T> delegate, T element) { return delegate.lastIndexOf(element); }
+        int delegateLastIndexOf(Stream<T> delegate, T element) {
+            return delegate.lastIndexOf(element);
+        }
 
         @Override
-        Stream<T> delegateSubSequence(Stream<T> delegate, int beginIndex, int endIndex) { return delegate.subSequence(beginIndex, endIndex); }
+        Stream<T> delegateSubSequence(Stream<T> delegate, int beginIndex, int endIndex) {
+            return delegate.subSequence(beginIndex, endIndex);
+        }
 
         @Override
-        java.util.Iterator<T> delegateIteratorFrom(Stream<T> delegate, int index) { return delegate.drop(index).iterator(); }
+        java.util.Iterator<T> delegateIteratorFrom(Stream<T> delegate, int index) {
+            return delegate.drop(index).iterator();
+        }
 
         @Override
-        java.util.Iterator<T> delegateReverseIterator(Stream<T> delegate) { return delegate.reverse().iterator(); }
+        java.util.Iterator<T> delegateReverseIterator(Stream<T> delegate) {
+            return delegate.reverse().iterator();
+        }
 
         @Override
-        ListView<T, Stream<T>> view(Stream<T> delegate, boolean reversed) { return new StreamListView<>(delegate, reversed); }
+        ListView<T, Stream<T>> view(Stream<T> delegate, boolean reversed) {
+            return new StreamListView<>(delegate, reversed);
+        }
     }
 }

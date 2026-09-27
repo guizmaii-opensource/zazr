@@ -16,17 +16,15 @@ final class LawChecks {
     /// The number of samples of each law, unless {@value CheckConfig#SAMPLES_PROPERTY} is set.
     static final int SAMPLES = 1000;
 
-    private LawChecks() {
-    }
+    private LawChecks() {}
 
     /// The configuration of a check named `name`: the seed of {@value CheckConfig#SEED_PROPERTY} when it is set,
     /// otherwise one derived from the name; {@link #SAMPLES} samples unless {@value CheckConfig#SAMPLES_PROPERTY}
     /// is set; the rest from {@link CheckConfig#defaults()}.
     static CheckConfig config(String name) {
         final CheckConfig defaults = CheckConfig.defaults();
-        final CheckConfig seeded = System.getProperty(CheckConfig.SEED_PROPERTY) == null
-                ? defaults.withSeed(seed(name))
-                : defaults;
+        final CheckConfig seeded =
+                System.getProperty(CheckConfig.SEED_PROPERTY) == null ? defaults.withSeed(seed(name)) : defaults;
         return System.getProperty(CheckConfig.SAMPLES_PROPERTY) == null ? seeded.withSamples(SAMPLES) : seeded;
     }
 
@@ -46,7 +44,8 @@ final class LawChecks {
                 .map(law -> new LawResult(law.name(), law.check(subject, config(law.name()))))
                 .filter(result -> !result.isSatisfied());
         if (!failures.isEmpty()) {
-            throw new AssertionError(failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
+            throw new AssertionError(
+                    failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
         }
     }
 }

@@ -4,18 +4,16 @@ package dev.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import dev.zazr.control.Option;
 import dev.zazr.control.Try;
-import java.lang.CharSequence;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CheckedFunction3Test {
 
@@ -52,15 +50,17 @@ public class CheckedFunction3Test {
 
     @Test
     public void shouldRethrowFatalThrowableFromLiftTry() {
-        final Function3<Integer, Integer, Integer, Try<Integer>> lifted =
-            CheckedFunction3.liftTry((i1, i2, i3) -> { throw new OutOfMemoryError("fatal"); });
+        final Function3<Integer, Integer, Integer, Try<Integer>> lifted = CheckedFunction3.liftTry((i1, i2, i3) -> {
+            throw new OutOfMemoryError("fatal");
+        });
         assertThrows(OutOfMemoryError.class, () -> lifted.apply(1, 1, 1));
     }
 
     @Test
     public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
-        final Function3<Integer, Integer, Integer, Try<Integer>> lifted =
-            CheckedFunction3.liftTry((i1, i2, i3) -> { throw new Exception("non-fatal"); });
+        final Function3<Integer, Integer, Integer, Try<Integer>> lifted = CheckedFunction3.liftTry((i1, i2, i3) -> {
+            throw new Exception("non-fatal");
+        });
         final Try<Integer> result = lifted.apply(1, 1, 1);
         assertThat(result.isFailure()).isTrue();
         assertThat(result.getCause()).isInstanceOf(Exception.class).hasMessage("non-fatal");
@@ -93,11 +93,13 @@ public class CheckedFunction3Test {
         assertThat(tupled.apply(Tuple.of(1, 2, 3))).isEqualTo("123");
     }
 
-    private static final CheckedFunction3<String, String, String, MessageDigest> digest = (s1, s2, s3) -> MessageDigest.getInstance(s1 + s2 + s3);
+    private static final CheckedFunction3<String, String, String, MessageDigest> digest =
+            (s1, s2, s3) -> MessageDigest.getInstance(s1 + s2 + s3);
 
     @Test
     public void shouldRecover() {
-        final Function3<String, String, String, MessageDigest> recover = digest.recover(throwable -> (s1, s2, s3) -> null);
+        final Function3<String, String, String, MessageDigest> recover =
+                digest.recover(throwable -> (s1, s2, s3) -> null);
         final MessageDigest md5 = recover.apply("M", "D", "5");
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
@@ -117,22 +119,29 @@ public class CheckedFunction3Test {
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
         assertThat(unknown.getCause().getMessage()).isEqualTo("CheckedFunction3.recover: recover returned null");
-        assertThat(unknown.getCause().getCause()).isInstanceOf(java.security.NoSuchAlgorithmException.class).hasMessage("Unknown MessageDigest not available");
+        assertThat(unknown.getCause().getCause())
+                .isInstanceOf(java.security.NoSuchAlgorithmException.class)
+                .hasMessage("Unknown MessageDigest not available");
     }
 
     @Test
     public void shouldNotHandFatalThrowableToRecover() {
-        final CheckedFunction3<String, String, String, MessageDigest> fatal = (s1, s2, s3) -> { throw new OutOfMemoryError("fatal"); };
-        final Function3<String, String, String, MessageDigest> recover =
-            fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
+        final CheckedFunction3<String, String, String, MessageDigest> fatal = (s1, s2, s3) -> {
+            throw new OutOfMemoryError("fatal");
+        };
+        final Function3<String, String, String, MessageDigest> recover = fatal.recover(throwable -> {
+            throw new AssertionError("recover must not see a fatal throwable");
+        });
         assertThrows(OutOfMemoryError.class, () -> recover.apply("M", "D", "5"));
     }
 
     @Test
     public void shouldHandNonFatalThrowableToRecover() {
-        final CheckedFunction3<String, String, String, MessageDigest> nonFatal = (s1, s2, s3) -> { throw new IllegalStateException("non-fatal"); };
+        final CheckedFunction3<String, String, String, MessageDigest> nonFatal = (s1, s2, s3) -> {
+            throw new IllegalStateException("non-fatal");
+        };
         final Function3<String, String, String, MessageDigest> recover =
-            nonFatal.recover(throwable -> (s1, s2, s3) -> null);
+                nonFatal.recover(throwable -> (s1, s2, s3) -> null);
         assertThat(recover.apply("M", "D", "5")).isNull();
     }
 
@@ -167,7 +176,8 @@ public class CheckedFunction3Test {
         assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
     }
 
-    private static final CheckedFunction3<Integer, Integer, Integer, Integer> recurrent1 = (i1, i2, i3) -> i1 <= 0 ? i1 : CheckedFunction3Test.recurrent1.apply(i1 - 1, i2, i3) + 1;
+    private static final CheckedFunction3<Integer, Integer, Integer, Integer> recurrent1 =
+            (i1, i2, i3) -> i1 <= 0 ? i1 : CheckedFunction3Test.recurrent1.apply(i1 - 1, i2, i3) + 1;
 
     @Test
     public void shouldCalculatedRecursively() throws Exception {
@@ -186,33 +196,37 @@ public class CheckedFunction3Test {
     @Nested
     class ComposeTests {
 
-      @Test
-      public void shouldCompose1()  throws Exception {
-          final CheckedFunction3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-          final Function<String, String> toUpperCase = String::toUpperCase;
-          assertThat(concat.compose1(toUpperCase).apply("xx", "s2", "s3")).isEqualTo("XXs2s3");
-      }
+        @Test
+        public void shouldCompose1() throws Exception {
+            final CheckedFunction3<String, String, String, String> concat =
+                    (String s1, String s2, String s3) -> s1 + s2 + s3;
+            final Function<String, String> toUpperCase = String::toUpperCase;
+            assertThat(concat.compose1(toUpperCase).apply("xx", "s2", "s3")).isEqualTo("XXs2s3");
+        }
 
-      @Test
-      public void shouldCompose2()  throws Exception {
-          final CheckedFunction3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-          final Function<String, String> toUpperCase = String::toUpperCase;
-          assertThat(concat.compose2(toUpperCase).apply("s1", "xx", "s3")).isEqualTo("s1XXs3");
-      }
+        @Test
+        public void shouldCompose2() throws Exception {
+            final CheckedFunction3<String, String, String, String> concat =
+                    (String s1, String s2, String s3) -> s1 + s2 + s3;
+            final Function<String, String> toUpperCase = String::toUpperCase;
+            assertThat(concat.compose2(toUpperCase).apply("s1", "xx", "s3")).isEqualTo("s1XXs3");
+        }
 
-      @Test
-      public void shouldCompose3()  throws Exception {
-          final CheckedFunction3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-          final Function<String, String> toUpperCase = String::toUpperCase;
-          assertThat(concat.compose3(toUpperCase).apply("s1", "s2", "xx")).isEqualTo("s1s2XX");
-      }
-
+        @Test
+        public void shouldCompose3() throws Exception {
+            final CheckedFunction3<String, String, String, String> concat =
+                    (String s1, String s2, String s3) -> s1 + s2 + s3;
+            final Function<String, String> toUpperCase = String::toUpperCase;
+            assertThat(concat.compose3(toUpperCase).apply("s1", "s2", "xx")).isEqualTo("s1s2XX");
+        }
     }
 
     @Test
-    public void shouldNarrow() throws Exception{
-        final CheckedFunction3<Number, Number, Number, String> wideFunction = (o1, o2, o3) -> String.format("Numbers are: %s, %s, %s", o1, o2, o3);
-        final CheckedFunction3<Integer, Integer, Integer, CharSequence> narrowFunction = CheckedFunction3.narrow(wideFunction);
+    public void shouldNarrow() throws Exception {
+        final CheckedFunction3<Number, Number, Number, String> wideFunction =
+                (o1, o2, o3) -> String.format("Numbers are: %s, %s, %s", o1, o2, o3);
+        final CheckedFunction3<Integer, Integer, Integer, CharSequence> narrowFunction =
+                CheckedFunction3.narrow(wideFunction);
 
         assertThat(narrowFunction.apply(1, 2, 3)).isEqualTo("Numbers are: 1, 2, 3");
     }

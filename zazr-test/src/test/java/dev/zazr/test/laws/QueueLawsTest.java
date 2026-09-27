@@ -3,8 +3,6 @@ package dev.zazr.test.laws;
 import dev.zazr.collection.Queue;
 import dev.zazr.control.Option;
 import dev.zazr.test.Gen;
-
-
 import java.util.function.Function;
 
 /**
@@ -47,11 +45,18 @@ class QueueLawsTest extends SequenceLawsSuite<Queue<?>, Queue<Integer>, QueueLaw
 
     @Override
     CollectionSubject<Integer, Queue<Integer>> collection() {
-        return new CollectionSubject<>(Gen.queue(Values.integers()), Queue::ofAll, Queue::size, Queue::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(
+                Gen.queue(Values.integers()),
+                Queue::ofAll,
+                Queue::size,
+                Queue::toList,
+                true,
+                Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Queue<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), Queue.collector(), Queue::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(
+                Gen.list(Values.integers()), Queue.collector(), Queue::ofAll, Option.some(IterationOrder.input()));
     }
 }

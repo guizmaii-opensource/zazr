@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class LinkedHashBuilderTest {
 
     private static final long SEED = 20260925L;
-    private static final int[] SIZES = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 };
+    private static final int[] SIZES = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025};
 
     /** A key whose hash code is chosen by the test; two keys are equal when both the hash and the id are. */
     record Key(int hash, int id) {
@@ -52,7 +52,8 @@ public class LinkedHashBuilderTest {
     @Test
     public void shouldBuildTheLinkedHashSetOfSuccessiveAddsAtEveryBoundary() {
         for (int size : SIZES) {
-            final java.util.List<Integer> input = IntStream.range(0, size).map(i -> size - 1 - i).boxed().toList();
+            final java.util.List<Integer> input =
+                    IntStream.range(0, size).map(i -> size - 1 - i).boxed().toList();
             final LinkedHashSet.Builder<Integer> builder = LinkedHashSet.newBuilder();
             for (Integer element : input) {
                 builder.add(element);
@@ -69,7 +70,8 @@ public class LinkedHashBuilderTest {
             }
         }
         assertThat(LinkedHashSet.newBuilder().result()).isSameAs(LinkedHashSet.empty());
-        assertThat(LinkedHashSet.newBuilder().addAll(java.util.List.of()).result()).isSameAs(LinkedHashSet.empty());
+        assertThat(LinkedHashSet.newBuilder().addAll(java.util.List.of()).result())
+                .isSameAs(LinkedHashSet.empty());
     }
 
     @Test
@@ -100,8 +102,10 @@ public class LinkedHashBuilderTest {
     @Test
     public void shouldReturnAnAdoptedLinkedHashSetAsItIs() {
         for (int size : SIZES) {
-            final LinkedHashSet<Integer> source = LinkedHashSet.ofAll(IntStream.range(0, size).boxed().toList());
-            final LinkedHashSet.Builder<Integer> builder = LinkedHashSet.<Integer> newBuilder().addAll(source);
+            final LinkedHashSet<Integer> source =
+                    LinkedHashSet.ofAll(IntStream.range(0, size).boxed().toList());
+            final LinkedHashSet.Builder<Integer> builder =
+                    LinkedHashSet.<Integer>newBuilder().addAll(source);
             assertThat(builder.size()).isEqualTo(size);
             // equal elements add nothing, so the set is still the one adopted
             builder.addAll(IntStream.range(0, size).boxed().toList());
@@ -109,7 +113,10 @@ public class LinkedHashBuilderTest {
                 assertThat(builder.result()).isSameAs(LinkedHashSet.empty());
             } else {
                 assertThat(builder.result()).isSameAs(source);
-                assertThat(LinkedHashSet.<Integer> newBuilder().addAll(source.asJava()).result()).isSameAs(source);
+                assertThat(LinkedHashSet.<Integer>newBuilder()
+                                .addAll(source.asJava())
+                                .result())
+                        .isSameAs(source);
             }
         }
     }
@@ -118,9 +125,11 @@ public class LinkedHashBuilderTest {
     public void shouldAdoptALinkedHashSetAndNeverChangeIt() {
         final Random random = new Random(SEED);
         for (int size : SIZES) {
-            final LinkedHashSet<Integer> source = LinkedHashSet.ofAll(IntStream.range(0, size).boxed().toList());
+            final LinkedHashSet<Integer> source =
+                    LinkedHashSet.ofAll(IntStream.range(0, size).boxed().toList());
             final java.util.List<Integer> sourceBefore = javaList(source);
-            final LinkedHashSet.Builder<Integer> builder = LinkedHashSet.<Integer> newBuilder().addAll(source);
+            final LinkedHashSet.Builder<Integer> builder =
+                    LinkedHashSet.<Integer>newBuilder().addAll(source);
             final java.util.LinkedHashSet<Integer> oracle = new java.util.LinkedHashSet<>(sourceBefore);
             for (int i = 0; i < 100; i++) {
                 final int element = random.nextInt(2 * size + 10);
@@ -136,7 +145,9 @@ public class LinkedHashBuilderTest {
 
     @Test
     public void shouldBuildALinkedHashSetThatSupportsTheSetOperations() {
-        final LinkedHashSet<Integer> built = LinkedHashSet.<Integer> newBuilder().addAll(IntStream.range(0, 1025).boxed().toList()).result();
+        final LinkedHashSet<Integer> built = LinkedHashSet.<Integer>newBuilder()
+                .addAll(IntStream.range(0, 1025).boxed().toList())
+                .result();
         final LinkedHashSet<Integer> changed = built.remove(3).add(5000).removeAll(java.util.List.of(0, 1, 2));
         assertThat(changed.size()).isEqualTo(1022);
         assertThat(changed.head()).isEqualTo(4);
@@ -150,9 +161,11 @@ public class LinkedHashBuilderTest {
 
     @Test
     public void shouldRefuseLinkedHashSetBuilderUseAfterResult() {
-        final LinkedHashSet.Builder<Integer> builder = LinkedHashSet.<Integer> newBuilder().add(1);
+        final LinkedHashSet.Builder<Integer> builder =
+                LinkedHashSet.<Integer>newBuilder().add(1);
         final LinkedHashSet<Integer> built = builder.result();
-        assertThatThrownBy(() -> builder.add(2)).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> builder.add(2))
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessage("result() has already been called on this LinkedHashSet.Builder");
         assertThatThrownBy(() -> builder.add(null)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.addAll(java.util.List.of(3))).isInstanceOf(IllegalStateException.class);
@@ -162,7 +175,8 @@ public class LinkedHashBuilderTest {
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
         assertThat(javaList(built)).containsExactly(1);
         // an adopting builder is closed too
-        final LinkedHashSet.Builder<Integer> adopting = LinkedHashSet.<Integer> newBuilder().addAll(LinkedHashSet.of(1, 2));
+        final LinkedHashSet.Builder<Integer> adopting =
+                LinkedHashSet.<Integer>newBuilder().addAll(LinkedHashSet.of(1, 2));
         adopting.result();
         assertThatThrownBy(() -> adopting.add(3)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(adopting::size).isInstanceOf(IllegalStateException.class);
@@ -170,12 +184,15 @@ public class LinkedHashBuilderTest {
 
     @Test
     public void shouldRejectNullsInTheLinkedHashSetBuilderAndKeepWhatCameBefore() {
-        assertThatThrownBy(() -> LinkedHashSet.newBuilder().add(null)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashSet.newBuilder().add(null))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashSet.Builder.add: element is null");
-        assertThatThrownBy(() -> LinkedHashSet.newBuilder().addAll(null)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashSet.newBuilder().addAll(null))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("elements is null");
         final LinkedHashSet.Builder<Integer> builder = LinkedHashSet.newBuilder();
-        assertThatThrownBy(() -> builder.addAll(java.util.Arrays.asList(3, 1, null, 2))).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> builder.addAll(java.util.Arrays.asList(3, 1, null, 2)))
+                .isInstanceOf(NullPointerException.class);
         assertThat(javaList(builder.result())).containsExactly(3, 1);
     }
 
@@ -188,7 +205,8 @@ public class LinkedHashBuilderTest {
         }
         final java.util.List<Integer> expected = new ArrayList<>(new java.util.LinkedHashSet<>(input));
         assertThat(javaList(input.stream().collect(LinkedHashSet.collector()))).isEqualTo(expected);
-        assertThat(javaList(input.parallelStream().collect(LinkedHashSet.collector()))).isEqualTo(expected);
+        assertThat(javaList(input.parallelStream().collect(LinkedHashSet.collector())))
+                .isEqualTo(expected);
     }
 
     // -- LinkedHashMap
@@ -196,8 +214,10 @@ public class LinkedHashBuilderTest {
     @Test
     public void shouldBuildTheLinkedHashMapOfSuccessivePutsAtEveryBoundary() {
         for (int size : SIZES) {
-            final java.util.List<Tuple2<Integer, String>> entries = IntStream.range(0, size).map(i -> size - 1 - i)
-                    .mapToObj(k -> Tuple.of(k, "v" + k)).toList();
+            final java.util.List<Tuple2<Integer, String>> entries = IntStream.range(0, size)
+                    .map(i -> size - 1 - i)
+                    .mapToObj(k -> Tuple.of(k, "v" + k))
+                    .toList();
             final LinkedHashMap.Builder<Integer, String> builder = LinkedHashMap.newBuilder();
             for (Tuple2<Integer, String> entry : entries) {
                 builder.put(entry._1(), entry._2());
@@ -215,7 +235,8 @@ public class LinkedHashBuilderTest {
             }
         }
         assertThat(LinkedHashMap.newBuilder().result()).isSameAs(LinkedHashMap.empty());
-        assertThat(LinkedHashMap.newBuilder().putAll(java.util.List.of()).result()).isSameAs(LinkedHashMap.empty());
+        assertThat(LinkedHashMap.newBuilder().putAll(java.util.List.of()).result())
+                .isSameAs(LinkedHashMap.empty());
     }
 
     @Test
@@ -246,14 +267,19 @@ public class LinkedHashBuilderTest {
     @Test
     public void shouldReturnAnAdoptedLinkedHashMapAsItIs() {
         for (int size : SIZES) {
-            final LinkedHashMap<Integer, Integer> source = LinkedHashMap.ofEntries(IntStream.range(0, size).mapToObj(k -> Tuple.of(k, k)).toList());
-            final LinkedHashMap.Builder<Integer, Integer> builder = LinkedHashMap.<Integer, Integer> newBuilder().putAll(source);
+            final LinkedHashMap<Integer, Integer> source = LinkedHashMap.ofEntries(
+                    IntStream.range(0, size).mapToObj(k -> Tuple.of(k, k)).toList());
+            final LinkedHashMap.Builder<Integer, Integer> builder =
+                    LinkedHashMap.<Integer, Integer>newBuilder().putAll(source);
             assertThat(builder.size()).isEqualTo(size);
             if (size == 0) {
                 assertThat(builder.result()).isSameAs(LinkedHashMap.empty());
             } else {
                 assertThat(builder.result()).isSameAs(source);
-                assertThat(LinkedHashMap.<Integer, Integer> newBuilder().putAll(source.asJava()).result()).isSameAs(source);
+                assertThat(LinkedHashMap.<Integer, Integer>newBuilder()
+                                .putAll(source.asJava())
+                                .result())
+                        .isSameAs(source);
             }
         }
     }
@@ -262,9 +288,11 @@ public class LinkedHashBuilderTest {
     public void shouldAdoptALinkedHashMapAndNeverChangeIt() {
         final Random random = new Random(SEED);
         for (int size : SIZES) {
-            final LinkedHashMap<Integer, Integer> source = LinkedHashMap.ofEntries(IntStream.range(0, size).mapToObj(k -> Tuple.of(k, k)).toList());
+            final LinkedHashMap<Integer, Integer> source = LinkedHashMap.ofEntries(
+                    IntStream.range(0, size).mapToObj(k -> Tuple.of(k, k)).toList());
             final java.util.List<Tuple2<Integer, Integer>> sourceBefore = javaList(source);
-            final LinkedHashMap.Builder<Integer, Integer> builder = LinkedHashMap.<Integer, Integer> newBuilder().putAll(source);
+            final LinkedHashMap.Builder<Integer, Integer> builder =
+                    LinkedHashMap.<Integer, Integer>newBuilder().putAll(source);
             final java.util.LinkedHashMap<Integer, Integer> oracle = new java.util.LinkedHashMap<>();
             sourceBefore.forEach(entry -> oracle.put(entry._1(), entry._2()));
             for (int i = 0; i < 100; i++) {
@@ -288,7 +316,8 @@ public class LinkedHashBuilderTest {
             builder.put(i, -i);
         }
         final LinkedHashMap<Integer, Integer> built = builder.result();
-        final LinkedHashMap<Integer, Integer> changed = built.remove(3).put(5000, 0).put(4, 4);
+        final LinkedHashMap<Integer, Integer> changed =
+                built.remove(3).put(5000, 0).put(4, 4);
         assertThat(changed.size()).isEqualTo(1025);
         assertThat(changed.get(4).get()).isEqualTo(4);
         assertThat(changed.last()).isEqualTo(Tuple.of(5000, 0));
@@ -301,20 +330,24 @@ public class LinkedHashBuilderTest {
 
     @Test
     public void shouldRefuseLinkedHashMapBuilderUseAfterResult() {
-        final LinkedHashMap.Builder<Integer, String> builder = LinkedHashMap.<Integer, String> newBuilder().put(1, "a");
+        final LinkedHashMap.Builder<Integer, String> builder =
+                LinkedHashMap.<Integer, String>newBuilder().put(1, "a");
         final LinkedHashMap<Integer, String> built = builder.result();
-        assertThatThrownBy(() -> builder.put(2, "b")).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> builder.put(2, "b"))
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessage("result() has already been called on this LinkedHashMap.Builder");
         assertThatThrownBy(() -> builder.put(null, null)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.put(Tuple.of(2, "b"))).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.put(null)).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> builder.putAll(java.util.List.of(Tuple.of(3, "c")))).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.putAll(java.util.List.of(Tuple.of(3, "c"))))
+                .isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.putAll(LinkedHashMap.of(3, "c"))).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.putAll(null)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
         assertThat(javaList(built)).containsExactly(Tuple.of(1, "a"));
-        final LinkedHashMap.Builder<Integer, String> adopting = LinkedHashMap.<Integer, String> newBuilder().putAll(LinkedHashMap.of(1, "a"));
+        final LinkedHashMap.Builder<Integer, String> adopting =
+                LinkedHashMap.<Integer, String>newBuilder().putAll(LinkedHashMap.of(1, "a"));
         adopting.result();
         assertThatThrownBy(() -> adopting.put(2, "b")).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(adopting::size).isInstanceOf(IllegalStateException.class);
@@ -322,20 +355,27 @@ public class LinkedHashBuilderTest {
 
     @Test
     public void shouldRejectNullsInTheLinkedHashMapBuilderAndKeepWhatCameBefore() {
-        assertThatThrownBy(() -> LinkedHashMap.<Integer, String> newBuilder().put(null, "a")).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.<Integer, String>newBuilder().put(null, "a"))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashMap.Builder.put: key is null");
-        assertThatThrownBy(() -> LinkedHashMap.<Integer, String> newBuilder().put(1, null)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.<Integer, String>newBuilder().put(1, null))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashMap.Builder.put: value is null");
-        assertThatThrownBy(() -> LinkedHashMap.<Integer, String> newBuilder().put(null)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.<Integer, String>newBuilder().put(null))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashMap.Builder.put: entry is null");
-        assertThatThrownBy(() -> LinkedHashMap.<Integer, String> newBuilder().put(Tuple.of(null, "a"))).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.<Integer, String>newBuilder().put(Tuple.of(null, "a")))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashMap.Builder.put: key is null");
-        assertThatThrownBy(() -> LinkedHashMap.<Integer, String> newBuilder().put(Tuple.of(1, null))).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.<Integer, String>newBuilder().put(Tuple.of(1, null)))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashMap.Builder.put: value is null");
-        assertThatThrownBy(() -> LinkedHashMap.<Integer, String> newBuilder().putAll(null)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.<Integer, String>newBuilder().putAll(null))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("entries is null");
         final LinkedHashMap.Builder<Integer, String> builder = LinkedHashMap.newBuilder();
-        assertThatThrownBy(() -> builder.putAll(java.util.Arrays.asList(Tuple.of(2, "b"), Tuple.of(1, "a"), Tuple.of(3, null))))
+        assertThatThrownBy(() ->
+                        builder.putAll(java.util.Arrays.asList(Tuple.of(2, "b"), Tuple.of(1, "a"), Tuple.of(3, null))))
                 .isInstanceOf(NullPointerException.class);
         assertThat(javaList(builder.result())).containsExactly(Tuple.of(2, "b"), Tuple.of(1, "a"));
     }
@@ -349,40 +389,54 @@ public class LinkedHashBuilderTest {
         }
         final java.util.List<Tuple2<Integer, Integer>> expected = javaList(puts(input));
         assertThat(javaList(input.stream().collect(LinkedHashMap.collector()))).isEqualTo(expected);
-        assertThat(javaList(input.parallelStream().collect(LinkedHashMap.collector()))).isEqualTo(expected);
-        assertThat(javaList(input.parallelStream().collect(LinkedHashMap.<Integer, Integer, Tuple2<Integer, Integer>> collector(Tuple2::_1, Tuple2::_2))))
+        assertThat(javaList(input.parallelStream().collect(LinkedHashMap.collector())))
+                .isEqualTo(expected);
+        assertThat(javaList(input.parallelStream()
+                        .collect(LinkedHashMap.<Integer, Integer, Tuple2<Integer, Integer>>collector(
+                                Tuple2::_1, Tuple2::_2))))
                 .isEqualTo(expected);
     }
 
     @Test
     public void shouldKeepTheFactoryNullMessagesOnTheBuilderPaths() {
         final java.util.List<Integer> withNull = java.util.Arrays.asList(1, null);
-        assertThatThrownBy(() -> LinkedHashSet.of(1, null)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashSet.of(1, null))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashSet.of: element is null");
-        assertThatThrownBy(() -> LinkedHashSet.ofAll(withNull)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashSet.ofAll(withNull))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashSet: element is null");
-        assertThatThrownBy(() -> LinkedHashSet.flatten(java.util.List.of(withNull))).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashSet.flatten(java.util.List.of(withNull)))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashSet: element is null");
         final java.util.Map<Integer, String> nullValue = new java.util.HashMap<>();
         nullValue.put(1, null);
-        assertThatThrownBy(() -> LinkedHashMap.ofAll(nullValue)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.ofAll(nullValue))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashMap: value is null");
         final java.util.Map<Integer, String> nullKey = new java.util.HashMap<>();
         nullKey.put(null, "a");
-        assertThatThrownBy(() -> LinkedHashMap.ofAll(nullKey)).isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> LinkedHashMap.ofAll(nullKey))
+                .isInstanceOf(NullPointerException.class)
                 .hasMessage("LinkedHashMap: key is null");
         assertThatThrownBy(() -> LinkedHashMap.ofEntries(java.util.Arrays.asList(Tuple.of(1, "a"), Tuple.of(2, null))))
-                .isInstanceOf(NullPointerException.class).hasMessage("LinkedHashMap: value is null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("LinkedHashMap: value is null");
     }
 
     @Test
     public void shouldCopyAReversedViewInsteadOfAdoptingIt() {
         final LinkedHashSet<Integer> set = LinkedHashSet.of(1, 2, 3);
-        assertThat(javaList(LinkedHashSet.<Integer> newBuilder().addAll(set.asJava().reversed()).result())).containsExactly(3, 2, 1);
+        assertThat(javaList(LinkedHashSet.<Integer>newBuilder()
+                        .addAll(set.asJava().reversed())
+                        .result()))
+                .containsExactly(3, 2, 1);
         final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b");
         final java.util.List<Tuple2<Integer, String>> reversed = new ArrayList<>();
         map.asJavaMap().reversed().forEach((key, value) -> reversed.add(Tuple.of(key, value)));
-        assertThat(javaList(LinkedHashMap.<Integer, String> newBuilder().putAll(reversed).result()))
+        assertThat(javaList(LinkedHashMap.<Integer, String>newBuilder()
+                        .putAll(reversed)
+                        .result()))
                 .containsExactly(Tuple.of(2, "b"), Tuple.of(1, "a"));
     }
 }

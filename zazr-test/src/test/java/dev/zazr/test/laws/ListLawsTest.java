@@ -3,8 +3,6 @@ package dev.zazr.test.laws;
 import dev.zazr.collection.List;
 import dev.zazr.control.Option;
 import dev.zazr.test.Gen;
-
-
 import java.util.function.Function;
 
 /**
@@ -47,11 +45,18 @@ class ListLawsTest extends SequenceLawsSuite<List<?>, List<Integer>, ListLawsTes
 
     @Override
     CollectionSubject<Integer, List<Integer>> collection() {
-        return new CollectionSubject<>(Gen.list(Values.integers()), List::ofAll, List::size, List::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(
+                Gen.list(Values.integers()),
+                List::ofAll,
+                List::size,
+                List::toList,
+                true,
+                Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, List<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), List.collector(), List::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(
+                Gen.list(Values.integers()), List.collector(), List::ofAll, Option.some(IterationOrder.input()));
     }
 }

@@ -2,7 +2,6 @@ package dev.zazr.test.laws;
 
 import dev.zazr.control.Either;
 import dev.zazr.test.Gen;
-
 import java.util.function.Function;
 
 /**
@@ -55,12 +54,15 @@ class EitherLawsTest extends ControlLawsSuite<Either<?, ?>, EitherLawsTest.Subje
 
     @Override
     EqualitySubject<Either<?, ?>> equality() {
-        return new EqualitySubject<>(subject().values(), e -> switch (e) {
-            case Either.Left<?, ?>(var l) -> Either.left(l);
-            case Either.Right<?, ?>(var r) -> Either.right(r);
-        }, e -> switch (e) {
-            case Either.Left<?, ?>(var l) -> java.util.List.of("left", l);
-            case Either.Right<?, ?>(var r) -> java.util.List.of("right", r);
-        });
+        return new EqualitySubject<>(
+                subject().values(),
+                e -> switch (e) {
+                    case Either.Left<?, ?>(var l) -> Either.left(l);
+                    case Either.Right<?, ?>(var r) -> Either.right(r);
+                },
+                e -> switch (e) {
+                    case Either.Left<?, ?>(var l) -> java.util.List.of("left", l);
+                    case Either.Right<?, ?>(var r) -> java.util.List.of("right", r);
+                });
     }
 }

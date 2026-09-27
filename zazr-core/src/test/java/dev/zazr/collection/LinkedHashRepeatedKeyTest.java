@@ -109,27 +109,49 @@ public class LinkedHashRepeatedKeyTest {
 
     // -- the comparison: the same entries in the same order, the same objects, the same positional behaviour
 
-    private static void assertSameMap(String what, LinkedHashMap<Key, String> actual, LinkedHashMap<Key, String> expected) {
+    private static void assertSameMap(
+            String what, LinkedHashMap<Key, String> actual, LinkedHashMap<Key, String> expected) {
         final List<Tuple2<Key, String>> actualEntries = actual.toList();
         final List<Tuple2<Key, String>> expectedEntries = expected.toList();
         assertThat(actualEntries).as(what).isEqualTo(expectedEntries);
         for (int i = 0; i < expectedEntries.size(); i++) {
-            assertThat(actualEntries.get(i)._1()).as(what + ": key object at " + i).isSameAs(expectedEntries.get(i)._1());
-            assertThat(actualEntries.get(i)._2()).as(what + ": value object at " + i).isSameAs(expectedEntries.get(i)._2());
+            assertThat(actualEntries.get(i)._1())
+                    .as(what + ": key object at " + i)
+                    .isSameAs(expectedEntries.get(i)._1());
+            assertThat(actualEntries.get(i)._2())
+                    .as(what + ": value object at " + i)
+                    .isSameAs(expectedEntries.get(i)._2());
         }
-        assertSameKeys(what + ": keySet", actual.keySet().toList(), expected.keySet().toList());
-        assertSameKeys(what + ": keySet order", ((LinkedHashSet<Key>) actual.keySet()).zipWithIndex().map(Tuple2::_1).toList(),
-                ((LinkedHashSet<Key>) expected.keySet()).zipWithIndex().map(Tuple2::_1).toList());
+        assertSameKeys(
+                what + ": keySet", actual.keySet().toList(), expected.keySet().toList());
+        assertSameKeys(
+                what + ": keySet order",
+                ((LinkedHashSet<Key>) actual.keySet())
+                        .zipWithIndex()
+                        .map(Tuple2::_1)
+                        .toList(),
+                ((LinkedHashSet<Key>) expected.keySet())
+                        .zipWithIndex()
+                        .map(Tuple2::_1)
+                        .toList());
         // the built map is a regular map: removing, slicing and putting again agree with the reference
         for (Tuple2<Key, String> entry : expectedEntries) {
-            assertThat(actual.remove(entry._1()).toList()).as(what + ": remove " + entry._1()).isEqualTo(expected.remove(entry._1()).toList());
+            assertThat(actual.remove(entry._1()).toList())
+                    .as(what + ": remove " + entry._1())
+                    .isEqualTo(expected.remove(entry._1()).toList());
         }
         for (int n = 0; n <= expectedEntries.size(); n++) {
-            assertThat(actual.take(n).toList()).as(what + ": take " + n).isEqualTo(expected.take(n).toList());
-            assertThat(actual.drop(n).toList()).as(what + ": drop " + n).isEqualTo(expected.drop(n).toList());
+            assertThat(actual.take(n).toList())
+                    .as(what + ": take " + n)
+                    .isEqualTo(expected.take(n).toList());
+            assertThat(actual.drop(n).toList())
+                    .as(what + ": drop " + n)
+                    .isEqualTo(expected.drop(n).toList());
         }
         final Key fresh = new Key(-1, "fresh");
-        assertThat(actual.put(fresh, "f").toList()).as(what + ": put").isEqualTo(expected.put(fresh, "f").toList());
+        assertThat(actual.put(fresh, "f").toList())
+                .as(what + ": put")
+                .isEqualTo(expected.put(fresh, "f").toList());
     }
 
     private static void assertSameKeys(String what, List<Key> actual, List<Key> expected) {
@@ -141,12 +163,19 @@ public class LinkedHashRepeatedKeyTest {
 
     private static void assertSameSet(String what, LinkedHashSet<Key> actual, LinkedHashSet<Key> expected) {
         assertSameKeys(what, actual.toList(), expected.toList());
-        assertSameKeys(what + ": zipWithIndex", actual.zipWithIndex().map(Tuple2::_1).toList(), expected.zipWithIndex().map(Tuple2::_1).toList());
+        assertSameKeys(
+                what + ": zipWithIndex",
+                actual.zipWithIndex().map(Tuple2::_1).toList(),
+                expected.zipWithIndex().map(Tuple2::_1).toList());
         for (Key element : expected) {
-            assertThat(actual.remove(element).toList()).as(what + ": remove " + element).isEqualTo(expected.remove(element).toList());
+            assertThat(actual.remove(element).toList())
+                    .as(what + ": remove " + element)
+                    .isEqualTo(expected.remove(element).toList());
         }
         for (int n = 0; n <= expected.size(); n++) {
-            assertThat(actual.take(n).toList()).as(what + ": take " + n).isEqualTo(expected.take(n).toList());
+            assertThat(actual.take(n).toList())
+                    .as(what + ": take " + n)
+                    .isEqualTo(expected.take(n).toList());
         }
     }
 
@@ -177,16 +206,31 @@ public class LinkedHashRepeatedKeyTest {
             assertSameMap("ofEntries(List) " + input, LinkedHashMap.ofEntries(List.ofAll(entries)), expected);
             assertSameMap("ofEntries(one-shot) " + input, LinkedHashMap.ofEntries(oneShot(entries)), expected);
             assertSameMap("collector() " + input, entries.stream().collect(LinkedHashMap.collector()), expected);
-            assertSameMap("parallel collector() " + input, entries.parallelStream().collect(LinkedHashMap.collector()), expected);
-            assertSameMap("collector(key, value) " + input,
-                    entries.parallelStream().collect(LinkedHashMap.<Key, String, Tuple2<Key, String>>collector(Tuple2::_1, Tuple2::_2)), expected);
+            assertSameMap(
+                    "parallel collector() " + input,
+                    entries.parallelStream().collect(LinkedHashMap.collector()),
+                    expected);
+            assertSameMap(
+                    "collector(key, value) " + input,
+                    entries.parallelStream()
+                            .collect(LinkedHashMap.<Key, String, Tuple2<Key, String>>collector(Tuple2::_1, Tuple2::_2)),
+                    expected);
             assertSameMap("tabulate " + input, LinkedHashMap.tabulate(entries.size(), entries::get), expected);
             final java.util.Iterator<Tuple2<Key, String>> supplied = entries.iterator();
             assertSameMap("fill " + input, LinkedHashMap.fill(entries.size(), supplied::next), expected);
-            assertSameMap("ofAll(Stream, entryMapper) " + input, LinkedHashMap.ofAll(entries.stream(), Function.identity()), expected);
-            assertSameMap("ofAll(Stream, key, value) " + input, LinkedHashMap.ofAll(entries.stream(), Tuple2::_1, Tuple2::_2), expected);
+            assertSameMap(
+                    "ofAll(Stream, entryMapper) " + input,
+                    LinkedHashMap.ofAll(entries.stream(), Function.identity()),
+                    expected);
+            assertSameMap(
+                    "ofAll(Stream, key, value) " + input,
+                    LinkedHashMap.ofAll(entries.stream(), Tuple2::_1, Tuple2::_2),
+                    expected);
             assertSameMap("orElse " + input, LinkedHashMap.<Key, String>empty().orElse(entries), expected);
-            assertSameMap("orElse(Supplier) " + input, LinkedHashMap.<Key, String>empty().orElse(() -> entries), expected);
+            assertSameMap(
+                    "orElse(Supplier) " + input,
+                    LinkedHashMap.<Key, String>empty().orElse(() -> entries),
+                    expected);
             if (entries.size() >= 1 && entries.size() <= 10) {
                 assertSameMap("of arity " + entries.size() + " " + input, ofArity(entries), expected);
             }
@@ -215,17 +259,29 @@ public class LinkedHashRepeatedKeyTest {
             case 2 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1));
             case 3 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2));
             case 4 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3));
-            case 5 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4));
-            case 6 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
-                    k(e, 5), v(e, 5));
-            case 7 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
-                    k(e, 5), v(e, 5), k(e, 6), v(e, 6));
-            case 8 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
-                    k(e, 5), v(e, 5), k(e, 6), v(e, 6), k(e, 7), v(e, 7));
-            case 9 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
-                    k(e, 5), v(e, 5), k(e, 6), v(e, 6), k(e, 7), v(e, 7), k(e, 8), v(e, 8));
-            case 10 -> LinkedHashMap.of(k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
-                    k(e, 5), v(e, 5), k(e, 6), v(e, 6), k(e, 7), v(e, 7), k(e, 8), v(e, 8), k(e, 9), v(e, 9));
+            case 5 ->
+                LinkedHashMap.of(
+                        k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4));
+            case 6 ->
+                LinkedHashMap.of(
+                        k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
+                        k(e, 5), v(e, 5));
+            case 7 ->
+                LinkedHashMap.of(
+                        k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
+                        k(e, 5), v(e, 5), k(e, 6), v(e, 6));
+            case 8 ->
+                LinkedHashMap.of(
+                        k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
+                        k(e, 5), v(e, 5), k(e, 6), v(e, 6), k(e, 7), v(e, 7));
+            case 9 ->
+                LinkedHashMap.of(
+                        k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
+                        k(e, 5), v(e, 5), k(e, 6), v(e, 6), k(e, 7), v(e, 7), k(e, 8), v(e, 8));
+            case 10 ->
+                LinkedHashMap.of(
+                        k(e, 0), v(e, 0), k(e, 1), v(e, 1), k(e, 2), v(e, 2), k(e, 3), v(e, 3), k(e, 4), v(e, 4),
+                        k(e, 5), v(e, 5), k(e, 6), v(e, 6), k(e, 7), v(e, 7), k(e, 8), v(e, 8), k(e, 9), v(e, 9));
             default -> throw new IllegalArgumentException("arity " + e.size());
         };
     }
@@ -242,7 +298,8 @@ public class LinkedHashRepeatedKeyTest {
     public void mapSingletonFactoriesAgreeWithPut() {
         final Key key = new Key(1, "a");
         final String value = new String("v");
-        final LinkedHashMap<Key, String> expected = LinkedHashMap.<Key, String>empty().put(key, value);
+        final LinkedHashMap<Key, String> expected =
+                LinkedHashMap.<Key, String>empty().put(key, value);
         assertSameMap("of(key, value)", LinkedHashMap.of(key, value), expected);
         assertSameMap("of(entry)", LinkedHashMap.of(Tuple.of(key, value)), expected);
     }
@@ -264,8 +321,14 @@ public class LinkedHashRepeatedKeyTest {
             assertSameMap("mapBoth " + input, source.mapBoth(mappedKeys::get, Function.identity()), expected);
             assertSameMap("mapKeys " + input, source.mapKeys(mappedKeys::get), expected);
             assertSameMap("map " + input, source.map((key, value) -> Tuple.of(mappedKeys.get(key), value)), expected);
-            assertSameMap("flatMap " + input, source.flatMap((key, value) -> List.of(Tuple.of(mappedKeys.get(key), value))), expected);
-            assertSameMap("collect " + input, source.collect((key, value) -> Option.some(Tuple.of(mappedKeys.get(key), value))), expected);
+            assertSameMap(
+                    "flatMap " + input,
+                    source.flatMap((key, value) -> List.of(Tuple.of(mappedKeys.get(key), value))),
+                    expected);
+            assertSameMap(
+                    "collect " + input,
+                    source.collect((key, value) -> Option.some(Tuple.of(mappedKeys.get(key), value))),
+                    expected);
 
             LinkedHashMap<Key, String> merged = LinkedHashMap.empty();
             for (Tuple2<Key, String> entry : mapped) {
@@ -290,7 +353,10 @@ public class LinkedHashRepeatedKeyTest {
                 }
             }
             assertSameMap("merge " + input, left.merge(right), kept);
-            assertSameMap("merge into empty " + input, LinkedHashMap.<Key, String>empty().merge(right), right);
+            assertSameMap(
+                    "merge into empty " + input,
+                    LinkedHashMap.<Key, String>empty().merge(right),
+                    right);
 
             LinkedHashMap<Key, String> resolved = left;
             for (Tuple2<Key, String> entry : right) {
@@ -306,12 +372,19 @@ public class LinkedHashRepeatedKeyTest {
         final Key first = new Key(1, "first");
         final Key second = new Key(1, "second");
         final Key other = new Key(2, "other");
-        final LinkedHashMap<Key, String> map = LinkedHashMap.<Key, String>empty().put(first, "a").put(other, "b").put(second, "c");
+        final LinkedHashMap<Key, String> map = LinkedHashMap.<Key, String>empty()
+                .put(first, "a")
+                .put(other, "b")
+                .put(second, "c");
         assertThat(map.toList()).isEqualTo(List.of(Tuple.of(first, "c"), Tuple.of(other, "b")));
         assertThat(map.head()._1()).isSameAs(second);
         assertThat(((LinkedHashSet<Key>) map.keySet()).head()).isSameAs(second);
-        assertThat(((LinkedHashSet<Key>) map.keySet()).zipWithIndex().head()._1()).isSameAs(second);
-        assertThat(((LinkedHashSet<Key>) map.keySet()).takeWhile(key -> key.tag.equals("second")).toList()).containsExactly(second);
+        assertThat(((LinkedHashSet<Key>) map.keySet()).zipWithIndex().head()._1())
+                .isSameAs(second);
+        assertThat(((LinkedHashSet<Key>) map.keySet())
+                        .takeWhile(key -> key.tag.equals("second"))
+                        .toList())
+                .containsExactly(second);
         assertThat(map.remove(other).head()._1()).isSameAs(second);
     }
 
@@ -333,7 +406,12 @@ public class LinkedHashRepeatedKeyTest {
             assertSameMap("builder put(key, value) " + input, byKeyValue.result(), expected);
             assertSameMap("builder put(entry) " + input, byEntry.result(), expected);
             assertSameMap("builder putAll(singletons) " + input, byPutAll.result(), expected);
-            assertSameMap("builder putAll(one-shot) " + input, LinkedHashMap.<Key, String>newBuilder().putAll(oneShot(entries)).result(), expected);
+            assertSameMap(
+                    "builder putAll(one-shot) " + input,
+                    LinkedHashMap.<Key, String>newBuilder()
+                            .putAll(oneShot(entries))
+                            .result(),
+                    expected);
 
             for (int split = 0; split <= entries.size(); split += Math.max(1, entries.size() / 4)) {
                 final java.util.List<Tuple2<Key, String>> prefix = entries.subList(0, split);
@@ -341,20 +419,40 @@ public class LinkedHashRepeatedKeyTest {
                 final LinkedHashMap<Key, String> prefixMap = puts(prefix);
                 final java.util.List<Tuple2<Key, String>> prefixBefore = javaList(prefixMap);
                 // adopted, then extended
-                assertSameMap("builder adopting at " + split + " " + input,
-                        LinkedHashMap.<Key, String>newBuilder().putAll(prefixMap).putAll(suffix).result(), expected);
-                assertSameMap("builder adopting the view at " + split + " " + input,
-                        LinkedHashMap.<Key, String>newBuilder().putAll(prefixMap.asJava()).putAll(suffix).result(), expected);
+                assertSameMap(
+                        "builder adopting at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder()
+                                .putAll(prefixMap)
+                                .putAll(suffix)
+                                .result(),
+                        expected);
+                assertSameMap(
+                        "builder adopting the view at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder()
+                                .putAll(prefixMap.asJava())
+                                .putAll(suffix)
+                                .result(),
+                        expected);
                 // a map put into a builder that is not empty is put entry by entry
                 final LinkedHashMap<Key, String> suffixMap = puts(suffix);
                 LinkedHashMap<Key, String> both = prefixMap;
                 for (Tuple2<Key, String> entry : suffixMap) {
                     both = both.put(entry._1(), entry._2());
                 }
-                assertSameMap("builder putAll(map) after entries at " + split + " " + input,
-                        LinkedHashMap.<Key, String>newBuilder().putAll(prefix).putAll(suffixMap).result(), both);
-                assertSameMap("builder putAll(map) twice at " + split + " " + input,
-                        LinkedHashMap.<Key, String>newBuilder().putAll(prefixMap).putAll(suffixMap).result(), both);
+                assertSameMap(
+                        "builder putAll(map) after entries at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder()
+                                .putAll(prefix)
+                                .putAll(suffixMap)
+                                .result(),
+                        both);
+                assertSameMap(
+                        "builder putAll(map) twice at " + split + " " + input,
+                        LinkedHashMap.<Key, String>newBuilder()
+                                .putAll(prefixMap)
+                                .putAll(suffixMap)
+                                .result(),
+                        both);
                 assertThat(javaList(prefixMap)).as("adopted map unchanged").isEqualTo(prefixBefore);
             }
 
@@ -369,8 +467,13 @@ public class LinkedHashRepeatedKeyTest {
                 for (Tuple2<Key, String> entry : entries) {
                     extended = extended.put(entry._1(), entry._2());
                 }
-                assertSameMap("builder adopting a map with removals " + input,
-                        LinkedHashMap.<Key, String>newBuilder().putAll(removed).putAll(entries).result(), extended);
+                assertSameMap(
+                        "builder adopting a map with removals " + input,
+                        LinkedHashMap.<Key, String>newBuilder()
+                                .putAll(removed)
+                                .putAll(entries)
+                                .result(),
+                        extended);
             }
         }
     }
@@ -389,13 +492,19 @@ public class LinkedHashRepeatedKeyTest {
             assertSameSet("ofAll(one-shot) " + input, LinkedHashSet.ofAll(oneShot(elements)), expected);
             assertSameSet("ofAll(Stream) " + input, LinkedHashSet.ofAll(elements.stream()), expected);
             assertSameSet("collector " + input, elements.stream().collect(LinkedHashSet.collector()), expected);
-            assertSameSet("parallel collector " + input, elements.parallelStream().collect(LinkedHashSet.collector()), expected);
+            assertSameSet(
+                    "parallel collector " + input,
+                    elements.parallelStream().collect(LinkedHashSet.collector()),
+                    expected);
             assertSameSet("tabulate " + input, LinkedHashSet.tabulate(elements.size(), elements::get), expected);
             final java.util.Iterator<Key> supplied = elements.iterator();
             assertSameSet("fill " + input, LinkedHashSet.fill(elements.size(), supplied::next), expected);
             final int half = elements.size() / 2;
-            assertSameSet("flatten " + input,
-                    LinkedHashSet.flatten(java.util.List.of(elements.subList(0, half), elements.subList(half, elements.size()))), expected);
+            assertSameSet(
+                    "flatten " + input,
+                    LinkedHashSet.flatten(
+                            java.util.List.of(elements.subList(0, half), elements.subList(half, elements.size()))),
+                    expected);
             if (elements.size() == 1) {
                 assertSameSet("of(T) " + input, LinkedHashSet.of(elements.get(0)), expected);
             }
@@ -421,7 +530,8 @@ public class LinkedHashRepeatedKeyTest {
             elements.forEach(element -> copies.add(new Key(element.id, element.tag + "'")));
             assertSameSet("addAll of copies " + input, expected.addAll(copies), expected);
             assertSameSet("union of copies " + input, expected.union(LinkedHashSet.ofAll(copies)), expected);
-            assertSameSet("addAll into empty " + input, LinkedHashSet.<Key>empty().addAll(elements), expected);
+            assertSameSet(
+                    "addAll into empty " + input, LinkedHashSet.<Key>empty().addAll(elements), expected);
 
             final java.util.Map<Key, Key> mappedKeys = new java.util.IdentityHashMap<>();
             expected.forEach(element -> mappedKeys.put(element, new Key(element.id / 2, element.tag + "'")));
@@ -429,10 +539,14 @@ public class LinkedHashRepeatedKeyTest {
             expected.forEach(element -> mapped.add(mappedKeys.get(element)));
             final LinkedHashSet<Key> expectedMapped = adds(mapped);
             assertSameSet("map " + input, expected.map(mappedKeys::get), expectedMapped);
-            assertSameSet("collect " + input, expected.collect(element -> Option.some(mappedKeys.get(element))), expectedMapped);
-            assertSameSet("flatMap " + input, expected.flatMap(element -> List.of(mappedKeys.get(element))), expectedMapped);
-            final Tuple2<LinkedHashSet<Key>, LinkedHashSet<Key>> partitioned =
-                    expected.partitionMap(element -> element.id % 2 == 0 ? Either.left(mappedKeys.get(element)) : Either.right(mappedKeys.get(element)));
+            assertSameSet(
+                    "collect " + input,
+                    expected.collect(element -> Option.some(mappedKeys.get(element))),
+                    expectedMapped);
+            assertSameSet(
+                    "flatMap " + input, expected.flatMap(element -> List.of(mappedKeys.get(element))), expectedMapped);
+            final Tuple2<LinkedHashSet<Key>, LinkedHashSet<Key>> partitioned = expected.partitionMap(element ->
+                    element.id % 2 == 0 ? Either.left(mappedKeys.get(element)) : Either.right(mappedKeys.get(element)));
             final java.util.List<Key> lefts = new ArrayList<>();
             final java.util.List<Key> rights = new ArrayList<>();
             expected.forEach(element -> (element.id % 2 == 0 ? lefts : rights).add(mappedKeys.get(element)));
@@ -457,30 +571,63 @@ public class LinkedHashRepeatedKeyTest {
             }
             assertSameSet("builder add " + input, byElement.result(), expected);
             assertSameSet("builder addAll(singletons) " + input, byAddAll.result(), expected);
-            assertSameSet("builder addAll(one-shot) " + input, LinkedHashSet.<Key>newBuilder().addAll(oneShot(elements)).result(), expected);
+            assertSameSet(
+                    "builder addAll(one-shot) " + input,
+                    LinkedHashSet.<Key>newBuilder().addAll(oneShot(elements)).result(),
+                    expected);
 
             for (int split = 0; split <= elements.size(); split += Math.max(1, elements.size() / 4)) {
                 final java.util.List<Key> prefix = elements.subList(0, split);
                 final java.util.List<Key> suffix = elements.subList(split, elements.size());
                 final LinkedHashSet<Key> prefixSet = adds(prefix);
                 final java.util.List<Key> prefixBefore = javaList(prefixSet);
-                assertSameSet("builder adopting at " + split + " " + input,
-                        LinkedHashSet.<Key>newBuilder().addAll(prefixSet).addAll(suffix).result(), expected);
-                assertSameSet("builder adopting the view at " + split + " " + input,
-                        LinkedHashSet.<Key>newBuilder().addAll(prefixSet.asJava()).addAll(suffix).result(), expected);
+                assertSameSet(
+                        "builder adopting at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder()
+                                .addAll(prefixSet)
+                                .addAll(suffix)
+                                .result(),
+                        expected);
+                assertSameSet(
+                        "builder adopting the view at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder()
+                                .addAll(prefixSet.asJava())
+                                .addAll(suffix)
+                                .result(),
+                        expected);
                 final LinkedHashSet<Key> suffixSet = adds(suffix);
-                assertSameSet("builder addAll(set) after elements at " + split + " " + input,
-                        LinkedHashSet.<Key>newBuilder().addAll(prefix).addAll(suffixSet).result(), addEach(prefixSet, suffixSet));
-                assertSameSet("builder addAll(set) twice at " + split + " " + input,
-                        LinkedHashSet.<Key>newBuilder().addAll(prefixSet).addAll(suffixSet).result(), addEach(prefixSet, suffixSet));
+                assertSameSet(
+                        "builder addAll(set) after elements at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder()
+                                .addAll(prefix)
+                                .addAll(suffixSet)
+                                .result(),
+                        addEach(prefixSet, suffixSet));
+                assertSameSet(
+                        "builder addAll(set) twice at " + split + " " + input,
+                        LinkedHashSet.<Key>newBuilder()
+                                .addAll(prefixSet)
+                                .addAll(suffixSet)
+                                .result(),
+                        addEach(prefixSet, suffixSet));
                 assertThat(javaList(prefixSet)).as("adopted set unchanged").isEqualTo(prefixBefore);
             }
 
             // every element again, as other objects: the first objects stay, and an adopted set comes back as it is
             final java.util.List<Key> copies = new ArrayList<>();
             elements.forEach(element -> copies.add(new Key(element.id, element.tag + "'")));
-            assertSameSet("builder add of copies " + input, LinkedHashSet.<Key>newBuilder().addAll(elements).addAll(copies).result(), expected);
-            assertThat(LinkedHashSet.<Key>newBuilder().addAll(expected).addAll(copies).result()).isSameAs(expected);
+            assertSameSet(
+                    "builder add of copies " + input,
+                    LinkedHashSet.<Key>newBuilder()
+                            .addAll(elements)
+                            .addAll(copies)
+                            .result(),
+                    expected);
+            assertThat(LinkedHashSet.<Key>newBuilder()
+                            .addAll(expected)
+                            .addAll(copies)
+                            .result())
+                    .isSameAs(expected);
 
             if (!expected.isEmpty()) {
                 final java.util.List<Key> kept = javaList(expected);
@@ -488,8 +635,13 @@ public class LinkedHashRepeatedKeyTest {
                 if (kept.size() > 2) {
                     removed = removed.remove(kept.get(kept.size() / 2));
                 }
-                assertSameSet("builder adopting a set with removals " + input,
-                        LinkedHashSet.<Key>newBuilder().addAll(removed).addAll(copies).result(), addEach(removed, copies));
+                assertSameSet(
+                        "builder adopting a set with removals " + input,
+                        LinkedHashSet.<Key>newBuilder()
+                                .addAll(removed)
+                                .addAll(copies)
+                                .result(),
+                        addEach(removed, copies));
             }
         }
     }

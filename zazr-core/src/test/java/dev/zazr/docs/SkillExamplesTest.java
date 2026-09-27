@@ -38,9 +38,9 @@ public class SkillExamplesTest {
 
         static Validation<String, Signup> signup(String name, Vector<String> emails) {
             return Validation.zipWith(
-                Validation.fromPredicate(name.trim(), n -> !n.isEmpty(), n -> "name is required"),
-                Validation.fromOption(emails.toNonEmptyVector(), () -> "at least one email is required"),
-                Signup::new);
+                    Validation.fromPredicate(name.trim(), n -> !n.isEmpty(), n -> "name is required"),
+                    Validation.fromOption(emails.toNonEmptyVector(), () -> "at least one email is required"),
+                    Signup::new);
         }
 
         @Test
@@ -53,7 +53,7 @@ public class SkillExamplesTest {
 
             assertThat(reply).isEqualTo("name is required; at least one email is required");
             assertThat(signup(" Ada ", Vector.of("ada@example.com")))
-                .isEqualTo(Validation.valid(new Signup("Ada", NonEmptyVector.of("ada@example.com"))));
+                    .isEqualTo(Validation.valid(new Signup("Ada", NonEmptyVector.of("ada@example.com"))));
         }
     }
 
@@ -85,8 +85,11 @@ public class SkillExamplesTest {
 
         @Test
         void membersTheyShare() {
-            var parsed = Either.forEach(Vector.of("1", "x", "3"), // Either<String, Vector<Integer>>
-                s -> s.chars().allMatch(Character::isDigit) ? Either.right(Integer.parseInt(s)) : Either.left("bad: " + s));
+            var parsed = Either.forEach(
+                    Vector.of("1", "x", "3"), // Either<String, Vector<Integer>>
+                    s -> s.chars().allMatch(Character::isDigit)
+                            ? Either.right(Integer.parseInt(s))
+                            : Either.left("bad: " + s));
             var all = Option.collectAll(Vector.of(Option.some(1), Option.some(2))); // Option<Vector<Integer>>
             // Left(bad: x), Some(Vector(1, 2))
 
@@ -102,15 +105,15 @@ public class SkillExamplesTest {
 
             assertThat(shell).isEqualTo(Option.none());
             assertThat(Try.of(() -> Option.some("SHELL").map(env::get)).getCause())
-                .isInstanceOf(NullPointerException.class);
+                    .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         void either() {
             var total = Either.<String, Integer>right(2) // Either<String, Integer>
-                .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
-                .filterOrElse(n -> n < 100, n -> n + " is too large")
-                .mapLeft(error -> "rejected: " + error);
+                    .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
+                    .filterOrElse(n -> n < 100, n -> n + " is too large")
+                    .mapLeft(error -> "rejected: " + error);
             var positive = Either.fromPredicate(-1, n -> n > 0, n -> n + " is not positive"); // Either<String, Integer>
             var named = Either.fromPredicate("", s -> !s.isBlank(), _ -> "name is blank"); // Either<String, String>
             // Right(20), Left(-1 is not positive), Left(name is blank)
@@ -118,29 +121,30 @@ public class SkillExamplesTest {
             assertThat(total).isEqualTo(Either.right(20));
             assertThat(positive).isEqualTo(Either.left("-1 is not positive"));
             assertThat(named).isEqualTo(Either.left("name is blank"));
-            assertThat(Either.fromPredicate(3, n -> n > 0, n -> n + " is not positive")).isEqualTo(Either.right(3));
+            assertThat(Either.fromPredicate(3, n -> n > 0, n -> n + " is not positive"))
+                    .isEqualTo(Either.right(3));
         }
 
         @Test
         void tryType() {
             var port = Try.of(() -> Integer.parseInt("80a")) // Try<Integer>
-                .catchSome(NumberFormatException.class, e -> 8080)
-                .map(p -> p + 1);
+                    .catchSome(NumberFormatException.class, e -> 8080)
+                    .map(p -> p + 1);
             var config = Try.<String>failure(new java.io.IOException("disk")) // Try<String>
-                .mapError(e -> new IllegalStateException("cannot read the configuration", e));
+                    .mapError(e -> new IllegalStateException("cannot read the configuration", e));
             // Success(8081), Failure(java.lang.IllegalStateException: cannot read the configuration)
 
             assertThat(port).isEqualTo(Try.success(8081));
             assertThat(config.getCause())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("cannot read the configuration");
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("cannot read the configuration");
         }
 
         @Test
         void validation() {
             var user = Validation.zipWith(name(""), age(-1), User::new); // Validation<String, User>
             var adult = Validation.zipWith(name("Ada"), age(15), User::new) // Validation<String, User>
-                .flatMapEither(u -> u.age() >= 18 ? Either.right(u) : Either.left(u.name() + " is under 18"));
+                    .flatMapEither(u -> u.age() >= 18 ? Either.right(u) : Either.left(u.name() + " is under 18"));
             var ages = Validation.forEach(Vector.of(3, -1, 7), n -> age(n)); // Validation<String, Vector<Integer>>
             // Invalid(name is blank, age is negative), Invalid(Ada is under 18), Invalid(age is negative)
 
@@ -152,14 +156,15 @@ public class SkillExamplesTest {
         @Test
         void using() {
             var sources = Vector.of("alpha", "beta");
-            var length = Using.manager(use -> { // Try<Integer>
-                var total = 0;
-                for (var source : sources) {
-                    var reader = use.acquire(new BufferedReader(new StringReader(source)));
-                    total += reader.readLine().length();
-                }
-                return total;
-            });
+            var length = Using.manager(
+                    use -> { // Try<Integer>
+                        var total = 0;
+                        for (var source : sources) {
+                            var reader = use.acquire(new BufferedReader(new StringReader(source)));
+                            total += reader.readLine().length();
+                        }
+                        return total;
+                    });
             // Success(9), and both readers are closed
 
             assertThat(length).isEqualTo(Try.success(9));
@@ -172,10 +177,10 @@ public class SkillExamplesTest {
         @Test
         void whatEveryCollectionShares() {
             var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>
-                .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
+                    .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
             var stock = HashMap.of("apple", 3, "pear", 0) // HashMap<String, Integer>
-                .put("pear", 5, Integer::sum)
-                .put("fig", 1);
+                    .put("pear", 5, Integer::sum)
+                    .put("fig", 1);
             var pears = stock.get("pear"); // Option<Integer>
             var kiwis = stock.getOrElse("kiwi", 0); // Integer
             // split is (List(2, 4), List(odd 1, odd 3)), pears is Some(5), kiwis is 0
@@ -234,7 +239,8 @@ public class SkillExamplesTest {
 
         @Test
         void arity() {
-            var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
+            var sum = Option.zipWith(
+                    Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
             // Option<Tuple3<Integer, String, Boolean>>
             var triple = Option.zip(Option.some(1), Option.some("a"), Option.some(true));
             // Some(6), Some((1, a, true))
@@ -245,10 +251,16 @@ public class SkillExamplesTest {
 
         @Test
         void onFailure() {
-            var first = Either.zipWith(Either.left("no a"), Either.<String, Integer>right(2), // Either<String, Integer>
-                Either.<String, Integer>left("no c"), (a, b, c) -> 0);
-            var all = Validation.zipWith(Validation.<String, Integer>invalid("no a"), // Validation<String, Integer>
-                Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("no c"), (a, b, c) -> 0);
+            var first = Either.zipWith(
+                    Either.left("no a"),
+                    Either.<String, Integer>right(2), // Either<String, Integer>
+                    Either.<String, Integer>left("no c"),
+                    (a, b, c) -> 0);
+            var all = Validation.zipWith(
+                    Validation.<String, Integer>invalid("no a"), // Validation<String, Integer>
+                    Validation.<String, Integer>valid(2),
+                    Validation.<String, Integer>invalid("no c"),
+                    (a, b, c) -> 0);
             // Left(no a), Invalid(no a, no c)
 
             assertThat(first).isEqualTo(Either.left("no a"));

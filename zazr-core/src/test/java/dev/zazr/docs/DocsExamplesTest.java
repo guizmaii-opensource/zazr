@@ -74,8 +74,8 @@ public class DocsExamplesTest {
         @Test
         void hero() {
             // one call per arity, never a Tuple2<Tuple2<A, B>, C>
-            var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-                (a, b, c) -> a + b + c); // Option<Integer>
+            var sum = Option.zipWith(
+                    Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
 
             // total on a collection that cannot be empty
             var best = NonEmptyVector.of(7, 3, 9).max(Integer::compare); // Integer
@@ -96,8 +96,8 @@ public class DocsExamplesTest {
             // "name is blank, age is negative, email has no @"
 
             // zip at any arity up to 8, no Tuple2<Tuple2<A, B>, C>
-            var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-                (a, b, c) -> a + b + c); // Option<Integer>
+            var sum = Option.zipWith(
+                    Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
 
             // total operations on a collection that cannot be empty
             var scores = NonEmptyVector.of(7, 3, 9);
@@ -133,9 +133,9 @@ public class DocsExamplesTest {
 
         static Either<String, Integer> parseQuantity(String input) {
             return Try.of(() -> Integer.parseInt(input.trim()))
-                .toEither()
-                .mapLeft(e -> "not a number: " + input)
-                .flatMap(q -> q > 0 ? Either.right(q) : Either.left("quantity must be positive"));
+                    .toEither()
+                    .mapLeft(e -> "not a number: " + input)
+                    .flatMap(q -> q > 0 ? Either.right(q) : Either.left("quantity must be positive"));
         }
 
         record Person(String name, String email, int age, String password) {}
@@ -166,13 +166,16 @@ public class DocsExamplesTest {
 
         class ConnectionState {
             boolean connected;
-            String sessionId;   // set when connected, hopefully
-            String error;       // set when it failed, hopefully
+            String sessionId; // set when connected, hopefully
+            String error; // set when it failed, hopefully
         }
 
         sealed interface Connection {}
+
         record Connecting() implements Connection {}
+
         record Connected(String sessionId) implements Connection {}
+
         record Failed(String error) implements Connection {}
 
         static String describe(Connection connection) {
@@ -186,10 +189,11 @@ public class DocsExamplesTest {
         @Test
         void nullCrashesFarFromItsCause() {
             assertThatThrownBy(() -> {
-                var customers = java.util.Map.of("c-1", new Customer("Ada", "ada@example.com"));
-                var customer = customers.get("c-2");        // Customer, yet it is null
-                var greeting = "Hello " + customer.name();  // NullPointerException
-            }).isInstanceOf(NullPointerException.class);
+                        var customers = java.util.Map.of("c-1", new Customer("Ada", "ada@example.com"));
+                        var customer = customers.get("c-2"); // Customer, yet it is null
+                        var greeting = "Hello " + customer.name(); // NullPointerException
+                    })
+                    .isInstanceOf(NullPointerException.class);
         }
 
         @Test
@@ -199,9 +203,10 @@ public class DocsExamplesTest {
             var greeting = customer.map(c -> "Hello " + c.name()).getOrElse("Hello, guest");
             // "Hello, guest"
 
-            var domain = customers.get("c-1") // Option<String>
-                .map(Customer::email)
-                .flatMap(email -> Option.when(email.contains("@"), () -> email.split("@")[1]));
+            var domain = customers
+                    .get("c-1") // Option<String>
+                    .map(Customer::email)
+                    .flatMap(email -> Option.when(email.contains("@"), () -> email.split("@")[1]));
             // Some(example.com)
 
             var message = switch (customers.get("c-1")) {
@@ -227,8 +232,8 @@ public class DocsExamplesTest {
             };
             // "quantity must be positive"
 
-            var totalInCents = parseQuantity("3").map(q -> q * 1_250);  // Either<String, Integer>
-            var rejected = parseQuantity("three").map(q -> q * 1_250);  // Either<String, Integer>
+            var totalInCents = parseQuantity("3").map(q -> q * 1_250); // Either<String, Integer>
+            var rejected = parseQuantity("three").map(q -> q * 1_250); // Either<String, Integer>
             // Right(3750), Left(not a number: three)
 
             var deliveryDate = Try.of(() -> LocalDate.parse("2026-02-30")); // Try<LocalDate>
@@ -238,15 +243,16 @@ public class DocsExamplesTest {
             assertThat(totalInCents).isEqualTo(Either.right(3750));
             assertThat(rejected).isEqualTo(Either.left("not a number: three"));
             assertThat(deliveryDate.isFailure()).isTrue();
-            assertThat(deliveryDate).isInstanceOfSatisfying(Failure.class,
-                failure -> assertThat(failure.cause()).isInstanceOf(DateTimeParseException.class));
+            assertThat(deliveryDate)
+                    .isInstanceOfSatisfying(
+                            Failure.class,
+                            failure -> assertThat(failure.cause()).isInstanceOf(DateTimeParseException.class));
         }
 
         @Test
         void validationReportsEveryError() {
             var person = Validation.zipWith( // Validation<String, Person>
-                checkName(""), checkEmail("ada.example.com"), checkAge(16), checkPassword("hunter2"),
-                Person::new);
+                    checkName(""), checkEmail("ada.example.com"), checkAge(16), checkPassword("hunter2"), Person::new);
 
             var response = switch (person) {
                 case Valid(var p) -> "Welcome, " + p.name();
@@ -254,21 +260,27 @@ public class DocsExamplesTest {
             };
             // "Fix: name is required; email has no @; you must be 18 or older; password is too short"
 
-            assertThat(response).isEqualTo(
-                "Fix: name is required; email has no @; you must be 18 or older; password is too short");
+            assertThat(response)
+                    .isEqualTo("Fix: name is required; email has no @; you must be 18 or older; password is too short");
             assertThat(Validation.zipWith(
-                checkName(" Ada "), checkEmail("ada@example.com"), checkAge(36), checkPassword("correct horse battery"),
-                Person::new)).isEqualTo(Validation.valid(new Person("Ada", "ada@example.com", 36, "correct horse battery")));
+                            checkName(" Ada "),
+                            checkEmail("ada@example.com"),
+                            checkAge(36),
+                            checkPassword("correct horse battery"),
+                            Person::new))
+                    .isEqualTo(Validation.valid(new Person("Ada", "ada@example.com", 36, "correct horse battery")));
         }
 
         @Test
         void parseDontValidate() {
             assertThat(isValidEmail("ada@example.com")).isTrue();
             assertThat(isValidEmail("ada.example.com")).isFalse();
-            assertThat(Email.parse(" ada@example.com ").map(Email::value)).isEqualTo(Validation.valid("ada@example.com"));
-            assertThat(Email.parse("ada.example.com").map(Email::value)).isEqualTo(Validation.invalid("email has no @"));
+            assertThat(Email.parse(" ada@example.com ").map(Email::value))
+                    .isEqualTo(Validation.valid("ada@example.com"));
+            assertThat(Email.parse("ada.example.com").map(Email::value))
+                    .isEqualTo(Validation.invalid("email has no @"));
 
-            var none = recipients(Vector.empty());          // Either<String, NonEmptyVector<String>>
+            var none = recipients(Vector.empty()); // Either<String, NonEmptyVector<String>>
             var some = recipients(Vector.of("ada@shop.com")); // Either<String, NonEmptyVector<String>>
             var first = some.map(NonEmptyVector::head).getOrElse("nobody");
             // none is Left(at least one recipient is required)
@@ -302,7 +314,7 @@ public class DocsExamplesTest {
             for (int i = 1; i <= 5; i++) {
                 squares.add(i * i);
             }
-            var result = squares.result();  // Vector(1, 4, 9, 16, 25)
+            var result = squares.result(); // Vector(1, 4, 9, 16, 25)
 
             assertThat(result).isEqualTo(Vector.of(1, 4, 9, 16, 25));
             assertThatThrownBy(() -> squares.add(36)).isInstanceOf(IllegalStateException.class);
@@ -310,12 +322,13 @@ public class DocsExamplesTest {
 
         @Test
         void zipInsteadOfAp() {
-            var total = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-                (a, b, c) -> a + b + c); // Option<Integer>
+            var total = Option.zipWith(
+                    Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
             // Some(6), and None as soon as one of them is None
 
             assertThat(total).isEqualTo(Option.some(6));
-            assertThat(Option.zipWith(Option.some(1), Option.<Integer> none(), Option.some(3), (a, b, c) -> a + b + c)).isEqualTo(Option.none());
+            assertThat(Option.zipWith(Option.some(1), Option.<Integer>none(), Option.some(3), (a, b, c) -> a + b + c))
+                    .isEqualTo(Option.none());
         }
 
         @Test
@@ -326,14 +339,15 @@ public class DocsExamplesTest {
             // Invalid(age is negative, email has no @)
 
             assertThat(both.isInvalid()).isTrue();
-            assertThat(((Invalid<String, String>) both).errors()).isEqualTo(NonEmptyVector.of("age is negative", "email has no @"));
+            assertThat(((Invalid<String, String>) both).errors())
+                    .isEqualTo(NonEmptyVector.of("age is negative", "email has no @"));
         }
 
         @Test
         void nonEmptyTypes() {
             var scores = NonEmptyVector.of(7, 3, 9);
-            var best = scores.max(Integer::compare);    // Integer: 9, nothing can go wrong
-            var passed = scores.filter(s -> s > 5);     // Vector<Integer>: may be empty, so a Vector
+            var best = scores.max(Integer::compare); // Integer: 9, nothing can go wrong
+            var passed = scores.filter(s -> s > 5); // Vector<Integer>: may be empty, so a Vector
 
             assertThat(best).isEqualTo(9);
             assertThat(passed).isEqualTo(Vector.of(7, 9));
@@ -388,8 +402,11 @@ public class DocsExamplesTest {
         @Test
         void membersTheyShare() {
             var all = Option.collectAll(Vector.of(Option.some(1), Option.some(2))); // Option<Vector<Integer>>
-            var parsed = Either.forEach(Vector.of("1", "x", "3"), // Either<String, Vector<Integer>>
-                s -> s.chars().allMatch(Character::isDigit) ? Either.right(Integer.parseInt(s)) : Either.left("bad: " + s));
+            var parsed = Either.forEach(
+                    Vector.of("1", "x", "3"), // Either<String, Vector<Integer>>
+                    s -> s.chars().allMatch(Character::isDigit)
+                            ? Either.right(Integer.parseInt(s))
+                            : Either.left("bad: " + s));
             // Some(Vector(1, 2)), Left(bad: x)
 
             var flat = Option.flatten(Option.some(Option.some(1))); // Option<Integer>
@@ -464,9 +481,9 @@ public class DocsExamplesTest {
         @Test
         void operations() {
             var port = Option.some("8080")
-                .filter(s -> s.chars().allMatch(Character::isDigit))
-                .map(Integer::parseInt)
-                .getOrElse(80); // Integer
+                    .filter(s -> s.chars().allMatch(Character::isDigit))
+                    .map(Integer::parseInt)
+                    .getOrElse(80); // Integer
             var shown = Option.<Integer>none().fold(() -> "no value", n -> "n = " + n);
             // 8080, "no value"
 
@@ -517,7 +534,8 @@ public class DocsExamplesTest {
             var checked = Either.fromPredicate(-1, n -> n >= 0, n -> "negative: " + n); // Either<String, Integer>
             // Right(42), Left(not a number), Left(negative: -1)
 
-            assertThat(Vector.of(right, left, checked)).hasToString("Vector(Right(42), Left(not a number), Left(negative: -1))");
+            assertThat(Vector.of(right, left, checked))
+                    .hasToString("Vector(Right(42), Left(not a number), Left(negative: -1))");
         }
 
         @Test
@@ -535,12 +553,12 @@ public class DocsExamplesTest {
         @Test
         void operations() {
             var total = Either.<String, Integer>right(2)
-                .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
-                .mapLeft(error -> "rejected: " + error); // Either<String, Integer>
+                    .flatMap(n -> n > 0 ? Either.right(n * 10) : Either.left("not positive"))
+                    .mapLeft(error -> "rejected: " + error); // Either<String, Integer>
             // Right(20)
 
             var adult = Either.<String, Integer>right(15)
-                .filterOrElse(n -> n >= 18, n -> n + " is under 18"); // Either<String, Integer>
+                    .filterOrElse(n -> n >= 18, n -> n + " is under 18"); // Either<String, Integer>
             var message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n); // String
             var flipped = adult.flip(); // Either<Integer, String>
             // Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18)
@@ -568,7 +586,8 @@ public class DocsExamplesTest {
         void sharpEdges() {
             assertThatThrownBy(() -> Either.left("x").get()).isInstanceOf(java.util.NoSuchElementException.class);
             IllegalStateException cause = new IllegalStateException("boom");
-            assertThat(Either.<Throwable, Integer>left(cause).toTry(t -> t).getCause()).isSameAs(cause);
+            assertThat(Either.<Throwable, Integer>left(cause).toTry(t -> t).getCause())
+                    .isSameAs(cause);
         }
     }
 
@@ -587,8 +606,9 @@ public class DocsExamplesTest {
             assertThat(ran).hasToString("Success(())");
             assertThat(Try.success(1)).hasToString("Success(1)");
             assertThatThrownBy(() -> Try.of(() -> {
-                throw new StackOverflowError();
-            })).isInstanceOf(StackOverflowError.class);
+                        throw new StackOverflowError();
+                    }))
+                    .isInstanceOf(StackOverflowError.class);
         }
 
         @Test
@@ -606,13 +626,13 @@ public class DocsExamplesTest {
         @Test
         void recovering() {
             var port = Try.of(() -> Integer.parseInt("80a"))
-                .catchSome(NumberFormatException.class, e -> 8080)
-                .map(p -> p + 1); // Try<Integer>
+                    .catchSome(NumberFormatException.class, e -> 8080)
+                    .map(p -> p + 1); // Try<Integer>
             // Success(8081)
 
             var recovered = Try.of(() -> Integer.parseInt("x")).catchAll(e -> 0); // Try<Integer>
             var wrapped = Try.<Integer>failure(new java.io.IOException("disk"))
-                .mapError(e -> new IllegalStateException("cannot read the configuration", e)); // Try<Integer>
+                    .mapError(e -> new IllegalStateException("cannot read the configuration", e)); // Try<Integer>
             // Success(0), Failure(java.lang.IllegalStateException: cannot read the configuration)
 
             assertThat(port).hasToString("Success(8081)");
@@ -625,7 +645,7 @@ public class DocsExamplesTest {
         void chaining() {
             var ratio = Try.of(() -> 10).map(n -> 100 / (n - 10)); // Try<Integer>
             var positive = Try.success(-1)
-                .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n)); // Try<Integer>
+                    .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n)); // Try<Integer>
             // Failure(java.lang.ArithmeticException: / by zero), Failure(java.lang.IllegalArgumentException: not
             // positive: -1)
 
@@ -679,8 +699,9 @@ public class DocsExamplesTest {
             // get() throws the cause itself
             assertThatThrownBy(first::get).isSameAs(first.getCause());
             // a future completed with null is a Failure of a NullPointerException
-            assertThat(Try.fromCompletableFuture(java.util.concurrent.CompletableFuture.completedFuture(null)).getCause())
-                .isInstanceOf(NullPointerException.class);
+            assertThat(Try.fromCompletableFuture(java.util.concurrent.CompletableFuture.completedFuture(null))
+                            .getCause())
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 
@@ -689,7 +710,8 @@ public class DocsExamplesTest {
 
         @Test
         void oneResource() {
-            var firstLine = Using.of(() -> new BufferedReader(new StringReader("a\nb")), BufferedReader::readLine); // Try<String>
+            var firstLine = Using.of(
+                    () -> new BufferedReader(new StringReader("a\nb")), BufferedReader::readLine); // Try<String>
             // Success(a)
 
             Try<String> typed = firstLine;
@@ -699,14 +721,15 @@ public class DocsExamplesTest {
         @Test
         void manyResources() {
             var sources = Vector.of("alpha", "beta", "gamma");
-            var length = Using.manager(use -> { // Try<Integer>
-                var total = 0;
-                for (var source : sources) {
-                    var reader = use.acquire(new BufferedReader(new StringReader(source)));
-                    total += reader.readLine().length();
-                }
-                return total;
-            });
+            var length = Using.manager(
+                    use -> { // Try<Integer>
+                        var total = 0;
+                        for (var source : sources) {
+                            var reader = use.acquire(new BufferedReader(new StringReader(source)));
+                            total += reader.readLine().length();
+                        }
+                        return total;
+                    });
             // Success(14), and the three readers are closed
 
             Try<Integer> typed = length;
@@ -716,11 +739,12 @@ public class DocsExamplesTest {
         @Test
         void aValueThatIsNotAutoCloseable() {
             var lock = new ReentrantLock();
-            var held = Using.manager(use -> { // Try<Boolean>
-                lock.lock();
-                use.acquire(lock, ReentrantLock::unlock);
-                return lock.isHeldByCurrentThread();
-            });
+            var held = Using.manager(
+                    use -> { // Try<Boolean>
+                        lock.lock();
+                        use.acquire(lock, ReentrantLock::unlock);
+                        return lock.isHeldByCurrentThread();
+                    });
             // Success(true), and the lock is released
 
             Try<Boolean> typed = held;
@@ -731,11 +755,12 @@ public class DocsExamplesTest {
         @Test
         void releaseOrder() {
             var log = new StringBuilder();
-            var result = Using.manager(use -> { // Try<String>
-                use.acquire(() -> log.append("connection closed; "));
-                use.acquire(() -> log.append("statement closed; "));
-                return "done";
-            });
+            var result = Using.manager(
+                    use -> { // Try<String>
+                        use.acquire(() -> log.append("connection closed; "));
+                        use.acquire(() -> log.append("statement closed; "));
+                        return "done";
+                    });
             // Success(done), and log is "statement closed; connection closed; "
 
             Try<String> typed = result;
@@ -748,9 +773,11 @@ public class DocsExamplesTest {
             AutoCloseable resource = () -> {
                 throw new IllegalStateException("close failed");
             };
-            var result = Using.<AutoCloseable, String>of(() -> resource, r -> { // Try<String>
-                throw new IOException("read failed");
-            });
+            var result = Using.<AutoCloseable, String>of(
+                    () -> resource,
+                    r -> { // Try<String>
+                        throw new IOException("read failed");
+                    });
             var suppressed = result.getCause().getSuppressed(); // Throwable[]
             // Failure(java.io.IOException: read failed), and suppressed holds the IllegalStateException
 
@@ -763,10 +790,11 @@ public class DocsExamplesTest {
         @Test
         void theManagerWorksOnlyInsideYourCode() {
             var escaped = new AtomicReference<Using.Manager>();
-            var done = Using.manager(use -> { // Try<String>
-                escaped.set(use);
-                return "done";
-            });
+            var done = Using.manager(
+                    use -> { // Try<String>
+                        escaped.set(use);
+                        return "done";
+                    });
             var log = new StringBuilder();
             var late = Try.run(() -> escaped.get().acquire(() -> log.append("released at once")));
             // Failure(java.lang.IllegalStateException: ...), and log is "released at once"
@@ -782,7 +810,7 @@ public class DocsExamplesTest {
         void nullIsAFailure() {
             assertThat(Using.manager(use -> null).getCause()).isInstanceOf(NullPointerException.class);
             assertThat(Using.<AutoCloseable, String>of(() -> null, r -> "x").getCause())
-                .isInstanceOf(NullPointerException.class);
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 
@@ -884,7 +912,7 @@ public class DocsExamplesTest {
             assertThat(pair).hasToString("Valid((Ada, 36))");
             assertThat(both).hasToString("Invalid(name is blank, age is negative)");
             assertThat(Validation.<String, Integer>invalid("a").zip(Either.<String, Integer>left("b")))
-                .hasToString("Invalid(a, b)");
+                    .hasToString("Invalid(a, b)");
         }
 
         @Test
@@ -901,20 +929,19 @@ public class DocsExamplesTest {
 
         @Test
         void manyValues() {
-            var ages = Validation.forEach(Vector.of(3, -1, 7, -2),
-                n -> age(n)); // Validation<String, Vector<Integer>>
+            var ages = Validation.forEach(Vector.of(3, -1, 7, -2), n -> age(n)); // Validation<String, Vector<Integer>>
             // Invalid(age is negative, age is negative)
 
-            var names = Validation.collectAll(
-                Vector.of(name("Ada"), name("Grace"))); // Validation<String, Vector<String>>
+            var names =
+                    Validation.collectAll(Vector.of(name("Ada"), name("Grace"))); // Validation<String, Vector<String>>
             // Valid(Vector(Ada, Grace))
 
-            var scores = Validation.forEach(NonEmptyVector.of(1, 2),
-                n -> age(n)); // Validation<String, NonEmptyVector<Integer>>
+            var scores = Validation.forEach(
+                    NonEmptyVector.of(1, 2), n -> age(n)); // Validation<String, NonEmptyVector<Integer>>
             // Valid(NonEmptyVector(1, 2))
 
-            var split = Validation.partition(Vector.of(4, -1, 9),
-                n -> age(n)); // Tuple2<Vector<String>, Vector<Integer>>
+            var split =
+                    Validation.partition(Vector.of(4, -1, 9), n -> age(n)); // Tuple2<Vector<String>, Vector<Integer>>
             // (Vector(age is negative), Vector(4, 9))
 
             assertThat(ages).hasToString("Invalid(age is negative, age is negative)");
@@ -926,18 +953,18 @@ public class DocsExamplesTest {
         @Test
         void shortCircuiting() {
             var adult = Validation.zipWith(name("Ada"), age(15), email("ada@example.com"), User::new)
-                .flatMapEither(u -> u.age() >= 18 ? Either.right(u) : Either.left(u.name() + " is under 18"));
+                    .flatMapEither(u -> u.age() >= 18 ? Either.right(u) : Either.left(u.name() + " is under 18"));
             // Invalid(Ada is under 18)
 
             assertThat(adult).hasToString("Invalid(Ada is under 18)");
             assertThat(Validation.<String, Integer>invalid("a").orElse(() -> Validation.invalid("b")))
-                .hasToString("Invalid(b)");
+                    .hasToString("Invalid(b)");
         }
 
         @Test
         void checks() {
-            var port = Validation.of(() -> Integer.parseInt("80a"),
-                e -> "port is not a number"); // Validation<String, Integer>
+            var port = Validation.of(
+                    () -> Integer.parseInt("80a"), e -> "port is not a number"); // Validation<String, Integer>
             // Invalid(port is not a number)
 
             assertThat(port).hasToString("Invalid(port is not a number)");
@@ -947,8 +974,7 @@ public class DocsExamplesTest {
         void conversions() {
             var negative = age(-3); // Validation<String, Integer>
             var joined = negative.toEitherWith(errors -> errors.mkString("; ")); // Either<String, Integer>
-            var failure = negative.toTry(
-                errors -> new IllegalArgumentException(errors.mkString("; "))); // Try<Integer>
+            var failure = negative.toTry(errors -> new IllegalArgumentException(errors.mkString("; "))); // Try<Integer>
             // Left(age is negative), Failure(java.lang.IllegalArgumentException: age is negative)
 
             assertThat(joined).hasToString("Left(age is negative)");
@@ -969,10 +995,10 @@ public class DocsExamplesTest {
 
         @Test
         void arity() {
-            var sum = Option.zipWith(Option.some(1), Option.some(2), Option.some(3),
-                (a, b, c) -> a + b + c); // Option<Integer>
-            var triple = Option.zip(Option.some(1), Option.some("a"),
-                Option.some(true)); // Option<Tuple3<Integer, String, Boolean>>
+            var sum = Option.zipWith(
+                    Option.some(1), Option.some(2), Option.some(3), (a, b, c) -> a + b + c); // Option<Integer>
+            var triple = Option.zip(
+                    Option.some(1), Option.some("a"), Option.some(true)); // Option<Tuple3<Integer, String, Boolean>>
             // Some(6), Some((1, a, true))
 
             assertThat(sum).hasToString("Some(6)");
@@ -981,11 +1007,16 @@ public class DocsExamplesTest {
 
         @Test
         void onFailure() {
-            var first = Either.zipWith(Either.left("no a"), Either.<String, Integer>right(2),
-                Either.<String, Integer>left("no c"), (a, b, c) -> 0); // Either<String, Integer>
-            var all = Validation.zipWith(Validation.<String, Integer>invalid("no a"),
-                Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("no c"),
-                (a, b, c) -> 0); // Validation<String, Integer>
+            var first = Either.zipWith(
+                    Either.left("no a"),
+                    Either.<String, Integer>right(2),
+                    Either.<String, Integer>left("no c"),
+                    (a, b, c) -> 0); // Either<String, Integer>
+            var all = Validation.zipWith(
+                    Validation.<String, Integer>invalid("no a"),
+                    Validation.<String, Integer>valid(2),
+                    Validation.<String, Integer>invalid("no c"),
+                    (a, b, c) -> 0); // Validation<String, Integer>
             // Left(no a), Invalid(no a, no c)
 
             var left = Option.some(1).zipLeft(Option.none()); // Option<Integer>
@@ -1050,7 +1081,7 @@ public class DocsExamplesTest {
             assertThat(fromNothing).hasToString("None");
             assertThat(NonEmptyVector.of(1, 2)).isNotEqualTo(Vector.of(1, 2));
             assertThatThrownBy(() -> NonEmptyVector.unsafeFromVector(Vector.empty()))
-                .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -1119,7 +1150,7 @@ public class DocsExamplesTest {
             // List(1, 2, 3), a HashSet of 1, 2, 3, and true
 
             var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>
-                .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
+                    .partitionMap(n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
             var flat = Vector.flatten(Vector.of(Vector.of(1, 2), List.of(3))); // Vector<Integer>
             // split is (List(2, 4), List(odd 1, odd 3)), flat is Vector(1, 2, 3)
 
@@ -1156,7 +1187,7 @@ public class DocsExamplesTest {
             var numbers = Vector.range(0, 10); // Vector<Integer>
             var windows = numbers.sliding(3, 3); // Vector<Vector<Integer>>
             var parts = numbers.partitionMap( // Tuple2<Vector<Integer>, Vector<String>>
-                n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
+                    n -> n % 2 == 0 ? Either.left(n) : Either.right("odd " + n));
             // windows is Vector(Vector(0, 1, 2), Vector(3, 4, 5), Vector(6, 7, 8), Vector(9))
 
             assertThat(changed).hasToString("Vector(B, c, d)");
@@ -1222,7 +1253,8 @@ public class DocsExamplesTest {
         @Test
         void whenToChooseIt() {
             var naturals = Stream.from(1); // Stream<Integer>
-            var squares = naturals.map(n -> n * n).filter(n -> n % 2 == 1).take(4).toVector();
+            var squares =
+                    naturals.map(n -> n * n).filter(n -> n % 2 == 1).take(4).toVector();
             // Vector(1, 9, 25, 49)
 
             var fibonacci = Stream.of(0L, 1L).appendSelf(self -> self.zipWith(self.tail(), Long::sum));
@@ -1324,8 +1356,8 @@ public class DocsExamplesTest {
         @Test
         void treeSetBuilder() {
             var sorted = TreeSet.newBuilder(java.util.Comparator.<String>reverseOrder())
-                .addAll(List.of("pear", "apple", "fig"))
-                .result(); // TreeSet<String>
+                    .addAll(List.of("pear", "apple", "fig"))
+                    .result(); // TreeSet<String>
             // TreeSet(pear, fig, apple)
 
             assertThat(sorted).hasToString("TreeSet(pear, fig, apple)");
@@ -1334,11 +1366,13 @@ public class DocsExamplesTest {
         @Test
         void insertionOrderedBuilders() {
             var firstSeen = LinkedHashSet.<String>newBuilder()
-                .addAll(List.of("b", "a", "b", "c"))
-                .result(); // LinkedHashSet<String>
+                    .addAll(List.of("b", "a", "b", "c"))
+                    .result(); // LinkedHashSet<String>
             var latest = LinkedHashMap.<String, Integer>newBuilder()
-                .put("b", 1).put("a", 2).put("b", 3)
-                .result(); // LinkedHashMap<String, Integer>
+                    .put("b", 1)
+                    .put("a", 2)
+                    .put("b", 3)
+                    .result(); // LinkedHashMap<String, Integer>
             // LinkedHashSet(b, a, c), LinkedHashMap((b, 3), (a, 2))
 
             assertThat(firstSeen).hasToString("LinkedHashSet(b, a, c)");
@@ -1365,8 +1399,9 @@ public class DocsExamplesTest {
 
         @Test
         void collectors() {
-            var lengths = java.util.stream.Stream.of("a", "bb", "ccc").map(String::length)
-                .collect(Vector.collector()); // Vector<Integer>
+            var lengths = java.util.stream.Stream.of("a", "bb", "ccc")
+                    .map(String::length)
+                    .collect(Vector.collector()); // Vector<Integer>
             var sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector()); // TreeSet<String>
             // Vector(1, 2, 3), TreeSet(a, b)
 
@@ -1460,9 +1495,7 @@ final class Email {
 
     static Validation<String, Email> parse(String input) {
         var trimmed = input.trim();
-        return trimmed.contains("@")
-            ? Validation.valid(new Email(trimmed))
-            : Validation.invalid("email has no @");
+        return trimmed.contains("@") ? Validation.valid(new Email(trimmed)) : Validation.invalid("email has no @");
     }
 
     String value() {

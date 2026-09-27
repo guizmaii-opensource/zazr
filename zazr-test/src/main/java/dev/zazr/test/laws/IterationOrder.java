@@ -1,7 +1,6 @@
 package dev.zazr.test.laws;
 
 import dev.zazr.Tuple2;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -74,7 +73,9 @@ public interface IterationOrder<T> {
         return input -> {
             final LinkedHashMap<K, V> map = new LinkedHashMap<>();
             input.forEach(entry -> map.put(entry._1(), entry._2()));
-            return map.entrySet().stream().map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue())).toList();
+            return map.entrySet().stream()
+                    .map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue()))
+                    .toList();
         };
     }
 
@@ -90,7 +91,9 @@ public interface IterationOrder<T> {
         return input -> {
             final TreeMap<K, V> map = new TreeMap<>(comparator);
             input.forEach(entry -> map.put(entry._1(), entry._2()));
-            return map.entrySet().stream().map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue())).toList();
+            return map.entrySet().stream()
+                    .map(entry -> dev.zazr.Tuple.of(entry.getKey(), entry.getValue()))
+                    .toList();
         };
     }
 }

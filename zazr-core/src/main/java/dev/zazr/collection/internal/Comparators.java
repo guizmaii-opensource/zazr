@@ -10,8 +10,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Comparators {
 
-    private Comparators() {
-    }
+    private Comparators() {}
 
     /**
      * Returns the natural comparator for type U, i.e. treating it as {@code Comparable<U>}.
@@ -31,8 +30,7 @@ final class NaturalComparator<T extends @Nullable Object> implements Comparator<
 
     private static final NaturalComparator<?> INSTANCE = new NaturalComparator<>();
 
-    private NaturalComparator() {
-    }
+    private NaturalComparator() {}
 
     @SuppressWarnings("unchecked")
     static <T extends @Nullable Object> NaturalComparator<T> instance() {
@@ -55,5 +53,4 @@ final class NaturalComparator<T extends @Nullable Object> implements Comparator<
     public int hashCode() {
         return 1;
     }
-
 }

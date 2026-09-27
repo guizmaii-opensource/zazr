@@ -103,7 +103,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet instance containing the given element
      */
     public static <T extends @Nullable Object> HashSet<T> of(T element) {
-        return HashSet.<T> empty().add(element);
+        return HashSet.<T>empty().add(element);
     }
 
     /**
@@ -117,7 +117,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @throws NullPointerException if {@code elements} is null
      */
     @SafeVarargs
-    public static <T extends @Nullable Object> HashSet<T> of(T ... elements) {
+    public static <T extends @Nullable Object> HashSet<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
         BitmapIndexedSetNode<T> tree = SetNode.empty();
         for (T element : elements) {
@@ -223,7 +223,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Boolean values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Boolean> ofAll(boolean ... elements) {
+    public static HashSet<Boolean> ofAll(boolean... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -235,7 +235,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Byte values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Byte> ofAll(byte ... elements) {
+    public static HashSet<Byte> ofAll(byte... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -247,7 +247,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Character values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Character> ofAll(char ... elements) {
+    public static HashSet<Character> ofAll(char... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -259,7 +259,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Double values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Double> ofAll(double ... elements) {
+    public static HashSet<Double> ofAll(double... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -271,7 +271,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Float values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Float> ofAll(float ... elements) {
+    public static HashSet<Float> ofAll(float... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -283,7 +283,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Integer values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Integer> ofAll(int ... elements) {
+    public static HashSet<Integer> ofAll(int... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -295,7 +295,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Long values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Long> ofAll(long ... elements) {
+    public static HashSet<Long> ofAll(long... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -307,7 +307,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A new HashSet of Short values
      * @throws NullPointerException if elements is null
      */
-    public static HashSet<Short> ofAll(short ... elements) {
+    public static HashSet<Short> ofAll(short... elements) {
         Objects.requireNonNull(elements, "elements is null");
         return HashSet.ofAll(Iterator.ofAll(elements));
     }
@@ -764,13 +764,16 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     @Override
-    public <U extends @Nullable Object> HashSet<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
+    public <U extends @Nullable Object> HashSet<U> flatMap(
+            Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
             return empty();
         } else {
-            final BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(),
-                    (tree, t) -> addAll(tree, Objects.requireNonNull(mapper.apply(t), "HashSet.flatMap: mapper returned null")));
+            final BitmapIndexedSetNode<U> that = foldLeft(
+                    SetNode.empty(),
+                    (tree, t) -> addAll(
+                            tree, Objects.requireNonNull(mapper.apply(t), "HashSet.flatMap: mapper returned null")));
             return new HashSet<>(that);
         }
     }
@@ -878,7 +881,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
         BitmapIndexedSetNode<U> that = SetNode.empty();
         for (T t : this) {
-            final Option<? extends U> collected = Objects.requireNonNull(mapper.apply(t), "HashSet.collect: mapper returned null");
+            final Option<? extends U> collected =
+                    Objects.requireNonNull(mapper.apply(t), "HashSet.collect: mapper returned null");
             if (collected.isDefined()) {
                 final U u = collected.get();
                 that = put(that, u);
@@ -900,7 +904,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public HashSet<T> orElse(Supplier<? extends Iterable<? extends T>> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return isEmpty() ? ofAll(Objects.requireNonNull(supplier.get(), "HashSet.orElse: supplier returned null")) : this;
+        return isEmpty()
+                ? ofAll(Objects.requireNonNull(supplier.get(), "HashSet.orElse: supplier returned null"))
+                : this;
     }
 
     @Override
@@ -921,7 +927,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return the left values and the right values
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
+    public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<HashSet<L>, HashSet<R>> partitionMap(
+            Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
         BitmapIndexedSetNode<L> lefts = SetNode.empty();
         BitmapIndexedSetNode<R> rights = SetNode.empty();
@@ -1047,7 +1054,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      *
      * @return {@code Some(nonEmptySet)} sharing this set's elements, or {@code None} if this set is empty
      */
-    public Option<NonEmptySet<T>> toNonEmptySet() { return NonEmptySet.fromSet(this); }
+    public Option<NonEmptySet<T>> toNonEmptySet() {
+        return NonEmptySet.fromSet(this);
+    }
 
     // -- Object
 
@@ -1104,8 +1113,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
         private final HashSetBuilder<T> trie = new HashSetBuilder<>("HashSet.Builder");
 
-        private Builder() {
-        }
+        private Builder() {}
 
         /**
          * Adds one element, unless an equal one is already there: that one is kept.
@@ -1169,8 +1177,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     }
 
     // persistent additions, each keeping an equal element already there
-    private static <T extends @Nullable Object> BitmapIndexedSetNode<T> addAll(BitmapIndexedSetNode<T> initial,
-            Iterable<? extends T> additional) {
+    private static <T extends @Nullable Object> BitmapIndexedSetNode<T> addAll(
+            BitmapIndexedSetNode<T> initial, Iterable<? extends T> additional) {
         BitmapIndexedSetNode<T> that = initial;
         for (T t : additional) {
             Objects.requireNonNull(t, "HashSet: element is null");
@@ -1188,5 +1196,4 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     private static <T extends @Nullable Object> HashSet<T> wrap(BitmapIndexedSetNode<T> tree) {
         return tree.size() == 0 ? empty() : new HashSet<>(tree);
     }
-
 }

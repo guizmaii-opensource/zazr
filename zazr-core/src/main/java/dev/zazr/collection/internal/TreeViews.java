@@ -37,15 +37,14 @@ import static dev.zazr.collection.internal.Maps.ABSENT;
  */
 public final class TreeViews {
 
-    private TreeViews() {
-    }
+    private TreeViews() {}
 
     public static <T extends @Nullable Object> NavigableSet<T> asJava(TreeSet<T> set, RedBlackTree<T> tree) {
         return new NavigableKeySetView<>(set, new TreeRange<>(tree, tree.comparator(), false), false);
     }
 
-    public static <K extends @Nullable Object, V extends @Nullable Object> NavigableMap<K, V> asJavaMap(TreeMap<K, V> map, RedBlackTree<Tuple2<K, V>> entries,
-            Comparator<K> keyComparator) {
+    public static <K extends @Nullable Object, V extends @Nullable Object> NavigableMap<K, V> asJavaMap(
+            TreeMap<K, V> map, RedBlackTree<Tuple2<K, V>> entries, Comparator<K> keyComparator) {
         return new NavigableMapView<>(map, new TreeRange<>(entries, keyComparator, true), false);
     }
 
@@ -77,9 +76,16 @@ public final class TreeViews {
             this(tree, comparator, entries, true, null, true, true, null, true);
         }
 
-        private TreeRange(RedBlackTree<E> tree, Comparator<? super K> comparator, boolean entries,
-                          boolean fromStart, @Nullable K lo, boolean loInclusive,
-                          boolean toEnd, @Nullable K hi, boolean hiInclusive) {
+        private TreeRange(
+                RedBlackTree<E> tree,
+                Comparator<? super K> comparator,
+                boolean entries,
+                boolean fromStart,
+                @Nullable K lo,
+                boolean loInclusive,
+                boolean toEnd,
+                @Nullable K hi,
+                boolean hiInclusive) {
             this.tree = tree;
             this.comparator = comparator;
             this.natural = comparator instanceof NaturalComparator;
@@ -105,7 +111,13 @@ public final class TreeViews {
             }
         }
 
-        private TreeRange<E, K> with(boolean fromStart, @Nullable K lo, boolean loInclusive, boolean toEnd, @Nullable K hi, boolean hiInclusive) {
+        private TreeRange<E, K> with(
+                boolean fromStart,
+                @Nullable K lo,
+                boolean loInclusive,
+                boolean toEnd,
+                @Nullable K hi,
+                boolean hiInclusive) {
             return new TreeRange<>(tree, comparator, entries, fromStart, lo, loInclusive, toEnd, hi, hiInclusive);
         }
 
@@ -120,7 +132,8 @@ public final class TreeViews {
         }
 
         /** The comparator a view reports: {@code null} for the natural order, reversed for a descending view. */
-        @Nullable Comparator<? super K> comparator(boolean descending) {
+        @Nullable
+        Comparator<? super K> comparator(boolean descending) {
             final Comparator<? super K> ascending = natural ? null : comparator;
             return descending ? Collections.reverseOrder(ascending) : ascending;
         }
@@ -158,7 +171,12 @@ public final class TreeViews {
         // -- the sub-ranges; on a descending view "from" is the high end
 
         @SuppressWarnings("unchecked")
-        TreeRange<E, K> sub(boolean descending, @Nullable Object from, boolean fromInclusive, @Nullable Object to, boolean toInclusive) {
+        TreeRange<E, K> sub(
+                boolean descending,
+                @Nullable Object from,
+                boolean fromInclusive,
+                @Nullable Object to,
+                boolean toInclusive) {
             if (!inRange(from, fromInclusive)) {
                 throw new IllegalArgumentException("fromKey out of range");
             }
@@ -166,8 +184,8 @@ public final class TreeViews {
                 throw new IllegalArgumentException("toKey out of range");
             }
             return descending
-                   ? with(false, (K) to, toInclusive, false, (K) from, fromInclusive)
-                   : with(false, (K) from, fromInclusive, false, (K) to, toInclusive);
+                    ? with(false, (K) to, toInclusive, false, (K) from, fromInclusive)
+                    : with(false, (K) from, fromInclusive, false, (K) to, toInclusive);
         }
 
         @SuppressWarnings("unchecked")
@@ -176,8 +194,8 @@ public final class TreeViews {
                 throw new IllegalArgumentException("toKey out of range");
             }
             return descending
-                   ? with(false, (K) to, inclusive, toEnd, hi, hiInclusive)
-                   : with(fromStart, lo, loInclusive, false, (K) to, inclusive);
+                    ? with(false, (K) to, inclusive, toEnd, hi, hiInclusive)
+                    : with(fromStart, lo, loInclusive, false, (K) to, inclusive);
         }
 
         @SuppressWarnings("unchecked")
@@ -186,8 +204,8 @@ public final class TreeViews {
                 throw new IllegalArgumentException("fromKey out of range");
             }
             return descending
-                   ? with(fromStart, lo, loInclusive, false, (K) from, inclusive)
-                   : with(false, (K) from, inclusive, toEnd, hi, hiInclusive);
+                    ? with(fromStart, lo, loInclusive, false, (K) from, inclusive)
+                    : with(false, (K) from, inclusive, toEnd, hi, hiInclusive);
         }
 
         // -- the whole tree, bounds ignored
@@ -266,17 +284,20 @@ public final class TreeViews {
 
         // -- within the bounds, in ascending order
 
-        @Nullable E lowest() {
+        @Nullable
+        E lowest() {
             final E e = fromStart ? treeFirst() : treeCeiling(lo, !loInclusive);
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
-        @Nullable E highest() {
+        @Nullable
+        E highest() {
             final E e = toEnd ? treeLast() : treeFloor(hi, !hiInclusive);
             return e == null || tooLow(key(e)) ? null : e;
         }
 
-        @Nullable E ceiling(@Nullable Object key) {
+        @Nullable
+        E ceiling(@Nullable Object key) {
             if (tooLow(key)) {
                 return lowest();
             }
@@ -284,7 +305,8 @@ public final class TreeViews {
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
-        @Nullable E higher(@Nullable Object key) {
+        @Nullable
+        E higher(@Nullable Object key) {
             if (tooLow(key)) {
                 return lowest();
             }
@@ -292,7 +314,8 @@ public final class TreeViews {
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
-        @Nullable E floor(@Nullable Object key) {
+        @Nullable
+        E floor(@Nullable Object key) {
             if (tooHigh(key)) {
                 return highest();
             }
@@ -300,7 +323,8 @@ public final class TreeViews {
             return e == null || tooLow(key(e)) ? null : e;
         }
 
-        @Nullable E lower(@Nullable Object key) {
+        @Nullable
+        E lower(@Nullable Object key) {
             if (tooHigh(key)) {
                 return highest();
             }
@@ -313,7 +337,8 @@ public final class TreeViews {
          * natural order rejects a {@code null} or non-{@link Comparable} key even when there is nothing to compare it
          * with.
          */
-        @Nullable E find(@Nullable Object key) {
+        @Nullable
+        E find(@Nullable Object key) {
             if (natural) {
                 Objects.requireNonNull(key, "key is null");
                 if (!(key instanceof Comparable<?>)) {
@@ -357,11 +382,12 @@ public final class TreeViews {
                 return (X) element;
             }
             final Tuple2<K, ?> entry = (Tuple2<K, ?>) element;
-            return (X) switch (part) {
-                case KEY -> entry._1();
-                case VALUE -> entry._2();
-                case ENTRY -> MapViews.entry(entry._1(), entry._2());
-            };
+            return (X)
+                    switch (part) {
+                        case KEY -> entry._1();
+                        case VALUE -> entry._2();
+                        case ENTRY -> MapViews.entry(entry._1(), entry._2());
+                    };
         }
     }
 
@@ -370,7 +396,9 @@ public final class TreeViews {
      * kept on an array stack: O(log n) to create, amortized O(1) per step, nothing allocated per step but what
      * {@code part} asks for (a {@link java.util.Map.Entry} for the entries of a map).
      */
-    private static final class RangeIterator<E extends @Nullable Object, K extends @Nullable Object, X extends @Nullable Object> implements java.util.Iterator<X> {
+    private static final class RangeIterator<
+                    E extends @Nullable Object, K extends @Nullable Object, X extends @Nullable Object>
+            implements java.util.Iterator<X> {
 
         private final TreeRange<E, K> range;
         private final boolean descending;
@@ -457,7 +485,8 @@ public final class TreeViews {
      * The {@link NavigableSet} view of the keys of a {@link TreeRange}: the view of a {@code TreeSet} and the key set
      * of a {@code TreeMap} view.
      */
-    static final class NavigableKeySetView<E extends @Nullable Object, K extends @Nullable Object> extends SetViews.UnmodifiableSet<K> implements NavigableSet<K> {
+    static final class NavigableKeySetView<E extends @Nullable Object, K extends @Nullable Object>
+            extends SetViews.UnmodifiableSet<K> implements NavigableSet<K> {
 
         private final @Nullable Object owner;
         private final TreeRange<E, K> range;
@@ -579,7 +608,8 @@ public final class TreeViews {
 
         @Override
         public NavigableSet<K> subSet(K fromElement, boolean fromInclusive, K toElement, boolean toInclusive) {
-            return new NavigableKeySetView<>(null, range.sub(descending, fromElement, fromInclusive, toElement, toInclusive), descending);
+            return new NavigableKeySetView<>(
+                    null, range.sub(descending, fromElement, fromInclusive, toElement, toInclusive), descending);
         }
 
         @Override
@@ -609,7 +639,8 @@ public final class TreeViews {
     }
 
     /** The {@link NavigableMap} view of a {@link TreeRange} of entries. */
-    static final class NavigableMapView<K extends @Nullable Object, V extends @Nullable Object> extends MapViews.UnmodifiableSequencedMap<K, V> implements NavigableMap<K, V> {
+    static final class NavigableMapView<K extends @Nullable Object, V extends @Nullable Object>
+            extends MapViews.UnmodifiableSequencedMap<K, V> implements NavigableMap<K, V> {
 
         private final @Nullable Object owner;
         private final TreeRange<Tuple2<K, V>, K> range;
@@ -627,7 +658,8 @@ public final class TreeViews {
         }
 
         @Override
-        @Nullable Object lookup(@Nullable Object key) {
+        @Nullable
+        Object lookup(@Nullable Object key) {
             final Tuple2<K, V> entry = range.find(key);
             return entry == null ? ABSENT : entry._2();
         }
@@ -793,7 +825,8 @@ public final class TreeViews {
 
         @Override
         public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-            return new NavigableMapView<>(null, range.sub(descending, fromKey, fromInclusive, toKey, toInclusive), descending);
+            return new NavigableMapView<>(
+                    null, range.sub(descending, fromKey, fromInclusive, toKey, toInclusive), descending);
         }
 
         @Override

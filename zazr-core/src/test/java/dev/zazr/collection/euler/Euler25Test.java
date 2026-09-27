@@ -45,6 +45,7 @@ public class Euler25Test {
         return fibonacci()
                 .zipWithIndex()
                 .find(t -> t._1().toString().length() == digits)
-                .get()._2();
+                .get()
+                ._2();
     }
 }

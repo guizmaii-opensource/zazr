@@ -35,7 +35,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the given {@code map} instance as narrowed type {@code Map<K, V>}.
      */
     @SuppressWarnings("unchecked")
-    static <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> narrow(Map<? extends K, ? extends V> map) {
+    static <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> narrow(
+            Map<? extends K, ? extends V> map) {
         return (Map<K, V>) map;
     }
 
@@ -73,7 +74,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return a new {@code Map}
      * @throws NullPointerException if {@code keyMapper} or {@code valueMapper} is null
      */
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> mapBoth(Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> mapBoth(
+            Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper);
 
     /**
      * Whether this map holds the key of {@code element}, associated with a value equal to that of {@code element}.
@@ -113,7 +115,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @throws NullPointerException if the key is present and {@code remappingFunction} returns {@code null}: the new
      *                              value is handed back as {@code Some}, which cannot hold {@code null}
      */
-    Tuple2<Option<V>, ? extends Map<K, V>> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+    Tuple2<Option<V>, ? extends Map<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
     /**
      * Returns <code>true</code> if this map contains a mapping for the specified key.
@@ -205,7 +208,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return A new {@code Map}.
      * @throws NullPointerException if {@code mapper} is null
      */
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper);
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> flatMap(
+            BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>> mapper);
 
     /**
      * Performs an action on key, value pair.
@@ -262,7 +266,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return a {@code Map} of the collected entries
      * @throws NullPointerException if {@code mapper} is null, or if it returns {@code null} for an entry
      */
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> collect(BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper);
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> collect(
+            BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper);
 
     /**
      * Maps the entries of this {@code Map} to form a new {@code Map}.
@@ -273,7 +278,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return a new {@code Map}
      * @throws NullPointerException if {@code mapper} is null
      */
-    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> map(BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper);
+    <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> map(
+            BiFunction<? super K, ? super V, Tuple2<K2, V2>> mapper);
 
     /**
      * Maps the keys of this {@code Map} while preserving the corresponding values.
@@ -301,7 +307,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return a new {@code Map}
      * @throws NullPointerException if {@code keyMapper} is null
      */
-    <K2 extends @Nullable Object> Map<K2, V> mapKeys(Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge);
+    <K2 extends @Nullable Object> Map<K2, V> mapKeys(
+            Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge);
 
     /**
      * Maps the values of this {@code Map} while preserving the corresponding keys.
@@ -337,7 +344,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return A merged map
      * @throws NullPointerException if that map or the given collision resolution function is null
      */
-    <U extends V> Map<K, V> merge(Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution);
+    <U extends V> Map<K, V> merge(
+            Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution);
 
     /**
      * Associates the specified value with the specified key in this map.
@@ -493,7 +501,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return a map from each group key to the map of the entries with that key
      * @throws NullPointerException if {@code classifier} is null
      */
-    <C extends @Nullable Object> Map<C, ? extends Map<K, V>> groupBy(Function<? super Tuple2<K, V>, ? extends C> classifier);
+    <C extends @Nullable Object> Map<C, ? extends Map<K, V>> groupBy(
+            Function<? super Tuple2<K, V>, ? extends C> classifier);
 
     /**
      * This map if it is non-empty, otherwise a map of the entries of {@code other}.
@@ -636,7 +645,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return {@code Some(element)} if there is an element, {@code None} otherwise
      * @throws NullPointerException if {@code f} is null
      */
-    default <U extends Comparable<? super U>> Option<Tuple2<K, V>> maxBy(Function<? super Tuple2<K, V>, ? extends U> f) {
+    default <U extends Comparable<? super U>> Option<Tuple2<K, V>> maxBy(
+            Function<? super Tuple2<K, V>, ? extends U> f) {
         return TraversableModule.maxBy(this, f);
     }
 
@@ -675,7 +685,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return {@code Some(element)} if there is an element, {@code None} otherwise
      * @throws NullPointerException if {@code f} is null
      */
-    default <U extends Comparable<? super U>> Option<Tuple2<K, V>> minBy(Function<? super Tuple2<K, V>, ? extends U> f) {
+    default <U extends Comparable<? super U>> Option<Tuple2<K, V>> minBy(
+            Function<? super Tuple2<K, V>, ? extends U> f) {
         return TraversableModule.minBy(this, f);
     }
 
@@ -688,7 +699,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the folded result, {@code zero} on an empty Map
      * @throws NullPointerException if {@code combine} is null
      */
-    default Tuple2<K, V> fold(Tuple2<K, V> zero, BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> combine) {
+    default Tuple2<K, V> fold(
+            Tuple2<K, V> zero, BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> combine) {
         Objects.requireNonNull(combine, "combine is null");
         return foldLeft(zero, combine);
     }
@@ -712,7 +724,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return {@code Some(result)}, or {@code None} if this Map is empty
      * @throws NullPointerException if {@code op} is null
      */
-    default Option<Tuple2<K, V>> reduceOption(BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> op) {
+    default Option<Tuple2<K, V>> reduceOption(
+            BiFunction<? super Tuple2<K, V>, ? super Tuple2<K, V>, ? extends Tuple2<K, V>> op) {
         return TraversableModule.reduceLeftOption(this, op);
     }
 
@@ -745,9 +758,11 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return {@code Some(map)} if the keys are unique, {@code None} otherwise
      * @throws NullPointerException if {@code getKey} is null
      */
-    default <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(Function<? super Tuple2<K, V>, ? extends K2> getKey) {
+    default <K2 extends @Nullable Object> Option<Map<K2, Tuple2<K, V>>> arrangeBy(
+            Function<? super Tuple2<K, V>, ? extends K2> getKey) {
         Objects.requireNonNull(getKey, "getKey is null");
-        return TraversableModule.arrangeBy(groupBy(element -> Objects.requireNonNull(getKey.apply(element), "Map.arrangeBy: getKey returned null")));
+        return TraversableModule.arrangeBy(groupBy(
+                element -> Objects.requireNonNull(getKey.apply(element), "Map.arrangeBy: getKey returned null")));
     }
 
     /**
@@ -758,7 +773,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @param collector the collector
      * @return the collected result
      */
-    default <R extends @Nullable Object, A extends @Nullable Object> R collect(Collector<? super Tuple2<K, V>, A, R> collector) {
+    default <R extends @Nullable Object, A extends @Nullable Object> R collect(
+            Collector<? super Tuple2<K, V>, A, R> collector) {
         return stream().collect(collector);
     }
 
@@ -773,7 +789,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the collected result
      * @throws NullPointerException if {@code supplier}, {@code accumulator} or {@code combiner} is null
      */
-    default <R extends @Nullable Object> R collect(Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
+    default <R extends @Nullable Object> R collect(
+            Supplier<R> supplier, BiConsumer<R, ? super Tuple2<K, V>> accumulator, BiConsumer<R, R> combiner) {
         Objects.requireNonNull(supplier, "supplier is null");
         Objects.requireNonNull(accumulator, "accumulator is null");
         Objects.requireNonNull(combiner, "combiner is null");
@@ -791,7 +808,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
         return toMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -805,7 +824,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = HashMap::ofEntries;
         return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Map.toMap: f returned null");
     }
@@ -822,7 +842,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
         return toLinkedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -837,7 +859,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = LinkedHashMap::ofEntries;
         return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Map.toLinkedMap: f returned null");
     }
@@ -854,7 +877,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+    default <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
         return toSortedMap(TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -868,7 +893,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if {@code f} is null or returns null
      */
-    default <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+    default <K2 extends Comparable<? super K2>, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         Objects.requireNonNull(f, "f is null");
         return toSortedMap(Comparator.naturalOrder(), f);
     }
@@ -886,7 +912,10 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends K2> keyMapper, Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(
+            Comparator<? super K2> comparator,
+            Function<? super Tuple2<K, V>, ? extends K2> keyMapper,
+            Function<? super Tuple2<K, V>, ? extends V2> valueMapper) {
         return toSortedMap(comparator, TraversableModule.entryMapper(keyMapper, valueMapper));
     }
 
@@ -901,9 +930,12 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return the new map
      * @throws NullPointerException if an argument is null
      */
-    default <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(Comparator<? super K2> comparator, Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
+    default <K2 extends @Nullable Object, V2 extends @Nullable Object> SortedMap<K2, V2> toSortedMap(
+            Comparator<? super K2> comparator,
+            Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, SortedMap<K2, V2>> ofAll = t -> TreeMap.ofEntries(comparator, t);
+        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, SortedMap<K2, V2>> ofAll =
+                t -> TreeMap.ofEntries(comparator, t);
         return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Map.toSortedMap: f returned null");
     }
 
@@ -944,7 +976,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default SortedSet<Tuple2<K, V>> toSortedSet(Comparator<? super Tuple2<K, V>> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return TraversableModule.toTraversable(this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
+        return TraversableModule.toTraversable(
+                this, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
     }
 
     /**

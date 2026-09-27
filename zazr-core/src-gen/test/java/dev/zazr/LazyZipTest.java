@@ -4,13 +4,13 @@ package dev.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class LazyZipTest {
 
@@ -88,17 +88,33 @@ public class LazyZipTest {
 
     @Test
     public void shouldZip2WithANullValueAtEveryPosition() {
-        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2)).get()).isEqualTo(Tuple.of(null, 2));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, null));
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2)).get())
+                .isEqualTo(Tuple.of(null, 2));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null)).get())
+                .isEqualTo(Tuple.of(1, null));
     }
 
     @Test
     public void shouldRejectANullArgumentOf2() {
-        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2))).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), (_, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null)).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, (_, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), (_, _) -> {
+                    throw new AssertionError("must not be called");
+                }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, (_, _) -> {
+                    throw new AssertionError("must not be called");
+                }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("f is null");
     }
 
     @Test
@@ -182,27 +198,54 @@ public class LazyZipTest {
 
     @Test
     public void shouldHoldNullFromTheZipWithOf3() {
-        final Lazy<Object> combined = Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), (_, _, _) -> null);
+        final Lazy<Object> combined =
+                Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), (_, _, _) -> null);
         assertThat(combined.get()).isNull();
         assertThat(combined.isEvaluated()).isTrue();
     }
 
     @Test
     public void shouldZip3WithANullValueAtEveryPosition() {
-        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3)).get()).isEqualTo(Tuple.of(null, 2, 3));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3)).get()).isEqualTo(Tuple.of(1, null, 3));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, null));
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3))
+                        .get())
+                .isEqualTo(Tuple.of(null, 2, 3));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3))
+                        .get())
+                .isEqualTo(Tuple.of(1, null, 3));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, null));
     }
 
     @Test
     public void shouldRejectANullArgumentOf3() {
-        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3))).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), (_, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3))).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), (_, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null)).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, (_, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), (_, _, _) -> {
+                    throw new AssertionError("must not be called");
+                }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), (_, _, _) -> {
+                    throw new AssertionError("must not be called");
+                }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, (_, _, _) -> {
+                    throw new AssertionError("must not be called");
+                }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("f is null");
     }
 
     @Test
@@ -300,30 +343,70 @@ public class LazyZipTest {
 
     @Test
     public void shouldHoldNullFromTheZipWithOf4() {
-        final Lazy<Object> combined = Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), (_, _, _, _) -> null);
+        final Lazy<Object> combined = Lazy.zipWith(
+                Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), (_, _, _, _) -> null);
         assertThat(combined.get()).isNull();
         assertThat(combined.isEvaluated()).isTrue();
     }
 
     @Test
     public void shouldZip4WithANullValueAtEveryPosition() {
-        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4)).get()).isEqualTo(Tuple.of(null, 2, 3, 4));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4)).get()).isEqualTo(Tuple.of(1, null, 3, 4));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4)).get()).isEqualTo(Tuple.of(1, 2, null, 4));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, null));
+        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4))
+                        .get())
+                .isEqualTo(Tuple.of(null, 2, 3, 4));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4))
+                        .get())
+                .isEqualTo(Tuple.of(1, null, 3, 4));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, null, 4));
+        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, null));
     }
 
     @Test
     public void shouldRejectANullArgumentOf4() {
-        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4))).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4))).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4))).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null)).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, (_, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(
+                        () -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), (_, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(
+                        () -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), (_, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(
+                        () -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), (_, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(
+                        () -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, (_, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() ->
+                        Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("f is null");
     }
 
     @Test
@@ -350,7 +433,8 @@ public class LazyZipTest {
             return 5;
         });
         final Lazy<Tuple5<Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(l1, l2, l3, l4, l5);
-        final Lazy<String> combined = Lazy.zipWith(l1, l2, l3, l4, l5, (a1, a2, a3, a4, a5) -> "" + a1 + a2 + a3 + a4 + a5);
+        final Lazy<String> combined =
+                Lazy.zipWith(l1, l2, l3, l4, l5, (a1, a2, a3, a4, a5) -> "" + a1 + a2 + a3 + a4 + a5);
         assertThat(zipped.isEvaluated()).isFalse();
         assertThat(combined.isEvaluated()).isFalse();
         assertThat(l1.isEvaluated()).isFalse();
@@ -435,33 +519,137 @@ public class LazyZipTest {
 
     @Test
     public void shouldHoldNullFromTheZipWithOf5() {
-        final Lazy<Object> combined = Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), (_, _, _, _, _) -> null);
+        final Lazy<Object> combined = Lazy.zipWith(
+                Lazy.of(() -> 1),
+                Lazy.of(() -> 2),
+                Lazy.of(() -> 3),
+                Lazy.of(() -> 4),
+                Lazy.of(() -> 5),
+                (_, _, _, _, _) -> null);
         assertThat(combined.get()).isNull();
         assertThat(combined.isEvaluated()).isTrue();
     }
 
     @Test
     public void shouldZip5WithANullValueAtEveryPosition() {
-        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null));
+        assertThat(Lazy.zip(
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5))
+                        .get())
+                .isEqualTo(Tuple.of(null, 2, 3, 4, 5));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5))
+                        .get())
+                .isEqualTo(Tuple.of(1, null, 3, 4, 5));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, null, 4, 5));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 5))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, null, 5));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.<Integer>of(() -> null))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, null));
     }
 
     @Test
     public void shouldRejectANullArgumentOf5() {
-        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5))).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5))).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5))).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5))).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null)).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, (_, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        null,
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        (_, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        null,
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        (_, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        null,
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        (_, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        null,
+                        Lazy.of(() -> 5),
+                        (_, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        null,
+                        (_, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("f is null");
     }
 
     @Test
@@ -491,8 +679,10 @@ public class LazyZipTest {
             order.add(6);
             return 6;
         });
-        final Lazy<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(l1, l2, l3, l4, l5, l6);
-        final Lazy<String> combined = Lazy.zipWith(l1, l2, l3, l4, l5, l6, (a1, a2, a3, a4, a5, a6) -> "" + a1 + a2 + a3 + a4 + a5 + a6);
+        final Lazy<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> zipped =
+                Lazy.zip(l1, l2, l3, l4, l5, l6);
+        final Lazy<String> combined =
+                Lazy.zipWith(l1, l2, l3, l4, l5, l6, (a1, a2, a3, a4, a5, a6) -> "" + a1 + a2 + a3 + a4 + a5 + a6);
         assertThat(zipped.isEvaluated()).isFalse();
         assertThat(combined.isEvaluated()).isFalse();
         assertThat(l1.isEvaluated()).isFalse();
@@ -531,7 +721,8 @@ public class LazyZipTest {
             order.add(6);
             return 6;
         });
-        final Lazy<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(l1, l2, l3, l4, l5, l6);
+        final Lazy<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> zipped =
+                Lazy.zip(l1, l2, l3, l4, l5, l6);
         assertThat(zipped.get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6));
         assertThat(order).containsExactly(1, 2, 3, 4, 5, 6);
         assertThat(zipped.isEvaluated()).isTrue();
@@ -587,36 +778,184 @@ public class LazyZipTest {
 
     @Test
     public void shouldHoldNullFromTheZipWithOf6() {
-        final Lazy<Object> combined = Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), (_, _, _, _, _, _) -> null);
+        final Lazy<Object> combined = Lazy.zipWith(
+                Lazy.of(() -> 1),
+                Lazy.of(() -> 2),
+                Lazy.of(() -> 3),
+                Lazy.of(() -> 4),
+                Lazy.of(() -> 5),
+                Lazy.of(() -> 6),
+                (_, _, _, _, _, _) -> null);
         assertThat(combined.get()).isNull();
         assertThat(combined.isEvaluated()).isTrue();
     }
 
     @Test
     public void shouldZip6WithANullValueAtEveryPosition() {
-        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5, 6));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5, 6));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5, 6));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null), Lazy.of(() -> 6)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null, 6));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, null));
+        assertThat(Lazy.zip(
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6))
+                        .get())
+                .isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6))
+                        .get())
+                .isEqualTo(Tuple.of(1, null, 3, 4, 5, 6));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, null, 4, 5, 6));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, null, 5, 6));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 6))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, null, 6));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.<Integer>of(() -> null))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, 5, null));
     }
 
     @Test
     public void shouldRejectANullArgumentOf6() {
-        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6))).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6))).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6))).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), Lazy.of(() -> 6))).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), Lazy.of(() -> 6), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, Lazy.of(() -> 6))).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, Lazy.of(() -> 6), (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null)).isInstanceOf(NullPointerException.class).hasMessage("l6 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null, (_, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l6 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        null,
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        (_, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        null,
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        (_, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        null,
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        (_, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), Lazy.of(() -> 6)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        null,
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        (_, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, Lazy.of(() -> 6)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        null,
+                        Lazy.of(() -> 6),
+                        (_, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l6 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        null,
+                        (_, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l6 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("f is null");
     }
 
     @Test
@@ -650,8 +989,10 @@ public class LazyZipTest {
             order.add(7);
             return 7;
         });
-        final Lazy<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(l1, l2, l3, l4, l5, l6, l7);
-        final Lazy<String> combined = Lazy.zipWith(l1, l2, l3, l4, l5, l6, l7, (a1, a2, a3, a4, a5, a6, a7) -> "" + a1 + a2 + a3 + a4 + a5 + a6 + a7);
+        final Lazy<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped =
+                Lazy.zip(l1, l2, l3, l4, l5, l6, l7);
+        final Lazy<String> combined = Lazy.zipWith(
+                l1, l2, l3, l4, l5, l6, l7, (a1, a2, a3, a4, a5, a6, a7) -> "" + a1 + a2 + a3 + a4 + a5 + a6 + a7);
         assertThat(zipped.isEvaluated()).isFalse();
         assertThat(combined.isEvaluated()).isFalse();
         assertThat(l1.isEvaluated()).isFalse();
@@ -695,7 +1036,8 @@ public class LazyZipTest {
             order.add(7);
             return 7;
         });
-        final Lazy<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(l1, l2, l3, l4, l5, l6, l7);
+        final Lazy<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped =
+                Lazy.zip(l1, l2, l3, l4, l5, l6, l7);
         assertThat(zipped.get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, 7));
         assertThat(order).containsExactly(1, 2, 3, 4, 5, 6, 7);
         assertThat(zipped.isEvaluated()).isTrue();
@@ -756,39 +1098,267 @@ public class LazyZipTest {
 
     @Test
     public void shouldHoldNullFromTheZipWithOf7() {
-        final Lazy<Object> combined = Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), (_, _, _, _, _, _, _) -> null);
+        final Lazy<Object> combined = Lazy.zipWith(
+                Lazy.of(() -> 1),
+                Lazy.of(() -> 2),
+                Lazy.of(() -> 3),
+                Lazy.of(() -> 4),
+                Lazy.of(() -> 5),
+                Lazy.of(() -> 6),
+                Lazy.of(() -> 7),
+                (_, _, _, _, _, _, _) -> null);
         assertThat(combined.get()).isNull();
         assertThat(combined.isEvaluated()).isTrue();
     }
 
     @Test
     public void shouldZip7WithANullValueAtEveryPosition() {
-        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5, 6, 7));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5, 6, 7));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5, 6, 7));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null), Lazy.of(() -> 6), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null, 6, 7));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.<Integer>of(() -> null), Lazy.of(() -> 7)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, null, 7));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, null));
+        assertThat(Lazy.zip(
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7))
+                        .get())
+                .isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7))
+                        .get())
+                .isEqualTo(Tuple.of(1, null, 3, 4, 5, 6, 7));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, null, 4, 5, 6, 7));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, null, 5, 6, 7));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, null, 6, 7));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 7))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, 5, null, 7));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.<Integer>of(() -> null))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, null));
     }
 
     @Test
     public void shouldRejectANullArgumentOf7() {
-        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7))).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7))).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7))).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7))).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, Lazy.of(() -> 6), Lazy.of(() -> 7))).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, Lazy.of(() -> 6), Lazy.of(() -> 7), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null, Lazy.of(() -> 7))).isInstanceOf(NullPointerException.class).hasMessage("l6 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null, Lazy.of(() -> 7), (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l6 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), null)).isInstanceOf(NullPointerException.class).hasMessage("l7 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), null, (_, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l7 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        null,
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        null,
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        (_, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        null,
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        null,
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        (_, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        null,
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        null,
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        (_, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        null,
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        null,
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        (_, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        null,
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        null,
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        (_, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        null,
+                        Lazy.of(() -> 7)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l6 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        null,
+                        Lazy.of(() -> 7),
+                        (_, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l6 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l7 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        null,
+                        (_, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l7 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("f is null");
     }
 
     @Test
@@ -826,8 +1396,18 @@ public class LazyZipTest {
             order.add(8);
             return 8;
         });
-        final Lazy<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(l1, l2, l3, l4, l5, l6, l7, l8);
-        final Lazy<String> combined = Lazy.zipWith(l1, l2, l3, l4, l5, l6, l7, l8, (a1, a2, a3, a4, a5, a6, a7, a8) -> "" + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8);
+        final Lazy<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped =
+                Lazy.zip(l1, l2, l3, l4, l5, l6, l7, l8);
+        final Lazy<String> combined = Lazy.zipWith(
+                l1,
+                l2,
+                l3,
+                l4,
+                l5,
+                l6,
+                l7,
+                l8,
+                (a1, a2, a3, a4, a5, a6, a7, a8) -> "" + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8);
         assertThat(zipped.isEvaluated()).isFalse();
         assertThat(combined.isEvaluated()).isFalse();
         assertThat(l1.isEvaluated()).isFalse();
@@ -876,7 +1456,8 @@ public class LazyZipTest {
             order.add(8);
             return 8;
         });
-        final Lazy<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped = Lazy.zip(l1, l2, l3, l4, l5, l6, l7, l8);
+        final Lazy<Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> zipped =
+                Lazy.zip(l1, l2, l3, l4, l5, l6, l7, l8);
         assertThat(zipped.get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, 7, 8));
         assertThat(order).containsExactly(1, 2, 3, 4, 5, 6, 7, 8);
         assertThat(zipped.isEvaluated()).isTrue();
@@ -942,41 +1523,325 @@ public class LazyZipTest {
 
     @Test
     public void shouldHoldNullFromTheZipWithOf8() {
-        final Lazy<Object> combined = Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> null);
+        final Lazy<Object> combined = Lazy.zipWith(
+                Lazy.of(() -> 1),
+                Lazy.of(() -> 2),
+                Lazy.of(() -> 3),
+                Lazy.of(() -> 4),
+                Lazy.of(() -> 5),
+                Lazy.of(() -> 6),
+                Lazy.of(() -> 7),
+                Lazy.of(() -> 8),
+                (_, _, _, _, _, _, _, _) -> null);
         assertThat(combined.get()).isNull();
         assertThat(combined.isEvaluated()).isTrue();
     }
 
     @Test
     public void shouldZip8WithANullValueAtEveryPosition() {
-        assertThat(Lazy.zip(Lazy.<Integer>of(() -> null), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7, 8));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.<Integer>of(() -> null), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, null, 3, 4, 5, 6, 7, 8));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.<Integer>of(() -> null), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, null, 4, 5, 6, 7, 8));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.<Integer>of(() -> null), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, null, 5, 6, 7, 8));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.<Integer>of(() -> null), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, null, 6, 7, 8));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.<Integer>of(() -> null), Lazy.of(() -> 7), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, null, 7, 8));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.<Integer>of(() -> null), Lazy.of(() -> 8)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, null, 8));
-        assertThat(Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.<Integer>of(() -> null)).get()).isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, 7, null));
+        assertThat(Lazy.zip(
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7),
+                                Lazy.of(() -> 8))
+                        .get())
+                .isEqualTo(Tuple.of(null, 2, 3, 4, 5, 6, 7, 8));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7),
+                                Lazy.of(() -> 8))
+                        .get())
+                .isEqualTo(Tuple.of(1, null, 3, 4, 5, 6, 7, 8));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7),
+                                Lazy.of(() -> 8))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, null, 4, 5, 6, 7, 8));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7),
+                                Lazy.of(() -> 8))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, null, 5, 6, 7, 8));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7),
+                                Lazy.of(() -> 8))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, null, 6, 7, 8));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 7),
+                                Lazy.of(() -> 8))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, 5, null, 7, 8));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.<Integer>of(() -> null),
+                                Lazy.of(() -> 8))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, null, 8));
+        assertThat(Lazy.zip(
+                                Lazy.of(() -> 1),
+                                Lazy.of(() -> 2),
+                                Lazy.of(() -> 3),
+                                Lazy.of(() -> 4),
+                                Lazy.of(() -> 5),
+                                Lazy.of(() -> 6),
+                                Lazy.of(() -> 7),
+                                Lazy.<Integer>of(() -> null))
+                        .get())
+                .isEqualTo(Tuple.of(1, 2, 3, 4, 5, 6, 7, null));
     }
 
     @Test
     public void shouldRejectANullArgumentOf8() {
-        assertThatThrownBy(() -> Lazy.zip(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8))).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(null, Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l1 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8))).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), null, Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l2 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8))).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), null, Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l3 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8))).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), null, Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l4 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8))).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), null, Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l5 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null, Lazy.of(() -> 7), Lazy.of(() -> 8))).isInstanceOf(NullPointerException.class).hasMessage("l6 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), null, Lazy.of(() -> 7), Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l6 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), null, Lazy.of(() -> 8))).isInstanceOf(NullPointerException.class).hasMessage("l7 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), null, Lazy.of(() -> 8), (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l7 is null");
-        assertThatThrownBy(() -> Lazy.zip(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), null)).isInstanceOf(NullPointerException.class).hasMessage("l8 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), null, (_, _, _, _, _, _, _, _) -> { throw new AssertionError("must not be called"); })).isInstanceOf(NullPointerException.class).hasMessage("l8 is null");
-        assertThatThrownBy(() -> Lazy.zipWith(Lazy.of(() -> 1), Lazy.of(() -> 2), Lazy.of(() -> 3), Lazy.of(() -> 4), Lazy.of(() -> 5), Lazy.of(() -> 6), Lazy.of(() -> 7), Lazy.of(() -> 8), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        null,
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        null,
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8),
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l1 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        null,
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        null,
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8),
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l2 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        null,
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        null,
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8),
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l3 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        null,
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        null,
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8),
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l4 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        null,
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        null,
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8),
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l5 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        null,
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l6 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        null,
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8),
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l6 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        null,
+                        Lazy.of(() -> 8)))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l7 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        null,
+                        Lazy.of(() -> 8),
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l7 is null");
+        assertThatThrownBy(() -> Lazy.zip(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l8 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        null,
+                        (_, _, _, _, _, _, _, _) -> {
+                            throw new AssertionError("must not be called");
+                        }))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("l8 is null");
+        assertThatThrownBy(() -> Lazy.zipWith(
+                        Lazy.of(() -> 1),
+                        Lazy.of(() -> 2),
+                        Lazy.of(() -> 3),
+                        Lazy.of(() -> 4),
+                        Lazy.of(() -> 5),
+                        Lazy.of(() -> 6),
+                        Lazy.of(() -> 7),
+                        Lazy.of(() -> 8),
+                        null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("f is null");
     }
 }

@@ -34,8 +34,10 @@ public class Euler38Test {
      */
     @Test
     public void shouldSolveProblem38() {
-        assertThat(isPandigitalMultiple(Vector.ofAll("192384576".toCharArray()))).isTrue();
-        assertThat(isPandigitalMultiple(Vector.ofAll("918273645".toCharArray()))).isTrue();
+        assertThat(isPandigitalMultiple(Vector.ofAll("192384576".toCharArray())))
+                .isTrue();
+        assertThat(isPandigitalMultiple(Vector.ofAll("918273645".toCharArray())))
+                .isTrue();
 
         assertThat(largest1To9PandigitalMultiple().mkString()).isEqualTo("932718654");
     }
@@ -56,10 +58,12 @@ public class Euler38Test {
 
     private static boolean isPandigitalMultiple(Vector<Character> pandigital) {
         return List.rangeClosed(1, pandigital.size() - 1)
-                .exists(i -> isPandigitalMultipleRest(pandigital.drop(i), Integer.valueOf(pandigital.take(i).mkString()), 2));
+                .exists(i -> isPandigitalMultipleRest(
+                        pandigital.drop(i), Integer.valueOf(pandigital.take(i).mkString()), 2));
     }
 
-    private static boolean isPandigitalMultipleRest(Vector<Character> pandigitalRest, int multiplicand, int multiplicator) {
+    private static boolean isPandigitalMultipleRest(
+            Vector<Character> pandigitalRest, int multiplicand, int multiplicator) {
         final int length = pandigitalRest.size();
         if (length == 0) {
             return true;

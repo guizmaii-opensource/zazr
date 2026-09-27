@@ -5,8 +5,7 @@ package dev.zazr.collection.internal;
  */
 public final class RadixVectorShapes {
 
-    private RadixVectorShapes() {
-    }
+    private RadixVectorShapes() {}
 
     /** The number of levels: 0 for the empty vector, N for a {@code VectorN}. */
     public static int depth(RadixVector<?> v) {

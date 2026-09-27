@@ -1,18 +1,17 @@
-
 package dev.zazr.test;
 
 /*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*\
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import dev.zazr.Tuple;
 import dev.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class Check7Test {
 
@@ -26,121 +25,667 @@ class Check7Test {
     @Test
     void passesTheValuesInOrder() {
         final ArrayList<Object> seen = new ArrayList<>();
-        final CheckResult result = Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7)));
+        final CheckResult result = Check.evaluate(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Gen.constant(7),
+                (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7)));
         assertThat(result).isEqualTo(new CheckResult.Satisfied(20));
         assertThat(seen).hasSize(20).containsOnly(Tuple.of(1, 2, 3, 4, 5, 6, 7));
     }
 
     @Test
     void checkUsesTheDefaultConfiguration() {
-        assertThat(Check.evaluate(Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
+        assertThat(Check.evaluate(
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Satisfied(CheckConfig.defaults().samples()));
     }
 
     @Test
     void checkNRunsNSamples() {
-        assertThat(Check.evaluateN(3, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Satisfied(3));
-        assertThatThrownBy(() -> Check.evaluateN(-1, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(IllegalArgumentException.class);
+        assertThat(Check.evaluateN(
+                        3,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Satisfied(3));
+        assertThatThrownBy(() -> Check.evaluateN(
+                        -1,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void checkAllRunsEveryCombinationOnce() {
         final ArrayList<Object> seen = new ArrayList<>();
-        assertThat(Check.evaluateAll(TWO, TWO, TWO, TWO, TWO, TWO, TWO, (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7)))).isEqualTo(new CheckResult.Satisfied(128));
+        assertThat(Check.evaluateAll(
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7))))
+                .isEqualTo(new CheckResult.Satisfied(128));
         assertThat(seen).hasSize(128).doesNotHaveDuplicates();
         seen.clear();
-        assertThat(Check.evaluateAll(CONFIG, TWO, TWO, TWO, TWO, TWO, TWO, TWO, (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7)))).isEqualTo(new CheckResult.Satisfied(128));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7))))
+                .isEqualTo(new CheckResult.Satisfied(128));
         assertThat(seen).hasSize(128).doesNotHaveDuplicates();
     }
 
     @Test
     void falseFalsifiesTheCheck() {
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> false))
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> false))
                 .isEqualTo(new CheckResult.Falsified(1, 42L, Tuple.of(1, 2, 3, 4, 5, 6, 7), Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, TWO, TWO, TWO, TWO, TWO, TWO, TWO, (v1, v2, v3, v4, v5, v6, v7) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 < 7))
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        (v1, v2, v3, v4, v5, v6, v7) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 < 7))
                 .isEqualTo(new CheckResult.Falsified(128, 42L, Tuple.of(1, 1, 1, 1, 1, 1, 1), Option.none()));
     }
 
     @Test
     void anAssertionErrorFalsifiesTheCheck() {
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> {
-            throw new AssertionError("sum " + (v1 + v2 + v3 + v4 + v5 + v6 + v7));
-        })).isEqualTo(new CheckResult.Falsified(1, 42L, Tuple.of(1, 2, 3, 4, 5, 6, 7), Option.some("sum 28")));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> {
+                            throw new AssertionError("sum " + (v1 + v2 + v3 + v4 + v5 + v6 + v7));
+                        }))
+                .isEqualTo(new CheckResult.Falsified(1, 42L, Tuple.of(1, 2, 3, 4, 5, 6, 7), Option.some("sum 28")));
     }
 
     @Test
     void anExceptionMakesTheCheckErroneous() {
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> {
-            throw BOOM;
-        })).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.some(Tuple.of(1, 2, 3, 4, 5, 6, 7))));
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> null).isErroneous()).isTrue();
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> {
+                            throw BOOM;
+                        }))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.some(Tuple.of(1, 2, 3, 4, 5, 6, 7))));
+        assertThat(Check.evaluate(
+                                CONFIG,
+                                Gen.constant(1),
+                                Gen.constant(2),
+                                Gen.constant(3),
+                                Gen.constant(4),
+                                Gen.constant(5),
+                                Gen.constant(6),
+                                Gen.constant(7),
+                                (v1, v2, v3, v4, v5, v6, v7) -> null)
+                        .isErroneous())
+                .isTrue();
     }
 
     @Test
     void aFailingGeneratorMakesTheCheckErroneous() {
-        assertThat(Check.evaluate(CONFIG, FAILING, Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, FAILING, Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), FAILING, Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), FAILING, Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), FAILING, Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), FAILING, Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), FAILING, Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), FAILING, Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), FAILING, Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), FAILING, Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), FAILING, Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), FAILING, Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), FAILING, (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
-        assertThat(Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), FAILING, (v1, v2, v3, v4, v5, v6, v7) -> true)).isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        FAILING,
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        FAILING,
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        FAILING,
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        FAILING,
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        FAILING,
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        FAILING,
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        FAILING,
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        FAILING,
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        FAILING,
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        FAILING,
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        FAILING,
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        FAILING,
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        FAILING,
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
+        assertThat(Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        FAILING,
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isEqualTo(new CheckResult.Erroneous(1, 42L, BOOM, Option.none()));
     }
 
     @Test
     void checkReturnsWhenEveryValuePasses() {
         final ArrayList<Object> seen = new ArrayList<>();
-        Check.check(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7)));
+        Check.check(
+                CONFIG,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Gen.constant(7),
+                (v1, v2, v3, v4, v5, v6, v7) -> seen.add(Tuple.of(v1, v2, v3, v4, v5, v6, v7)));
         assertThat(seen).hasSize(20);
-        Check.check(Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true);
-        Check.checkN(3, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true);
+        Check.check(
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Gen.constant(7),
+                (v1, v2, v3, v4, v5, v6, v7) -> true);
+        Check.checkN(
+                3,
+                Gen.constant(1),
+                Gen.constant(2),
+                Gen.constant(3),
+                Gen.constant(4),
+                Gen.constant(5),
+                Gen.constant(6),
+                Gen.constant(7),
+                (v1, v2, v3, v4, v5, v6, v7) -> true);
         Check.checkAll(TWO, TWO, TWO, TWO, TWO, TWO, TWO, (v1, v2, v3, v4, v5, v6, v7) -> true);
         Check.checkAll(CONFIG, TWO, TWO, TWO, TWO, TWO, TWO, TWO, (v1, v2, v3, v4, v5, v6, v7) -> true);
     }
 
     @Test
     void checkThrowsTheAssertionErrorOfTheResult() {
-        assertThatThrownBy(() -> Check.check(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> false))
+        assertThatThrownBy(() -> Check.check(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> false))
                 .isExactlyInstanceOf(AssertionError.class)
-                .hasMessage("falsified at sample 1 by (1, 2, 3, 4, 5, 6, 7) (seed 42, replay with -Dzazr.check.seed=42)");
-        assertThatThrownBy(() -> Check.check(Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> false)).isExactlyInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> Check.checkN(3, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> false)).isExactlyInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> Check.checkAll(TWO, TWO, TWO, TWO, TWO, TWO, TWO, (v1, v2, v3, v4, v5, v6, v7) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 < 7)).isExactlyInstanceOf(AssertionError.class)
+                .hasMessage(
+                        "falsified at sample 1 by (1, 2, 3, 4, 5, 6, 7) (seed 42, replay with -Dzazr.check.seed=42)");
+        assertThatThrownBy(() -> Check.check(
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> false))
+                .isExactlyInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> Check.checkN(
+                        3,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> false))
+                .isExactlyInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> Check.checkAll(
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        TWO,
+                        (v1, v2, v3, v4, v5, v6, v7) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 < 7))
+                .isExactlyInstanceOf(AssertionError.class)
                 .hasMessageStartingWith("falsified at sample 128 by (");
-        assertThatThrownBy(() -> Check.checkAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> {
-            throw BOOM;
-        })).isExactlyInstanceOf(AssertionError.class).hasCause(BOOM)
-                .hasMessage("erroneous at sample 1 with (1, 2, 3, 4, 5, 6, 7): java.lang.IllegalStateException: boom (seed 42, replay with -Dzazr.check.seed=42)");
+        assertThatThrownBy(() -> Check.checkAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> {
+                            throw BOOM;
+                        }))
+                .isExactlyInstanceOf(AssertionError.class)
+                .hasCause(BOOM)
+                .hasMessage(
+                        "erroneous at sample 1 with (1, 2, 3, 4, 5, 6, 7): java.lang.IllegalStateException: boom (seed 42, replay with -Dzazr.check.seed=42)");
     }
 
     @Test
     void rejectsNulls() {
-        assertThatThrownBy(() -> Check.evaluate((CheckConfig) null, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.evaluateAll((CheckConfig) null, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.check(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.checkAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.check((CheckConfig) null, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), null)).isInstanceOf(NullPointerException.class);
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, null, Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, null, Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g1 is null");
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), null, Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g2 is null");
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), null, Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g2 is null");
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), null, Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g3 is null");
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), null, Gen.constant(4), Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g3 is null");
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), null, Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g4 is null");
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), null, Gen.constant(5), Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g4 is null");
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), null, Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g5 is null");
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), null, Gen.constant(6), Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g5 is null");
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), null, Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g6 is null");
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), null, Gen.constant(7), (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g6 is null");
-        assertThatThrownBy(() -> Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), null, (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g7 is null");
-        assertThatThrownBy(() -> Check.evaluateAll(CONFIG, Gen.constant(1), Gen.constant(2), Gen.constant(3), Gen.constant(4), Gen.constant(5), Gen.constant(6), null, (v1, v2, v3, v4, v5, v6, v7) -> true)).isInstanceOf(NullPointerException.class).hasMessage("g7 is null");
+        assertThatThrownBy(() -> Check.evaluate(
+                        (CheckConfig) null,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        (CheckConfig) null,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.check(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.checkAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.check(
+                        (CheckConfig) null,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        null,
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g1 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        null,
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g1 is null");
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        null,
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g2 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        null,
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g2 is null");
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        null,
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g3 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        null,
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g3 is null");
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        null,
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g4 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        null,
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g4 is null");
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        null,
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g5 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        null,
+                        Gen.constant(6),
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g5 is null");
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        null,
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g6 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        null,
+                        Gen.constant(7),
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g6 is null");
+        assertThatThrownBy(() -> Check.evaluate(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        null,
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g7 is null");
+        assertThatThrownBy(() -> Check.evaluateAll(
+                        CONFIG,
+                        Gen.constant(1),
+                        Gen.constant(2),
+                        Gen.constant(3),
+                        Gen.constant(4),
+                        Gen.constant(5),
+                        Gen.constant(6),
+                        null,
+                        (v1, v2, v3, v4, v5, v6, v7) -> true))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("g7 is null");
     }
 }

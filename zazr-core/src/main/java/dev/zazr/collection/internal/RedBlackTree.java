@@ -45,7 +45,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         Objects.requireNonNull(values, "values is null");
         // sort-then-build, keeping the last of equal values as successive insertions would; `values` is copied, never
         // reordered
-        final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder", values.length, false);
+        final RedBlackTreeBuilder<T> builder =
+                new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder", values.length, false);
         for (T value : values) {
             builder.add(Objects.requireNonNull(value, "TreeSet: element is null"));
         }
@@ -53,7 +54,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
     }
 
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> RedBlackTree<T> ofAll(Comparator<? super T> comparator, Iterable<? extends T> values) {
+    static <T extends @Nullable Object> RedBlackTree<T> ofAll(
+            Comparator<? super T> comparator, Iterable<? extends T> values) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(values, "values is null");
         // function equality is not computable => same object check
@@ -161,7 +163,10 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
             final Node<T> that = (Node<T>) tree;
             final Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
             if (contains(that.value)) {
-                return Node.join(split._1().intersection(that.left), that.value, split._2().intersection(that.right));
+                return Node.join(
+                        split._1().intersection(that.left),
+                        that.value,
+                        split._2().intersection(that.right));
             } else {
                 return Node.merge(split._1().intersection(that.left), split._2().intersection(that.right));
             }
@@ -234,7 +239,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
                 return that.color(BLACK);
             } else {
                 final Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
-                return Node.join(split._1().union(that.left), that.value, split._2().union(that.right));
+                return Node.join(
+                        split._1().union(that.left), that.value, split._2().union(that.right));
             }
         }
     }
@@ -325,8 +331,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
     String toString();
 
     enum Color {
-
-        RED, BLACK;
+        RED,
+        BLACK;
 
         @Override
         public String toString() {

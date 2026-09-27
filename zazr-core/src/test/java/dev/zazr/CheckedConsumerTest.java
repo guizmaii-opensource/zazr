@@ -26,8 +26,7 @@ public class CheckedConsumerTest {
         assertThat(consumer).isNotNull();
     }
 
-    private static void accept(Object obj) {
-    }
+    private static void accept(Object obj) {}
 
     @Nested
     class AcceptTests {
@@ -36,18 +35,20 @@ public class CheckedConsumerTest {
             final CheckedConsumer<?> f = t -> {};
             try {
                 f.accept(null);
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 fail("should not have thrown", x);
             }
         }
 
         @Test
         public void shouldApplyThrowingCheckedConsumer() {
-            final CheckedConsumer<?> f = t -> { throw new Error(); };
+            final CheckedConsumer<?> f = t -> {
+                throw new Error();
+            };
             try {
                 f.accept(null);
                 fail("should have thrown");
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 // ok
             }
         }
@@ -68,7 +69,7 @@ public class CheckedConsumerTest {
             try {
                 f.andThen(ignored -> result.set(true)).accept(null);
                 assertThat(result.get()).isTrue();
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 fail("should not have thrown", x);
             }
         }
@@ -76,11 +77,13 @@ public class CheckedConsumerTest {
         @Test
         public void shouldComposeCheckedConsumerUsingAndThenWhenFirstOneFails() {
             final AtomicBoolean result = new AtomicBoolean(false);
-            final CheckedConsumer<?> f = t -> { throw new Error(); };
+            final CheckedConsumer<?> f = t -> {
+                throw new Error();
+            };
             try {
                 f.andThen(ignored -> result.set(true)).accept(null);
                 fail("should have thrown");
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 assertThat(result.get()).isFalse();
             }
         }
@@ -93,18 +96,21 @@ public class CheckedConsumerTest {
             final Consumer<Object> consumer = CheckedConsumer.of(obj -> {}).unchecked();
             try {
                 consumer.accept(null);
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 Assertions.fail("Did not excepect an exception but received: " + x.getMessage());
             }
         }
 
         @Test
         public void shouldApplyAnUncheckedFunctionThatThrows() {
-            final Consumer<Object> consumer = CheckedConsumer.of(obj -> { throw new Error(); }).unchecked();
+            final Consumer<Object> consumer = CheckedConsumer.of(obj -> {
+                        throw new Error();
+                    })
+                    .unchecked();
             try {
                 consumer.accept(null);
                 Assertions.fail("Did excepect an exception.");
-            } catch(Error x) {
+            } catch (Error x) {
                 // ok!
             }
         }

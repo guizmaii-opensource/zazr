@@ -4,7 +4,6 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.test.Check;
 import dev.zazr.test.Gen;
-
 import java.util.Objects;
 
 /**
@@ -12,8 +11,7 @@ import java.util.Objects;
  */
 public final class EqualityLaws {
 
-    private EqualityLaws() {
-    }
+    private EqualityLaws() {}
 
     /**
      * For values {@code a} and {@code b}: {@code a} equals itself and its copy, the copy equals {@code a}, no value
@@ -23,10 +21,12 @@ public final class EqualityLaws {
      * @return the law
      */
     public static <T> Law<EqualitySubject<T>> equalsHashCodeConsistency() {
-        return Law.of("equalsHashCodeConsistency", (subject, config) -> Check.evaluate(config, subject.values(), subject.values(),
-                (a, b) -> {
+        return Law.of(
+                "equalsHashCodeConsistency",
+                (subject, config) -> Check.evaluate(config, subject.values(), subject.values(), (a, b) -> {
                     final T copy = subject.copy().apply(a);
-                    return consistent(a, a) && consistent(a, copy)
+                    return consistent(a, a)
+                            && consistent(a, copy)
                             && Results.check(copy.equals(a), () -> "the copy " + copy + " differs from " + a)
                             && Results.check(!a.equals(null), () -> a + " equals null")
                             && consistent(a, b);
@@ -43,16 +43,18 @@ public final class EqualityLaws {
      * @return the law
      */
     public static <T> Law<EqualitySubject<T>> equalsAgreesWithModel() {
-        return Law.of("equalsAgreesWithModel", (subject, config) -> Check.evaluate(config, pairs(subject),
-                pair -> {
+        return Law.of(
+                "equalsAgreesWithModel",
+                (subject, config) -> Check.evaluate(config, pairs(subject), pair -> {
                     final T a = pair._1();
                     final T b = pair._2();
                     final Object modelA = subject.model().apply(a);
                     final Object modelB = subject.model().apply(b);
                     final boolean expected = Objects.equals(modelA, modelB);
-                    return Results.check(a.equals(b) == expected && b.equals(a) == expected,
-                            () -> a + (expected ? " differs from " : " equals ") + b + " but their models are "
-                                    + modelA + " and " + modelB);
+                    return Results.check(
+                            a.equals(b) == expected && b.equals(a) == expected,
+                            () -> a + (expected ? " differs from " : " equals ") + b + " but their models are " + modelA
+                                    + " and " + modelB);
                 }));
     }
 
@@ -71,8 +73,10 @@ public final class EqualityLaws {
 
     private static <T> Gen<Tuple2<T, T>> pairs(EqualitySubject<T> subject) {
         final Gen<T> values = subject.values();
-        final Gen<Tuple2<T, T>> copies = values.map(a -> Tuple.of(a, subject.copy().apply(a)));
-        final Gen<Tuple2<T, T>> small = Gen.sized(size -> Gen.zip(values, values).withSize(Math.min(size, SMALL_SIZE)));
+        final Gen<Tuple2<T, T>> copies =
+                values.map(a -> Tuple.of(a, subject.copy().apply(a)));
+        final Gen<Tuple2<T, T>> small =
+                Gen.sized(size -> Gen.zip(values, values).withSize(Math.min(size, SMALL_SIZE)));
         final Gen<Tuple2<T, T>> independent = Gen.zip(values, values);
         return Gen.oneOf(copies, small, independent);
     }
@@ -83,7 +87,8 @@ public final class EqualityLaws {
         if (ab != b.equals(a)) {
             throw new AssertionError("equals is not symmetric between " + a + " and " + b);
         } else if (ab && a.hashCode() != b.hashCode()) {
-            throw new AssertionError(a + " and " + b + " are equal but hash to " + a.hashCode() + " and " + b.hashCode());
+            throw new AssertionError(
+                    a + " and " + b + " are equal but hash to " + a.hashCode() + " and " + b.hashCode());
         }
         return true;
     }

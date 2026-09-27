@@ -2,7 +2,6 @@ package dev.zazr.test.laws;
 
 import dev.zazr.test.CheckConfig;
 import dev.zazr.test.CheckResult;
-
 import java.util.Objects;
 
 /**
@@ -41,15 +40,17 @@ public record LawResult(String name, CheckResult result) {
      * @return a description of the result
      */
     public String describe() {
-        return name + ": " + switch (result) {
-            case CheckResult.Satisfied(var samples) -> "satisfied (" + samples + " samples)";
-            case CheckResult.Falsified(var sampleNumber, var seed, var counterexample, var message) ->
-                    "falsified at sample " + sampleNumber + " by " + counterexample + message.map(m -> ": " + m).getOrElse("")
-                            + replay(seed);
-            case CheckResult.Erroneous(var sampleNumber, var seed, var cause, var sample) ->
-                    "erroneous at sample " + sampleNumber + sample.map(values -> " with " + values).getOrElse(", while generating it")
-                            + ": " + cause + replay(seed);
-        };
+        return name + ": "
+                + switch (result) {
+                    case CheckResult.Satisfied(var samples) -> "satisfied (" + samples + " samples)";
+                    case CheckResult.Falsified(var sampleNumber, var seed, var counterexample, var message) ->
+                        "falsified at sample " + sampleNumber + " by " + counterexample
+                                + message.map(m -> ": " + m).getOrElse("") + replay(seed);
+                    case CheckResult.Erroneous(var sampleNumber, var seed, var cause, var sample) ->
+                        "erroneous at sample " + sampleNumber
+                                + sample.map(values -> " with " + values).getOrElse(", while generating it") + ": "
+                                + cause + replay(seed);
+                };
     }
 
     private static String replay(long seed) {

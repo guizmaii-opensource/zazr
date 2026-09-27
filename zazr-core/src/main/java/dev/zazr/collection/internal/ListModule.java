@@ -27,7 +27,9 @@ public interface ListModule {
             int remaining = length;
             for (List<T> rest = elements; remaining >= k; rest = rest.tail(), remaining--) {
                 final T head = rest.head();
-                for (List<List<T>> tails = combine(rest.tail(), remaining - 1, k - 1); !tails.isEmpty(); tails = tails.tail()) {
+                for (List<List<T>> tails = combine(rest.tail(), remaining - 1, k - 1);
+                        !tails.isEmpty();
+                        tails = tails.tail()) {
                     reversed = reversed.prepend(tails.head().prepend(head));
                 }
             }
@@ -37,7 +39,8 @@ public interface ListModule {
 
     interface SplitAt {
 
-        static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitByPredicateReversed(List<T> source, Predicate<? super T> predicate) {
+        static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitByPredicateReversed(
+                List<T> source, Predicate<? super T> predicate) {
             Objects.requireNonNull(predicate, "predicate is null");
             List<T> init = Nil.instance();
             List<T> tail = source;
@@ -113,7 +116,8 @@ public interface ListModule {
         }
 
         // the offset of the next occurrence of the slice in source, or -1
-        private static <T extends @Nullable Object> int findNextSlice(List<T> source, List<T> slice, int remaining, int sliceLength) {
+        private static <T extends @Nullable Object> int findNextSlice(
+                List<T> source, List<T> slice, int remaining, int sliceLength) {
             int index = 0;
             while (remaining >= sliceLength) {
                 if (source.startsWith(slice)) {

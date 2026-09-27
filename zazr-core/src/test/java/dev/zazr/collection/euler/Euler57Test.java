@@ -39,7 +39,8 @@ public class Euler57Test {
     private static int cnt() {
         return fractions()
                 .take(1000)
-                .filter(f -> f._1().toPlainString().length() > f._2().toPlainString().length())
+                .filter(f ->
+                        f._1().toPlainString().length() > f._2().toPlainString().length())
                 .size();
     }
 

@@ -19,46 +19,72 @@ class JavaSetViewTest {
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldReadAHashSetLikeAJavaHashSet() {
-        return IntStream.of(JavaViewContract.SIZES).mapToObj(n -> DynamicTest.dynamicTest("HashSet of " + n, () -> {
-            final java.util.List<Integer> elements = JavaViewContract.evens(n);
-            JavaViewContract.unordered().set("HashSet(" + n + ").asJava()", HashSet.ofAll(elements).asJava(), new java.util.HashSet<>(elements),
-                    JavaViewContract.keyProbes(n));
-        }));
+        return IntStream.of(JavaViewContract.SIZES)
+                .mapToObj(n -> DynamicTest.dynamicTest("HashSet of " + n, () -> {
+                    final java.util.List<Integer> elements = JavaViewContract.evens(n);
+                    JavaViewContract.unordered()
+                            .set(
+                                    "HashSet(" + n + ").asJava()",
+                                    HashSet.ofAll(elements).asJava(),
+                                    new java.util.HashSet<>(elements),
+                                    JavaViewContract.keyProbes(n));
+                }));
     }
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldReadALinkedHashSetLikeAJavaLinkedHashSet() {
-        return IntStream.of(JavaViewContract.SIZES).mapToObj(n -> DynamicTest.dynamicTest("LinkedHashSet of " + n, () -> {
-            final java.util.List<Integer> elements = shuffled(JavaViewContract.evens(n));
-            JavaViewContract.ordered().sequencedSet("LinkedHashSet(" + n + ").asJava()", LinkedHashSet.ofAll(elements).asJava(),
-                    new java.util.LinkedHashSet<>(elements), JavaViewContract.keyProbes(n), 0);
-        }));
+        return IntStream.of(JavaViewContract.SIZES)
+                .mapToObj(n -> DynamicTest.dynamicTest("LinkedHashSet of " + n, () -> {
+                    final java.util.List<Integer> elements = shuffled(JavaViewContract.evens(n));
+                    JavaViewContract.ordered()
+                            .sequencedSet(
+                                    "LinkedHashSet(" + n + ").asJava()",
+                                    LinkedHashSet.ofAll(elements).asJava(),
+                                    new java.util.LinkedHashSet<>(elements),
+                                    JavaViewContract.keyProbes(n),
+                                    0);
+                }));
     }
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldReadALinkedHashSetWithRemovedElementsLikeAJavaLinkedHashSet() {
-        return IntStream.of(JavaViewContract.SIZES).mapToObj(n -> DynamicTest.dynamicTest("LinkedHashSet of " + n + " minus every third", () -> {
-            final java.util.List<Integer> elements = shuffled(JavaViewContract.evens(n));
-            LinkedHashSet<Integer> set = LinkedHashSet.ofAll(elements);
-            final java.util.LinkedHashSet<Integer> reference = new java.util.LinkedHashSet<>(elements);
-            for (int i = 0; i < elements.size(); i += 3) {
-                set = set.remove(elements.get(i));
-                reference.remove(elements.get(i));
-            }
-            JavaViewContract.ordered().sequencedSet("LinkedHashSet(" + n + ").remove(...).asJava()", set.asJava(), reference, JavaViewContract.keyProbes(n), 0);
-        }));
+        return IntStream.of(JavaViewContract.SIZES)
+                .mapToObj(n -> DynamicTest.dynamicTest("LinkedHashSet of " + n + " minus every third", () -> {
+                    final java.util.List<Integer> elements = shuffled(JavaViewContract.evens(n));
+                    LinkedHashSet<Integer> set = LinkedHashSet.ofAll(elements);
+                    final java.util.LinkedHashSet<Integer> reference = new java.util.LinkedHashSet<>(elements);
+                    for (int i = 0; i < elements.size(); i += 3) {
+                        set = set.remove(elements.get(i));
+                        reference.remove(elements.get(i));
+                    }
+                    JavaViewContract.ordered()
+                            .sequencedSet(
+                                    "LinkedHashSet(" + n + ").remove(...).asJava()",
+                                    set.asJava(),
+                                    reference,
+                                    JavaViewContract.keyProbes(n),
+                                    0);
+                }));
     }
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldReadATreeSetLikeAJavaTreeSet() {
-        return JavaViewContract.comparators().stream().flatMap(comparator -> IntStream.of(JavaViewContract.SIZES).mapToObj(n ->
-                DynamicTest.dynamicTest("TreeSet of " + n + " by " + name(comparator), () -> {
-                    final java.util.List<Integer> elements = shuffled(JavaViewContract.evens(n));
-                    final java.util.TreeSet<Integer> reference = new java.util.TreeSet<>(comparator == Comparator.<Integer> naturalOrder() ? null : comparator);
-                    reference.addAll(elements);
-                    JavaViewContract.ordered().navigableSet("TreeSet(" + n + ", " + name(comparator) + ").asJava()", treeSet(comparator, elements).asJava(), reference,
-                            JavaViewContract.keyProbes(n), JavaViewContract.bounds(n), 0);
-                })));
+        return JavaViewContract.comparators().stream()
+                .flatMap(comparator -> IntStream.of(JavaViewContract.SIZES)
+                        .mapToObj(n -> DynamicTest.dynamicTest("TreeSet of " + n + " by " + name(comparator), () -> {
+                            final java.util.List<Integer> elements = shuffled(JavaViewContract.evens(n));
+                            final java.util.TreeSet<Integer> reference = new java.util.TreeSet<>(
+                                    comparator == Comparator.<Integer>naturalOrder() ? null : comparator);
+                            reference.addAll(elements);
+                            JavaViewContract.ordered()
+                                    .navigableSet(
+                                            "TreeSet(" + n + ", " + name(comparator) + ").asJava()",
+                                            treeSet(comparator, elements).asJava(),
+                                            reference,
+                                            JavaViewContract.keyProbes(n),
+                                            JavaViewContract.bounds(n),
+                                            0);
+                        })));
     }
 
     @Test
@@ -66,16 +92,19 @@ class JavaSetViewTest {
         assertThat(TreeSet.of(1, 2).asJava().comparator()).isNull();
         assertThat(TreeSet.of(1, 2).asJava().spliterator().getComparator()).isNull();
         assertThat(TreeSet.of(1, 2).asJava().subSet(0, 5).comparator()).isNull();
-        assertThat(TreeSet.of(1, 2).asJava().descendingSet().comparator()).isEqualTo(java.util.Collections.reverseOrder());
-        assertThat(TreeSet.of(Comparator.reverseOrder(), 1, 2).asJava().comparator()).isEqualTo(Comparator.reverseOrder());
+        assertThat(TreeSet.of(1, 2).asJava().descendingSet().comparator())
+                .isEqualTo(java.util.Collections.reverseOrder());
+        assertThat(TreeSet.of(Comparator.reverseOrder(), 1, 2).asJava().comparator())
+                .isEqualTo(Comparator.reverseOrder());
         final Comparator<Integer> byAbs = Comparator.comparingInt(Math::abs);
         assertThat(TreeSet.of(byAbs, 1, -2).asJava().comparator()).isSameAs(byAbs);
-        assertThat(TreeSet.of(byAbs, 1, -2).asJava().descendingSet().comparator()).isEqualTo(java.util.Collections.reverseOrder(byAbs));
+        assertThat(TreeSet.of(byAbs, 1, -2).asJava().descendingSet().comparator())
+                .isEqualTo(java.util.Collections.reverseOrder(byAbs));
     }
 
     @Test
     void shouldRejectNullAndForeignBoundsAsAJavaTreeSetDoes() {
-        final java.util.NavigableSet<Integer> view = TreeSet.<Integer> empty().asJava();
+        final java.util.NavigableSet<Integer> view = TreeSet.<Integer>empty().asJava();
         final java.util.TreeSet<Integer> reference = new java.util.TreeSet<>();
         for (java.util.NavigableSet<Integer> set : java.util.List.of(view, reference)) {
             assertThatThrownBy(() -> set.headSet(null)).isInstanceOf(NullPointerException.class);
@@ -85,13 +114,16 @@ class JavaSetViewTest {
             assertThatThrownBy(() -> set.subSet(3, 1)).isInstanceOf(IllegalArgumentException.class);
             assertThat(set.ceiling(null)).isNull();
         }
-        final java.util.NavigableSet<Object> foreign = (java.util.NavigableSet) TreeSet.of(1, 2).asJava();
+        final java.util.NavigableSet<Object> foreign =
+                (java.util.NavigableSet) TreeSet.of(1, 2).asJava();
         assertThatThrownBy(() -> foreign.headSet(new Object())).isInstanceOf(ClassCastException.class);
         // a bound is compared only with itself when the view is made, as by a java.util.TreeSet
         assertThat(foreign.headSet("a")).isNotNull();
-        assertThat(new java.util.TreeSet<Object>(java.util.List.of(1, 2)).headSet("a")).isNotNull();
+        assertThat(new java.util.TreeSet<Object>(java.util.List.of(1, 2)).headSet("a"))
+                .isNotNull();
         assertThatThrownBy(() -> foreign.contains(new Object())).isInstanceOf(ClassCastException.class);
-        final java.util.NavigableSet<Object> emptyForeign = (java.util.NavigableSet) TreeSet.empty().asJava();
+        final java.util.NavigableSet<Object> emptyForeign =
+                (java.util.NavigableSet) TreeSet.empty().asJava();
         assertThatThrownBy(() -> emptyForeign.contains(new Object())).isInstanceOf(ClassCastException.class);
     }
 
@@ -102,11 +134,13 @@ class JavaSetViewTest {
     }
 
     static TreeSet<Integer> treeSet(Comparator<Integer> comparator, java.util.List<Integer> elements) {
-        return comparator == Comparator.<Integer> naturalOrder() ? TreeSet.ofAll(elements) : TreeSet.ofAll(comparator, elements);
+        return comparator == Comparator.<Integer>naturalOrder()
+                ? TreeSet.ofAll(elements)
+                : TreeSet.ofAll(comparator, elements);
     }
 
     static String name(Comparator<Integer> comparator) {
-        return comparator == Comparator.<Integer> naturalOrder() ? "natural order" : "reversed order";
+        return comparator == Comparator.<Integer>naturalOrder() ? "natural order" : "reversed order";
     }
 
     @Test
@@ -121,8 +155,9 @@ class JavaSetViewTest {
         for (int i = 0; i < n; i++) {
             elements.add(i);
         }
-        final java.util.Collection<Integer> tree = TreeSet.ofAll(counting, elements).asJava();
-        for (int i : new int[] { 0, n / 2, n - 1, n, -1 }) {
+        final java.util.Collection<Integer> tree =
+                TreeSet.ofAll(counting, elements).asJava();
+        for (int i : new int[] {0, n / 2, n - 1, n, -1}) {
             calls[0] = 0;
             assertThat(tree.contains(i)).isEqualTo(i >= 0 && i < n);
             assertThat(calls[0]).as("comparisons for " + i).isLessThanOrEqualTo(22);
@@ -145,7 +180,8 @@ class JavaSetViewTest {
         for (int i = 0; i < n; i++) {
             counted.add(new Counted(i, equalsCalls));
         }
-        for (java.util.Collection<Counted> view : java.util.List.of(HashSet.ofAll(counted).asJava(), LinkedHashSet.ofAll(counted).asJava())) {
+        for (java.util.Collection<Counted> view : java.util.List.of(
+                HashSet.ofAll(counted).asJava(), LinkedHashSet.ofAll(counted).asJava())) {
             equalsCalls[0] = 0;
             assertThat(view.contains(new Counted(n / 2, equalsCalls))).isTrue();
             assertThat(view.contains(new Counted(n, equalsCalls))).isFalse();

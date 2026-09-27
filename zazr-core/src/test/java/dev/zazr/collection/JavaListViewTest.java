@@ -20,22 +20,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class JavaListViewTest {
 
-    private static final java.util.Map<String, Function<java.util.List<Integer>, java.util.List<Integer>>> VIEWS = java.util.Map.of(
-            "Vector", elements -> Vector.ofAll(elements).asJava(),
-            "List", elements -> List.ofAll(elements).asJava(),
-            "Queue", elements -> Queue.ofAll(elements).asJava(),
-            "Stream", elements -> Stream.ofAll(elements).asJava(),
-            "NonEmptyVector", elements -> elements.isEmpty() ? Vector.<Integer> empty().asJava() : NonEmptyVector.fromIterable(elements).get().asJava());
+    private static final java.util.Map<String, Function<java.util.List<Integer>, java.util.List<Integer>>> VIEWS =
+            java.util.Map.of(
+                    "Vector", elements -> Vector.ofAll(elements).asJava(),
+                    "List", elements -> List.ofAll(elements).asJava(),
+                    "Queue", elements -> Queue.ofAll(elements).asJava(),
+                    "Stream", elements -> Stream.ofAll(elements).asJava(),
+                    "NonEmptyVector",
+                            elements -> elements.isEmpty()
+                                    ? Vector.<Integer>empty().asJava()
+                                    : NonEmptyVector.fromIterable(elements)
+                                            .get()
+                                            .asJava());
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldReadLikeAnArrayList() {
-        return VIEWS.entrySet().stream().sorted(java.util.Map.Entry.comparingByKey()).flatMap(view -> IntStream.of(JavaViewContract.SIZES).mapToObj(n ->
-                DynamicTest.dynamicTest(view.getKey() + " of " + n, () -> {
-                    final java.util.List<Integer> elements = JavaViewContract.pairs(n);
-                    final JavaViewContract contract = JavaViewContract.ordered();
-                    contract.list(view.getKey() + "(" + n + ").asJava()", view.getValue().apply(elements), new ArrayList<>(elements), JavaViewContract.elementProbes(n), 0);
-                    assertThat(contract.checks()).isPositive();
-                })));
+        return VIEWS.entrySet().stream()
+                .sorted(java.util.Map.Entry.comparingByKey())
+                .flatMap(view -> IntStream.of(JavaViewContract.SIZES)
+                        .mapToObj(n -> DynamicTest.dynamicTest(view.getKey() + " of " + n, () -> {
+                            final java.util.List<Integer> elements = JavaViewContract.pairs(n);
+                            final JavaViewContract contract = JavaViewContract.ordered();
+                            contract.list(
+                                    view.getKey() + "(" + n + ").asJava()",
+                                    view.getValue().apply(elements),
+                                    new ArrayList<>(elements),
+                                    JavaViewContract.elementProbes(n),
+                                    0);
+                            assertThat(contract.checks()).isPositive();
+                        })));
     }
 
     @Nested
@@ -88,7 +101,8 @@ class JavaListViewTest {
 
         @Test
         void shouldIterateTheListIteratorOfALinearSequenceForwardInOneWalk() {
-            final java.util.ListIterator<Integer> iterator = List.of(1, 2, 3).asJava().listIterator(1);
+            final java.util.ListIterator<Integer> iterator =
+                    List.of(1, 2, 3).asJava().listIterator(1);
             assertThat(iterator.next()).isEqualTo(2);
             assertThat(iterator.next()).isEqualTo(3);
             assertThat(iterator.hasNext()).isFalse();

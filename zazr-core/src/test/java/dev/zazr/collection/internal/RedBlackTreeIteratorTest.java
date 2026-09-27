@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RedBlackTreeIteratorTest {
 
-    private static final int[] SIZES = { 0, 1, 2, 3, 7, 8, 31, 32, 33, 1023, 1024, 1025, 100_000 };
+    private static final int[] SIZES = {0, 1, 2, 3, 7, 8, 31, 32, 33, 1023, 1024, 1025, 100_000};
 
     private static final Comparator<Integer> NATURAL = Comparators.naturalComparator();
 
@@ -52,7 +52,8 @@ public class RedBlackTreeIteratorTest {
     public void shouldIterateInOrderTreesBuiltFromOrderedValues() {
         for (int size : SIZES) {
             final Object[] sorted = range(size).toArray();
-            final RedBlackTree<Integer> tree = RedBlackTreeModule.Node.fromOrdered(new RedBlackTreeModule.Empty<>(NATURAL), sorted, size);
+            final RedBlackTree<Integer> tree =
+                    RedBlackTreeModule.Node.fromOrdered(new RedBlackTreeModule.Empty<>(NATURAL), sorted, size);
             assertThat(iterated(tree)).as("size %d", size).containsExactlyElementsOf(range(size));
         }
     }
@@ -68,7 +69,8 @@ public class RedBlackTreeIteratorTest {
             for (int i = 0; i < size; i += 3) {
                 tree = tree.delete(i);
             }
-            final java.util.List<Integer> expected = range(size).stream().filter(i -> i % 3 != 0).toList();
+            final java.util.List<Integer> expected =
+                    range(size).stream().filter(i -> i % 3 != 0).toList();
             assertThat(iterated(tree)).as("size %d", size).containsExactlyElementsOf(expected);
             // the tree the deletions started from is unchanged
             assertThat(iterated(full)).as("original of size %d", size).containsExactlyElementsOf(range(size));

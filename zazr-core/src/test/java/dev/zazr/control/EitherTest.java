@@ -33,7 +33,10 @@ public class EitherTest {
     @Test
     public void shouldReturnSameWhenCallingMapOnLeft() {
         final Either<Integer, Object> actual = Either.left(1);
-        assertThat(actual.map(v -> {throw new IllegalStateException();})).isSameAs(actual);
+        assertThat(actual.map(v -> {
+                    throw new IllegalStateException();
+                }))
+                .isSameAs(actual);
     }
 
     @Test
@@ -66,14 +69,16 @@ public class EitherTest {
 
         @Test
         public void shouldMapBothLeft() {
-            final Either<Integer, String> actual = Either.<Integer, String>left(1).mapBoth(i -> i + 1, s -> s + "1");
+            final Either<Integer, String> actual =
+                    Either.<Integer, String>left(1).mapBoth(i -> i + 1, s -> s + "1");
             final Either<Integer, String> expected = Either.left(2);
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldMapBothRight() {
-            final Either<Integer, String> actual = Either.<Integer, String>right("1").mapBoth(i -> i + 1, s -> s + "1");
+            final Either<Integer, String> actual =
+                    Either.<Integer, String>right("1").mapBoth(i -> i + 1, s -> s + "1");
             final Either<Integer, String> expected = Either.right("11");
             assertThat(actual).isEqualTo(expected);
         }
@@ -97,8 +102,8 @@ public class EitherTest {
         @Test
         public void shouldThrowWhenCollectingAllOfNull() {
             assertThatThrownBy(() -> Either.collectAll(null))
-              .isInstanceOf(NullPointerException.class)
-              .withFailMessage("eithers is null");
+                    .isInstanceOf(NullPointerException.class)
+                    .withFailMessage("eithers is null");
         }
 
         @Test
@@ -111,7 +116,8 @@ public class EitherTest {
 
         @Test
         public void shouldCollectAllNonEmptyIterableOfRight() {
-            final Iterable<Either<Integer, String>> eithers = List.of(Either.right("a"), Either.right("b"), Either.right("c"));
+            final Iterable<Either<Integer, String>> eithers =
+                    List.of(Either.right("a"), Either.right("b"), Either.right("c"));
             final Either<Integer, Vector<String>> actual = Either.collectAll(eithers);
             final Either<Integer, Vector<String>> expected = Either.right(Vector.of("a", "b", "c"));
             assertThat(actual).isEqualTo(expected);
@@ -127,7 +133,8 @@ public class EitherTest {
 
         @Test
         public void shouldCollectAllNonEmptyIterableOfMixedEither() {
-            final Iterable<Either<Integer, String>> eithers = List.of(Either.right("a"), Either.left(1), Either.right("c"), Either.left(3));
+            final Iterable<Either<Integer, String>> eithers =
+                    List.of(Either.right("a"), Either.left(1), Either.right("c"), Either.left(3));
             final Either<Integer, Vector<String>> actual = Either.collectAll(eithers);
             final Either<Integer, Vector<String>> expected = Either.left(1);
             assertThat(actual).isEqualTo(expected);
@@ -139,8 +146,8 @@ public class EitherTest {
         @Test
         public void shouldThrowWhenForEachOfNull() {
             assertThatThrownBy(() -> Either.forEach(null, null))
-              .isInstanceOf(NullPointerException.class)
-              .withFailMessage("eithers is null");
+                    .isInstanceOf(NullPointerException.class)
+                    .withFailMessage("eithers is null");
         }
 
         @Test
@@ -170,8 +177,8 @@ public class EitherTest {
         @Test
         public void shouldForEachNonEmptyIterableOfMixedEither() {
             final Iterable<String> values = List.of("a", "1", "c", "3");
-            final Either<Integer, Vector<String>> actual =
-              Either.forEach(values, x -> x.matches("^\\d+$") ? Either.left(Integer.parseInt(x)) : Either.right(x));
+            final Either<Integer, Vector<String>> actual = Either.forEach(
+                    values, x -> x.matches("^\\d+$") ? Either.left(Integer.parseInt(x)) : Either.right(x));
             final Either<Integer, Vector<String>> expected = Either.left(1);
             assertThat(actual).isEqualTo(expected);
         }
@@ -236,9 +243,13 @@ public class EitherTest {
         public void shouldThrowWhenIfFalseReturnsNull() {
             assertThrows(NullPointerException.class, () -> Either.fromPredicate(1, i -> false, _ -> null));
         }
+
         private class Animal {
             String name;
-            Animal(String name) { this.name = name; }
+
+            Animal(String name) {
+                this.name = name;
+            }
 
             @Override
             public boolean equals(Object o) {
@@ -255,11 +266,15 @@ public class EitherTest {
         }
 
         private class Dog extends Animal {
-            Dog(String name) { super(name); }
+            Dog(String name) {
+                super(name);
+            }
         }
 
         private class Cat extends Animal {
-            Cat(String name) { super(name); }
+            Cat(String name) {
+                super(name);
+            }
         }
 
         @Test
@@ -329,26 +344,32 @@ public class EitherTest {
         @Test
         public void shouldNotInvokeSupplierOnRight() {
             assertThat(Either.right(1).getOrElse(() -> {
-                throw new AssertionError("must not be invoked");
-            })).isEqualTo(1);
+                        throw new AssertionError("must not be invoked");
+                    }))
+                    .isEqualTo(1);
         }
 
         @Test
         public void shouldThrowOnNullSupplier() {
             final Supplier<Integer> supplier = null;
-            assertThrows(NullPointerException.class, () -> EitherTest.<Integer>left().getOrElse(supplier));
+            assertThrows(
+                    NullPointerException.class, () -> EitherTest.<Integer>left().getOrElse(supplier));
         }
 
         @Test
         public void shouldGetOrElseFromTheLeftValue() {
-            assertThat(Either.<String, Integer>right(1).getOrElse(String::length)).isEqualTo(1);
-            assertThat(Either.<String, Integer>left("abc").getOrElse(String::length)).isEqualTo(3);
+            assertThat(Either.<String, Integer>right(1).getOrElse(String::length))
+                    .isEqualTo(1);
+            assertThat(Either.<String, Integer>left("abc").getOrElse(String::length))
+                    .isEqualTo(3);
         }
 
         @Test
         public void shouldThrowOnNullFunction() {
             final Function<String, Integer> f = null;
-            assertThrows(NullPointerException.class, () -> Either.<String, Integer>left("abc").getOrElse(f));
+            assertThrows(
+                    NullPointerException.class,
+                    () -> Either.<String, Integer>left("abc").getOrElse(f));
         }
     }
 
@@ -357,26 +378,30 @@ public class EitherTest {
 
         @Test
         public void shouldGetRightValue() {
-            assertThat(Either.right(1).getOrElseThrow(() -> new IllegalStateException("x"))).isEqualTo(1);
-            assertThat(Either.<String, Integer>right(1).getOrElseThrow(l -> new IllegalStateException(l))).isEqualTo(1);
+            assertThat(Either.right(1).getOrElseThrow(() -> new IllegalStateException("x")))
+                    .isEqualTo(1);
+            assertThat(Either.<String, Integer>right(1).getOrElseThrow(l -> new IllegalStateException(l)))
+                    .isEqualTo(1);
         }
 
         @Test
         public void shouldThrowSuppliedExceptionOnLeft() {
-            assertThrows(IllegalStateException.class, () -> left().getOrElseThrow(() -> new IllegalStateException("x")));
+            assertThrows(
+                    IllegalStateException.class, () -> left().getOrElseThrow(() -> new IllegalStateException("x")));
         }
 
         @Test
         public void shouldThrowExceptionBuiltFromTheLeftValue() {
             assertThatThrownBy(() -> EitherTest.<Integer>left().getOrElseThrow(l -> new IllegalStateException(l)))
-              .isInstanceOf(IllegalStateException.class)
-              .hasMessage("empty");
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("empty");
         }
 
         @Test
         public void shouldThrowOnNullArguments() {
             assertThrows(NullPointerException.class, () -> left().getOrElseThrow((Supplier<RuntimeException>) null));
-            assertThrows(NullPointerException.class, () -> left().getOrElseThrow((Function<String, RuntimeException>) null));
+            assertThrows(
+                    NullPointerException.class, () -> left().getOrElseThrow((Function<String, RuntimeException>) null));
         }
     }
 
@@ -469,14 +494,14 @@ public class EitherTest {
 
         @Test
         public void shouldConsumeTheRightValue() {
-            final int[] actual = { -1 };
+            final int[] actual = {-1};
             Either.right(1).forEach(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(1);
         }
 
         @Test
         public void shouldNotConsumeAnythingOnLeft() {
-            final int[] actual = { -1 };
+            final int[] actual = {-1};
             EitherTest.<Integer>left().forEach(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(-1);
         }
@@ -535,7 +560,10 @@ public class EitherTest {
         @Test
         public void shouldNotTapLeft() {
             final Either<String, Integer> left = left();
-            assertThat(left.tap(i -> {throw new IllegalStateException();})).isSameAs(left);
+            assertThat(left.tap(i -> {
+                        throw new IllegalStateException();
+                    }))
+                    .isSameAs(left);
         }
 
         @Test
@@ -562,7 +590,9 @@ public class EitherTest {
 
         @Test
         public void shouldNotTapLeftForRight() {
-            Either.right(1).tapLeft(i -> {throw new IllegalStateException();});
+            Either.right(1).tapLeft(i -> {
+                throw new IllegalStateException();
+            });
         }
     }
 
@@ -730,8 +760,9 @@ public class EitherTest {
         @Test
         void shouldNotApplyTheMapperOnRight() {
             assertThat(Either.<String, String>right("ok").toTry(l -> {
-                throw new AssertionError("must not be invoked");
-            })).isEqualTo(Try.success("ok"));
+                        throw new AssertionError("must not be invoked");
+                    }))
+                    .isEqualTo(Try.success("ok"));
         }
 
         @Test
@@ -741,7 +772,9 @@ public class EitherTest {
             Try<String> result = either.toTry(IllegalStateException::new);
 
             assertThat(result.isFailure()).isTrue();
-            assertThat(result.getCause()).isInstanceOf(IllegalStateException.class).hasMessage("error");
+            assertThat(result.getCause())
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("error");
         }
 
         @Test
@@ -795,7 +828,8 @@ public class EitherTest {
 
         @Test
         public void shouldPairTwoRights() {
-            assertThat(Either.<String, Integer>right(1).zip(Either.right("a"))).isEqualTo(Either.right(Tuple.of(1, "a")));
+            assertThat(Either.<String, Integer>right(1).zip(Either.right("a")))
+                    .isEqualTo(Either.right(Tuple.of(1, "a")));
         }
 
         @Test
@@ -811,9 +845,10 @@ public class EitherTest {
         public void shouldCombineWithZipWith() {
             final AtomicInteger calls = new AtomicInteger();
             assertThat(Either.<String, Integer>right(1).zipWith(Either.right(2), (a, b) -> {
-                calls.incrementAndGet();
-                return a + b;
-            })).isEqualTo(Either.right(3));
+                        calls.incrementAndGet();
+                        return a + b;
+                    }))
+                    .isEqualTo(Either.right(3));
             assertThat(calls.get()).isEqualTo(1);
         }
 
@@ -825,15 +860,16 @@ public class EitherTest {
             final Either<String, Integer> left = Either.left("a");
             final Either<String, Integer> otherLeft = Either.left("b");
             assertThat(left.zipWith(Either.right(2), notCalled)).isSameAs(left);
-            assertThat(Either.<String, Integer>right(1).zipWith(left, notCalled)).isSameAs(left);
+            assertThat(Either.<String, Integer>right(1).zipWith(left, notCalled))
+                    .isSameAs(left);
             assertThat(left.zipWith(otherLeft, notCalled)).isSameAs(left);
         }
 
         @Test
         public void shouldRejectANullCombinerResult() {
             assertThatThrownBy(() -> Either.<String, Integer>right(1).zipWith(Either.right(2), (_, _) -> null))
-              .isInstanceOf(NullPointerException.class)
-              .hasMessage("Either.zipWith: f returned null");
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("Either.zipWith: f returned null");
         }
 
         @Test
@@ -861,11 +897,21 @@ public class EitherTest {
         @Test
         public void shouldRejectNulls() {
             final Either<String, Integer> right = Either.right(1);
-            assertThatThrownBy(() -> right.zip(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
-            assertThatThrownBy(() -> right.zipWith(null, Integer::sum)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
-            assertThatThrownBy(() -> right.zipWith(Either.right(2), null)).isInstanceOf(NullPointerException.class).hasMessage("f is null");
-            assertThatThrownBy(() -> right.zipLeft(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
-            assertThatThrownBy(() -> right.zipRight(null)).isInstanceOf(NullPointerException.class).hasMessage("that is null");
+            assertThatThrownBy(() -> right.zip(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
+            assertThatThrownBy(() -> right.zipWith(null, Integer::sum))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
+            assertThatThrownBy(() -> right.zipWith(Either.right(2), null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("f is null");
+            assertThatThrownBy(() -> right.zipLeft(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
+            assertThatThrownBy(() -> right.zipRight(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("that is null");
         }
     }
 
@@ -879,8 +925,10 @@ public class EitherTest {
             final Either<String, Integer> right = Either.right(1);
             final Either<String, Integer> innerLeft = Either.left("inner");
             final Either<String, Either<String, Integer>> outerLeft = Either.left("outer");
-            assertThat(Either.flatten(Either.<String, Either<String, Integer>> right(right))).isSameAs(right);
-            assertThat(Either.flatten(Either.<String, Either<String, Integer>> right(innerLeft))).isSameAs(innerLeft);
+            assertThat(Either.flatten(Either.<String, Either<String, Integer>>right(right)))
+                    .isSameAs(right);
+            assertThat(Either.flatten(Either.<String, Either<String, Integer>>right(innerLeft)))
+                    .isSameAs(innerLeft);
             assertThat(Either.flatten(outerLeft)).isSameAs(outerLeft);
             assertThat(Either.flatten(outerLeft)).isEqualTo(Either.left("outer"));
         }
@@ -888,20 +936,25 @@ public class EitherTest {
         @Test
         public void shouldRemoveOneLevelOnly() {
             final Either<String, Either<String, Integer>> twice = Either.right(Either.right(1));
-            assertThat(Either.flatten(Either.<String, Either<String, Either<String, Integer>>> right(twice))).isSameAs(twice);
+            assertThat(Either.flatten(Either.<String, Either<String, Either<String, Integer>>>right(twice)))
+                    .isSameAs(twice);
         }
 
         @Test
         public void shouldWidenBothTypes() {
-            final Either<CharSequence, Number> right = Either.flatten(Either.<String, Either<String, Integer>> right(Either.right(1)));
+            final Either<CharSequence, Number> right =
+                    Either.flatten(Either.<String, Either<String, Integer>>right(Either.right(1)));
             assertThat(right).isEqualTo(Either.right(1));
-            final Either<CharSequence, Number> left = Either.flatten(Either.<String, Either<StringBuilder, Integer>> right(Either.left(new StringBuilder("sb"))));
+            final Either<CharSequence, Number> left = Either.flatten(
+                    Either.<String, Either<StringBuilder, Integer>>right(Either.left(new StringBuilder("sb"))));
             assertThat(left.getLeft().toString()).isEqualTo("sb");
         }
 
         @Test
         public void shouldRejectANullEither() {
-            assertThatThrownBy(() -> Either.flatten(null)).isInstanceOf(NullPointerException.class).hasMessage("nested is null");
+            assertThatThrownBy(() -> Either.flatten(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("nested is null");
         }
     }
 }

@@ -21,7 +21,8 @@ import static java.lang.Integer.bitCount;
 /// @param <T> the element type
 public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetNode<T> {
 
-    static final BitmapIndexedSetNode<?> EMPTY = new BitmapIndexedSetNode<>(null, 0, 0, EMPTY_OBJECTS, EMPTY_INTS, 0, 0);
+    static final BitmapIndexedSetNode<?> EMPTY =
+            new BitmapIndexedSetNode<>(null, 0, 0, EMPTY_OBJECTS, EMPTY_INTS, 0, 0);
 
     int dataMap;
     int nodeMap;
@@ -32,7 +33,14 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     // the builder token that may update this node in place; null for a node of a persistent operation
     final @Nullable Object owner;
 
-    BitmapIndexedSetNode(@Nullable Object owner, int dataMap, int nodeMap, Object[] content, int[] hashes, int size, int keyHashSum) {
+    BitmapIndexedSetNode(
+            @Nullable Object owner,
+            int dataMap,
+            int nodeMap,
+            Object[] content,
+            int[] hashes,
+            int size,
+            int keyHashSum) {
         this.owner = owner;
         this.dataMap = dataMap;
         this.nodeMap = nodeMap;
@@ -139,7 +147,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     }
 
     @Override
-    @Nullable T find(T element, int hash, int shift) {
+    @Nullable
+    T find(T element, int hash, int shift) {
         final int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
             final int index = indexFrom(dataMap, bitpos);
@@ -169,7 +178,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                     return this;
                 }
             } else {
-                final SetNode<T> subNodeNew = mergeTwoKeyValPairs(null, element0, hash0, element, hash, shift + BIT_PARTITION_SIZE);
+                final SetNode<T> subNodeNew =
+                        mergeTwoKeyValPairs(null, element0, hash0, element, hash, shift + BIT_PARTITION_SIZE);
                 return copyAndMigrateFromInlineToNode(bitpos, hash0, subNodeNew);
             }
         } else if ((nodeMap & bitpos) != 0) {
@@ -192,8 +202,14 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                     // is the one of the root level
                     final int newDataMap = (shift == 0) ? (dataMap ^ bitpos) : bitposFrom(maskFrom(hash, 0));
                     final int other = 1 - index;
-                    return new BitmapIndexedSetNode<>(null, newDataMap, 0, new Object[] { getPayload(other) },
-                            new int[] { hashes[other] }, 1, hashes[other]);
+                    return new BitmapIndexedSetNode<>(
+                            null,
+                            newDataMap,
+                            0,
+                            new Object[] {getPayload(other)},
+                            new int[] {hashes[other]},
+                            1,
+                            hashes[other]);
                 } else {
                     return copyAndRemoveValue(bitpos, hash);
                 }
@@ -225,10 +241,10 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     /// The node of two elements whose hashes agree up to `shift`, owned by `owner`: one node holding both when their
     /// fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node below
     /// the last level.
-    static <T extends @Nullable Object> SetNode<T> mergeTwoKeyValPairs(@Nullable Object owner, T element0, int hash0, T element1,
-            int hash1, int shift) {
+    static <T extends @Nullable Object> SetNode<T> mergeTwoKeyValPairs(
+            @Nullable Object owner, T element0, int hash0, T element1, int hash1, int shift) {
         if (shift >= HASH_CODE_LENGTH) {
-            return new HashCollisionSetNode<>(hash0, new Object[] { element0, element1 });
+            return new HashCollisionSetNode<>(hash0, new Object[] {element0, element1});
         }
         final int mask0 = maskFrom(hash0, shift);
         final int mask1 = maskFrom(hash1, shift);
@@ -236,20 +252,30 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             final int dataMap = bitposFrom(mask0) | bitposFrom(mask1);
             final int keyHashSum = hash0 + hash1;
             if (mask0 < mask1) {
-                return new BitmapIndexedSetNode<>(owner, dataMap, 0, new Object[] { element0, element1 }, new int[] { hash0, hash1 }, 2, keyHashSum);
+                return new BitmapIndexedSetNode<>(
+                        owner, dataMap, 0, new Object[] {element0, element1}, new int[] {hash0, hash1}, 2, keyHashSum);
             } else {
-                return new BitmapIndexedSetNode<>(owner, dataMap, 0, new Object[] { element1, element0 }, new int[] { hash1, hash0 }, 2, keyHashSum);
+                return new BitmapIndexedSetNode<>(
+                        owner, dataMap, 0, new Object[] {element1, element0}, new int[] {hash1, hash0}, 2, keyHashSum);
             }
         } else {
-            final SetNode<T> node = mergeTwoKeyValPairs(owner, element0, hash0, element1, hash1, shift + BIT_PARTITION_SIZE);
-            return new BitmapIndexedSetNode<>(owner, 0, bitposFrom(mask0), new Object[] { node }, EMPTY_INTS, node.size(), node.keyHashSum());
+            final SetNode<T> node =
+                    mergeTwoKeyValPairs(owner, element0, hash0, element1, hash1, shift + BIT_PARTITION_SIZE);
+            return new BitmapIndexedSetNode<>(
+                    owner, 0, bitposFrom(mask0), new Object[] {node}, EMPTY_INTS, node.size(), node.keyHashSum());
         }
     }
 
     private BitmapIndexedSetNode<T> copyAndSetNode(int bitpos, SetNode<T> oldNode, SetNode<T> newNode) {
         final Object[] dst = content.clone();
         dst[dst.length - 1 - nodeIndex(bitpos)] = newNode;
-        return new BitmapIndexedSetNode<>(null, dataMap, nodeMap, dst, hashes, size - oldNode.size() + newNode.size(),
+        return new BitmapIndexedSetNode<>(
+                null,
+                dataMap,
+                nodeMap,
+                dst,
+                hashes,
+                size - oldNode.size() + newNode.size(),
                 keyHashSum - oldNode.keyHashSum() + newNode.keyHashSum());
     }
 
@@ -260,8 +286,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         System.arraycopy(src, 0, dst, 0, dataIx);
         dst[dataIx] = element;
         System.arraycopy(src, dataIx, dst, dataIx + 1, src.length - dataIx);
-        return new BitmapIndexedSetNode<>(null, dataMap | bitpos, nodeMap, dst, insertElement(hashes, dataIx, hash), size + 1,
-                keyHashSum + hash);
+        return new BitmapIndexedSetNode<>(
+                null, dataMap | bitpos, nodeMap, dst, insertElement(hashes, dataIx, hash), size + 1, keyHashSum + hash);
     }
 
     private BitmapIndexedSetNode<T> copyAndRemoveValue(int bitpos, int hash) {
@@ -270,8 +296,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         final Object[] dst = new Object[src.length - 1];
         System.arraycopy(src, 0, dst, 0, dataIx);
         System.arraycopy(src, dataIx + 1, dst, dataIx, src.length - dataIx - 1);
-        return new BitmapIndexedSetNode<>(null, dataMap ^ bitpos, nodeMap, dst, removeElement(hashes, dataIx), size - 1,
-                keyHashSum - hash);
+        return new BitmapIndexedSetNode<>(
+                null, dataMap ^ bitpos, nodeMap, dst, removeElement(hashes, dataIx), size - 1, keyHashSum - hash);
     }
 
     // the content of this node with the element of `bitpos` moved out, and `node` inserted among the children
@@ -288,8 +314,14 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     }
 
     private BitmapIndexedSetNode<T> copyAndMigrateFromInlineToNode(int bitpos, int hash, SetNode<T> node) {
-        return new BitmapIndexedSetNode<>(null, dataMap ^ bitpos, nodeMap | bitpos, migratedFromInlineToNode(bitpos, node),
-                removeElement(hashes, dataIndex(bitpos)), size - 1 + node.size(), keyHashSum - hash + node.keyHashSum());
+        return new BitmapIndexedSetNode<>(
+                null,
+                dataMap ^ bitpos,
+                nodeMap | bitpos,
+                migratedFromInlineToNode(bitpos, node),
+                removeElement(hashes, dataIndex(bitpos)),
+                size - 1 + node.size(),
+                keyHashSum - hash + node.keyHashSum());
     }
 
     private BitmapIndexedSetNode<T> copyAndMigrateFromNodeToInline(int bitpos, SetNode<T> oldNode, SetNode<T> node) {
@@ -301,8 +333,14 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         dst[idxNew] = node.getPayload(0);
         System.arraycopy(src, idxNew, dst, idxNew + 1, idxOld - idxNew);
         System.arraycopy(src, idxOld + 1, dst, idxOld + 1, src.length - idxOld - 1);
-        return new BitmapIndexedSetNode<>(null, dataMap | bitpos, nodeMap ^ bitpos, dst, insertElement(hashes, idxNew, node.getHash(0)),
-                size - oldNode.size() + 1, keyHashSum - oldNode.keyHashSum() + node.keyHashSum());
+        return new BitmapIndexedSetNode<>(
+                null,
+                dataMap | bitpos,
+                nodeMap ^ bitpos,
+                dst,
+                insertElement(hashes, idxNew, node.getHash(0)),
+                size - oldNode.size() + 1,
+                keyHashSum - oldNode.keyHashSum() + node.keyHashSum());
     }
 
     // -- the operations on whole subtrees
@@ -346,7 +384,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             if ((bitpos & dataMap) != 0) {
                 if ((bitpos & bm.dataMap) != 0) {
                     final int leftHash = hashes[leftIdx];
-                    if (leftHash == bm.hashes[rightIdx] && Objects.equals(getPayload(leftIdx), bm.getPayload(rightIdx))) {
+                    if (leftHash == bm.hashes[rightIdx]
+                            && Objects.equals(getPayload(leftIdx), bm.getPayload(rightIdx))) {
                         leftDataRightDataRightOverwrites |= bitpos;
                     } else {
                         leftDataRightDataMigrateToNode |= bitpos;
@@ -381,8 +420,12 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         }
 
         final int newDataMap = leftDataOnly | rightDataOnly | leftDataRightDataRightOverwrites;
-        final int newNodeMap = leftNodeRightNode | leftDataRightNode | leftNodeRightData | leftNodeOnly | rightNodeOnly
-                               | dataToNodeMigrationTargets;
+        final int newNodeMap = leftNodeRightNode
+                | leftDataRightNode
+                | leftNodeRightData
+                | leftNodeOnly
+                | rightNodeOnly
+                | dataToNodeMigrationTargets;
         if (newDataMap == (rightDataOnly | leftDataRightDataRightOverwrites) && newNodeMap == rightNodeOnly) {
             // nothing of this node makes it into the result
             return bm;
@@ -430,7 +473,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                 newKeyHashSum += newNode.keyHashSum();
             } else if ((bitpos & leftNodeRightData) != 0) {
                 anyChangesMadeSoFar = true;
-                final SetNode<T> newNode = getNode(leftNodeIdx).updated(bm.getPayload(rightDataIdx), bm.hashes[rightDataIdx], nextShift, true);
+                final SetNode<T> newNode = getNode(leftNodeIdx)
+                        .updated(bm.getPayload(rightDataIdx), bm.hashes[rightDataIdx], nextShift, true);
                 newContent[newContentSize - compressedNodeIdx - 1] = newNode;
                 compressedNodeIdx++;
                 leftNodeIdx++;
@@ -469,8 +513,13 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                 newKeyHashSum += newNode.keyHashSum();
             } else if ((bitpos & leftDataRightDataMigrateToNode) != 0) {
                 anyChangesMadeSoFar = true;
-                final SetNode<T> newNode = mergeTwoKeyValPairs(null, getPayload(leftDataIdx), hashes[leftDataIdx],
-                        bm.getPayload(rightDataIdx), bm.hashes[rightDataIdx], nextShift);
+                final SetNode<T> newNode = mergeTwoKeyValPairs(
+                        null,
+                        getPayload(leftDataIdx),
+                        hashes[leftDataIdx],
+                        bm.getPayload(rightDataIdx),
+                        bm.hashes[rightDataIdx],
+                        nextShift);
                 newContent[newContentSize - compressedNodeIdx - 1] = newNode;
                 compressedNodeIdx++;
                 leftDataIdx++;
@@ -492,8 +541,9 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             bitpos <<= 1;
         }
         return anyChangesMadeSoFar
-               ? new BitmapIndexedSetNode<>(null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum)
-               : bm;
+                ? new BitmapIndexedSetNode<>(
+                        null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum)
+                : bm;
     }
 
     @Override
@@ -554,8 +604,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     }
 
     // records the new child at `index` once one child has changed: null while every child is the old one
-    private static <T extends @Nullable Object> SetNode<T> @Nullable [] withChild(SetNode<T> @Nullable [] newChildren, int children,
-            int index, SetNode<T> child, SetNode<T> newChild) {
+    private static <T extends @Nullable Object> SetNode<T> @Nullable [] withChild(
+            SetNode<T> @Nullable [] newChildren, int children, int index, SetNode<T> child, SetNode<T> newChild) {
         SetNode<T>[] result = newChildren;
         if (newChild != child && result == null) {
             @SuppressWarnings("unchecked")
@@ -667,15 +717,18 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                 if ((node.dataMap & bitpos) != 0) {
                     // an element against an element
                     final int thatIndex = indexFrom(node.dataMap, bitpos);
-                    isSubset = hashes[index] == node.hashes[thatIndex] && Objects.equals(getPayload(index), node.getPayload(thatIndex));
+                    isSubset = hashes[index] == node.hashes[thatIndex]
+                            && Objects.equals(getPayload(index), node.getPayload(thatIndex));
                 } else {
                     // an element against a child
-                    isSubset = node.getNode(indexFrom(node.nodeMap, bitpos)).contains(getPayload(index), hashes[index], shift + BIT_PARTITION_SIZE);
+                    isSubset = node.getNode(indexFrom(node.nodeMap, bitpos))
+                            .contains(getPayload(index), hashes[index], shift + BIT_PARTITION_SIZE);
                 }
             } else {
                 // a child against a child; a child against an element cannot be a subset, the child holding two
                 isSubset = (node.dataMap & bitpos) == 0
-                           && getNode(indexFrom(nodeMap, bitpos)).subsetOf(node.getNode(indexFrom(node.nodeMap, bitpos)), shift + BIT_PARTITION_SIZE);
+                        && getNode(indexFrom(nodeMap, bitpos))
+                                .subsetOf(node.getNode(indexFrom(node.nodeMap, bitpos)), shift + BIT_PARTITION_SIZE);
             }
             if (!isSubset) {
                 return false;
@@ -689,8 +742,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     @Override
     BitmapIndexedSetNode<T> addInPlace(Object owner, T element, int hash, int shift) {
         final BitmapIndexedSetNode<T> node = (this.owner == owner)
-                                             ? this
-                                             : new BitmapIndexedSetNode<>(owner, dataMap, nodeMap, content.clone(), hashes, size, keyHashSum);
+                ? this
+                : new BitmapIndexedSetNode<>(owner, dataMap, nodeMap, content.clone(), hashes, size, keyHashSum);
         node.update(owner, element, hash, shift);
         return node;
     }
@@ -706,7 +759,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                 // the element already there is kept
                 return;
             } else {
-                final SetNode<T> subNodeNew = mergeTwoKeyValPairs(owner, element0, hash0, element, hash, shift + BIT_PARTITION_SIZE);
+                final SetNode<T> subNodeNew =
+                        mergeTwoKeyValPairs(owner, element0, hash0, element, hash, shift + BIT_PARTITION_SIZE);
                 // an element and a child take one slot each, so the owned array is reused: the elements after the
                 // migrated one and the children before the new one shift left by one
                 final int idxNew = content.length - 1 - nodeIndex(bitpos);

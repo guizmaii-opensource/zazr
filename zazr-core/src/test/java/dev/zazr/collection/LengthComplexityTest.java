@@ -34,7 +34,11 @@ public class LengthComplexityTest {
         assertTimeoutPreemptively(BOUND, () -> {
             assertThat(Queue.ofAll(List.range(0, N)).dropRight(K).size()).isEqualTo(N - K);
             assertThat(Queue.ofAll(List.range(0, N)).takeRight(K).size()).isEqualTo(K);
-            assertThat(Queue.<Integer>empty().enqueueAll(List.range(0, N)).dropRight(K).size()).isEqualTo(N - K);
+            assertThat(Queue.<Integer>empty()
+                            .enqueueAll(List.range(0, N))
+                            .dropRight(K)
+                            .size())
+                    .isEqualTo(N - K);
         });
     }
 
@@ -43,8 +47,10 @@ public class LengthComplexityTest {
         assertTimeoutPreemptively(BOUND, () -> {
             assertThat(Iterator.range(0, N).takeRight(K).toVector().size()).isEqualTo(K);
             assertThat(Iterator.range(0, N).dropRight(K).toVector().size()).isEqualTo(N - K);
-            assertThat(Iterator.ofAll(List.range(0, N)).takeRight(K).toVector().size()).isEqualTo(K);
-            assertThat(Iterator.ofAll(List.range(0, N)).dropRight(K).toVector().size()).isEqualTo(N - K);
+            assertThat(Iterator.ofAll(List.range(0, N)).takeRight(K).toVector().size())
+                    .isEqualTo(K);
+            assertThat(Iterator.ofAll(List.range(0, N)).dropRight(K).toVector().size())
+                    .isEqualTo(N - K);
         });
     }
 
@@ -140,7 +146,7 @@ public class LengthComplexityTest {
         final java.util.List<java.util.List<Integer>> views = java.util.List.of(
                 List.range(0, MILLION).asJava(),
                 Queue.ofAll(List.range(0, MILLION)).asJava(),
-                Queue.<Integer> empty().enqueueAll(List.range(0, MILLION)).asJava(),
+                Queue.<Integer>empty().enqueueAll(List.range(0, MILLION)).asJava(),
                 Stream.range(0, MILLION).asJava(),
                 List.range(0, MILLION).asJava().reversed());
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
@@ -151,5 +157,4 @@ public class LengthComplexityTest {
             }
         });
     }
-
 }

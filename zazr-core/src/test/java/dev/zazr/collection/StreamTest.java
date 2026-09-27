@@ -66,7 +66,8 @@ public class StreamTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected <T extends Comparable<? super T>> Stream<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
+    protected <T extends Comparable<? super T>> Stream<T> ofJavaStream(
+            java.util.stream.Stream<? extends T> javaStream) {
         return Stream.ofAll(javaStream);
     }
 
@@ -302,8 +303,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldGenerateOverflowingLongStream() {
             //noinspection NumericOverflow
-            assertThat(Stream.from(Long.MAX_VALUE).take(2))
-                    .isEqualTo(Stream.of(Long.MAX_VALUE, Long.MAX_VALUE + 1));
+            assertThat(Stream.from(Long.MAX_VALUE).take(2)).isEqualTo(Stream.of(Long.MAX_VALUE, Long.MAX_VALUE + 1));
         }
     }
 
@@ -317,8 +317,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldGenerateOverflowingLongStreamWithStep() {
             //noinspection NumericOverflow
-            assertThat(Stream.from(Long.MAX_VALUE, 2).take(2))
-                    .isEqualTo(Stream.of(Long.MAX_VALUE, Long.MAX_VALUE + 2));
+            assertThat(Stream.from(Long.MAX_VALUE, 2).take(2)).isEqualTo(Stream.of(Long.MAX_VALUE, Long.MAX_VALUE + 2));
         }
     }
 
@@ -326,7 +325,8 @@ public class StreamTest extends AbstractTraversableTest {
     class StaticContinuallySupplierTests {
         @Test
         public void shouldGenerateInfiniteStreamBasedOnSupplier() {
-            assertThat(Stream.continually(() -> 1).take(13).reduce((i, j) -> i + j)).isEqualTo(13);
+            assertThat(Stream.continually(() -> 1).take(13).reduce((i, j) -> i + j))
+                    .isEqualTo(13);
         }
     }
 
@@ -334,7 +334,8 @@ public class StreamTest extends AbstractTraversableTest {
     class StaticIterateTFunctionTests {
         @Test
         public void shouldGenerateInfiniteStreamBasedOnSupplierWithAccessToPreviousValue() {
-            assertThat(Stream.iterate(2, (i) -> i + 2).take(3).reduce((i, j) -> i + j)).isEqualTo(12);
+            assertThat(Stream.iterate(2, (i) -> i + 2).take(3).reduce((i, j) -> i + j))
+                    .isEqualTo(12);
         }
     }
 
@@ -342,7 +343,8 @@ public class StreamTest extends AbstractTraversableTest {
     class StaticIterateSupplierOptionTests {
         @Test
         public void shouldGenerateInfiniteStreamBasedOnOptionSupplier() {
-            assertThat(Stream.iterate(() -> Option.some(1)).take(5).reduce((i, j) -> i + j)).isEqualTo(5);
+            assertThat(Stream.iterate(() -> Option.some(1)).take(5).reduce((i, j) -> i + j))
+                    .isEqualTo(5);
         }
     }
 
@@ -395,7 +397,10 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldAppendMillionTimes() {
             final int bigNum = 1_000_000;
-            assertThat(Stream.range(0, bigNum).foldLeft(Stream.empty(), Stream::append).size()).isEqualTo(bigNum);
+            assertThat(Stream.range(0, bigNum)
+                            .foldLeft(Stream.empty(), Stream::append)
+                            .size())
+                    .isEqualTo(bigNum);
         }
     }
 
@@ -418,7 +423,8 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldAppendAllToInfiniteStream() {
-            assertThat(Stream.from(1).appendAll(Stream.continually(() -> -1)).take(6)).isEqualTo(of(1, 2, 3, 4, 5, 6));
+            assertThat(Stream.from(1).appendAll(Stream.continually(() -> -1)).take(6))
+                    .isEqualTo(of(1, 2, 3, 4, 5, 6));
         }
     }
 
@@ -431,8 +437,16 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldComputeCombinationsOfNonEmptyStream() {
-            assertThat(Stream.of(1, 2, 3).combinations()).isEqualTo(Stream.of(Stream.empty(), Stream.of(1), Stream.of(2),
-                    Stream.of(3), Stream.of(1, 2), Stream.of(1, 3), Stream.of(2, 3), Stream.of(1, 2, 3)));
+            assertThat(Stream.of(1, 2, 3).combinations())
+                    .isEqualTo(Stream.of(
+                            Stream.empty(),
+                            Stream.of(1),
+                            Stream.of(2),
+                            Stream.of(3),
+                            Stream.of(1, 2),
+                            Stream.of(1, 3),
+                            Stream.of(2, 3),
+                            Stream.of(1, 2, 3)));
         }
     }
 
@@ -454,7 +468,9 @@ public class StreamTest extends AbstractTraversableTest {
     class FlatmapTests {
         @Test
         public void shouldFlatMapInfiniteTraversable() {
-            assertThat(Stream.iterate(1, i -> i + 1).flatMap(i -> List.of(i, 2 * i)).take(7))
+            assertThat(Stream.iterate(1, i -> i + 1)
+                            .flatMap(i -> List.of(i, 2 * i))
+                            .take(7))
                     .isEqualTo(Stream.of(1, 2, 2, 4, 3, 6, 4));
         }
     }
@@ -464,10 +480,11 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionInTwoIterations() {
             final AtomicInteger count = new AtomicInteger(0);
-            final Tuple2<Stream<Integer>, Stream<Integer>> results = Stream.of(1, 2, 3).partition(i -> {
-                count.incrementAndGet();
-                return true;
-            });
+            final Tuple2<Stream<Integer>, Stream<Integer>> results = Stream.of(1, 2, 3)
+                    .partition(i -> {
+                        count.incrementAndGet();
+                        return true;
+                    });
             assertThat(results._1()).isEqualTo(of(1, 2, 3));
             assertThat(results._2()).isEqualTo(of());
             assertThat(count.get()).isEqualTo(6);
@@ -502,8 +519,14 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldComputePermutationsOfNonEmptyStream() {
-            assertThat(Stream.of(1, 2, 3).permutations()).isEqualTo(Stream.ofAll(Stream.of(Stream.of(1, 2, 3),
-                    Stream.of(1, 3, 2), Stream.of(2, 1, 3), Stream.of(2, 3, 1), Stream.of(3, 1, 2), Stream.of(3, 2, 1))));
+            assertThat(Stream.of(1, 2, 3).permutations())
+                    .isEqualTo(Stream.ofAll(Stream.of(
+                            Stream.of(1, 2, 3),
+                            Stream.of(1, 3, 2),
+                            Stream.of(2, 1, 3),
+                            Stream.of(2, 3, 1),
+                            Stream.of(3, 1, 2),
+                            Stream.of(3, 2, 1))));
         }
     }
 
@@ -511,18 +534,19 @@ public class StreamTest extends AbstractTraversableTest {
     class AppendselfTests {
         @Test
         public void shouldRecurrentlyCalculateFibonacci() {
-            assertThat(Stream.of(1, 1).appendSelf(self -> self.zip(self.tail()).map(t -> t._1() + t._2())).take(10))
+            assertThat(Stream.of(1, 1)
+                            .appendSelf(self -> self.zip(self.tail()).map(t -> t._1() + t._2()))
+                            .take(10))
                     .isEqualTo(Stream.of(1, 1, 2, 3, 5, 8, 13, 21, 34, 55));
         }
 
         @Test
         public void shouldRecurrentlyCalculatePrimes() {
-            assertThat(Stream
-                    .of(2)
-                    .appendSelf(self -> Stream
-                            .iterate(3, i -> i + 2)
-                            .filter(i -> self.takeWhile(j -> j * j <= i).forAll(k -> i % k > 0)))
-                    .take(10)).isEqualTo(Stream.of(2, 3, 5, 7, 11, 13, 17, 19, 23, 29));
+            assertThat(Stream.of(2)
+                            .appendSelf(self -> Stream.iterate(3, i -> i + 2)
+                                    .filter(i -> self.takeWhile(j -> j * j <= i).forAll(k -> i % k > 0)))
+                            .take(10))
+                    .isEqualTo(Stream.of(2, 3, 5, 7, 11, 13, 17, 19, 23, 29));
         }
 
         @Test
@@ -532,12 +556,14 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRecurrentlyCalculateArithmeticProgression() {
-            assertThat(Stream.of(1).appendSelf(self -> self.map(t -> t + 1)).take(4)).isEqualTo(Stream.of(1, 2, 3, 4));
+            assertThat(Stream.of(1).appendSelf(self -> self.map(t -> t + 1)).take(4))
+                    .isEqualTo(Stream.of(1, 2, 3, 4));
         }
 
         @Test
         public void shouldRecurrentlyCalculateGeometricProgression() {
-            assertThat(Stream.of(1).appendSelf(self -> self.map(t -> t * 2)).take(4)).isEqualTo(Stream.of(1, 2, 4, 8));
+            assertThat(Stream.of(1).appendSelf(self -> self.map(t -> t * 2)).take(4))
+                    .isEqualTo(Stream.of(1, 2, 4, 8));
         }
     }
 
@@ -627,7 +653,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnAnEmptyStreamWhenExtendingAnEmptyStreamWithFunction() {
-            assertThat(Stream.<Integer> of().extend(i -> i + 1)).isEqualTo(of());
+            assertThat(Stream.<Integer>of().extend(i -> i + 1)).isEqualTo(of());
         }
 
         @Test
@@ -658,7 +684,7 @@ public class StreamTest extends AbstractTraversableTest {
     class TailTests {
         @Test
         public void shouldEvaluateTailAtMostOnce() {
-            final int[] counter = { 0 };
+            final int[] counter = {0};
             final Stream<Integer> stream = Stream.continually(() -> counter[0]++);
             // this test ensures that the `tail.append(100)` does not modify the tail elements
             final Stream<Integer> tail = stream.tail().append(100);
@@ -672,14 +698,14 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldNotProduceStackOverflow() {
             Stream.range(0, 1_000_000)
                     .map(String::valueOf)
-                    .foldLeft(Stream.<String> empty(), Stream::append)
+                    .foldLeft(Stream.<String>empty(), Stream::append)
                     .mkString();
         }
 
         @Test // See #327, #594
         public void shouldNotEvaluateHeadOfTailWhenCallingIteratorHasNext() {
 
-            final Integer[] vals = new Integer[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            final Integer[] vals = new Integer[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
             final CheckedFunction2<StringBuilder, Integer, Void> doStuff = (builder, i) -> {
                 builder.append(i);
@@ -732,7 +758,8 @@ public class StreamTest extends AbstractTraversableTest {
     @Disabled
     @Test
     public void shouldTakeZeroOfEmptyFlatMappedInfiniteStream() {
-        assertThat(Stream.continually(1).flatMap(i -> Stream.empty()).take(0).isEmpty()).isTrue();
+        assertThat(Stream.continually(1).flatMap(i -> Stream.empty()).take(0).isEmpty())
+                .isTrue();
     }
 
     @Disabled
@@ -785,10 +812,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldUnfoldRightSimpleStream() {
-            assertThat(
-                    Stream.unfoldRight(10, x -> x == 0
-                                                ? Option.none()
-                                                : Option.some(new Tuple2<>(x, x - 1))))
+            assertThat(Stream.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))))
                     .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
         }
 
@@ -799,10 +823,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldUnfoldLeftSimpleStream() {
-            assertThat(
-                    Stream.unfoldLeft(10, x -> x == 0
-                                               ? Option.none()
-                                               : Option.some(new Tuple2<>(x - 1, x))))
+            assertThat(Stream.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
 
@@ -813,10 +834,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldUnfoldSimpleStream() {
-            assertThat(
-                    Stream.unfold(10, x -> x == 0
-                                           ? Option.none()
-                                           : Option.some(new Tuple2<>(x - 1, x))))
+            assertThat(Stream.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
                     .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         }
     }
@@ -825,7 +843,8 @@ public class StreamTest extends AbstractTraversableTest {
     class StreamSpliteratorTests {
         @Test
         public void shouldNotHaveSizedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED))
+                    .isFalse();
         }
 
         @Test
@@ -843,7 +862,8 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldThrowIndexOutOfBoundsWhenRemovingIndexEqualToLengthOnceTraversed() {
-            assertThrows(IndexOutOfBoundsException.class, () -> of(1, 2).removeAt(2).toList());
+            assertThrows(
+                    IndexOutOfBoundsException.class, () -> of(1, 2).removeAt(2).toList());
         }
     }
 
@@ -872,10 +892,12 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldCallTheCollectMapperOncePerElement() {
             final AtomicInteger calls = new AtomicInteger();
-            Stream.of(1, 2, 3, 4).collect(i -> {
-                calls.incrementAndGet();
-                return i % 2 == 0 ? Option.some(i) : Option.none();
-            }).toList();
+            Stream.of(1, 2, 3, 4)
+                    .collect(i -> {
+                        calls.incrementAndGet();
+                        return i % 2 == 0 ? Option.some(i) : Option.none();
+                    })
+                    .toList();
             assertThat(calls.get()).isEqualTo(4);
         }
 
@@ -887,14 +909,11 @@ public class StreamTest extends AbstractTraversableTest {
 
     // -- the sequence cases, one copy per type
 
-
     @Nested
     class FillIntSupplierTests {
         @Test
         public void shouldReturnManyAfterFillWithConstantSupplier() {
-            assertThat(fill(17, () -> 7))
-                    .hasSize(17)
-                    .containsOnly(7);
+            assertThat(fill(17, () -> 7)).hasSize(17).containsOnly(7);
         }
     }
 
@@ -912,9 +931,7 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnManyAfterFillWithConstant() {
-            assertThat(fill(17, 7))
-                    .hasSize(17)
-                    .containsOnly(7);
+            assertThat(fill(17, 7)).hasSize(17).containsOnly(7);
         }
     }
 
@@ -922,14 +939,14 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendElementToNil() {
-        final Stream<Integer> actual = this.<Integer> empty().append(1);
+        final Stream<Integer> actual = this.<Integer>empty().append(1);
         final Stream<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldRejectAppendOfNullElement() {
-        assertThatNullPointerException().isThrownBy(() -> this.<Integer> empty().append(null));
+        assertThatNullPointerException().isThrownBy(() -> this.<Integer>empty().append(null));
     }
 
     @Test
@@ -960,7 +977,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendAllNonNilToNil() {
-        final Stream<Integer> actual = this.<Integer> empty().appendAll(of(1, 2, 3));
+        final Stream<Integer> actual = this.<Integer>empty().appendAll(of(1, 2, 3));
         final Stream<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
@@ -982,11 +999,11 @@ public class StreamTest extends AbstractTraversableTest {
     @Test
     public void shouldAppendAllWhenUsedWithTypeHierarchy() {
         final Stream<SomeInterface> empty = of();
-        final Stream<SomeInterface> all = empty
-          .appendAll(of(OneEnum.values()))
-          .appendAll(of(SecondEnum.values()));
+        final Stream<SomeInterface> all = empty.appendAll(of(OneEnum.values())).appendAll(of(SecondEnum.values()));
 
-        assertThat(all).isEqualTo(this.<SomeInterface>of(OneEnum.A1, OneEnum.A2, OneEnum.A3, SecondEnum.A1, SecondEnum.A2, SecondEnum.A3));
+        assertThat(all)
+                .isEqualTo(this.<SomeInterface>of(
+                        OneEnum.A1, OneEnum.A2, OneEnum.A3, SecondEnum.A1, SecondEnum.A2, SecondEnum.A3));
     }
 
     @Test
@@ -1083,9 +1100,18 @@ public class StreamTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         @Test
         public void shouldCalculateCrossProductOfNonNil() {
-            final List<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct().toList();
-            final List<Tuple2<Integer, Integer>> expected = List.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3),
-                    Tuple.of(2, 1), Tuple.of(2, 2), Tuple.of(2, 3), Tuple.of(3, 1), Tuple.of(3, 2), Tuple.of(3, 3));
+            final List<Tuple2<Integer, Integer>> actual =
+                    of(1, 2, 3).crossProduct().toList();
+            final List<Tuple2<Integer, Integer>> expected = List.of(
+                    Tuple.of(1, 1),
+                    Tuple.of(1, 2),
+                    Tuple.of(1, 3),
+                    Tuple.of(2, 1),
+                    Tuple.of(2, 2),
+                    Tuple.of(2, 3),
+                    Tuple.of(3, 1),
+                    Tuple.of(3, 2),
+                    Tuple.of(3, 3));
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -1133,9 +1159,16 @@ public class StreamTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         @Test
         public void shouldCalculateCrossProductOfNonNilAndNonNil() {
-            final List<Tuple2<Integer, Character>> actual = of(1, 2, 3).crossProduct(of('a', 'b')).toList();
-            final List<Tuple2<Integer, Character>> expected = of(Tuple.of(1, 'a'), Tuple.of(1, 'b'),
-                    Tuple.of(2, 'a'), Tuple.of(2, 'b'), Tuple.of(3, 'a'), Tuple.of(3, 'b')).toList();
+            final List<Tuple2<Integer, Character>> actual =
+                    of(1, 2, 3).crossProduct(of('a', 'b')).toList();
+            final List<Tuple2<Integer, Character>> expected = of(
+                            Tuple.of(1, 'a'),
+                            Tuple.of(1, 'b'),
+                            Tuple.of(2, 'a'),
+                            Tuple.of(2, 'b'),
+                            Tuple.of(3, 'a'),
+                            Tuple.of(3, 'b'))
+                    .toList();
             assertThat(actual).isEqualTo(expected);
         }
 
@@ -1399,8 +1432,10 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(2), -1)).isEqualTo(Option.none());
             assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(2), 2)).isEqualTo(Option.some(1));
             assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(2, 3), 2)).isEqualTo(Option.some(1));
-            assertThat(of(1, 2, 3, 1, 2, 3, 4).lastIndexOfSliceOption(of(2, 3), 2)).isEqualTo(Option.some(1));
-            assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(1, 2, 3), 2)).isEqualTo(Option.some(0));
+            assertThat(of(1, 2, 3, 1, 2, 3, 4).lastIndexOfSliceOption(of(2, 3), 2))
+                    .isEqualTo(Option.some(1));
+            assertThat(of(1, 2, 3, 1, 2, 3).lastIndexOfSliceOption(of(1, 2, 3), 2))
+                    .isEqualTo(Option.some(0));
         }
     }
 
@@ -1421,10 +1456,14 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 1)).isEqualTo(Option.some(1));
             assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 2)).isEqualTo(Option.some(2));
             assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 8)).isEqualTo(Option.none());
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 0, 3)).isEqualTo(Option.some(4));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 1, 3)).isEqualTo(Option.some(5));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 2, 3)).isEqualTo(Option.some(6));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 8, 3)).isEqualTo(Option.none());
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 0, 3))
+                    .isEqualTo(Option.some(4));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 1, 3))
+                    .isEqualTo(Option.some(5));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 2, 3))
+                    .isEqualTo(Option.some(6));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).indexWhereOption(i -> i == 8, 3))
+                    .isEqualTo(Option.none());
         }
 
         @Test
@@ -1459,14 +1498,22 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhere(i -> i == 2, 3)).isEqualTo(2);
             assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhere(i -> i == 8, 3)).isEqualTo(-1);
 
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0)).isEqualTo(Option.some(4));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1)).isEqualTo(Option.some(5));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2)).isEqualTo(Option.some(6));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8)).isEqualTo(Option.none());
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0, 3)).isEqualTo(Option.some(0));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1, 3)).isEqualTo(Option.some(1));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2, 3)).isEqualTo(Option.some(2));
-            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8, 3)).isEqualTo(Option.none());
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0))
+                    .isEqualTo(Option.some(4));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1))
+                    .isEqualTo(Option.some(5));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2))
+                    .isEqualTo(Option.some(6));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8))
+                    .isEqualTo(Option.none());
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 0, 3))
+                    .isEqualTo(Option.some(0));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 1, 3))
+                    .isEqualTo(Option.some(1));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 2, 3))
+                    .isEqualTo(Option.some(2));
+            assertThat(of(0, 1, 2, -1, 0, 1, 2).lastIndexWhereOption(i -> i == 8, 3))
+                    .isEqualTo(Option.none());
         }
 
         @Test
@@ -1529,7 +1576,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldInsertIntoNil() {
-        final Stream<Integer> actual = this.<Integer> empty().insert(0, 1);
+        final Stream<Integer> actual = this.<Integer>empty().insert(0, 1);
         final Stream<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
@@ -1562,19 +1609,21 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenInsertOnNilWithNegativeIndex() {
-        assertThrows(IndexOutOfBoundsException.class, () -> this.<Integer> empty().insert(-1, 9));
+        assertThrows(
+                IndexOutOfBoundsException.class, () -> this.<Integer>empty().insert(-1, 9));
     }
 
     @Test
     public void shouldThrowOnInsertWhenExceedingUpperBound() {
-        assertThrows(IndexOutOfBoundsException.class, () -> this.<Integer> empty().insert(1, 9));
+        assertThrows(
+                IndexOutOfBoundsException.class, () -> this.<Integer>empty().insert(1, 9));
     }
 
     // -- insertAll
 
     @Test
     public void shouldInsertAllIntoNil() {
-        final Stream<Integer> actual = this.<Integer> empty().insertAll(0, of(1, 2, 3));
+        final Stream<Integer> actual = this.<Integer>empty().insertAll(0, of(1, 2, 3));
         final Stream<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
@@ -1642,7 +1691,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldIntersperseNil() {
-        assertThat(this.<Character> empty().intersperse(',')).isEmpty();
+        assertThat(this.<Character>empty().intersperse(',')).isEmpty();
     }
 
     @Test
@@ -1804,9 +1853,17 @@ public class StreamTest extends AbstractTraversableTest {
     @Test
     public void shouldMapTransformedStream() {
         final Function<Integer, Integer> mapper = o -> o + 1;
-        assertThat(this.<Integer> empty().map(mapper)).isEmpty();
+        assertThat(this.<Integer>empty().map(mapper)).isEmpty();
         assertThat(of(3, 1, 4, 1, 5).map(mapper)).isEqualTo(of(4, 2, 5, 2, 6));
-        assertThat(of(3, 1, 4, 1, 5, 9, 2).sorted().distinct().drop(1).init().remove(5).map(mapper).tail()).isEqualTo(of(4, 5));
+        assertThat(of(3, 1, 4, 1, 5, 9, 2)
+                        .sorted()
+                        .distinct()
+                        .drop(1)
+                        .init()
+                        .remove(5)
+                        .map(mapper)
+                        .tail())
+                .isEqualTo(of(4, 5));
     }
 
     @Nested
@@ -1853,7 +1910,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependElementToNil() {
-        final Stream<Integer> actual = this.<Integer> empty().prepend(1);
+        final Stream<Integer> actual = this.<Integer>empty().prepend(1);
         final Stream<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
@@ -1874,7 +1931,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependAllNilToNil() {
-        final Stream<Integer> actual = this.<Integer> empty().prependAll(empty());
+        final Stream<Integer> actual = this.<Integer>empty().prependAll(empty());
         final Stream<Integer> expected = empty();
         assertThat(actual).isEqualTo(expected);
     }
@@ -1888,7 +1945,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependAllNonNilToNil() {
-        final Stream<Integer> actual = this.<Integer> empty().prependAll(of(1, 2, 3));
+        final Stream<Integer> actual = this.<Integer>empty().prependAll(of(1, 2, 3));
         final Stream<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
@@ -2042,7 +2099,7 @@ public class StreamTest extends AbstractTraversableTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldRemoveNonExistingElements() {
-        assertThat(this.<Integer> empty().removeAll(i -> i == 0)).isSameAs(empty());
+        assertThat(this.<Integer>empty().removeAll(i -> i == 0)).isSameAs(empty());
         assertThat(of(1, 2, 3).removeAll(i -> i != 0)).isSameAs(empty());
     }
 
@@ -2086,7 +2143,9 @@ public class StreamTest extends AbstractTraversableTest {
     class RemoveatIndexTests {
         @Test
         public void shouldRemoveIndexAtNil() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(empty().removeAt(1)).isEmpty());
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(empty().removeAt(1)).isEmpty());
         }
 
         @Test
@@ -2106,22 +2165,34 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRemoveMultipleTimes() {
-            assertThat(of(3, 1, 4, 1, 5, 9, 2).removeAt(0).removeAt(0).removeAt(4).removeAt(3).removeAt(1)).isEqualTo(of(4, 5));
+            assertThat(of(3, 1, 4, 1, 5, 9, 2)
+                            .removeAt(0)
+                            .removeAt(0)
+                            .removeAt(4)
+                            .removeAt(3)
+                            .removeAt(1))
+                    .isEqualTo(of(4, 5));
         }
 
         @Test
         public void shouldRemoveIndexOutOfBoundsLeft() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(of(1, 2, 3).removeAt(-1)).isEqualTo(of(1, 2, 3)));
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(of(1, 2, 3).removeAt(-1)).isEqualTo(of(1, 2, 3)));
         }
 
         @Test
         public void shouldRemoveIndexOutOfBoundsRight() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(of(1, 2, 3).removeAt(5)).isEqualTo(of(1, 2, 3)));
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(of(1, 2, 3).removeAt(5)).isEqualTo(of(1, 2, 3)));
         }
 
         @Test
         public void shouldRemoveIndexEqualToLength() {
-            assertThrows(IndexOutOfBoundsException.class, () -> assertThat(of(1, 2, 3).removeAt(3)).isEqualTo(of(1, 2, 3)));
+            assertThrows(
+                    IndexOutOfBoundsException.class,
+                    () -> assertThat(of(1, 2, 3).removeAt(3)).isEqualTo(of(1, 2, 3)));
         }
     }
 
@@ -2147,13 +2218,15 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldIterateSingleInReverse() {
-        final java.util.Iterator<String> iterator = ofAll(this.of("a")).reverse().iterator();
+        final java.util.Iterator<String> iterator =
+                ofAll(this.of("a")).reverse().iterator();
         assertThat(List.ofAll(() -> iterator)).isEqualTo(List.of("a"));
     }
 
     @Test
     public void shouldIterateNonEmptyInReverse() {
-        final java.util.Iterator<String> iterator = ofAll(of("a", "b", "c")).reverse().iterator();
+        final java.util.Iterator<String> iterator =
+                ofAll(of("a", "b", "c")).reverse().iterator();
         assertThat(List.ofAll(() -> iterator)).isEqualTo(List.of("c", "b", "a"));
     }
 
@@ -2180,7 +2253,9 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldRotateLeftByZeroOnAnInfiniteStream() {
             // == on purpose: a failure must not make AssertJ format an infinite Stream
             final Stream<Integer> naturals = Stream.from(1);
-            assertThat(naturals.rotateLeft(0) == naturals).as("rotateLeft(0) returns the receiver").isTrue();
+            assertThat(naturals.rotateLeft(0) == naturals)
+                    .as("rotateLeft(0) returns the receiver")
+                    .isTrue();
             assertThat(naturals.rotateLeft(0).take(3)).isEqualTo(Stream.of(1, 2, 3));
         }
 
@@ -2223,11 +2298,14 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateByTheMostNegativeDistance() {
             // Integer.MIN_VALUE has no positive negation: the distance is taken modulo the length, not negated
-            assertThat(of(1, 2, 3, 4).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateLeft(Math.floorMod(Integer.MIN_VALUE, 4)));
-            assertThat(of(1, 2, 3, 4).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(1, 2, 3, 4).rotateRight(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3, 4).rotateLeft(Integer.MIN_VALUE))
+                    .isEqualTo(of(1, 2, 3, 4).rotateLeft(Math.floorMod(Integer.MIN_VALUE, 4)));
+            assertThat(of(1, 2, 3, 4).rotateRight(Integer.MIN_VALUE))
+                    .isEqualTo(of(1, 2, 3, 4).rotateRight(Math.floorMod(Integer.MIN_VALUE, 4)));
             assertThat(of(1, 2, 3).rotateLeft(Integer.MIN_VALUE)).isEqualTo(of(2, 3, 1));
             assertThat(of(1, 2, 3).rotateRight(Integer.MIN_VALUE)).isEqualTo(of(3, 1, 2));
         }
+
         @Test
         public void shouldRotateRightOnEmpty() {
             assertThat(empty().rotateRight(1)).isSameAs(empty());
@@ -2249,7 +2327,9 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldRotateRightByZeroOnAnInfiniteStream() {
             // == on purpose: a failure must not make AssertJ format an infinite Stream
             final Stream<Integer> naturals = Stream.from(1);
-            assertThat(naturals.rotateRight(0) == naturals).as("rotateRight(0) returns the receiver").isTrue();
+            assertThat(naturals.rotateRight(0) == naturals)
+                    .as("rotateRight(0) returns the receiver")
+                    .isTrue();
             assertThat(naturals.rotateRight(0).take(3)).isEqualTo(Stream.of(1, 2, 3));
         }
 
@@ -2407,7 +2487,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSliceFrom0To0OnNil() {
-        final Stream<Integer> actual = this.<Integer> empty().slice(0, 0);
+        final Stream<Integer> actual = this.<Integer>empty().slice(0, 0);
         assertThat(actual).isEmpty();
     }
 
@@ -2498,7 +2578,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortNilUsingComparator() {
-        assertThat(this.<Integer> empty().sorted((i, j) -> j - i)).isEmpty();
+        assertThat(this.<Integer>empty().sorted((i, j) -> j - i)).isEmpty();
     }
 
     @Test
@@ -2510,7 +2590,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNilUsingFunction() {
-        assertThat(this.<String> empty().sortBy(String::length)).isEmpty();
+        assertThat(this.<String>empty().sortBy(String::length)).isEmpty();
     }
 
     @Test
@@ -2536,7 +2616,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNilUsingComparatorAndFunction() {
-        assertThat(this.<String> empty().sortBy(String::length)).isEmpty();
+        assertThat(this.<String>empty().sortBy(String::length)).isEmpty();
     }
 
     @Test
@@ -2636,17 +2716,20 @@ public class StreamTest extends AbstractTraversableTest {
     class SpliteratorTests {
         @Test
         public void shouldNotHaveSortedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SORTED))
+                    .isFalse();
         }
 
         @Test
         public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isTrue();
         }
 
         @Test
         public void shouldNotHaveDistinctSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT))
+                    .isFalse();
         }
     }
 
@@ -2730,7 +2813,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0OnNil() {
-        final Stream<Integer> actual = this.<Integer> empty().subSequence(0);
+        final Stream<Integer> actual = this.<Integer>empty().subSequence(0);
         assertThat(actual).isEmpty();
     }
 
@@ -2783,7 +2866,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0To0OnNil() {
-        final Stream<Integer> actual = this.<Integer> empty().subSequence(0, 0);
+        final Stream<Integer> actual = this.<Integer>empty().subSequence(0, 0);
         assertThat(actual).isEmpty();
     }
 
@@ -2844,12 +2927,20 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowOnSubSequenceWhenEndIndexExceedsUpperBound() {
-        assertThrows(IndexOutOfBoundsException.class, () -> of(1, 2, 3).subSequence(1, 4).mkString()); // force computation of last element, e.g. because Stream is lazy
+        assertThrows(
+                IndexOutOfBoundsException.class,
+                () -> of(1, 2, 3)
+                        .subSequence(1, 4)
+                        .mkString()); // force computation of last element, e.g. because Stream is lazy
     }
 
     @Test
     public void shouldThrowOnSubSequenceWhenBeginIndexIsGreaterThanEndIndex() {
-        assertThrows(IllegalArgumentException.class, () -> of(1, 2, 3).subSequence(2, 1).mkString()); // force computation of last element, e.g. because Stream is lazy
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> of(1, 2, 3)
+                        .subSequence(2, 1)
+                        .mkString()); // force computation of last element, e.g. because Stream is lazy
     }
 
     @Nested
@@ -2875,7 +2966,7 @@ public class StreamTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSearchNegatedInsertionPointMinusOneForAbsentElementsUsingComparator() {
-        assertThat(this.<Integer> empty().search(42, Integer::compareTo)).isEqualTo(-1);
+        assertThat(this.<Integer>empty().search(42, Integer::compareTo)).isEqualTo(-1);
         assertThat(of(10, 20, 30).search(25, Integer::compareTo)).isEqualTo(-3);
     }
 
@@ -2925,49 +3016,31 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedIfSymmetric() {
-            final Stream<Stream<Integer>> actual = of(
-                    of(1, 2, 3),
-                    of(4, 5, 6),
-                    of(7, 8, 9));
-            final Stream<Stream<Integer>> expected = of(
-                    of(1, 4, 7),
-                    of(2, 5, 8),
-                    of(3, 6, 9));
+            final Stream<Stream<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9));
+            final Stream<Stream<Integer>> expected = of(of(1, 4, 7), of(2, 5, 8), of(3, 6, 9));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreColumnsThanRows() {
-            final Stream<Stream<Integer>> actual = of(
-                    of(1, 2, 3),
-                    of(4, 5, 6));
-            final Stream<Stream<Integer>> expected = of(
-                    of(1, 4),
-                    of(2, 5),
-                    of(3, 6));
+            final Stream<Stream<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
+            final Stream<Stream<Integer>> expected = of(of(1, 4), of(2, 5), of(3, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreRowsThanColumns() {
-            final Stream<Stream<Integer>> actual = of(
-                    of(1, 2),
-                    of(3, 4),
-                    of(5, 6));
-            final Stream<Stream<Integer>> expected = of(
-                    of(1, 3, 5),
-                    of(2, 4, 6));
+            final Stream<Stream<Integer>> actual = of(of(1, 2), of(3, 4), of(5, 6));
+            final Stream<Stream<Integer>> expected = of(of(1, 3, 5), of(2, 4, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldBeEqualIfTransposedTwice() {
-            final Stream<Stream<Integer>> actual = of(
-                    of(1, 2, 3),
-                    of(4, 5, 6));
+            final Stream<Stream<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
             final Stream<Stream<Integer>> transposed = transpose(actual);
             assertThat(transpose(transposed)).isEqualTo(actual);
         }
@@ -2976,12 +3049,7 @@ public class StreamTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         public void shouldNotTransposeForMissingOrEmptyValues() {
             assertThrows(IllegalArgumentException.class, () -> {
-                final Stream<Stream<Integer>> actual = of(
-                  of(),
-                  of(0, 1),
-                  of(2, 3, 4, 5),
-                  of(),
-                  of(6, 7, 8));
+                final Stream<Stream<Integer>> actual = of(of(), of(0, 1), of(2, 3, 4, 5), of(), of(6, 7, 8));
                 transpose(actual);
             });
         }
@@ -3018,8 +3086,7 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfNonEmptyStreamUsingComparator() {
         final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        final Stream<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c")
-                .distinctByKeepLast(comparator);
+        final Stream<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(comparator);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
@@ -3043,8 +3110,7 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfNonEmptyStreamUsingKeyExtractor() {
         final Function<String, Character> function = c -> c.charAt(1);
-        final Stream<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c")
-                .distinctByKeepLast(function);
+        final Stream<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(function);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
@@ -3054,15 +3120,18 @@ public class StreamTest extends AbstractTraversableTest {
         assertThat(empty.distinctByKeepLast(Function.identity())).isSameAs(empty);
     }
 
-    private interface SomeInterface {
-    }
+    private interface SomeInterface {}
 
     enum OneEnum implements SomeInterface {
-        A1, A2, A3;
+        A1,
+        A2,
+        A3;
     }
 
     enum SecondEnum implements SomeInterface {
-        A1, A2, A3;
+        A1,
+        A2,
+        A3;
     }
 
     // -- removeAll / retainAll with null elements go through a HashSet, whose contains must not use Option
@@ -3093,14 +3162,18 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldHaveTheSameSupertypesOnBothCases() {
-            assertThat(supertypeNames(Stream.empty().getClass())).containsExactlyInAnyOrder("Stream", "Traversable", "Iterable");
-            assertThat(supertypeNames(Stream.of(1).getClass())).containsExactlyInAnyOrder("Stream", "Traversable", "Iterable");
+            assertThat(supertypeNames(Stream.empty().getClass()))
+                    .containsExactlyInAnyOrder("Stream", "Traversable", "Iterable");
+            assertThat(supertypeNames(Stream.of(1).getClass()))
+                    .containsExactlyInAnyOrder("Stream", "Traversable", "Iterable");
         }
 
         @Test
         public void shouldHaveAnOrderedButNotSizedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED)).isFalse();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED))
+                    .isFalse();
         }
     }
 
@@ -3126,7 +3199,11 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(naturals.search(4)).isEqualTo(3);
             assertThat(naturals.search(4, Comparator.naturalOrder())).isEqualTo(3);
             assertThat(naturals.drop(3).take(2).toList()).isEqualTo(List.of(4, 5));
-            assertThat(naturals.crossProduct(Stream.from(1)).take(3).map(Tuple2::_2).toList()).isEqualTo(List.of(1, 2, 3));
+            assertThat(naturals.crossProduct(Stream.from(1))
+                            .take(3)
+                            .map(Tuple2::_2)
+                            .toList())
+                    .isEqualTo(List.of(1, 2, 3));
         }
 
         @Test
@@ -3177,18 +3254,42 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldRejectNullArgumentsOfEveryNewlyDeclaredMethod() {
             final Stream<Integer> stream = Stream.of(1, 2, 3);
-            assertThatNullPointerException().isThrownBy(() -> stream.containsSlice(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.crossProduct(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.endsWith(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.startsWith(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.indexOfSlice(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.lastIndexOfSlice(null)).withMessage("that is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.indexWhere(null)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.lastIndexWhere(null)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.segmentLength(null, 0)).withMessage("predicate is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.search(1, null)).withMessage("comparator is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.sortBy(null, Function.identity())).withMessage("comparator is null");
-            assertThatNullPointerException().isThrownBy(() -> stream.sortBy(Comparator.naturalOrder(), null)).withMessage("mapper is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.containsSlice(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.crossProduct(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.endsWith(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.startsWith(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.indexOfSlice(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.lastIndexOfSlice(null))
+                    .withMessage("that is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.indexWhere(null))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.lastIndexWhere(null))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.segmentLength(null, 0))
+                    .withMessage("predicate is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.search(1, null))
+                    .withMessage("comparator is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.sortBy(null, Function.identity()))
+                    .withMessage("comparator is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> stream.sortBy(Comparator.naturalOrder(), null))
+                    .withMessage("mapper is null");
         }
     }
 
@@ -3203,7 +3304,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingAverageOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").average());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").average());
     }
 
     @TestTemplate
@@ -3270,12 +3372,18 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateAverageOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     @TestTemplate
     public void shouldCalculateAverageOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).average().get()).isNaN();
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)
+                        .average()
+                        .get())
+                .isNaN();
     }
 
     // -- distinct
@@ -3315,8 +3423,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingComparator() {
         final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        final Stream<String> distinct = of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator)
-          .map(s -> s.substring(1));
+        final Stream<String> distinct =
+                of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
@@ -3340,8 +3448,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingKeyExtractor() {
         final Function<String, Character> function = c -> c.charAt(1);
-        final Stream<String> distinct = of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function)
-          .map(s -> s.substring(1));
+        final Stream<String> distinct =
+                of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
@@ -3671,7 +3779,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectTheKeptElementsInOrder() {
-        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none())).isEqualTo(of("e2", "e4"));
+        assertThat(of(1, 2, 3, 4).collect(i -> i % 2 == 0 ? Option.some("e" + i) : Option.none()))
+                .isEqualTo(of("e2", "e4"));
     }
 
     @TestTemplate
@@ -3686,10 +3795,12 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldCallTheCollectMapperOncePerElement() {
         final AtomicInteger calls = new AtomicInteger();
-        of(1, 2, 3).collect(i -> {
-            calls.incrementAndGet();
-            return i == 2 ? Option.none() : Option.some(i);
-        }).size();
+        of(1, 2, 3)
+                .collect(i -> {
+                    calls.incrementAndGet();
+                    return i == 2 ? Option.none() : Option.some(i);
+                })
+                .size();
         assertThat(calls.get()).isEqualTo(3);
     }
 
@@ -3698,8 +3809,8 @@ public class StreamTest extends AbstractTraversableTest {
         // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, Iterator...)
         final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
-          .isInstanceOf(NullPointerException.class)
-          .hasMessage(type + ".collect: mapper returned null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage(type + ".collect: mapper returned null");
     }
 
     @TestTemplate
@@ -3760,7 +3871,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldConsumeEachElementWithIndexWhenNonEmpty() {
         final java.util.List<Tuple2<Character, Integer>> actual = new java.util.ArrayList<>();
-        final java.util.List<Tuple2<Character, Integer>> expected = Arrays.asList(Tuple.of('a', 0), Tuple.of('b', 1), Tuple.of('c', 2));
+        final java.util.List<Tuple2<Character, Integer>> expected =
+                Arrays.asList(Tuple.of('a', 0), Tuple.of('b', 1), Tuple.of('c', 2));
         ofAll('a', 'b', 'c').forEachWithIndex((chr, index) -> actual.add(Tuple.of(chr, index)));
         assertThat(actual).isEqualTo(expected);
     }
@@ -3775,7 +3887,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldNonNilGroupByIdentity() {
         final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected = LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
+        final Map<?, ?> expected =
+                LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -3796,7 +3909,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
         final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
+        final Option<Map<?, ?>> expected =
+                Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4023,13 +4137,14 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMaxOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max()
-          .get()).isEqualTo(Double.POSITIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Double.POSITIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get()).isEqualTo(Float.POSITIVE_INFINITY);
+        assertThat(of(Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY).max().get())
+                .isEqualTo(Float.POSITIVE_INFINITY);
     }
 
     // -- maxBy(Comparator)
@@ -4080,9 +4195,10 @@ public class StreamTest extends AbstractTraversableTest {
     public void shouldCallMaxFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(of(1, 2, 3).maxBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(3));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(3));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -4180,14 +4296,14 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCalculateMinOfDoublePositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     @TestTemplate
     public void shouldCalculateMinOfFloatPositiveAndNegativeInfinity() {
-        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min()
-          .get()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY).min().get())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     // -- minBy(Comparator)
@@ -4238,9 +4354,10 @@ public class StreamTest extends AbstractTraversableTest {
     public void shouldCallMinFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(of(1, 2, 3).minBy(i -> {
-            cnt[0]++;
-            return i;
-        })).isEqualTo(Option.some(1));
+                    cnt[0]++;
+                    return i;
+                }))
+                .isEqualTo(Option.some(1));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -4317,7 +4434,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingProductOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").product());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").product());
     }
 
     @TestTemplate
@@ -4614,7 +4732,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldScanWithNonComparable() {
         final Stream<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual = List.ofAll(testee.scan(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        final List<NonComparable> actual =
+                List.ofAll(testee.scan(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
@@ -4624,7 +4743,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldScanLeftWithNonComparable() {
         final Stream<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual = List.ofAll(testee.scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        final List<NonComparable> actual =
+                List.ofAll(testee.scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
         final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
@@ -4634,7 +4754,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldScanRightWithNonComparable() {
         final Stream<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual = List.ofAll(testee.scanRight(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
+        final List<NonComparable> actual = List.ofAll(
+                testee.scanRight(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
         final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
@@ -4650,12 +4771,12 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTerminateSlideByClassifier() {
-        assertTimeout(Duration.ofSeconds(1),() -> {
+        assertTimeout(Duration.ofSeconds(1), () -> {
             AtomicInteger ai = new AtomicInteger(0);
             List<List<String>> expected = List.of(List.of("a", "-"), List.of("-"), List.of("d"));
             List<List<String>> actual = List.of("a", "-", "-", "d")
-              .slideBy(x -> x.equals("-") ? ai.getAndIncrement() : ai.get())
-              .toList();
+                    .slideBy(x -> x.equals("-") ? ai.getAndIncrement() : ai.get())
+                    .toList();
             assertThat(actual).containsAll(expected);
             assertThat(expected).containsAll(actual);
         });
@@ -4670,7 +4791,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideNonNilByIdentityClassifier() {
-        final List<Stream<Integer>> actual = of(1, 2, 3).slideBy(Function.identity()).toList();
+        final List<Stream<Integer>> actual =
+                of(1, 2, 3).slideBy(Function.identity()).toList();
         final List<Stream<Integer>> expected = List.of(Stream.of(1), Stream.of(2), Stream.of(3));
         assertThat(actual).isEqualTo(expected);
     }
@@ -4684,8 +4806,10 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideNonNilBySomeClassifier() {
-        final List<Stream<Integer>> actual = of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList();
-        final List<Stream<Integer>> expected = List.of(Stream.of(10, 20, 30), Stream.of(42, 52), Stream.of(60), Stream.of(72));
+        final List<Stream<Integer>> actual =
+                of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList();
+        final List<Stream<Integer>> expected =
+                List.of(Stream.of(10, 20, 30), Stream.of(42, 52), Stream.of(60), Stream.of(72));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4733,7 +4857,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldSlideNonNilBySize2() {
         final List<Stream<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
-        final List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(2, 3), Stream.of(3, 4), Stream.of(4, 5));
+        final List<Stream<Integer>> expected =
+                List.of(Stream.of(1, 2), Stream.of(2, 3), Stream.of(3, 4), Stream.of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4789,14 +4914,16 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlide7ElementsBySize1AndStep3() {
-        final List<Stream<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
+        final List<Stream<Integer>> actual =
+                of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
         final List<Stream<Integer>> expected = List.of(Stream.of(1), Stream.of(4), Stream.of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize2AndStep3() {
-        final List<Stream<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
+        final List<Stream<Integer>> actual =
+                of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
         final List<Stream<Integer>> expected = List.of(Stream.of(1, 2), Stream.of(4, 5), Stream.of(7));
         assertThat(actual).isEqualTo(expected);
     }
@@ -4828,7 +4955,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenComputingSumOfStrings() {
-        assertThrows(UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
+        assertThrows(
+                UnsupportedOperationException.class, () -> of("1", "2", "3").sum());
     }
 
     @TestTemplate
@@ -5103,21 +5231,24 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldZipNonNilsIfThisIsSmaller() {
         final Stream<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
-        @SuppressWarnings("unchecked") final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        @SuppressWarnings("unchecked")
+        final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsIfThatIsSmaller() {
         final Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
-        @SuppressWarnings("unchecked") final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        @SuppressWarnings("unchecked")
+        final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsOfSameSize() {
         final Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
-        @SuppressWarnings("unchecked") final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        @SuppressWarnings("unchecked")
+        final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5165,21 +5296,24 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldZipAllNonNilsIfThisIsSmaller() {
         final Stream<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
-        @SuppressWarnings("unchecked") final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
+        @SuppressWarnings("unchecked")
+        final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsIfThatIsSmaller() {
         final Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
-        @SuppressWarnings("unchecked") final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
+        @SuppressWarnings("unchecked")
+        final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsOfSameSize() {
         final Stream<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
-        @SuppressWarnings("unchecked") final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        @SuppressWarnings("unchecked")
+        final Stream<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5198,7 +5332,8 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldZipNonNilWithIndex() {
         final Stream<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
-        @SuppressWarnings("unchecked") final Stream<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        @SuppressWarnings("unchecked")
+        final Stream<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -5215,14 +5350,14 @@ public class StreamTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldConvertNilToJavaArray() {
         final Integer[] actual = List.<Integer>empty().toArray(Integer[]::new);
-        final Integer[] expected = new Integer[]{};
+        final Integer[] expected = new Integer[] {};
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldConvertNonNilToJavaArray() {
         final Integer[] array = of(1, 2).toArray(Integer[]::new);
-        final Integer[] expected = new Integer[]{1, 2};
+        final Integer[] expected = new Integer[] {1, 2};
         assertThat(array).isEqualTo(expected);
     }
 
@@ -5314,9 +5449,12 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldPropagateWhatTheTapActionThrows() {
-        assertThrows(IllegalStateException.class, () -> of(1, 2).tap(i -> {
-            throw new IllegalStateException();
-        }).size());
+        assertThrows(
+                IllegalStateException.class,
+                () -> of(1, 2).tap(i -> {
+                            throw new IllegalStateException();
+                        })
+                        .size());
     }
 
     // -- collect(Collector)
@@ -5329,7 +5467,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        final ArrayList<Integer> actual =
+                of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -5352,7 +5491,8 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedMapTwoFunctions() {
-        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity())).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(1, 5, 9).toLinkedMap(Function.identity(), Function.identity()))
+                .isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
@@ -5363,19 +5503,22 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctions() {
-        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity())).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(of(9, 5, 1).toSortedMap(Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i)))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity())).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity()))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
@@ -5400,13 +5543,15 @@ public class StreamTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowOnConvertToSortedSetWithoutComparatorOnNonComparable() {
-        assertThrows(ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
+        assertThrows(
+                ClassCastException.class, () -> of(new Object(), new Object()).toSortedSet());
     }
 
     @TestTemplate
     public void shouldConvertToSortedSet() {
         final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
-        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed())).isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
+        assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
+                .isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
     }
 
     @TestTemplate
@@ -5554,57 +5699,73 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(rangeClosedBy('a', 'c', 1)).isEqualTo(of('a', 'b', 'c'));
             assertThat(rangeClosedBy('a', 'e', 2)).isEqualTo(of('a', 'c', 'e'));
             assertThat(rangeClosedBy('a', 'f', 2)).isEqualTo(of('a', 'c', 'e'));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 2)));
-            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 2), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 2)));
+            assertThat(rangeClosedBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE));
             assertThat(rangeClosedBy('c', 'a', -1)).isEqualTo(of('c', 'b', 'a'));
             assertThat(rangeClosedBy('e', 'a', -2)).isEqualTo(of('e', 'c', 'a'));
             assertThat(rangeClosedBy('e', (char) ('a' - 1), -2)).isEqualTo(of('e', 'c', 'a'));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 2)));
-            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 2), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 2)));
+            assertThat(rangeClosedBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0, 3.0));
             assertThat(rangeClosedBy(1.0, 5.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
             assertThat(rangeClosedBy(1.0, 6.0, 2.0)).isEqualTo(of(1.0, 3.0, 5.0));
-            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 2.0E307));
+            assertThat(rangeClosedBy(Double.MAX_VALUE - 2.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 2.0E307));
             assertThat(rangeClosedBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0, 1.0));
             assertThat(rangeClosedBy(5.0, 1.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
             assertThat(rangeClosedBy(5.0, 0.0, -2.0)).isEqualTo(of(5.0, 3.0, 1.0));
-            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
+            assertThat(rangeClosedBy(-Double.MAX_VALUE + 2.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 2.0E307));
 
             // int
             assertThat(rangeClosedBy(1, 3, 1)).isEqualTo(of(1, 2, 3));
             assertThat(rangeClosedBy(1, 5, 2)).isEqualTo(of(1, 3, 5));
             assertThat(rangeClosedBy(1, 6, 2)).isEqualTo(of(1, 3, 5));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 2, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 3, Integer.MAX_VALUE));
             assertThat(rangeClosedBy(3, 1, -1)).isEqualTo(of(3, 2, 1));
             assertThat(rangeClosedBy(5, 1, -2)).isEqualTo(of(5, 3, 1));
             assertThat(rangeClosedBy(5, 0, -2)).isEqualTo(of(5, 3, 1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 2, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 3, Integer.MIN_VALUE));
 
             // long
             assertThat(rangeClosedBy(1L, 3L, 1)).isEqualTo(of(1L, 2L, 3L));
             assertThat(rangeClosedBy(1L, 5L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(1L, 6L, 2)).isEqualTo(of(1L, 3L, 5L));
             assertThat(rangeClosedBy(Long.MAX_VALUE - 2, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
+            assertThat(rangeClosedBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 3, Long.MAX_VALUE));
             assertThat(rangeClosedBy(3L, 1L, -1)).isEqualTo(of(3L, 2L, 1L));
             assertThat(rangeClosedBy(5L, 1L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(5L, 0L, -2)).isEqualTo(of(5L, 3L, 1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE + 2, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
+            assertThat(rangeClosedBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 3, Long.MIN_VALUE));
         }
 
         @Test
         public void shouldCreateRangeClosedByWhereFromAndToEqualMIN_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1)).isEqualTo(of(Character.MIN_VALUE));
-            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3)).isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, 3))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -1))
+                    .isEqualTo(of(Character.MIN_VALUE));
+            assertThat(rangeClosedBy(Character.MIN_VALUE, Character.MIN_VALUE, -3))
+                    .isEqualTo(of(Character.MIN_VALUE));
 
             // double
             assertThat(rangeClosedBy(-Double.MAX_VALUE, -Double.MAX_VALUE, 1)).isEqualTo(of(-Double.MAX_VALUE));
@@ -5629,10 +5790,14 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByWhereFromAndToEqualMAX_VALUE() {
 
             // char
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1)).isEqualTo(of(Character.MAX_VALUE));
-            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3)).isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, 3))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -1))
+                    .isEqualTo(of(Character.MAX_VALUE));
+            assertThat(rangeClosedBy(Character.MAX_VALUE, Character.MAX_VALUE, -3))
+                    .isEqualTo(of(Character.MAX_VALUE));
 
             // double
             assertThat(rangeClosedBy(Double.MAX_VALUE, Double.MAX_VALUE, 1)).isEqualTo(of(Double.MAX_VALUE));
@@ -5657,17 +5822,26 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldCreateRangeClosedByStartingAtTypeBoundary() {
 
             // int
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE)).isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE)).isEqualTo(of(Integer.MAX_VALUE, -1));
-            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5)).isEqualTo(of(Integer.MIN_VALUE));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1, Integer.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE))
+                    .isEqualTo(of(Integer.MIN_VALUE, -1, Integer.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE))
+                    .isEqualTo(of(Integer.MAX_VALUE, -1));
+            assertThat(rangeClosedBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, 5))
+                    .isEqualTo(of(Integer.MIN_VALUE));
 
             // long
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
-            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE)).isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
-            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE)).isEqualTo(of(Long.MAX_VALUE, -1L));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2));
+            assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+                    .isEqualTo(of(Long.MIN_VALUE, -1L, Long.MAX_VALUE - 1));
+            assertThat(rangeClosedBy(Long.MAX_VALUE, Long.MIN_VALUE, Long.MIN_VALUE))
+                    .isEqualTo(of(Long.MAX_VALUE, -1L));
             assertThat(rangeClosedBy(Long.MIN_VALUE, Long.MIN_VALUE + 1, 5L)).isEqualTo(of(Long.MIN_VALUE));
         }
     }
@@ -5785,18 +5959,24 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(rangeBy('a', 'd', 2)).isEqualTo(of('a', 'c'));
             assertThat(rangeBy('c', 'a', -1)).isEqualTo(of('c', 'b'));
             assertThat(rangeBy('d', 'a', -2)).isEqualTo(of('d', 'b'));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 3)));
-            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3)).isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 3)));
-            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3)).isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 3), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 3)));
+            assertThat(rangeBy((char) (Character.MAX_VALUE - 4), Character.MAX_VALUE, 3))
+                    .isEqualTo(of((char) (Character.MAX_VALUE - 4), (char) (Character.MAX_VALUE - 1)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 3), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 3)));
+            assertThat(rangeBy((char) (Character.MIN_VALUE + 4), Character.MIN_VALUE, -3))
+                    .isEqualTo(of((char) (Character.MIN_VALUE + 4), (char) (Character.MIN_VALUE + 1)));
 
             // double
             assertThat(rangeBy(1.0, 3.0, 1.0)).isEqualTo(of(1.0, 2.0));
             assertThat(rangeBy(1.0, 4.0, 2.0)).isEqualTo(of(1.0, 3.0));
             assertThat(rangeBy(3.0, 1.0, -1.0)).isEqualTo(of(3.0, 2.0));
             assertThat(rangeBy(4.0, 1.0, -2.0)).isEqualTo(of(4.0, 2.0));
-            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307)).isEqualTo(of(Double.MAX_VALUE - 3.0E307));
-            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307)).isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
+            assertThat(rangeBy(Double.MAX_VALUE - 3.0E307, Double.MAX_VALUE, 3.0E307))
+                    .isEqualTo(of(Double.MAX_VALUE - 3.0E307));
+            assertThat(rangeBy(-Double.MAX_VALUE + 3.0E307, -Double.MAX_VALUE, -3.0E307))
+                    .isEqualTo(of(-Double.MAX_VALUE + 3.0E307));
 
             // int
             assertThat(rangeBy(1, 3, 1)).isEqualTo(of(1, 2));
@@ -5804,9 +5984,11 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(rangeBy(3, 1, -1)).isEqualTo(of(3, 2));
             assertThat(rangeBy(4, 1, -2)).isEqualTo(of(4, 2));
             assertThat(rangeBy(Integer.MAX_VALUE - 3, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 3));
-            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3)).isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MAX_VALUE - 4, Integer.MAX_VALUE, 3))
+                    .isEqualTo(of(Integer.MAX_VALUE - 4, Integer.MAX_VALUE - 1));
             assertThat(rangeBy(Integer.MIN_VALUE + 3, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 3));
-            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3)).isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MIN_VALUE + 4, Integer.MIN_VALUE, -3))
+                    .isEqualTo(of(Integer.MIN_VALUE + 4, Integer.MIN_VALUE + 1));
 
             // long
             assertThat(rangeBy(1L, 3L, 1L)).isEqualTo(of(1L, 2L));
@@ -5814,9 +5996,11 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(rangeBy(3L, 1L, -1L)).isEqualTo(of(3L, 2L));
             assertThat(rangeBy(4L, 1L, -2L)).isEqualTo(of(4L, 2L));
             assertThat(rangeBy(Long.MAX_VALUE - 3, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 3));
-            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3)).isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MAX_VALUE - 4, Long.MAX_VALUE, 3))
+                    .isEqualTo(of(Long.MAX_VALUE - 4, Long.MAX_VALUE - 1));
             assertThat(rangeBy(Long.MIN_VALUE + 3, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 3));
-            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3)).isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MIN_VALUE + 4, Long.MIN_VALUE, -3))
+                    .isEqualTo(of(Long.MIN_VALUE + 4, Long.MIN_VALUE + 1));
         }
 
         @Test
@@ -5933,14 +6117,18 @@ public class StreamTest extends AbstractTraversableTest {
             // int
             assertThat(rangeBy(5, Integer.MIN_VALUE, 1)).isEmpty();
             assertThat(rangeBy(5, Integer.MAX_VALUE, -1)).isEmpty();
-            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1)).isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
-            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1)).isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
+            assertThat(rangeBy(Integer.MIN_VALUE, Integer.MIN_VALUE + 2, 1))
+                    .isEqualTo(of(Integer.MIN_VALUE, Integer.MIN_VALUE + 1));
+            assertThat(rangeBy(Integer.MAX_VALUE, Integer.MAX_VALUE - 2, -1))
+                    .isEqualTo(of(Integer.MAX_VALUE, Integer.MAX_VALUE - 1));
 
             // long
             assertThat(rangeBy(5L, Long.MIN_VALUE, 1L)).isEmpty();
             assertThat(rangeBy(5L, Long.MAX_VALUE, -1L)).isEmpty();
-            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L)).isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
-            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L)).isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
+            assertThat(rangeBy(Long.MIN_VALUE, Long.MIN_VALUE + 2, 1L))
+                    .isEqualTo(of(Long.MIN_VALUE, Long.MIN_VALUE + 1));
+            assertThat(rangeBy(Long.MAX_VALUE, Long.MAX_VALUE - 2, -1L))
+                    .isEqualTo(of(Long.MAX_VALUE, Long.MAX_VALUE - 1));
         }
 
         // double special cases
@@ -5994,7 +6182,9 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSlideIntoStreamsOfStreams() {
-            assertThat(of(1, 2, 3, 4).sliding(3)).isInstanceOf(Stream.class).isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(2, 3, 4)));
+            assertThat(of(1, 2, 3, 4).sliding(3))
+                    .isInstanceOf(Stream.class)
+                    .isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(2, 3, 4)));
             assertThat(of(1, 2, 3, 4, 5).sliding(2, 3)).isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(4, 5)));
             assertThat(of(1, 2, 3, 4, 5).sliding(2, 4)).isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(5)));
             assertThat(of(1, 2).sliding(5)).isEqualTo(Stream.of(Stream.of(1, 2)));
@@ -6003,9 +6193,11 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSlideByIntoStreamsOfStreams() {
-            final Stream<Stream<Integer>> runs = of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10);
+            final Stream<Stream<Integer>> runs =
+                    of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10);
             assertThat(runs).isInstanceOf(Stream.class);
-            assertThat(runs).isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(10, 12), Stream.of(5, 7), Stream.of(20, 29)));
+            assertThat(runs)
+                    .isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(10, 12), Stream.of(5, 7), Stream.of(20, 29)));
             assertThat(runs.head()).isInstanceOf(Stream.class);
         }
 
@@ -6038,9 +6230,11 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSlideAnInfiniteStream() {
-            assertThat(Stream.from(1).sliding(2, 3).take(3)).isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(4, 5), Stream.of(7, 8)));
+            assertThat(Stream.from(1).sliding(2, 3).take(3))
+                    .isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(4, 5), Stream.of(7, 8)));
             assertThat(Stream.from(1).sliding(3).take(2)).isEqualTo(Stream.of(Stream.of(1, 2, 3), Stream.of(2, 3, 4)));
-            assertThat(Stream.from(1).slideBy(i -> i / 3).take(2)).isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(3, 4, 5)));
+            assertThat(Stream.from(1).slideBy(i -> i / 3).take(2))
+                    .isEqualTo(Stream.of(Stream.of(1, 2), Stream.of(3, 4, 5)));
         }
 
         @Test
@@ -6097,17 +6291,25 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(forcedForThePower.get()).isEqualTo(1);
             assertThat(power.take(2)).isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2)));
             assertThat(forcedForThePower.get()).isEqualTo(2);
-            assertThat(Stream.from(1).crossProduct(Stream.from(1)).take(5)).isEqualTo(Stream.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3), Tuple.of(1, 4), Tuple.of(1, 5)));
+            assertThat(Stream.from(1).crossProduct(Stream.from(1)).take(5))
+                    .isEqualTo(
+                            Stream.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3), Tuple.of(1, 4), Tuple.of(1, 5)));
         }
 
         @Test
         public void shouldBuildTheCrossProductSquareAndPowerLazily() {
-            assertThat(Stream.from(1).crossProduct().take(3)).isEqualTo(Stream.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3)));
-            assertThat(Stream.from(1).crossProduct(2).take(3)).isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2), Stream.of(1, 3)));
+            assertThat(Stream.from(1).crossProduct().take(3))
+                    .isEqualTo(Stream.of(Tuple.of(1, 1), Tuple.of(1, 2), Tuple.of(1, 3)));
+            assertThat(Stream.from(1).crossProduct(2).take(3))
+                    .isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2), Stream.of(1, 3)));
             assertThat(Stream.from(1).crossProduct(2).head()).isInstanceOf(Stream.class);
-            assertThat(of(1, 2).crossProduct(2)).isInstanceOf(Stream.class).isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2), Stream.of(2, 1), Stream.of(2, 2)));
+            assertThat(of(1, 2).crossProduct(2))
+                    .isInstanceOf(Stream.class)
+                    .isEqualTo(Stream.of(Stream.of(1, 1), Stream.of(1, 2), Stream.of(2, 1), Stream.of(2, 2)));
             assertThat(of(1, 2).crossProduct()).isInstanceOf(Stream.class);
-            assertThat(of(1, 2).crossProduct(List.of('a'))).isInstanceOf(Stream.class).isEqualTo(Stream.of(Tuple.of(1, 'a'), Tuple.of(2, 'a')));
+            assertThat(of(1, 2).crossProduct(List.of('a')))
+                    .isInstanceOf(Stream.class)
+                    .isEqualTo(Stream.of(Tuple.of(1, 'a'), Tuple.of(2, 'a')));
         }
 
         @Test
@@ -6118,7 +6320,14 @@ public class StreamTest extends AbstractTraversableTest {
                 return java.util.List.of('a', 'b').iterator();
             };
             final Stream<Tuple2<Integer, Character>> product = of(1, 2, 3).crossProduct(that);
-            assertThat(product.toList()).isEqualTo(List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b'), Tuple.of(3, 'a'), Tuple.of(3, 'b')));
+            assertThat(product.toList())
+                    .isEqualTo(List.of(
+                            Tuple.of(1, 'a'),
+                            Tuple.of(1, 'b'),
+                            Tuple.of(2, 'a'),
+                            Tuple.of(2, 'b'),
+                            Tuple.of(3, 'a'),
+                            Tuple.of(3, 'b')));
             assertThat(walks.get()).isEqualTo(1);
         }
     }
@@ -6170,9 +6379,11 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldConcatOneShotIterables() {
-            final Iterable<Iterable<Integer>> outer = java.util.stream.Stream.<Iterable<Integer>>of(oneShot(1, 2), oneShot(3))::iterator;
+            final Iterable<Iterable<Integer>> outer =
+                    java.util.stream.Stream.<Iterable<Integer>>of(oneShot(1, 2), oneShot(3))::iterator;
             assertThat(Stream.concat(outer)).isEqualTo(of(1, 2, 3));
-            assertThat(Stream.concat(java.util.stream.Stream.<Iterable<Integer>>empty()::iterator)).isSameAs(empty());
+            assertThat(Stream.concat(java.util.stream.Stream.<Iterable<Integer>>empty()::iterator))
+                    .isSameAs(empty());
             assertThat(Stream.concat(oneShot(1, 2), oneShot(3))).isEqualTo(of(1, 2, 3));
         }
 
@@ -6196,32 +6407,37 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final Stream<Integer> source = Stream.range(0, n);
-                final Tuple2<Stream<String>, Stream<Integer>> actual = source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
+                final Tuple2<Stream<String>, Stream<Integer>> actual =
+                        source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
                 final Tuple2<Stream<Integer>, Stream<Integer>> expected = source.partition(i -> i % 3 == 0);
                 assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
                 assertThat(actual._2()).isEqualTo(expected._2());
                 assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
-                assertThat(source.partitionMap(i -> Either.<Integer, String> left(i))).isEqualTo(Tuple.of(source, Stream.empty()));
-                assertThat(source.partitionMap(i -> Either.<String, Integer> right(i))).isEqualTo(Tuple.of(Stream.empty(), source));
+                assertThat(source.partitionMap(i -> Either.<Integer, String>left(i)))
+                        .isEqualTo(Tuple.of(source, Stream.empty()));
+                assertThat(source.partitionMap(i -> Either.<String, Integer>right(i)))
+                        .isEqualTo(Tuple.of(Stream.empty(), source));
             }
         }
 
         @Test
         public void shouldKeepTheSourceOrderOnEachSide() {
-            final Tuple2<Stream<Integer>, Stream<String>> actual = Stream.of(5, 2, 8, 1, 9, 4).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
+            final Tuple2<Stream<Integer>, Stream<String>> actual =
+                    Stream.of(5, 2, 8, 1, 9, 4).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
             assertThat(actual).isEqualTo(Tuple.of(Stream.of(2, 8, 4), Stream.of("o5", "o1", "o9")));
         }
 
         @Test
         public void shouldCallTheFunctionOncePerElementInOrder() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final java.util.List<Integer> seen = new ArrayList<>();
-                final Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.range(0, n).partitionMap(i -> {
-                    seen.add(i);
-                    return i % 2 == 0 ? Either.left(i) : Either.right(i);
-                });
+                final Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.range(0, n)
+                        .partitionMap(i -> {
+                            seen.add(i);
+                            return i % 2 == 0 ? Either.left(i) : Either.right(i);
+                        });
                 // both sides forced to the end, each in turn: every element was classified once, in order
                 sides._1().size();
                 sides._2().size();
@@ -6250,35 +6466,49 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPartitionAnInfiniteStream() {
-            final Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.from(0).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right(i));
+            final Tuple2<Stream<Integer>, Stream<Integer>> sides =
+                    Stream.from(0).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right(i));
             assertThat(sides._1().take(33).toList()).isEqualTo(List.range(0, 66).filter(i -> i % 2 == 0));
             assertThat(sides._2().take(33).toList()).isEqualTo(List.range(0, 66).filter(i -> i % 2 != 0));
         }
 
         @Test
         public void shouldRejectANullEitherWhenASideReachesIt() {
-            final Tuple2<Stream<Integer>, Stream<Integer>> sides = Stream.from(0).partitionMap(i -> i == 4 ? null : i % 2 == 0 ? Either.left(i) : Either.right(i));
+            final Tuple2<Stream<Integer>, Stream<Integer>> sides =
+                    Stream.from(0).partitionMap(i -> i == 4 ? null : i % 2 == 0 ? Either.left(i) : Either.right(i));
             assertThat(sides._1().take(2).toList()).isEqualTo(List.of(0, 2));
             assertThat(sides._2().take(2).toList()).isEqualTo(List.of(1, 3));
-            assertThatNullPointerException().isThrownBy(() -> sides._1().take(3).toList()).withMessage("Stream.partitionMap: f returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> sides._1().take(3).toList())
+                    .withMessage("Stream.partitionMap: f returned null");
         }
 
         @Test
         public void shouldReturnTheEmptyStreamForAnEmptySide() {
-            final Tuple2<Stream<Integer>, Stream<Integer>> none = Stream.<Integer> empty().partitionMap(Either::left);
+            final Tuple2<Stream<Integer>, Stream<Integer>> none =
+                    Stream.<Integer>empty().partitionMap(Either::left);
             assertThat(none._1()).isSameAs(Stream.empty());
             assertThat(none._2()).isSameAs(Stream.empty());
-            assertThat(Stream.of(1, 2).partitionMap(Either::<Integer, Integer> left)._2()).isSameAs(Stream.empty());
-            assertThat(Stream.of(1, 2).partitionMap(Either::<Integer, Integer> right)._1()).isSameAs(Stream.empty());
+            assertThat(Stream.of(1, 2)
+                            .partitionMap(Either::<Integer, Integer>left)
+                            ._2())
+                    .isSameAs(Stream.empty());
+            assertThat(Stream.of(1, 2)
+                            .partitionMap(Either::<Integer, Integer>right)
+                            ._1())
+                    .isSameAs(Stream.empty());
         }
 
         @Test
         public void shouldRejectNullFunctionAndNullEither() {
-            assertThatNullPointerException().isThrownBy(() -> Stream.of(1).partitionMap(null)).withMessage("f is null");
-            for (int n : new int[] { 1, 32, 33 }) {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Stream.of(1).partitionMap(null))
+                    .withMessage("f is null");
+            for (int n : new int[] {1, 32, 33}) {
                 final int last = n - 1;
                 assertThatNullPointerException()
-                        .isThrownBy(() -> Stream.range(0, n).partitionMap(i -> i == last ? null : Either.<Integer, Integer> left(i)))
+                        .isThrownBy(() -> Stream.range(0, n)
+                                .partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)))
                         .withMessage("Stream.partitionMap: f returned null");
             }
         }
@@ -6289,12 +6519,15 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final Stream<Integer> inner = Stream.range(0, n);
                 assertThat(Stream.flatten(Stream.of(inner))).isEqualTo(inner);
                 assertThat(Stream.flatten(Stream.of(inner, inner))).isEqualTo(inner.appendAll(inner));
-                assertThat(Stream.flatten(Stream.of(Stream.<Integer> empty(), inner, Stream.<Integer> empty()))).isEqualTo(inner);
-                assertThat(Stream.flatten(java.util.List.of(Vector.range(0, n), new java.util.ArrayList<>(inner.asJava())))).isEqualTo(inner.appendAll(inner));
+                assertThat(Stream.flatten(Stream.of(Stream.<Integer>empty(), inner, Stream.<Integer>empty())))
+                        .isEqualTo(inner);
+                assertThat(Stream.flatten(
+                                java.util.List.of(Vector.range(0, n), new java.util.ArrayList<>(inner.asJava()))))
+                        .isEqualTo(inner.appendAll(inner));
                 // n inner iterables of one element each
                 assertThat(Stream.flatten(inner.map(Stream::of))).isEqualTo(inner);
             }
@@ -6302,32 +6535,43 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenEmptiesToTheEmptyStream() {
-            assertThat(Stream.flatten(Stream.<Stream<Integer>> empty())).isSameAs(Stream.empty());
-            assertThat(Stream.flatten(Stream.of(Stream.<Integer> empty()))).isSameAs(Stream.empty());
-            assertThat(Stream.flatten(Stream.of(Stream.<Integer> empty(), Vector.<Integer> empty(), java.util.List.<Integer> of()))).isSameAs(Stream.empty());
-            assertThat(Stream.flatten(java.util.List.<java.util.List<Integer>> of())).isSameAs(Stream.empty());
+            assertThat(Stream.flatten(Stream.<Stream<Integer>>empty())).isSameAs(Stream.empty());
+            assertThat(Stream.flatten(Stream.of(Stream.<Integer>empty()))).isSameAs(Stream.empty());
+            assertThat(Stream.flatten(
+                            Stream.of(Stream.<Integer>empty(), Vector.<Integer>empty(), java.util.List.<Integer>of())))
+                    .isSameAs(Stream.empty());
+            assertThat(Stream.flatten(java.util.List.<java.util.List<Integer>>of()))
+                    .isSameAs(Stream.empty());
         }
 
         @Test
         public void shouldWidenTheElementType() {
             final Stream<Number> numbers = Stream.flatten(Stream.of(Stream.of(1), Stream.of(2.0)));
-            assertThat(numbers).isEqualTo(Stream.<Number> of(1, 2.0));
+            assertThat(numbers).isEqualTo(Stream.<Number>of(1, 2.0));
         }
 
         @Test
         public void shouldReadOneShotIterablesOnce() {
-            assertThat(Stream.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3)))).isEqualTo(Stream.of(1, 2, 3));
-            assertThat(Stream.flatten(Stream.<Iterable<Integer>> empty())).isSameAs(Stream.empty());
-            assertThat(Stream.<Integer> flatten(oneShotOf())).isSameAs(Stream.empty());
+            assertThat(Stream.flatten(oneShotOf(oneShotOf(1, 2), oneShotOf(), oneShotOf(3))))
+                    .isEqualTo(Stream.of(1, 2, 3));
+            assertThat(Stream.flatten(Stream.<Iterable<Integer>>empty())).isSameAs(Stream.empty());
+            assertThat(Stream.<Integer>flatten(oneShotOf())).isSameAs(Stream.empty());
         }
 
         @Test
         public void shouldRejectNulls() {
-            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(null)).withMessage("nested is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Stream.flatten(null))
+                    .withMessage("nested is null");
             // lazy: a null inner iterable or element fails when the result reaches it
-            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(null, Stream.of(1))));
-            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(Stream.of(1), null)).toList());
-            assertThatNullPointerException().isThrownBy(() -> Stream.flatten(Stream.of(java.util.Arrays.asList(1, null))).toList())
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(null, Stream.of(1))));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Stream.flatten(java.util.Arrays.asList(Stream.of(1), null))
+                            .toList());
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Stream.flatten(Stream.of(java.util.Arrays.asList(1, null)))
+                            .toList())
                     .withMessage("Stream: element is null");
         }
     }
@@ -6340,24 +6584,30 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(Stream.of(3, 1, 3, 2, 1, 3).duplicates()).isEqualTo(Stream.of(3, 1));
             assertThat(Stream.of(1, 2, 2, 1).duplicates()).isEqualTo(Stream.of(1, 2));
             assertThat(Stream.of("a", "b", "c").duplicates()).isSameAs(Stream.empty());
-            assertThat(Stream.<Integer> empty().duplicates()).isSameAs(Stream.empty());
+            assertThat(Stream.<Integer>empty().duplicates()).isSameAs(Stream.empty());
             assertThat(Stream.of(1).duplicates()).isSameAs(Stream.empty());
         }
 
         @Test
         public void shouldReturnTheFirstElementOfEachDuplicatedKey() {
-            assertThat(Stream.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length)).isEqualTo(Stream.of("aa", "b"));
-            assertThat(Stream.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length)).isEqualTo(Stream.of("aa"));
-            assertThat(Stream.of("b", "aa", "e", "cc").duplicatesBy(String::length)).isEqualTo(Stream.of("b", "aa"));
+            assertThat(Stream.of("aa", "b", "cc", "dd", "e").duplicatesBy(String::length))
+                    .isEqualTo(Stream.of("aa", "b"));
+            assertThat(Stream.of("aa", "b", "cc", "dd", "eee").duplicatesBy(String::length))
+                    .isEqualTo(Stream.of("aa"));
+            assertThat(Stream.of("b", "aa", "e", "cc").duplicatesBy(String::length))
+                    .isEqualTo(Stream.of("b", "aa"));
             assertThat(Stream.of("a", "bb").duplicatesBy(String::length)).isSameAs(Stream.empty());
-            assertThatNullPointerException().isThrownBy(() -> Stream.of(1).duplicatesBy(null)).withMessage("keyExtractor is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Stream.of(1).duplicatesBy(null))
+                    .withMessage("keyExtractor is null");
         }
 
         @Test
         public void shouldFindDuplicatesOfANullKey() {
             // an Stream never holds a null element, but a key extractor may return null for several of them
             assertThat(Stream.of("a", "b").duplicatesBy(s -> null)).isEqualTo(Stream.of("a"));
-            assertThat(Stream.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s)).isEqualTo(Stream.of("a"));
+            assertThat(Stream.of("a", "bb", "c").duplicatesBy(s -> s.length() == 1 ? null : s))
+                    .isEqualTo(Stream.of("a"));
             assertThat(Stream.of("a").duplicatesBy(s -> null)).isSameAs(Stream.empty());
         }
 
@@ -6365,20 +6615,22 @@ public class StreamTest extends AbstractTraversableTest {
         public void shouldComputeTheKeyOncePerElementInOrder() {
             final java.util.List<Integer> seen = new ArrayList<>();
             assertThat(Stream.range(0, 33).duplicatesBy(i -> {
-                seen.add(i);
-                return i % 5;
-            })).isEqualTo(Stream.of(0, 1, 2, 3, 4));
+                        seen.add(i);
+                        return i % 5;
+                    }))
+                    .isEqualTo(Stream.of(0, 1, 2, 3, 4));
             assertThat(Stream.ofAll(seen)).isEqualTo(Stream.range(0, 33));
         }
 
         @Test
         public void shouldFindDuplicatesAtEveryBoundary() {
-            for (int n : new int[] { 0, 1, 32, 33 }) {
+            for (int n : new int[] {0, 1, 32, 33}) {
                 final Stream<Integer> source = Stream.range(0, n);
                 assertThat(source.duplicates()).isSameAs(Stream.empty());
                 assertThat(source.appendAll(source).duplicates()).isEqualTo(source);
                 assertThat(source.appendAll(source.reverse()).duplicates()).isEqualTo(source);
-                assertThat(source.duplicatesBy(i -> i % 5)).isEqualTo(source.take(Math.max(n - 5, 0)).take(5));
+                assertThat(source.duplicatesBy(i -> i % 5))
+                        .isEqualTo(source.take(Math.max(n - 5, 0)).take(5));
             }
         }
     }
@@ -6409,13 +6661,20 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void shouldFlattenAnInfiniteInnerIterable() {
             assertThat(Stream.flatten(List.of(Stream.from(0))).take(3).toList()).isEqualTo(List.of(0, 1, 2));
-            assertThat(Stream.flatten(List.of(List.of(-1), Stream.from(0), List.of(-2))).take(3).toList()).isEqualTo(List.of(-1, 0, 1));
-            assertThat(Stream.flatten(Stream.from(0).map(i -> Stream.from(i))).take(3).toList()).isEqualTo(List.of(0, 1, 2));
+            assertThat(Stream.flatten(List.of(List.of(-1), Stream.from(0), List.of(-2)))
+                            .take(3)
+                            .toList())
+                    .isEqualTo(List.of(-1, 0, 1));
+            assertThat(Stream.flatten(Stream.from(0).map(i -> Stream.from(i)))
+                            .take(3)
+                            .toList())
+                    .isEqualTo(List.of(0, 1, 2));
         }
 
         @Test
         public void shouldSkipEmptyInnerIterablesOfAnInfiniteOuter() {
-            final Stream<Integer> flat = Stream.flatten(Stream.from(0).map(i -> i % 3 == 0 ? List.of(i) : List.<Integer> empty()));
+            final Stream<Integer> flat =
+                    Stream.flatten(Stream.from(0).map(i -> i % 3 == 0 ? List.of(i) : List.<Integer>empty()));
             assertThat(flat.take(4).toList()).isEqualTo(List.of(0, 3, 6, 9));
         }
 
@@ -6481,7 +6740,9 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void subSequenceFromToPastTheEndThrowsOnTraversalAfterADeepStart() {
             final Stream<Integer> actual = longStream().subSequence(START, SIZE + 1);
-            assertThatThrownBy(actual::size).isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+            assertThatThrownBy(actual::size)
+                    .isInstanceOf(IndexOutOfBoundsException.class)
+                    .hasMessage("subSequence of Nil");
         }
 
         @Test
@@ -6490,10 +6751,15 @@ public class StreamTest extends AbstractTraversableTest {
             assertThat(longStream().get(START)).isEqualTo(START);
             assertThat(longStream().update(START, -1).drop(START).take(2)).isEqualTo(Stream.of(-1, START + 1));
             assertThat(longStream().insert(START, -1).drop(START).take(2)).isEqualTo(Stream.of(-1, START));
-            assertThat(longStream().insertAll(START, List.of(-1, -2)).drop(START).take(3)).isEqualTo(Stream.of(-1, -2, START));
+            assertThat(longStream()
+                            .insertAll(START, List.of(-1, -2))
+                            .drop(START)
+                            .take(3))
+                    .isEqualTo(Stream.of(-1, -2, START));
             assertThat(longStream().removeAt(START).drop(START).head()).isEqualTo(START + 1);
             assertThat(longStream().splitAt(START)._2().head()).isEqualTo(START);
-            assertThat(longStream().patch(START, List.of(-1), 2).drop(START).take(2)).isEqualTo(Stream.of(-1, START + 2));
+            assertThat(longStream().patch(START, List.of(-1), 2).drop(START).take(2))
+                    .isEqualTo(Stream.of(-1, START + 2));
             assertThat(longStream().dropRight(START).size()).isEqualTo(SIZE - START);
             assertThat(longStream().takeRight(SIZE - START).head()).isEqualTo(START);
         }
@@ -6555,20 +6821,26 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void subSequenceBoundsAreCheckedAsBefore() {
             assertThatThrownBy(() -> Stream.of(1).subSequence(5, 5))
-                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+                    .isInstanceOf(IndexOutOfBoundsException.class)
+                    .hasMessage("subSequence of Nil");
             assertThat(Stream.of(1, 2).subSequence(2, 2)).isEmpty();
             assertThat(Stream.of(1, 2).subSequence(1, 2)).isEqualTo(Stream.of(2));
             assertThatThrownBy(() -> Stream.of(1, 2).subSequence(2, 3))
-                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+                    .isInstanceOf(IndexOutOfBoundsException.class)
+                    .hasMessage("subSequence of Nil");
             assertThatThrownBy(() -> Stream.of(1, 2).subSequence(5, 6))
-                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+                    .isInstanceOf(IndexOutOfBoundsException.class)
+                    .hasMessage("subSequence of Nil");
             assertThatThrownBy(() -> Stream.empty().subSequence(0, 1))
-                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+                    .isInstanceOf(IndexOutOfBoundsException.class)
+                    .hasMessage("subSequence of Nil");
             assertThatThrownBy(() -> Stream.of(1, 2).subSequence(-1, 1)).isInstanceOf(IndexOutOfBoundsException.class);
             assertThatThrownBy(() -> Stream.of(1, 2).subSequence(2, 1)).isInstanceOf(IllegalArgumentException.class);
             final Stream<Integer> pastTheEnd = Stream.of(1, 2).subSequence(1, 3);
             assertThat(pastTheEnd.head()).isEqualTo(2);
-            assertThatThrownBy(pastTheEnd::tail).isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+            assertThatThrownBy(pastTheEnd::tail)
+                    .isInstanceOf(IndexOutOfBoundsException.class)
+                    .hasMessage("subSequence of Nil");
         }
     }
 
@@ -6581,7 +6853,7 @@ public class StreamTest extends AbstractTraversableTest {
         }
 
         private int[] indices(int n) {
-            return new int[] { Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE };
+            return new int[] {Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE};
         }
 
         @Test
@@ -6609,7 +6881,7 @@ public class StreamTest extends AbstractTraversableTest {
         @Test
         public void patchAgreesWithVector() {
             final List<List<Integer>> replacements = List.of(List.empty(), List.of(-1), List.of(-1, -2, -3));
-            for (int n : new int[] { 0, 1, 5 }) {
+            for (int n : new int[] {0, 1, 5}) {
                 final Stream<Integer> stream = Stream.range(0, n);
                 final Vector<Integer> vector = Vector.range(0, n);
                 for (int from : indices(n)) {
@@ -6618,13 +6890,18 @@ public class StreamTest extends AbstractTraversableTest {
                             continue; // Vector adds the two
                         }
                         for (List<Integer> that : replacements) {
-                            assertThat(stream.patch(from, that, replaced).toVector()).as("patch(%d, %s, %d) of %d", from, that, replaced, n).isEqualTo(vector.patch(from, that, replaced));
+                            assertThat(stream.patch(from, that, replaced).toVector())
+                                    .as("patch(%d, %s, %d) of %d", from, that, replaced, n)
+                                    .isEqualTo(vector.patch(from, that, replaced));
                         }
                     }
                 }
             }
-            assertThat(Stream.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE)).isEqualTo(Stream.of(1, 2, 9));
-            assertThatNullPointerException().isThrownBy(() -> Stream.of(1).patch(0, null, 0)).withMessage("that is null");
+            assertThat(Stream.of(1, 2).patch(Integer.MAX_VALUE, List.of(9), Integer.MAX_VALUE))
+                    .isEqualTo(Stream.of(1, 2, 9));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> Stream.of(1).patch(0, null, 0))
+                    .withMessage("that is null");
         }
 
         @Test
@@ -6657,13 +6934,19 @@ public class StreamTest extends AbstractTraversableTest {
 
         @Test
         public void lastIndexOfSliceAgreesWithVector() {
-            final List<List<Integer>> slices = List.of(List.empty(), List.of(1), List.of(1, 2), List.of(2, 1, 2), List.of(3), List.of(1, 2, 1, 2, 1, 2));
-            for (Vector<Integer> vector : List.of(Vector.<Integer> empty(), Vector.of(1), Vector.of(1, 2, 1, 2, 1), Vector.of(2, 2, 2))) {
+            final List<List<Integer>> slices = List.of(
+                    List.empty(), List.of(1), List.of(1, 2), List.of(2, 1, 2), List.of(3), List.of(1, 2, 1, 2, 1, 2));
+            for (Vector<Integer> vector :
+                    List.of(Vector.<Integer>empty(), Vector.of(1), Vector.of(1, 2, 1, 2, 1), Vector.of(2, 2, 2))) {
                 final Stream<Integer> stream = Stream.ofAll(vector);
                 for (List<Integer> slice : slices) {
-                    assertThat(stream.lastIndexOfSlice(slice)).as("lastIndexOfSlice(%s) of %s", slice, vector).isEqualTo(vector.lastIndexOfSlice(slice));
+                    assertThat(stream.lastIndexOfSlice(slice))
+                            .as("lastIndexOfSlice(%s) of %s", slice, vector)
+                            .isEqualTo(vector.lastIndexOfSlice(slice));
                     for (int end : indices(vector.size())) {
-                        assertThat(stream.lastIndexOfSlice(slice, end)).as("lastIndexOfSlice(%s, %d) of %s", slice, end, vector).isEqualTo(vector.lastIndexOfSlice(slice, end));
+                        assertThat(stream.lastIndexOfSlice(slice, end))
+                                .as("lastIndexOfSlice(%s, %d) of %s", slice, end, vector)
+                                .isEqualTo(vector.lastIndexOfSlice(slice, end));
                     }
                 }
             }
@@ -6674,12 +6957,12 @@ public class StreamTest extends AbstractTraversableTest {
     class SubSequenceBoundsTests {
 
         private int[] indices(int n) {
-            return new int[] { Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE };
+            return new int[] {Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE};
         }
 
         @Test
         public void subSequenceThrowsExactlyWhenVectorThrows() {
-            for (int n : new int[] { 0, 1, 5 }) {
+            for (int n : new int[] {0, 1, 5}) {
                 final Vector<Integer> vector = Vector.range(0, n);
                 for (int from : indices(n)) {
                     final int begin = from;
@@ -6695,7 +6978,9 @@ public class StreamTest extends AbstractTraversableTest {
                     } catch (RuntimeException e) {
                         singleStream = e.getClass();
                     }
-                    assertThat(singleStream).as("subSequence(%d) on %d", begin, n).isEqualTo(single);
+                    assertThat(singleStream)
+                            .as("subSequence(%d) on %d", begin, n)
+                            .isEqualTo(single);
                     for (int to : indices(n)) {
                         final String call = "subSequence(" + from + ", " + to + ") on " + n;
                         Class<?> expected;
@@ -6735,7 +7020,8 @@ public class StreamTest extends AbstractTraversableTest {
             assertThatThrownBy(() -> stream.subSequence(30, 20)).isInstanceOf(IllegalArgumentException.class);
             assertThat(forced.get()).isEqualTo(20);
             assertThatThrownBy(() -> Stream.of(1, 2).subSequence(5, 3))
-                    .isInstanceOf(IndexOutOfBoundsException.class).hasMessage("subSequence of Nil");
+                    .isInstanceOf(IndexOutOfBoundsException.class)
+                    .hasMessage("subSequence of Nil");
         }
     }
 }

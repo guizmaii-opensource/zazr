@@ -97,8 +97,7 @@ public class UsingTest {
         void release(int index, Kind kind) throws Exception {
             released.add(index);
             switch (kind) {
-                case OK -> {
-                }
+                case OK -> {}
                 case RETHROW_LAST -> {
                     if (!events.isEmpty()) {
                         final Throwable last = events.getLast();
@@ -195,9 +194,10 @@ public class UsingTest {
                     } else {
                         final Integer value = 1000 + index;
                         assertThat(use.acquire(value, v -> {
-                            assertThat(v).isSameAs(value);
-                            run.release(index, release);
-                        })).isSameAs(value);
+                                    assertThat(v).isSameAs(value);
+                                    run.release(index, release);
+                                }))
+                                .isSameAs(value);
                     }
                 }
                 return block(run, s);
@@ -209,15 +209,17 @@ public class UsingTest {
 
     static Object runOf(Run run, Scenario s) {
         try {
-            return Using.of(() -> {
-                if (s.failAt() == 0) {
-                    throw UsingTest.<Exception>sneaky(run.raise(s.failure(), "acquisition 0"));
-                }
-                return new Resource(run, 0, s.releases()[0]);
-            }, r -> {
-                assertThat(r.index()).isZero();
-                return block(run, s);
-            });
+            return Using.of(
+                    () -> {
+                        if (s.failAt() == 0) {
+                            throw UsingTest.<Exception>sneaky(run.raise(s.failure(), "acquisition 0"));
+                        }
+                        return new Resource(run, 0, s.releases()[0]);
+                    },
+                    r -> {
+                        assertThat(r.index()).isZero();
+                        return block(run, s);
+                    });
         } catch (Throwable t) {
             return t;
         }
@@ -249,20 +251,24 @@ public class UsingTest {
             }
         }
         for (Map.Entry<Throwable, List<Throwable>> e : expectedSuppressed.entrySet()) {
-            assertThat(e.getKey().getSuppressed()).as("suppressed in %s", e.getKey())
+            assertThat(e.getKey().getSuppressed())
+                    .as("suppressed in %s", e.getKey())
                     .containsExactlyElementsOf(e.getValue());
         }
 
         if (primary == null) {
             if (s.body() == Kind.NULL) {
-                assertThat(outcome).isInstanceOfSatisfying(Try.Failure.class,
-                        f -> assertThat(f.cause()).isInstanceOf(NullPointerException.class));
+                assertThat(outcome)
+                        .isInstanceOfSatisfying(
+                                Try.Failure.class, f -> assertThat(f.cause()).isInstanceOf(NullPointerException.class));
             } else {
                 assertThat(outcome).isEqualTo(Try.success("ok"));
             }
         } else if (run.kinds.get(primary) == Kind.ORDINARY) {
             final Throwable surfaced = primary;
-            assertThat(outcome).isInstanceOfSatisfying(Try.Failure.class, f -> assertThat(f.cause()).isSameAs(surfaced));
+            assertThat(outcome)
+                    .isInstanceOfSatisfying(
+                            Try.Failure.class, f -> assertThat(f.cause()).isSameAs(surfaced));
         } else {
             // fatal throwables are rethrown, as by Try.of
             assertThat(outcome).isSameAs(primary);
@@ -271,15 +277,17 @@ public class UsingTest {
 
     @TestFactory
     Stream<DynamicTest> managerFailureMatrix() {
-        return scenarios(3, true).stream().map(s -> DynamicTest.dynamicTest(s.toString(), () -> {
-            final Run run = new Run();
-            check(run, s, runManager(run, s));
-        }));
+        return scenarios(3, true).stream()
+                .map(s -> DynamicTest.dynamicTest(s.toString(), () -> {
+                    final Run run = new Run();
+                    check(run, s, runManager(run, s));
+                }));
     }
 
     @TestFactory
     Stream<DynamicTest> ofFailureMatrix() {
-        return scenarios(1, true).stream().filter(s -> s.resources() == 1)
+        return scenarios(1, true).stream()
+                .filter(s -> s.resources() == 1)
                 .map(s -> DynamicTest.dynamicTest(s.toString(), () -> {
                     final Run run = new Run();
                     check(run, s, runOf(run, s));
@@ -313,20 +321,21 @@ public class UsingTest {
             final IOException d = new IOException("release 1");
             final List<String> released = new ArrayList<>();
             assertThatThrownBy(() -> Using.manager(use -> {
-                use.acquire("1", r -> {
-                    released.add(r);
-                    throw d;
-                });
-                use.acquire("2", r -> {
-                    released.add(r);
-                    throw c;
-                });
-                use.acquire("3", r -> {
-                    released.add(r);
-                    throw b;
-                });
-                throw a;
-            })).isSameAs(c);
+                        use.acquire("1", r -> {
+                            released.add(r);
+                            throw d;
+                        });
+                        use.acquire("2", r -> {
+                            released.add(r);
+                            throw c;
+                        });
+                        use.acquire("3", r -> {
+                            released.add(r);
+                            throw b;
+                        });
+                        throw a;
+                    }))
+                    .isSameAs(c);
             assertThat(released).containsExactly("3", "2", "1");
             assertThat(a.getSuppressed()).containsExactly(b);
             assertThat(c.getSuppressed()).containsExactly(a, d);
@@ -338,11 +347,13 @@ public class UsingTest {
         void keepsTheFirstOnEqualSeverity() {
             final IOException first = new IOException("block");
             final IllegalStateException second = new IllegalStateException("close");
-            final Try<String> result = Using.of(() -> () -> {
-                throw second;
-            }, r -> {
-                throw first;
-            });
+            final Try<String> result = Using.of(
+                    () -> () -> {
+                        throw second;
+                    },
+                    r -> {
+                        throw first;
+                    });
             assertThat(result.getCause()).isSameAs(first);
             assertThat(first.getSuppressed()).containsExactly(second);
         }
@@ -352,11 +363,14 @@ public class UsingTest {
             // try-with-resources would throw the IOException with the OutOfMemoryError suppressed
             final IOException body = new IOException("block");
             final OutOfMemoryError oom = new OutOfMemoryError("close");
-            assertThatThrownBy(() -> Using.of(() -> () -> {
-                throw oom;
-            }, r -> {
-                throw body;
-            })).isSameAs(oom);
+            assertThatThrownBy(() -> Using.of(
+                            () -> () -> {
+                                throw oom;
+                            },
+                            r -> {
+                                throw body;
+                            }))
+                    .isSameAs(oom);
             assertThat(oom.getSuppressed()).containsExactly(body);
         }
 
@@ -366,14 +380,15 @@ public class UsingTest {
             final LinkageError linkage = new LinkageError("release 2");
             final StackOverflowError overflow = new StackOverflowError("release 1");
             assertThatThrownBy(() -> Using.manager(use -> {
-                use.acquire(1, r -> {
-                    throw overflow;
-                });
-                use.acquire(2, r -> {
-                    throw linkage;
-                });
-                throw interrupted;
-            })).isSameAs(overflow);
+                        use.acquire(1, r -> {
+                            throw overflow;
+                        });
+                        use.acquire(2, r -> {
+                            throw linkage;
+                        });
+                        throw interrupted;
+                    }))
+                    .isSameAs(overflow);
             assertThat(linkage.getSuppressed()).containsExactly(interrupted);
             assertThat(overflow.getSuppressed()).containsExactly(linkage);
         }
@@ -382,22 +397,27 @@ public class UsingTest {
         void ranksInterruptedExceptionOverAnOrdinaryException() {
             final IOException body = new IOException("block");
             final InterruptedException interrupted = new InterruptedException("close");
-            assertThatThrownBy(() -> Using.of(() -> () -> {
-                throw interrupted;
-            }, r -> {
-                throw body;
-            })).isSameAs(interrupted);
+            assertThatThrownBy(() -> Using.of(
+                            () -> () -> {
+                                throw interrupted;
+                            },
+                            r -> {
+                                throw body;
+                            }))
+                    .isSameAs(interrupted);
             assertThat(interrupted.getSuppressed()).containsExactly(body);
         }
 
         @Test
         void neverSuppressesAThrowableInItselfWhenCloseRethrowsTheBlocksThrowable() {
             final IOException body = new IOException("block");
-            final Try<String> result = Using.of(() -> () -> {
-                throw body;
-            }, r -> {
-                throw body;
-            });
+            final Try<String> result = Using.of(
+                    () -> () -> {
+                        throw body;
+                    },
+                    r -> {
+                        throw body;
+                    });
             assertThat(result.getCause()).isSameAs(body);
             assertThat(body.getSuppressed()).isEmpty();
         }
@@ -442,9 +462,13 @@ public class UsingTest {
         @Test
         void failsWithTheCloseFailureWhenOnlyCloseThrows() {
             final IllegalStateException closeFailure = new IllegalStateException("close");
-            assertThat(Using.of(() -> () -> {
-                throw closeFailure;
-            }, r -> "ok").getCause()).isSameAs(closeFailure);
+            assertThat(Using.of(
+                                    () -> () -> {
+                                        throw closeFailure;
+                                    },
+                                    r -> "ok")
+                            .getCause())
+                    .isSameAs(closeFailure);
         }
 
         @Test
@@ -452,8 +476,9 @@ public class UsingTest {
             final InterruptedException interrupted = new InterruptedException("block");
             final AtomicInteger closed = new AtomicInteger();
             assertThatThrownBy(() -> Using.of(() -> closed::incrementAndGet, r -> {
-                throw interrupted;
-            })).isSameAs(interrupted);
+                        throw interrupted;
+                    }))
+                    .isSameAs(interrupted);
             assertThat(closed).hasValue(1);
         }
 
@@ -461,11 +486,13 @@ public class UsingTest {
         void discardsTheSuppressedThrowableWhenTheSurfacingOneDoesNotSupportSuppression() {
             final Exception noSuppression = new Exception("block", null, false, false) {};
             final IOException closeFailure = new IOException("close");
-            final Try<String> result = Using.of(() -> () -> {
-                throw closeFailure;
-            }, r -> {
-                throw noSuppression;
-            });
+            final Try<String> result = Using.of(
+                    () -> () -> {
+                        throw closeFailure;
+                    },
+                    r -> {
+                        throw noSuppression;
+                    });
             assertThat(result.getCause()).isSameAs(noSuppression);
             assertThat(noSuppression.getSuppressed()).isEmpty();
         }
@@ -504,9 +531,11 @@ public class UsingTest {
         @Test
         void failsWithoutClosingWhenTheAcquisitionThrows() {
             final IOException cause = new IOException("no resource");
-            final Try<String> result = Using.<AutoCloseable, String>of(() -> {
-                throw cause;
-            }, r -> "unreachable");
+            final Try<String> result = Using.<AutoCloseable, String>of(
+                    () -> {
+                        throw cause;
+                    },
+                    r -> "unreachable");
             assertThat(result.getCause()).isSameAs(cause);
         }
 
@@ -525,24 +554,29 @@ public class UsingTest {
         void failsWithANullPointerExceptionOnANullResultAndCloses() {
             final AtomicInteger closed = new AtomicInteger();
             final Try<String> result = Using.of(() -> closed::incrementAndGet, r -> null);
-            assertThat(result.getCause()).isInstanceOf(NullPointerException.class).hasMessageContaining("Using.of");
+            assertThat(result.getCause())
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("Using.of");
             assertThat(closed).hasValue(1);
         }
 
         @Test
         void failsWithTheCloseFailureOverANullResult() {
             final IOException closeFailure = new IOException("close");
-            final Try<String> result = Using.of(() -> () -> {
-                throw closeFailure;
-            }, r -> null);
+            final Try<String> result = Using.of(
+                    () -> () -> {
+                        throw closeFailure;
+                    },
+                    r -> null);
             assertThat(result.getCause()).isSameAs(closeFailure);
         }
 
         @Test
         void nests() {
             final List<String> closed = new ArrayList<>();
-            final Try<String> result = Using.of(() -> () -> closed.add("outer"), o ->
-                    Using.of(() -> () -> closed.add("inner"), i -> "both").get());
+            final Try<String> result = Using.of(
+                    () -> () -> closed.add("outer"),
+                    o -> Using.of(() -> () -> closed.add("inner"), i -> "both").get());
             assertThat(result).isEqualTo(Try.success("both"));
             assertThat(closed).containsExactly("inner", "outer");
         }
@@ -612,7 +646,8 @@ public class UsingTest {
                 use.acquire(released::incrementAndGet);
                 return null;
             });
-            assertThat(result.getCause()).isInstanceOf(NullPointerException.class)
+            assertThat(result.getCause())
+                    .isInstanceOf(NullPointerException.class)
                     .hasMessageContaining("Using.manager");
             assertThat(released).hasValue(1);
         }
@@ -657,7 +692,8 @@ public class UsingTest {
             final List<String> released = new ArrayList<>();
             final Try<String> result = Using.manager(outer -> {
                 outer.acquire("outer", released::add);
-                return Using.manager(inner -> inner.acquire("inner", released::add)).get();
+                return Using.manager(inner -> inner.acquire("inner", released::add))
+                        .get();
             });
             assertThat(result).isEqualTo(Try.success("inner"));
             assertThat(released).containsExactly("inner", "outer");
@@ -692,8 +728,7 @@ public class UsingTest {
         void acquireOfAValueThrowsAndReleasesIt() {
             final Using.Manager manager = leak();
             final List<String> released = new ArrayList<>();
-            assertThatThrownBy(() -> manager.acquire("late", released::add))
-                    .isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(() -> manager.acquire("late", released::add)).isInstanceOf(IllegalStateException.class);
             assertThat(released).containsExactly("late");
         }
 
@@ -702,8 +737,10 @@ public class UsingTest {
             final Using.Manager manager = leak();
             final IOException releaseFailure = new IOException("release");
             assertThatThrownBy(() -> manager.acquire("late", v -> {
-                throw releaseFailure;
-            })).isInstanceOf(IllegalStateException.class).hasSuppressedException(releaseFailure);
+                        throw releaseFailure;
+                    }))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasSuppressedException(releaseFailure);
         }
 
         @Test
@@ -711,8 +748,9 @@ public class UsingTest {
             final Using.Manager manager = leak();
             final OutOfMemoryError oom = new OutOfMemoryError("close");
             assertThatThrownBy(() -> manager.acquire(() -> {
-                throw oom;
-            })).isSameAs(oom);
+                        throw oom;
+                    }))
+                    .isSameAs(oom);
             assertThat(oom.getSuppressed()).singleElement().isInstanceOf(IllegalStateException.class);
         }
 

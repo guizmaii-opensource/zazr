@@ -7,8 +7,7 @@ import dev.zazr.test.Gen;
  */
 final class Values {
 
-    private Values() {
-    }
+    private Values() {}
 
     /// Integers between minus the size and the size: a small range, so that equal values are frequent.
     static Gen<Integer> integers() {

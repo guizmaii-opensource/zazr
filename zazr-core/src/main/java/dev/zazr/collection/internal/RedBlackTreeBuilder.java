@@ -86,7 +86,8 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         if (done) {
             throw new IllegalStateException("result() has already been called on this " + name);
         } else if (sorting) {
-            throw new IllegalStateException("the comparator threw while this " + name + " was sorting; it cannot be used any more");
+            throw new IllegalStateException(
+                    "the comparator threw while this " + name + " was sorting; it cannot be used any more");
         }
     }
 

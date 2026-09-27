@@ -36,7 +36,8 @@ class ModulePathConsumerTest {
 
     /// Runs a command, and returns its exit code followed by its output.
     private static String run(List<String> command) throws IOException, InterruptedException {
-        final Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        final Process process =
+                new ProcessBuilder(command).redirectErrorStream(true).start();
         final String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         assertThat(process.waitFor(2, TimeUnit.MINUTES)).isTrue();
         return process.exitValue() + "\n" + output;
@@ -44,9 +45,13 @@ class ModulePathConsumerTest {
 
     @Test
     void theModuleIsNamedAndExportsItsApi() throws URISyntaxException {
-        final ModuleDescriptor descriptor = ModuleFinder.of(location(Gen.class)).find("dev.zazr.test").orElseThrow().descriptor();
+        final ModuleDescriptor descriptor = ModuleFinder.of(location(Gen.class))
+                .find("dev.zazr.test")
+                .orElseThrow()
+                .descriptor();
         assertThat(descriptor.isAutomatic()).isFalse();
-        assertThat(descriptor.exports()).extracting(ModuleDescriptor.Exports::source)
+        assertThat(descriptor.exports())
+                .extracting(ModuleDescriptor.Exports::source)
                 .containsExactlyInAnyOrder("dev.zazr.test", "dev.zazr.test.laws");
         assertThat(descriptor.requires()).anySatisfy(requires -> {
             assertThat(requires.name()).isEqualTo("dev.zazr");
@@ -83,11 +88,21 @@ class ModulePathConsumerTest {
                 """);
         final String modulePath = location(Gen.class) + File.pathSeparator + location(dev.zazr.Tuple.class);
         final Path classes = dir.resolve("classes");
-        final List<String> javac = new ArrayList<>(List.of(tool("javac"), "--module-path", modulePath, "-d", classes.toString(),
-                sources.resolve("module-info.java").toString(), sources.resolve("consumer/Main.java").toString()));
+        final List<String> javac = new ArrayList<>(List.of(
+                tool("javac"),
+                "--module-path",
+                modulePath,
+                "-d",
+                classes.toString(),
+                sources.resolve("module-info.java").toString(),
+                sources.resolve("consumer/Main.java").toString()));
         assertThat(run(javac)).startsWith("0\n");
-        final String output = run(List.of(tool("java"), "--module-path", classes + File.pathSeparator + modulePath,
-                "--module", "consumer/consumer.Main"));
+        final String output = run(List.of(
+                tool("java"),
+                "--module-path",
+                classes + File.pathSeparator + modulePath,
+                "--module",
+                "consumer/consumer.Main"));
         assertThat(output).isEqualTo("0\nSatisfied[samples=200]\nVector(1, 2) Laws(mapIdentity, mapComposition)\n");
     }
 }

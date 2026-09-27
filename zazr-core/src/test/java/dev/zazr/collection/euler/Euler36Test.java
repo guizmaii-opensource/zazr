@@ -23,7 +23,8 @@ public class Euler36Test {
     private static int solve(int n) {
         return Stream.range(1, n)
                 .filter(Euler36Test::isDoubleBasePalindrome)
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 
     private static boolean isPalindrome(Vector<Character> seq) {
@@ -35,5 +36,4 @@ public class Euler36Test {
         final Vector<Character> rev = Vector.ofAll(Integer.toBinaryString(x).toCharArray());
         return isPalindrome(seq) && isPalindrome(rev);
     }
-
 }

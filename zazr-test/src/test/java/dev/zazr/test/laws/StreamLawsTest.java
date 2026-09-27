@@ -3,8 +3,6 @@ package dev.zazr.test.laws;
 import dev.zazr.collection.Stream;
 import dev.zazr.control.Option;
 import dev.zazr.test.Gen;
-
-
 import java.util.function.Function;
 
 /**
@@ -47,11 +45,18 @@ class StreamLawsTest extends SequenceLawsSuite<Stream<?>, Stream<Integer>, Strea
 
     @Override
     CollectionSubject<Integer, Stream<Integer>> collection() {
-        return new CollectionSubject<>(Gen.stream(Values.integers()), Stream::ofAll, Stream::size, Stream::toList, true, Option.some(IterationOrder.input()));
+        return new CollectionSubject<>(
+                Gen.stream(Values.integers()),
+                Stream::ofAll,
+                Stream::size,
+                Stream::toList,
+                true,
+                Option.some(IterationOrder.input()));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, Stream<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), Stream.collector(), Stream::ofAll, Option.some(IterationOrder.input()));
+        return new BuilderLaws.CollectorSubject<>(
+                Gen.list(Values.integers()), Stream.collector(), Stream::ofAll, Option.some(IterationOrder.input()));
     }
 }

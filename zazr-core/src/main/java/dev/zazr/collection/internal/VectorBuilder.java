@@ -40,8 +40,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
     private int depth = 1;
     private boolean done;
 
-    VectorBuilder() {
-    }
+    VectorBuilder() {}
 
     private void setLen(int i) {
         len1 = i & MASK;
@@ -201,8 +200,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
      * joined into the first entry of the top array, with offset counting the missing elements in front */
     private void initFrom(RadixVector<?> v) {
         switch (v) {
-            case RadixVector.Vector0<?> v0 -> {
-            }
+            case RadixVector.Vector0<?> v0 -> {}
             case RadixVector.Vector1<?> v1 -> {
                 depth = 1;
                 setLen(v1.prefix1.length);
@@ -281,7 +279,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
                 offset = WIDTH5 - v6.len12345;
                 setLen(v6.length0 + offset);
                 a6 = new Object[LASTWIDTH];
-                a6[0] = copyPrepend(copyPrepend(copyPrepend(copyPrepend(v6.prefix1, v6.prefix2), v6.prefix3), v6.prefix4), v6.prefix5);
+                a6[0] = copyPrepend(
+                        copyPrepend(copyPrepend(copyPrepend(v6.prefix1, v6.prefix2), v6.prefix3), v6.prefix4),
+                        v6.prefix5);
                 System.arraycopy(d6, 0, a6, 1, d6.length);
                 a5 = Arrays.copyOf(s5, WIDTH);
                 a4 = Arrays.copyOf(s4, WIDTH);
@@ -800,7 +800,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
             final int len1 = prefix1.length;
             final int len12 = len1 + prefix2.length * WIDTH;
             final int len123 = len12 + prefix3.length * WIDTH2;
-            result = new RadixVector.Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data, suffix3, suffix2, suffix1, realLen);
+            result = new RadixVector.Vector4<>(
+                    prefix1, len1, prefix2, len12, prefix3, len123, data, suffix3, suffix2, suffix1, realLen);
         } else if (len <= WIDTH5) {
             final int i1 = (len - 1) & MASK;
             final int i2 = ((len - 1) >>> BITS) & MASK;
@@ -820,8 +821,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
             final int len12 = len1 + prefix2.length * WIDTH;
             final int len123 = len12 + prefix3.length * WIDTH2;
             final int len1234 = len123 + prefix4.length * WIDTH3;
-            result = new RadixVector.Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data, suffix4, suffix3,
-                suffix2, suffix1, realLen);
+            result = new RadixVector.Vector5<>(
+                    prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data, suffix4, suffix3, suffix2,
+                    suffix1, realLen);
         } else {
             final int i1 = (len - 1) & MASK;
             final int i2 = ((len - 1) >>> BITS) & MASK;
@@ -845,8 +847,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
             final int len123 = len12 + prefix3.length * WIDTH2;
             final int len1234 = len123 + prefix4.length * WIDTH3;
             final int len12345 = len1234 + prefix5.length * WIDTH4;
-            result = new RadixVector.Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data,
-                suffix5, suffix4, suffix3, suffix2, suffix1, realLen);
+            result = new RadixVector.Vector6<>(
+                    prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data, suffix5,
+                    suffix4, suffix3, suffix2, suffix1, realLen);
         }
         return result;
     }

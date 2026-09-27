@@ -51,21 +51,19 @@ public class Euler43Test {
         return ALL_DIGITS
                 .combinations(2)
                 .flatMap(Vector::permutations)
-                .flatMap(firstTwoDigits -> DIVISORS
-                        .foldLeft(List.of(firstTwoDigits), (accumulator, divisor) -> accumulator
+                .flatMap(firstTwoDigits -> DIVISORS.foldLeft(
+                        List.of(firstTwoDigits),
+                        (accumulator, divisor) -> accumulator
                                 .flatMap(digitsSoFar -> ALL_DIGITS
                                         .removeAll(digitsSoFar)
-                                        .map(nextDigit -> digitsSoFar.append(nextDigit))
-                                )
-                                .filter(digitsToTest -> Integer.parseInt(digitsToTest.takeRight(3).mkString()) % divisor == 0)
-                        )
-                )
-                .map(tailDigitsWithProperty -> tailDigitsWithProperty
-                        .prepend(ALL_DIGITS
-                                .removeAll(tailDigitsWithProperty)
-                                .head()
-                        )
-                )
+                                        .map(nextDigit -> digitsSoFar.append(nextDigit)))
+                                .filter(digitsToTest -> Integer.parseInt(digitsToTest
+                                                        .takeRight(3)
+                                                        .mkString())
+                                                % divisor
+                                        == 0)))
+                .map(tailDigitsWithProperty -> tailDigitsWithProperty.prepend(
+                        ALL_DIGITS.removeAll(tailDigitsWithProperty).head()))
                 .map(v -> Long.parseLong(v.mkString()));
     }
 }

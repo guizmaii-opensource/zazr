@@ -3,10 +3,7 @@ package dev.zazr.test.laws;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.control.Option;
 import dev.zazr.test.Gen;
-
-
 import java.util.function.Function;
-
 
 /**
  * The laws of {@code TreeSet}.
@@ -41,11 +38,21 @@ class TreeSetLawsTest extends SetLawsSuite<TreeSet<?>, TreeSet<Integer>> {
 
     @Override
     CollectionSubject<Integer, TreeSet<Integer>> collection() {
-        return new CollectionSubject<>(Gen.treeSet(Values.integers()), TreeSet::ofAll, TreeSet::size, TreeSet::toList, false, Option.some(IterationOrder.sorted(java.util.Comparator.<Integer>naturalOrder())));
+        return new CollectionSubject<>(
+                Gen.treeSet(Values.integers()),
+                TreeSet::ofAll,
+                TreeSet::size,
+                TreeSet::toList,
+                false,
+                Option.some(IterationOrder.sorted(java.util.Comparator.<Integer>naturalOrder())));
     }
 
     @Override
     BuilderLaws.CollectorSubject<Integer, TreeSet<Integer>> collector() {
-        return new BuilderLaws.CollectorSubject<>(Gen.list(Values.integers()), TreeSet.collector(), TreeSet::ofAll, Option.some(IterationOrder.sorted(java.util.Comparator.<Integer>naturalOrder())));
+        return new BuilderLaws.CollectorSubject<>(
+                Gen.list(Values.integers()),
+                TreeSet.collector(),
+                TreeSet::ofAll,
+                Option.some(IterationOrder.sorted(java.util.Comparator.<Integer>naturalOrder())));
     }
 }

@@ -34,13 +34,15 @@ public class Euler34Test {
         // have to investigate.
         return Stream.rangeClosed(3, 2_540_160)
                 .filter(i -> i == sumOfDigitFactorial(i))
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 
     private static int sumOfDigitFactorial(int num) {
         return Vector.ofAll(Integer.toString(num).toCharArray())
                 .map(c -> Character.digit(c, 10))
                 .map(MEMOIZED_FACTORIAL)
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 }

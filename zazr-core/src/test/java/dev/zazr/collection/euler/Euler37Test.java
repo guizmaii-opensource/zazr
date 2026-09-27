@@ -36,7 +36,8 @@ public class Euler37Test {
         return PrimeNumbers.primes()
                 .filter(Euler37Test::isTruncatablePrime)
                 .take(11)
-                .sum().intValue();
+                .sum()
+                .intValue();
     }
 
     private static boolean isTruncatablePrime(int prime) {

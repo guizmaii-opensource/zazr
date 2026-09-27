@@ -45,20 +45,34 @@ public interface TraversableModule {
         return toTraversable(traversable, TreeSet.empty(comparator), values -> TreeSet.ofAll(comparator, values));
     }
 
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object, E extends Tuple2<? extends K, ? extends V>, R extends Map<K, V>> R toMap(
-            Traversable<T> traversable, R empty, Function<Iterable<E>, R> ofAll, Function<? super T, ? extends E> f, String nullResult) {
+    static <
+                    T extends @Nullable Object,
+                    K extends @Nullable Object,
+                    V extends @Nullable Object,
+                    E extends Tuple2<? extends K, ? extends V>,
+                    R extends Map<K, V>>
+            R toMap(
+                    Traversable<T> traversable,
+                    R empty,
+                    Function<Iterable<E>, R> ofAll,
+                    Function<? super T, ? extends E> f,
+                    String nullResult) {
         Objects.requireNonNull(f, "f is null");
-        return traversable.isEmpty() ? empty : ofAll.apply(Iterator.ofAll(traversable).map(t -> Objects.requireNonNull(f.apply(t), nullResult)));
+        return traversable.isEmpty()
+                ? empty
+                : ofAll.apply(Iterator.ofAll(traversable).map(t -> Objects.requireNonNull(f.apply(t), nullResult)));
     }
 
-    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object> Function<T, Tuple2<K, V>> entryMapper(
-            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    static <T extends @Nullable Object, K extends @Nullable Object, V extends @Nullable Object>
+            Function<T, Tuple2<K, V>> entryMapper(
+                    Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         return t -> Tuple.of(keyMapper.apply(t), valueMapper.apply(t));
     }
 
-    static <K extends @Nullable Object, T extends @Nullable Object> Option<Map<K, T>> arrangeBy(Map<K, ? extends Traversable<T>> groups) {
+    static <K extends @Nullable Object, T extends @Nullable Object> Option<Map<K, T>> arrangeBy(
+            Map<K, ? extends Traversable<T>> groups) {
         for (Tuple2<K, ? extends Traversable<T>> group : groups) {
             if (group._2().size() != 1) {
                 return Option.none();
@@ -105,11 +119,13 @@ public interface TraversableModule {
         }
     }
 
-    static <T extends @Nullable Object> T reduceLeft(Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
+    static <T extends @Nullable Object> T reduceLeft(
+            Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
         final java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
-            throw new NoSuchElementException("reduceLeft on empty " + traversable.getClass().getSimpleName());
+            throw new NoSuchElementException(
+                    "reduceLeft on empty " + traversable.getClass().getSimpleName());
         }
         T xs = iterator.next();
         while (iterator.hasNext()) {
@@ -118,13 +134,15 @@ public interface TraversableModule {
         return xs;
     }
 
-    static <T extends @Nullable Object> Option<T> reduceLeftOption(Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
+    static <T extends @Nullable Object> Option<T> reduceLeftOption(
+            Traversable<T> traversable, BiFunction<? super T, ? super T, ? extends T> op) {
         Objects.requireNonNull(op, "op is null");
         return traversable.isEmpty() ? Option.none() : Option.some(reduceLeft(traversable, op));
     }
 
     static <T extends @Nullable Object> T single(Traversable<T> traversable) {
-        return singleOption(traversable).getOrElseThrow(() -> new NoSuchElementException("Does not contain a single value"));
+        return singleOption(traversable)
+                .getOrElseThrow(() -> new NoSuchElementException("Does not contain a single value"));
     }
 
     static <T extends @Nullable Object> Option<T> singleOption(Traversable<T> traversable) {
@@ -156,7 +174,8 @@ public interface TraversableModule {
         return Option.some(max);
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> maxBy(Traversable<T> traversable, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> maxBy(
+            Traversable<T> traversable, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         final java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
@@ -224,7 +243,8 @@ public interface TraversableModule {
         return Option.some(min);
     }
 
-    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> minBy(Traversable<T> traversable, Function<? super T, ? extends U> f) {
+    static <T extends @Nullable Object, U extends Comparable<? super U>> Option<T> minBy(
+            Traversable<T> traversable, Function<? super T, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
         final java.util.Iterator<T> iterator = traversable.iterator();
         if (!iterator.hasNext()) {
@@ -351,6 +371,6 @@ public interface TraversableModule {
         if (size > 0 && Double.isNaN(sum) && Double.isInfinite(simpleSum)) {
             sum = simpleSum;
         }
-        return new double[] { sum, size };
+        return new double[] {sum, size};
     }
 }

@@ -44,18 +44,21 @@ public class CheckedPredicateTest {
             final Predicate<Object> preciate = CheckedPredicate.of(obj -> true).unchecked();
             try {
                 preciate.test(null);
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 Assertions.fail("Did not excepect an exception but received: " + x.getMessage());
             }
         }
 
         @Test
         public void shouldApplyAnUncheckedFunctionThatThrows() {
-            final Predicate<Object> preciate = CheckedPredicate.of(obj -> { throw new Error(); }).unchecked();
+            final Predicate<Object> preciate = CheckedPredicate.of(obj -> {
+                        throw new Error();
+                    })
+                    .unchecked();
             try {
                 preciate.test(null);
                 Assertions.fail("Did excepect an exception.");
-            } catch(Error x) {
+            } catch (Error x) {
                 // ok!
             }
         }

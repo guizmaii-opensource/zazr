@@ -29,8 +29,27 @@ public class ChampBulkTest {
         }
     }
 
-    private static final int[] HOT_HASHES = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, -1, Integer.MIN_VALUE, Integer.MAX_VALUE,
-            1 << 30, 2 << 30, 3 << 30, 1 << 25, 1 << 20, (1 << 25) | 1, (1 << 30) | 1 };
+    private static final int[] HOT_HASHES = {
+        0,
+        1,
+        2,
+        31,
+        32,
+        33,
+        1023,
+        1024,
+        1025,
+        -1,
+        Integer.MIN_VALUE,
+        Integer.MAX_VALUE,
+        1 << 30,
+        2 << 30,
+        3 << 30,
+        1 << 25,
+        1 << 20,
+        (1 << 25) | 1,
+        (1 << 30) | 1
+    };
 
     private static Key randomKey(Random random, int range) {
         final int hash = switch (random.nextInt(4)) {
@@ -43,11 +62,11 @@ public class ChampBulkTest {
     }
 
     /** The kept key object and its value, the model of a map entry. */
-    private record Kept(Object key, Object value) {
-    }
+    private record Kept(Object key, Object value) {}
 
     // a map trie of random keys, some shared with `pool` (as new, equal objects), and the model of what it keeps
-    private static BitmapIndexedMapNode<Key, Object> randomMap(Random random, java.util.List<Key> pool, java.util.Map<Key, Kept> model) {
+    private static BitmapIndexedMapNode<Key, Object> randomMap(
+            Random random, java.util.List<Key> pool, java.util.Map<Key, Kept> model) {
         BitmapIndexedMapNode<Key, Object> trie = MapNode.empty();
         final int size = switch (random.nextInt(4)) {
             case 0 -> random.nextInt(3);
@@ -106,7 +125,8 @@ public class ChampBulkTest {
             final java.util.Map<Key, Kept> leftModel = new java.util.HashMap<>();
             final java.util.Map<Key, Kept> rightModel = new java.util.HashMap<>();
             final BitmapIndexedMapNode<Key, Object> left = randomMap(random, pool, leftModel);
-            final BitmapIndexedMapNode<Key, Object> right = random.nextInt(10) == 0 ? left : randomMap(random, pool, rightModel);
+            final BitmapIndexedMapNode<Key, Object> right =
+                    random.nextInt(10) == 0 ? left : randomMap(random, pool, rightModel);
             if (right == left) {
                 rightModel.putAll(leftModel);
             }
@@ -127,7 +147,7 @@ public class ChampBulkTest {
 
     @Test
     public void shouldConcatMapsAtTheNodeBoundaries() {
-        final int[] sizes = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 };
+        final int[] sizes = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025};
         for (int leftSize : sizes) {
             for (int rightSize : sizes) {
                 BitmapIndexedMapNode<Key, String> left = MapNode.empty();
@@ -172,10 +192,12 @@ public class ChampBulkTest {
             }
             final boolean keep = random.nextBoolean();
             final java.util.List<Object> seen = new ArrayList<>();
-            final BitmapIndexedMapNode<Key, Object> result = trie.filter((k, v) -> {
-                seen.add(k);
-                return chosen.contains(k);
-            }, keep);
+            final BitmapIndexedMapNode<Key, Object> result = trie.filter(
+                    (k, v) -> {
+                        seen.add(k);
+                        return chosen.contains(k);
+                    },
+                    keep);
             // the predicate sees each entry once, in iteration order
             final java.util.List<Object> order = new ArrayList<>();
             trie.keysIterator().forEachRemaining(order::add);
@@ -225,7 +247,8 @@ public class ChampBulkTest {
             }
             assertThat(describe(trie)).isEqualTo(before);
             if (trie.size() > 0) {
-                assertThatThrownBy(() -> trie.transform((k, v) -> null)).isInstanceOf(NullPointerException.class)
+                assertThatThrownBy(() -> trie.transform((k, v) -> null))
+                        .isInstanceOf(NullPointerException.class)
                         .hasMessage("HashMap: value is null");
             }
         }
@@ -242,11 +265,14 @@ public class ChampBulkTest {
             Collections.shuffle(keys, random);
             BitmapIndexedMapNode<Key, Object> copy = MapNode.empty();
             for (Key key : keys) {
-                copy = copy.updated(new Key(key.hash(), key.id()), new String("v" + System.identityHashCode(model.get(key).value())));
+                copy = copy.updated(
+                        new Key(key.hash(), key.id()),
+                        new String("v" + System.identityHashCode(model.get(key).value())));
             }
             BitmapIndexedMapNode<Key, Object> same = MapNode.empty();
             for (Key key : keys) {
-                same = same.updated(new Key(key.hash(), key.id()), model.get(key).value());
+                same = same.updated(
+                        new Key(key.hash(), key.id()), model.get(key).value());
             }
             assertThat(MapNode.sameEntries(trie, same)).isTrue();
             assertThat(MapNode.sameEntries(same, trie)).isTrue();
@@ -255,20 +281,26 @@ public class ChampBulkTest {
                 assertThat(MapNode.sameEntries(trie, copy)).as("other values").isFalse();
                 final Key one = keys.get(0);
                 // one value differs
-                assertThat(MapNode.sameEntries(trie, same.updated(one, "other"))).isFalse();
+                assertThat(MapNode.sameEntries(trie, same.updated(one, "other")))
+                        .isFalse();
                 // one key missing, one key more
                 assertThat(MapNode.sameEntries(trie, same.removed(one))).isFalse();
                 assertThat(MapNode.sameEntries(trie.removed(one), same)).isFalse();
                 // one key swapped for another of the same hash: same size and hashes, different keys
                 final Key swapped = new Key(one.hash(), 7);
-                assertThat(MapNode.sameEntries(trie, same.removed(one).updated(swapped, model.get(one).value()))).isFalse();
+                assertThat(MapNode.sameEntries(
+                                trie,
+                                same.removed(one)
+                                        .updated(swapped, model.get(one).value())))
+                        .isFalse();
             }
         }
     }
 
     // -- sets
 
-    private static BitmapIndexedSetNode<Key> randomSet(Random random, java.util.List<Key> pool, java.util.Map<Key, Key> model) {
+    private static BitmapIndexedSetNode<Key> randomSet(
+            Random random, java.util.List<Key> pool, java.util.Map<Key, Key> model) {
         BitmapIndexedSetNode<Key> trie = SetNode.empty();
         final int size = switch (random.nextInt(4)) {
             case 0 -> random.nextInt(3);
@@ -369,8 +401,10 @@ public class ChampBulkTest {
 
             assertThat(left.subsetOf(right, 0)).isEqualTo(rightModel.keySet().containsAll(leftModel.keySet()));
             assertThat(right.subsetOf(left, 0)).isEqualTo(leftModel.keySet().containsAll(rightModel.keySet()));
-            assertThat(SetNode.sameElements(left, right)).isEqualTo(leftModel.keySet().equals(rightModel.keySet()));
-            assertThat(SetNode.sameElements(right, left)).isEqualTo(leftModel.keySet().equals(rightModel.keySet()));
+            assertThat(SetNode.sameElements(left, right))
+                    .isEqualTo(leftModel.keySet().equals(rightModel.keySet()));
+            assertThat(SetNode.sameElements(right, left))
+                    .isEqualTo(leftModel.keySet().equals(rightModel.keySet()));
 
             assertThat(describe(left)).isEqualTo(leftBefore);
             assertThat(describe(right)).isEqualTo(rightBefore);
@@ -379,7 +413,7 @@ public class ChampBulkTest {
 
     @Test
     public void shouldConcatAndDiffSetsAtTheNodeBoundaries() {
-        final int[] sizes = { 0, 1, 2, 31, 32, 33, 1023, 1024, 1025 };
+        final int[] sizes = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025};
         final Function<int[], BitmapIndexedSetNode<Key>> range = bounds -> {
             BitmapIndexedSetNode<Key> trie = SetNode.empty();
             for (int i = bounds[0]; i < bounds[1]; i++) {
@@ -389,16 +423,19 @@ public class ChampBulkTest {
         };
         for (int leftSize : sizes) {
             for (int rightSize : sizes) {
-                final BitmapIndexedSetNode<Key> left = range.apply(new int[] { 0, leftSize });
-                final BitmapIndexedSetNode<Key> right = range.apply(new int[] { leftSize / 2, leftSize / 2 + rightSize });
+                final BitmapIndexedSetNode<Key> left = range.apply(new int[] {0, leftSize});
+                final BitmapIndexedSetNode<Key> right = range.apply(new int[] {leftSize / 2, leftSize / 2 + rightSize});
                 final BitmapIndexedSetNode<Key> union = left.concat(right, 0);
                 assertValid(union);
                 assertThat(union.size()).isEqualTo(Math.max(leftSize, leftSize / 2 + rightSize));
                 final BitmapIndexedSetNode<Key> diff = left.diff(right, 0);
                 assertValid(diff);
-                assertThat(diff.size()).isEqualTo(Math.min(leftSize, leftSize / 2) + Math.max(0, leftSize - (leftSize / 2 + rightSize)));
+                assertThat(diff.size())
+                        .isEqualTo(
+                                Math.min(leftSize, leftSize / 2) + Math.max(0, leftSize - (leftSize / 2 + rightSize)));
                 for (int i = 0; i < leftSize; i++) {
-                    assertThat(diff.contains(new Key(i, 0))).isEqualTo(i < leftSize / 2 || i >= leftSize / 2 + rightSize);
+                    assertThat(diff.contains(new Key(i, 0)))
+                            .isEqualTo(i < leftSize / 2 || i >= leftSize / 2 + rightSize);
                 }
                 assertThat(right.subsetOf(union, 0)).isTrue();
                 assertThat(left.subsetOf(union, 0)).isTrue();
@@ -423,10 +460,12 @@ public class ChampBulkTest {
             }
             final boolean keep = random.nextBoolean();
             final java.util.List<Key> seen = new ArrayList<>();
-            final BitmapIndexedSetNode<Key> result = trie.filter(k -> {
-                seen.add(k);
-                return chosen.contains(k);
-            }, keep);
+            final BitmapIndexedSetNode<Key> result = trie.filter(
+                    k -> {
+                        seen.add(k);
+                        return chosen.contains(k);
+                    },
+                    keep);
             assertThat(seen).containsExactlyElementsOf(elements(trie));
             final java.util.Map<Key, Key> expected = new java.util.HashMap<>(model);
             expected.keySet().removeIf(k -> chosen.contains(k) != keep);

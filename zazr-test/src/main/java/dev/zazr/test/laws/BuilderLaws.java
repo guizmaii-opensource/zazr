@@ -4,7 +4,6 @@ import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import dev.zazr.test.Check;
 import dev.zazr.test.Gen;
-
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.Function;
@@ -15,8 +14,7 @@ import java.util.stream.Collector;
  */
 public final class BuilderLaws {
 
-    private BuilderLaws() {
-    }
+    private BuilderLaws() {}
 
     /**
      * A collector and the {@code ofAll} it must agree with.
@@ -29,9 +27,11 @@ public final class BuilderLaws {
      * @param <T>       the element type
      * @param <F>       the collection type
      */
-    public record CollectorSubject<T, F extends Iterable<T>>(Gen<? extends Iterable<T>> elements,
-                                                             Collector<T, ?, F> collector, Function<Iterable<T>, F> ofAll,
-                                                             Option<IterationOrder<T>> order) {
+    public record CollectorSubject<T, F extends Iterable<T>>(
+            Gen<? extends Iterable<T>> elements,
+            Collector<T, ?, F> collector,
+            Function<Iterable<T>, F> ofAll,
+            Option<IterationOrder<T>> order) {
 
         /**
          * Creates a subject.
@@ -57,8 +57,8 @@ public final class BuilderLaws {
          * @param ofAll     the collection type's {@code ofAll}
          * @throws NullPointerException if an argument is null
          */
-        public CollectorSubject(Gen<? extends Iterable<T>> elements, Collector<T, ?, F> collector,
-                                Function<Iterable<T>, F> ofAll) {
+        public CollectorSubject(
+                Gen<? extends Iterable<T>> elements, Collector<T, ?, F> collector, Function<Iterable<T>, F> ofAll) {
             this(elements, collector, ofAll, Option.none());
         }
     }
@@ -70,16 +70,19 @@ public final class BuilderLaws {
      * @return the law, checked against a generator of lists of elements
      */
     public static Law<Gen<? extends Iterable<?>>> builderResultEqualsOfAll() {
-        return Law.of("builderResultEqualsOfAll", (elements, config) -> Check.evaluate(config, elements, Values.integers(),
-                (xs, hint) -> {
+        return Law.of(
+                "builderResultEqualsOfAll",
+                (elements, config) -> Check.evaluate(config, elements, Values.integers(), (xs, hint) -> {
                     final Vector<Object> expected = Vector.ofAll(xs);
                     final Vector.Builder<Object> oneByOne = Vector.newBuilder();
                     xs.forEach(oneByOne::add);
                     final Vector.Builder<Object> hinted = Vector.newBuilder(Math.abs(hint));
                     xs.forEach(hinted::add);
                     final Vector<Object> all = Vector.newBuilder().addAll(xs).result();
-                    return Results.equal(oneByOne.result(), expected) && Results.equal(hinted.result(), expected)
-                            && Results.equal(all, expected) && Results.equal(CollectionLaws.elements(expected), elements(xs));
+                    return Results.equal(oneByOne.result(), expected)
+                            && Results.equal(hinted.result(), expected)
+                            && Results.equal(all, expected)
+                            && Results.equal(CollectionLaws.elements(expected), elements(xs));
                 }));
     }
 
@@ -92,16 +95,20 @@ public final class BuilderLaws {
      * @return the law
      */
     public static <T, F extends Iterable<T>> Law<CollectorSubject<T, F>> collectorResultEqualsOfAll() {
-        return Law.of("collectorResultEqualsOfAll", (subject, config) -> Check.evaluate(config, subject.elements(), xs -> {
-            final ArrayList<T> list = CollectionLaws.elements(xs);
-            final F expected = subject.ofAll().apply(list);
-            final F sequential = list.stream().collect(subject.collector());
-            final F parallel = list.parallelStream().collect(subject.collector());
-            return Results.equal(sequential, expected) && Results.equal(parallel, expected)
-                    && subject.order().map(order -> Results.equal(CollectionLaws.elements(sequential), order.of(list))
-                            && Results.equal(CollectionLaws.elements(parallel), order.of(list)))
-                    .getOrElse(true);
-        }));
+        return Law.of(
+                "collectorResultEqualsOfAll",
+                (subject, config) -> Check.evaluate(config, subject.elements(), xs -> {
+                    final ArrayList<T> list = CollectionLaws.elements(xs);
+                    final F expected = subject.ofAll().apply(list);
+                    final F sequential = list.stream().collect(subject.collector());
+                    final F parallel = list.parallelStream().collect(subject.collector());
+                    return Results.equal(sequential, expected)
+                            && Results.equal(parallel, expected)
+                            && subject.order()
+                                    .map(order -> Results.equal(CollectionLaws.elements(sequential), order.of(list))
+                                            && Results.equal(CollectionLaws.elements(parallel), order.of(list)))
+                                    .getOrElse(true);
+                }));
     }
 
     private static ArrayList<Object> elements(Iterable<?> xs) {

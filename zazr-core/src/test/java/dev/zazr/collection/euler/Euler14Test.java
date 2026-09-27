@@ -5,7 +5,6 @@ import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-
 public class Euler14Test {
 
     /**
@@ -37,12 +36,13 @@ public class Euler14Test {
     public void shouldSolveProblem14() {
         // equivalent to from(1L).take(1_000_000)
         Assertions.assertThat(Stream.from(500_000L)
-                .take(500_000)
-                .maxBy(collatzSequenceLength)
-                .get()).isEqualTo(837799);
+                        .take(500_000)
+                        .maxBy(collatzSequenceLength)
+                        .get())
+                .isEqualTo(837799);
     }
 
-    private final static Function<Long, Long> collatzRecursive = n -> {
+    private static final Function<Long, Long> collatzRecursive = n -> {
         if (n == 1) {
             return 1L;
         } else {
@@ -54,5 +54,5 @@ public class Euler14Test {
         }
     };
 
-    private final static Function<Long, Long> collatzSequenceLength = Memoize.of(collatzRecursive);
+    private static final Function<Long, Long> collatzSequenceLength = Memoize.of(collatzRecursive);
 }

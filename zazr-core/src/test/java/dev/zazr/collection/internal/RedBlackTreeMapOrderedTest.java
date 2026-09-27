@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class RedBlackTreeMapOrderedTest {
 
     private static final long SEED = 20260925L;
-    private static final int[] SIZES = { 0, 1, 2, 3, 4, 5, 7, 8, 9, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 4097 };
+    private static final int[] SIZES = {0, 1, 2, 3, 4, 5, 7, 8, 9, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 4097};
 
     private static final Comparator<Integer> NATURAL = Comparators.naturalComparator();
     private static final Comparator<Integer> REVERSED = NATURAL.reversed();
@@ -82,7 +82,8 @@ public class RedBlackTreeMapOrderedTest {
         assertSameShape(mapped, source);
         assertThat(mapped.comparator()).isSameAs(order);
         assertThat(calls).as("the mapper is called once per element, in order").isEqualTo(elements(source));
-        assertThat(elements(mapped)).isEqualTo(elements(source).stream().map(mapper).toList());
+        assertThat(elements(mapped))
+                .isEqualTo(elements(source).stream().map(mapper).toList());
         for (T element : source) {
             assertThat(mapped.contains(mapper.apply(element))).isTrue();
         }
@@ -130,14 +131,16 @@ public class RedBlackTreeMapOrderedTest {
 
     @Test
     public void shouldReturnAnEmptyTreeOfTheGivenComparatorForAnEmptySource() {
-        final RedBlackTree<Long> mapped = RedBlackTreeModule.Node.mapOrdered(RedBlackTree.empty(NATURAL), LONG_REVERSED, Integer::longValue);
+        final RedBlackTree<Long> mapped =
+                RedBlackTreeModule.Node.mapOrdered(RedBlackTree.empty(NATURAL), LONG_REVERSED, Integer::longValue);
         assertThat(mapped.isEmpty()).isTrue();
         assertThat(mapped.comparator()).isSameAs(LONG_REVERSED);
     }
 
     @Test
     public void shouldLeaveTheSourceUnchanged() {
-        final RedBlackTree<Integer> source = sources(NATURAL, 1025, new Random(SEED)).get(1);
+        final RedBlackTree<Integer> source =
+                sources(NATURAL, 1025, new Random(SEED)).get(1);
         final java.util.List<Integer> before = elements(source);
         RedBlackTreeModule.Node.mapOrdered(source, LONG_NATURAL, Integer::longValue);
         assertValid(source);
@@ -146,15 +149,18 @@ public class RedBlackTreeMapOrderedTest {
 
     @Test
     public void shouldPropagateAnExceptionOfTheMapper() {
-        final RedBlackTree<Integer> source = sources(NATURAL, 33, new Random(SEED)).get(0);
+        final RedBlackTree<Integer> source =
+                sources(NATURAL, 33, new Random(SEED)).get(0);
         final java.util.List<Integer> calls = new ArrayList<>();
         assertThatThrownBy(() -> RedBlackTreeModule.Node.mapOrdered(source, NATURAL, i -> {
-            calls.add(i);
-            if (i == 10) {
-                throw new IllegalStateException("boom");
-            }
-            return i;
-        })).isInstanceOf(IllegalStateException.class).hasMessage("boom");
+                    calls.add(i);
+                    if (i == 10) {
+                        throw new IllegalStateException("boom");
+                    }
+                    return i;
+                }))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("boom");
         assertThat(calls).containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     }
 }

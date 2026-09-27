@@ -2,7 +2,6 @@ package dev.zazr.test.laws;
 
 import dev.zazr.control.Try;
 import dev.zazr.test.Gen;
-
 import java.util.function.Function;
 
 /**
@@ -55,13 +54,16 @@ class TryLawsTest extends ControlLawsSuite<Try<?>, TryLawsTest.Subject> {
 
     @Override
     EqualitySubject<Try<?>> equality() {
-        return new EqualitySubject<>(subject().values(), t -> switch (t) {
-            case Try.Success<?>(var v) -> Try.success(v);
-            case Try.Failure<?>(var e) -> Try.failure(e);
-        }, t -> switch (t) {
-            case Try.Success<?>(var v) -> java.util.List.of("success", v);
-            case Try.Failure<?>(var e) -> java.util.List.of("failure", new Identity(e));
-        });
+        return new EqualitySubject<>(
+                subject().values(),
+                t -> switch (t) {
+                    case Try.Success<?>(var v) -> Try.success(v);
+                    case Try.Failure<?>(var e) -> Try.failure(e);
+                },
+                t -> switch (t) {
+                    case Try.Success<?>(var v) -> java.util.List.of("success", v);
+                    case Try.Failure<?>(var e) -> java.util.List.of("failure", new Identity(e));
+                });
     }
 
     /// A failure's cause compared by reference, as `Failure` compares it.

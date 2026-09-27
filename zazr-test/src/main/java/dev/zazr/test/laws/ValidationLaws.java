@@ -10,8 +10,7 @@ import dev.zazr.test.Gen;
  */
 public final class ValidationLaws {
 
-    private ValidationLaws() {
-    }
+    private ValidationLaws() {}
 
     /**
      * {@code a.zip(b)} is {@code Valid} of both values when both are valid, and otherwise {@code Invalid} of the
@@ -20,8 +19,10 @@ public final class ValidationLaws {
      * @return the law, checked against a generator of validations
      */
     public static Law<Gen<Validation<?, ?>>> validationZipAccumulatesBothSides() {
-        return Law.of("validationZipAccumulatesBothSides", (values, config) -> Check.evaluate(config, values, values,
-                (a, b) -> Results.equal(zip(a, b), expected(a, b))));
+        return Law.of(
+                "validationZipAccumulatesBothSides",
+                (values, config) ->
+                        Check.evaluate(config, values, values, (a, b) -> Results.equal(zip(a, b), expected(a, b))));
     }
 
     /**
@@ -41,15 +42,20 @@ public final class ValidationLaws {
     @SuppressWarnings("unchecked")
     private static Validation<Object, ?> expected(Validation<?, ?> a, Validation<?, ?> b) {
         return switch (a) {
-            case Validation.Valid<?, ?>(var x) -> switch (b) {
-                case Validation.Valid<?, ?>(var y) -> Validation.valid(Tuple.of(x, y));
-                case Validation.Invalid<?, ?>(var errors) -> Validation.invalidAll((dev.zazr.collection.NonEmptyVector<Object>) errors);
-            };
-            case Validation.Invalid<?, ?>(var errorsA) -> switch (b) {
-                case Validation.Valid<?, ?> ignored -> Validation.invalidAll((dev.zazr.collection.NonEmptyVector<Object>) errorsA);
-                case Validation.Invalid<?, ?>(var errorsB) -> Validation.invalidAll(
-                        ((dev.zazr.collection.NonEmptyVector<Object>) errorsA).appendAll(errorsB));
-            };
+            case Validation.Valid<?, ?>(var x) ->
+                switch (b) {
+                    case Validation.Valid<?, ?>(var y) -> Validation.valid(Tuple.of(x, y));
+                    case Validation.Invalid<?, ?>(var errors) ->
+                        Validation.invalidAll((dev.zazr.collection.NonEmptyVector<Object>) errors);
+                };
+            case Validation.Invalid<?, ?>(var errorsA) ->
+                switch (b) {
+                    case Validation.Valid<?, ?> ignored ->
+                        Validation.invalidAll((dev.zazr.collection.NonEmptyVector<Object>) errorsA);
+                    case Validation.Invalid<?, ?>(var errorsB) ->
+                        Validation.invalidAll(
+                                ((dev.zazr.collection.NonEmptyVector<Object>) errorsA).appendAll(errorsB));
+                };
         };
     }
 }

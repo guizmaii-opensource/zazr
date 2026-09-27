@@ -196,11 +196,15 @@ public class VectorPropertyTest {
             dev.zazr.collection.List<Object> expected = dev.zazr.collection.List.empty();
             Vector<Object> actual = Vector.empty();
             for (int j = 0; j < 20_000; j++) {
-                dev.zazr.collection.List<Tuple2<dev.zazr.collection.List<Object>, Vector<Object>>> history = dev.zazr.collection.List.empty();
+                dev.zazr.collection.List<Tuple2<dev.zazr.collection.List<Object>, Vector<Object>>> history =
+                        dev.zazr.collection.List.empty();
 
                 if (percent(random) < 20) {
-                    expected = dev.zazr.collection.List.ofAll(Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
-                    actual = (percent(random) < 30) ? Vector.narrow(Vector.ofAll(ints(expected))) : Vector.ofAll(expected);
+                    expected = dev.zazr.collection.List.ofAll(
+                            Vector.ofAll(randomValues(random, 100)).filter(v -> v instanceof Integer));
+                    actual = (percent(random) < 30)
+                            ? Vector.narrow(Vector.ofAll(ints(expected)))
+                            : Vector.ofAll(expected);
                     assertAreEqual(expected, actual);
                     history = history.append(Tuple.of(expected, actual));
                 }
@@ -215,7 +219,9 @@ public class VectorPropertyTest {
                     Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
                     expected = expected.appendAll(values);
 
-                    values = (percent(random) < 50) ? Iterator.ofAll(values.iterator()) : values;  /* not traversable again */
+                    values = (percent(random) < 50)
+                            ? Iterator.ofAll(values.iterator())
+                            : values; /* not traversable again */
                     actual = assertAreEqual(actual, values, Vector::appendAll, expected);
                     history = history.append(Tuple.of(expected, actual));
                 }
@@ -230,7 +236,7 @@ public class VectorPropertyTest {
                     Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
                     expected = expected.prependAll(values);
 
-                    values = (percent(random) < 50) ? Iterator.ofAll(values) : values;  /* not traversable again */
+                    values = (percent(random) < 50) ? Iterator.ofAll(values) : values; /* not traversable again */
                     actual = assertAreEqual(actual, values, Vector::prependAll, expected);
                     history = history.append(Tuple.of(expected, actual));
                 }
@@ -247,7 +253,7 @@ public class VectorPropertyTest {
                     Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
                     expected = expected.insertAll(index, values);
 
-                    values = (percent(random) < 50) ? Iterator.ofAll(values) : values;  /* not traversable again */
+                    values = (percent(random) < 50) ? Iterator.ofAll(values) : values; /* not traversable again */
                     actual = assertAreEqual(actual, values, (a, p) -> a.insertAll(index, p), expected);
                     history = history.append(Tuple.of(expected, actual));
                 }
@@ -261,7 +267,9 @@ public class VectorPropertyTest {
 
                 if (!expected.isEmpty()) {
                     assertThat(actual.head()).isEqualTo(expected.head());
-                    Assertions.assertThat(new java.util.ArrayList<>(actual.tail().asJava())).isEqualTo(new java.util.ArrayList<>(expected.tail().asJava()));
+                    Assertions.assertThat(
+                                    new java.util.ArrayList<>(actual.tail().asJava()))
+                            .isEqualTo(new java.util.ArrayList<>(expected.tail().asJava()));
                     history = history.append(Tuple.of(expected, actual));
                 }
 
@@ -312,16 +320,20 @@ public class VectorPropertyTest {
         }
     }
 
-    private int percent(Random random) { return random.nextInt(101); }
+    private int percent(Random random) {
+        return random.nextInt(101);
+    }
+
     private Iterable<Object> randomValues(Random random, int count) {
         final Vector<Object> values = Vector.range(0, count).map(v -> randomValue(random));
         final int percent = percent(random);
         if (percent < 30) {
-            return new java.util.ArrayList<>(values.asJava());  /* not Traversable */
+            return new java.util.ArrayList<>(values.asJava()); /* not Traversable */
         } else {
             return values;
         }
     }
+
     private Object randomValue(Random random) {
         final int percent = percent(random);
         if (percent < 10) {
@@ -331,7 +343,8 @@ public class VectorPropertyTest {
         }
     }
 
-    private static <T extends Traversable<?>, P> T assertAreEqual(T previousActual, P param, BiFunction<T, P, T> actualProvider, Traversable<?> expected) {
+    private static <T extends Traversable<?>, P> T assertAreEqual(
+            T previousActual, P param, BiFunction<T, P, T> actualProvider, Traversable<?> expected) {
         final T actual = actualProvider.apply(previousActual, param);
         assertAreEqual(expected, actual);
         return actual; // makes debugging a lot easier, as the frame can be dropped and rerun on AssertError

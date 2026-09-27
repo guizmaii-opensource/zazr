@@ -4,13 +4,12 @@ package dev.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import dev.zazr.collection.List;
 import dev.zazr.collection.Vector;
 import java.util.Comparator;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Tuple0Test {
 
@@ -82,36 +81,43 @@ public class Tuple0Test {
 
     @Test
     public void shouldConcatTuple4() {
-        final Tuple4<Integer, Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3, 4));
+        final Tuple4<Integer, Integer, Integer, Integer> actual =
+                Tuple0.instance().concat(Tuple.of(1, 2, 3, 4));
         final Tuple4<Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple5() {
-        final Tuple5<Integer, Integer, Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5));
+        final Tuple5<Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5));
         final Tuple5<Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple6() {
-        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6));
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6));
         final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple7() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6, 7));
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7);
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6, 7));
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+                Tuple.of(1, 2, 3, 4, 5, 6, 7);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple8() {
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6, 7, 8));
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
+        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6, 7, 8));
+        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+                Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -132,7 +138,6 @@ public class Tuple0Test {
     @Test
     public void shouldComputeCorrectHashCode() {
         assertThat(createTuple().hashCode()).isEqualTo(createTuple().hashCode());
-
     }
 
     @Test

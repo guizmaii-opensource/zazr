@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /// above the proportion that makes a LinkedHashMap compact its insertion order.
 public class MapIterationTest {
 
-    private static final int[] SIZES = { 0, 1, 2, 3, 31, 32, 33, 1023, 1024, 1025 };
+    private static final int[] SIZES = {0, 1, 2, 3, 31, 32, 33, 1023, 1024, 1025};
 
     // which keys of 0 until size are removed after they were all put
     private static final java.util.List<Removal> REMOVALS = java.util.List.of(
@@ -135,7 +135,9 @@ public class MapIterationTest {
         }
         final java.util.List<Integer> keys = new ArrayList<>();
         iterator.forEachRemaining(entry -> keys.add(entry._1()));
-        assertThat(keys).containsExactlyElementsOf(java.util.stream.IntStream.range(0, 100).boxed().toList());
+        assertThat(keys)
+                .containsExactlyElementsOf(
+                        java.util.stream.IntStream.range(0, 100).boxed().toList());
     }
 
     @Test
@@ -251,7 +253,8 @@ public class MapIterationTest {
                             expected.remove(i);
                         }
                     }
-                    assertThat(javaList(actual)).as(order + " " + size + " " + removal.name())
+                    assertThat(javaList(actual))
+                            .as(order + " " + size + " " + removal.name())
                             .containsExactlyElementsOf(expected);
                 }
             }
@@ -272,16 +275,19 @@ public class MapIterationTest {
         return copy;
     }
 
-    private static <K, V> void assertLinkedHashMap(LinkedHashMap<K, V> actual, java.util.LinkedHashMap<K, V> expected, String description) {
+    private static <K, V> void assertLinkedHashMap(
+            LinkedHashMap<K, V> actual, java.util.LinkedHashMap<K, V> expected, String description) {
         assertEntries(actual, expected, description);
         // the reversed view walks the insertion order backwards without the forward iterator
-        final java.util.List<K> reversedKeys = new ArrayList<>(actual.asJavaMap().reversed().keySet());
+        final java.util.List<K> reversedKeys =
+                new ArrayList<>(actual.asJavaMap().reversed().keySet());
         java.util.Collections.reverse(reversedKeys);
         assertThat(reversedKeys).as(description + " reversed view").containsExactlyElementsOf(expected.keySet());
         assertThat(javaList(actual.keySet())).as(description + " keySet").containsExactlyElementsOf(expected.keySet());
     }
 
-    private static <K, V> void assertTreeMap(TreeMap<K, V> actual, java.util.TreeMap<K, V> expected, String description) {
+    private static <K, V> void assertTreeMap(
+            TreeMap<K, V> actual, java.util.TreeMap<K, V> expected, String description) {
         assertEntries(actual, expected, description);
     }
 
@@ -307,7 +313,9 @@ public class MapIterationTest {
         final Vector<V> values = actual.values();
         assertThat(values.size()).as(description + " values size").isEqualTo(expected.size());
         assertThat(javaList(values)).as(description + " values").containsExactlyElementsOf(expectedValues);
-        assertThat(values).as(description + " values against the entries").isEqualTo(Vector.ofAll(Iterator.ofAll(iterated).map(Tuple2::_2)));
+        assertThat(values)
+                .as(description + " values against the entries")
+                .isEqualTo(Vector.ofAll(Iterator.ofAll(iterated).map(Tuple2::_2)));
         assertThat(actual.size()).as(description + " size").isEqualTo(expected.size());
     }
 }

@@ -4,14 +4,14 @@ package dev.zazr;
    G E N E R A T O R   C R A F T E D
 \*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import dev.zazr.collection.List;
 import dev.zazr.collection.Vector;
 import java.util.Comparator;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Tuple6Test {
 
@@ -40,68 +40,74 @@ public class Tuple6Test {
 
     @Test
     public void shouldUpdate1() {
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update1(42);
-      assertThat(tuple._1()).isEqualTo(42);
-      assertThat(tuple._2()).isEqualTo(2);
-      assertThat(tuple._3()).isEqualTo(3);
-      assertThat(tuple._4()).isEqualTo(4);
-      assertThat(tuple._5()).isEqualTo(5);
-      assertThat(tuple._6()).isEqualTo(6);
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+                createIntTuple(1, 2, 3, 4, 5, 6).update1(42);
+        assertThat(tuple._1()).isEqualTo(42);
+        assertThat(tuple._2()).isEqualTo(2);
+        assertThat(tuple._3()).isEqualTo(3);
+        assertThat(tuple._4()).isEqualTo(4);
+        assertThat(tuple._5()).isEqualTo(5);
+        assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate2() {
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update2(42);
-      assertThat(tuple._1()).isEqualTo(1);
-      assertThat(tuple._2()).isEqualTo(42);
-      assertThat(tuple._3()).isEqualTo(3);
-      assertThat(tuple._4()).isEqualTo(4);
-      assertThat(tuple._5()).isEqualTo(5);
-      assertThat(tuple._6()).isEqualTo(6);
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+                createIntTuple(1, 2, 3, 4, 5, 6).update2(42);
+        assertThat(tuple._1()).isEqualTo(1);
+        assertThat(tuple._2()).isEqualTo(42);
+        assertThat(tuple._3()).isEqualTo(3);
+        assertThat(tuple._4()).isEqualTo(4);
+        assertThat(tuple._5()).isEqualTo(5);
+        assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate3() {
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update3(42);
-      assertThat(tuple._1()).isEqualTo(1);
-      assertThat(tuple._2()).isEqualTo(2);
-      assertThat(tuple._3()).isEqualTo(42);
-      assertThat(tuple._4()).isEqualTo(4);
-      assertThat(tuple._5()).isEqualTo(5);
-      assertThat(tuple._6()).isEqualTo(6);
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+                createIntTuple(1, 2, 3, 4, 5, 6).update3(42);
+        assertThat(tuple._1()).isEqualTo(1);
+        assertThat(tuple._2()).isEqualTo(2);
+        assertThat(tuple._3()).isEqualTo(42);
+        assertThat(tuple._4()).isEqualTo(4);
+        assertThat(tuple._5()).isEqualTo(5);
+        assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate4() {
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update4(42);
-      assertThat(tuple._1()).isEqualTo(1);
-      assertThat(tuple._2()).isEqualTo(2);
-      assertThat(tuple._3()).isEqualTo(3);
-      assertThat(tuple._4()).isEqualTo(42);
-      assertThat(tuple._5()).isEqualTo(5);
-      assertThat(tuple._6()).isEqualTo(6);
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+                createIntTuple(1, 2, 3, 4, 5, 6).update4(42);
+        assertThat(tuple._1()).isEqualTo(1);
+        assertThat(tuple._2()).isEqualTo(2);
+        assertThat(tuple._3()).isEqualTo(3);
+        assertThat(tuple._4()).isEqualTo(42);
+        assertThat(tuple._5()).isEqualTo(5);
+        assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate5() {
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update5(42);
-      assertThat(tuple._1()).isEqualTo(1);
-      assertThat(tuple._2()).isEqualTo(2);
-      assertThat(tuple._3()).isEqualTo(3);
-      assertThat(tuple._4()).isEqualTo(4);
-      assertThat(tuple._5()).isEqualTo(42);
-      assertThat(tuple._6()).isEqualTo(6);
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+                createIntTuple(1, 2, 3, 4, 5, 6).update5(42);
+        assertThat(tuple._1()).isEqualTo(1);
+        assertThat(tuple._2()).isEqualTo(2);
+        assertThat(tuple._3()).isEqualTo(3);
+        assertThat(tuple._4()).isEqualTo(4);
+        assertThat(tuple._5()).isEqualTo(42);
+        assertThat(tuple._6()).isEqualTo(6);
     }
 
     @Test
     public void shouldUpdate6() {
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple = createIntTuple(1, 2, 3, 4, 5, 6).update6(42);
-      assertThat(tuple._1()).isEqualTo(1);
-      assertThat(tuple._2()).isEqualTo(2);
-      assertThat(tuple._3()).isEqualTo(3);
-      assertThat(tuple._4()).isEqualTo(4);
-      assertThat(tuple._5()).isEqualTo(5);
-      assertThat(tuple._6()).isEqualTo(42);
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+                createIntTuple(1, 2, 3, 4, 5, 6).update6(42);
+        assertThat(tuple._1()).isEqualTo(1);
+        assertThat(tuple._2()).isEqualTo(2);
+        assertThat(tuple._3()).isEqualTo(3);
+        assertThat(tuple._4()).isEqualTo(4);
+        assertThat(tuple._5()).isEqualTo(5);
+        assertThat(tuple._6()).isEqualTo(42);
     }
 
     @Test
@@ -186,90 +192,139 @@ public class Tuple6Test {
     @Test
     public void shouldMap() {
         final Tuple6<Object, Object, Object, Object, Object, Object> tuple = createTuple();
-        final Tuple6<Object, Object, Object, Object, Object, Object> actual = tuple.map((o1, o2, o3, o4, o5, o6) -> tuple);
+        final Tuple6<Object, Object, Object, Object, Object, Object> actual =
+                tuple.map((o1, o2, o3, o4, o5, o6) -> tuple);
         assertThat(actual).isEqualTo(tuple);
     }
 
     @Test
     public void shouldMapComponents() {
-      final Tuple6<Object, Object, Object, Object, Object, Object> tuple = createTuple();
-      final Function<Object, Object> f1 = Function.identity();
-      final Function<Object, Object> f2 = Function.identity();
-      final Function<Object, Object> f3 = Function.identity();
-      final Function<Object, Object> f4 = Function.identity();
-      final Function<Object, Object> f5 = Function.identity();
-      final Function<Object, Object> f6 = Function.identity();
-      final Tuple6<Object, Object, Object, Object, Object, Object> actual = tuple.map(f1, f2, f3, f4, f5, f6);
-      assertThat(actual).isEqualTo(tuple);
+        final Tuple6<Object, Object, Object, Object, Object, Object> tuple = createTuple();
+        final Function<Object, Object> f1 = Function.identity();
+        final Function<Object, Object> f2 = Function.identity();
+        final Function<Object, Object> f3 = Function.identity();
+        final Function<Object, Object> f4 = Function.identity();
+        final Function<Object, Object> f5 = Function.identity();
+        final Function<Object, Object> f6 = Function.identity();
+        final Tuple6<Object, Object, Object, Object, Object, Object> actual = tuple.map(f1, f2, f3, f4, f5, f6);
+        assertThat(actual).isEqualTo(tuple);
     }
 
     @Test
     public void shouldReturnTuple6OfUnzip6() {
-      final List<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(2, 3, 4, 5, 6, 7), Tuple.of(4, 5, 6, 7, 8, 9), Tuple.of(6, 7, 8, 9, 10, 11), Tuple.of(8, 9, 10, 11, 12, 13), Tuple.of(10, 11, 12, 13, 14, 15), Tuple.of(12, 13, 14, 15, 16, 17));
-      final Tuple6<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(2, 4, 6, 8, 10, 12), Vector.of(3, 5, 7, 9, 11, 13), Vector.of(4, 6, 8, 10, 12, 14), Vector.of(5, 7, 9, 11, 13, 15), Vector.of(6, 8, 10, 12, 14, 16), Vector.of(7, 9, 11, 13, 15, 17));
-      assertThat(Tuple.unzip6(iterable)).isEqualTo(expected);
+        final List<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(
+                Tuple.of(2, 3, 4, 5, 6, 7),
+                Tuple.of(4, 5, 6, 7, 8, 9),
+                Tuple.of(6, 7, 8, 9, 10, 11),
+                Tuple.of(8, 9, 10, 11, 12, 13),
+                Tuple.of(10, 11, 12, 13, 14, 15),
+                Tuple.of(12, 13, 14, 15, 16, 17));
+        final Tuple6<
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>>
+                expected = Tuple.of(
+                        Vector.of(2, 4, 6, 8, 10, 12),
+                        Vector.of(3, 5, 7, 9, 11, 13),
+                        Vector.of(4, 6, 8, 10, 12, 14),
+                        Vector.of(5, 7, 9, 11, 13, 15),
+                        Vector.of(6, 8, 10, 12, 14, 16),
+                        Vector.of(7, 9, 11, 13, 15, 17));
+        assertThat(Tuple.unzip6(iterable)).isEqualTo(expected);
     }
 
     @Test
     public void shouldUnzip6Nothing() {
-      final Tuple6<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty());
-      assertThat(Tuple.unzip6(List.<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> empty())).isEqualTo(expected);
-      assertThat(Tuple.unzip6(List.<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> empty())._1()).isSameAs(Vector.empty());
+        final Tuple6<
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>>
+                expected = Tuple.of(
+                        Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty(), Vector.empty());
+        assertThat(Tuple.unzip6(List.<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>>empty()))
+                .isEqualTo(expected);
+        assertThat(Tuple.unzip6(List.<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>>empty())
+                        ._1())
+                .isSameAs(Vector.empty());
     }
 
     @Test
     public void shouldRejectNullOnUnzip6() {
-      assertThrows(NullPointerException.class, () -> Tuple.unzip6(null));
-      assertThrows(NullPointerException.class, () -> Tuple.unzip6(List.of(Tuple.of((Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null))));
+        assertThrows(NullPointerException.class, () -> Tuple.unzip6(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> Tuple.unzip6(List.of(Tuple.of(
+                        (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer) null, (Integer)
+                                null))));
     }
 
     @Test
     public void shouldReturnTuple6OfUnzip1() {
-      final List<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(Tuple.of(1, 2, 3, 4, 5, 6));
-      final Tuple6<Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>, Vector<Integer>> expected = Tuple.of(Vector.of(1), Vector.of(2), Vector.of(3), Vector.of(4), Vector.of(5), Vector.of(6));
-      assertThat(Tuple.unzip6(iterable)).isEqualTo(expected);
+        final List<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> iterable =
+                List.of(Tuple.of(1, 2, 3, 4, 5, 6));
+        final Tuple6<
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>,
+                        Vector<Integer>>
+                expected = Tuple.of(Vector.of(1), Vector.of(2), Vector.of(3), Vector.of(4), Vector.of(5), Vector.of(6));
+        assertThat(Tuple.unzip6(iterable)).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap1stComponent() {
-      final Tuple6<String, Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1, 1, 1, 1, 1, 1).map1(i -> "X");
-      final Tuple6<String, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of("X", 1, 1, 1, 1, 1);
-      assertThat(actual).isEqualTo(expected);
+        final Tuple6<String, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1, 1, 1, 1, 1, 1).map1(i -> "X");
+        final Tuple6<String, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of("X", 1, 1, 1, 1, 1);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap2ndComponent() {
-      final Tuple6<Integer, String, Integer, Integer, Integer, Integer> actual = Tuple.of(1, 1, 1, 1, 1, 1).map2(i -> "X");
-      final Tuple6<Integer, String, Integer, Integer, Integer, Integer> expected = Tuple.of(1, "X", 1, 1, 1, 1);
-      assertThat(actual).isEqualTo(expected);
+        final Tuple6<Integer, String, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1, 1, 1, 1, 1, 1).map2(i -> "X");
+        final Tuple6<Integer, String, Integer, Integer, Integer, Integer> expected = Tuple.of(1, "X", 1, 1, 1, 1);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap3rdComponent() {
-      final Tuple6<Integer, Integer, String, Integer, Integer, Integer> actual = Tuple.of(1, 1, 1, 1, 1, 1).map3(i -> "X");
-      final Tuple6<Integer, Integer, String, Integer, Integer, Integer> expected = Tuple.of(1, 1, "X", 1, 1, 1);
-      assertThat(actual).isEqualTo(expected);
+        final Tuple6<Integer, Integer, String, Integer, Integer, Integer> actual =
+                Tuple.of(1, 1, 1, 1, 1, 1).map3(i -> "X");
+        final Tuple6<Integer, Integer, String, Integer, Integer, Integer> expected = Tuple.of(1, 1, "X", 1, 1, 1);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap4thComponent() {
-      final Tuple6<Integer, Integer, Integer, String, Integer, Integer> actual = Tuple.of(1, 1, 1, 1, 1, 1).map4(i -> "X");
-      final Tuple6<Integer, Integer, Integer, String, Integer, Integer> expected = Tuple.of(1, 1, 1, "X", 1, 1);
-      assertThat(actual).isEqualTo(expected);
+        final Tuple6<Integer, Integer, Integer, String, Integer, Integer> actual =
+                Tuple.of(1, 1, 1, 1, 1, 1).map4(i -> "X");
+        final Tuple6<Integer, Integer, Integer, String, Integer, Integer> expected = Tuple.of(1, 1, 1, "X", 1, 1);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap5thComponent() {
-      final Tuple6<Integer, Integer, Integer, Integer, String, Integer> actual = Tuple.of(1, 1, 1, 1, 1, 1).map5(i -> "X");
-      final Tuple6<Integer, Integer, Integer, Integer, String, Integer> expected = Tuple.of(1, 1, 1, 1, "X", 1);
-      assertThat(actual).isEqualTo(expected);
+        final Tuple6<Integer, Integer, Integer, Integer, String, Integer> actual =
+                Tuple.of(1, 1, 1, 1, 1, 1).map5(i -> "X");
+        final Tuple6<Integer, Integer, Integer, Integer, String, Integer> expected = Tuple.of(1, 1, 1, 1, "X", 1);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap6thComponent() {
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, String> actual = Tuple.of(1, 1, 1, 1, 1, 1).map6(i -> "X");
-      final Tuple6<Integer, Integer, Integer, Integer, Integer, String> expected = Tuple.of(1, 1, 1, 1, 1, "X");
-      assertThat(actual).isEqualTo(expected);
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, String> actual =
+                Tuple.of(1, 1, 1, 1, 1, 1).map6(i -> "X");
+        final Tuple6<Integer, Integer, Integer, Integer, Integer, String> expected = Tuple.of(1, 1, 1, 1, 1, "X");
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -281,22 +336,28 @@ public class Tuple6Test {
 
     @Test
     public void shouldAppendValue() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1, 2, 3, 4, 5, 6).append(7);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7);
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1, 2, 3, 4, 5, 6).append(7);
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+                Tuple.of(1, 2, 3, 4, 5, 6, 7);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple1() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1, 2, 3, 4, 5, 6).concat(Tuple.of(7));
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7);
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1, 2, 3, 4, 5, 6).concat(Tuple.of(7));
+        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+                Tuple.of(1, 2, 3, 4, 5, 6, 7);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple2() {
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual = Tuple.of(1, 2, 3, 4, 5, 6).concat(Tuple.of(7, 8));
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
+        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+                Tuple.of(1, 2, 3, 4, 5, 6).concat(Tuple.of(7, 8));
+        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+                Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -328,8 +389,10 @@ public class Tuple6Test {
     @Test
     public void shouldComputeCorrectHashCode() {
         assertThat(createTuple().hashCode()).isEqualTo(createTuple().hashCode());
-        assertThat(createIntTuple(0, 0, 0, 0, 0, 0).hashCode()).isEqualTo(createIntTuple(0, 0, 0, 0, 0, 0).hashCode());
-        assertThat(createIntTuple(0, 0, 0, 0, 0, 0).hashCode()).isNotEqualTo(createIntTuple(1, 0, 0, 0, 0, 0).hashCode());
+        assertThat(createIntTuple(0, 0, 0, 0, 0, 0).hashCode())
+                .isEqualTo(createIntTuple(0, 0, 0, 0, 0, 0).hashCode());
+        assertThat(createIntTuple(0, 0, 0, 0, 0, 0).hashCode())
+                .isNotEqualTo(createIntTuple(1, 0, 0, 0, 0, 0).hashCode());
     }
 
     @Test
@@ -354,13 +417,21 @@ public class Tuple6Test {
         assertThat(actual).isEqualTo(expected);
     }
 
-    private Comparator<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> intTupleComparator = Tuple6.comparator(Integer::compare, Integer::compare, Integer::compare, Integer::compare, Integer::compare, Integer::compare);
+    private Comparator<Tuple6<Integer, Integer, Integer, Integer, Integer, Integer>> intTupleComparator =
+            Tuple6.comparator(
+                    Integer::compare,
+                    Integer::compare,
+                    Integer::compare,
+                    Integer::compare,
+                    Integer::compare,
+                    Integer::compare);
 
     private Tuple6<Object, Object, Object, Object, Object, Object> createTuple() {
         return new Tuple6<>(null, null, null, null, null, null);
     }
 
-    private Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> createIntTuple(Integer i1, Integer i2, Integer i3, Integer i4, Integer i5, Integer i6) {
+    private Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> createIntTuple(
+            Integer i1, Integer i2, Integer i3, Integer i4, Integer i5, Integer i6) {
         return new Tuple6<>(i1, i2, i3, i4, i5, i6);
     }
 }

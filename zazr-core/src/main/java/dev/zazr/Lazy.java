@@ -78,7 +78,8 @@ public final class Lazy<T extends @Nullable Object> {
      */
     public static <T extends @Nullable Object> Lazy<T> flatten(Lazy<? extends Lazy<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        return Lazy.of(() -> Objects.requireNonNull(nested.get(), "Lazy.flatten: the outer Lazy holds null").get());
+        return Lazy.of(() -> Objects.requireNonNull(nested.get(), "Lazy.flatten: the outer Lazy holds null")
+                .get());
     }
 
     /**
@@ -107,7 +108,8 @@ public final class Lazy<T extends @Nullable Object> {
      * @return an unevaluated {@code Lazy} of all the values
      * @throws NullPointerException if {@code values} is null
      */
-    public static <T extends @Nullable Object> Lazy<Vector<T>> collectAll(Iterable<? extends Lazy<? extends T>> values) {
+    public static <T extends @Nullable Object> Lazy<Vector<T>> collectAll(
+            Iterable<? extends Lazy<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
         return Lazy.of(() -> {
             final Vector.Builder<T> builder = Vector.newBuilder();
@@ -185,7 +187,8 @@ public final class Lazy<T extends @Nullable Object> {
      */
     public <U extends @Nullable Object> Lazy<U> flatMap(Function<? super T, ? extends Lazy<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return Lazy.of(() -> Objects.requireNonNull(mapper.apply(get()), "Lazy.flatMap: mapper returned null").get());
+        return Lazy.of(() -> Objects.requireNonNull(mapper.apply(get()), "Lazy.flatMap: mapper returned null")
+                .get());
     }
 
     // -- zip
@@ -218,7 +221,8 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if {@code that} or {@code f} is null
      */
-    public <U extends @Nullable Object, V extends @Nullable Object> Lazy<V> zipWith(Lazy<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
+    public <U extends @Nullable Object, V extends @Nullable Object> Lazy<V> zipWith(
+            Lazy<? extends U> that, BiFunction<? super T, ? super U, ? extends V> f) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(f, "f is null");
         return Lazy.of(() -> f.apply(get(), that.get()));
@@ -272,7 +276,8 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the tuple of the values
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> Lazy<Tuple2<T1, T2>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> Lazy<Tuple2<T1, T2>> zip(
+            Lazy<? extends T1> l1, Lazy<? extends T2> l2) {
         return zipWith(l1, l2, Tuple::of);
     }
 
@@ -292,7 +297,9 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Lazy<R> zipWith(Lazy<? extends T1> l1, Lazy<? extends T2> l2, BiFunction<? super T1, ? super T2, ? extends R> f) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object>
+            Lazy<R> zipWith(
+                    Lazy<? extends T1> l1, Lazy<? extends T2> l2, BiFunction<? super T1, ? super T2, ? extends R> f) {
         Objects.requireNonNull(l1, "l1 is null");
         Objects.requireNonNull(l2, "l2 is null");
         Objects.requireNonNull(f, "f is null");
@@ -313,7 +320,8 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the tuple of the values
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> Lazy<Tuple3<T1, T2, T3>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Lazy<Tuple3<T1, T2, T3>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3) {
         return zipWith(l1, l2, l3, Tuple::of);
     }
 
@@ -335,7 +343,16 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, R extends @Nullable Object> Lazy<R> zipWith(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Lazy<R> zipWith(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
         Objects.requireNonNull(l1, "l1 is null");
         Objects.requireNonNull(l2, "l2 is null");
         Objects.requireNonNull(l3, "l3 is null");
@@ -359,7 +376,13 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the tuple of the values
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object> Lazy<Tuple4<T1, T2, T3, T4>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Lazy<Tuple4<T1, T2, T3, T4>> zip(
+                    Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4) {
         return zipWith(l1, l2, l3, l4, Tuple::of);
     }
 
@@ -383,7 +406,18 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, R extends @Nullable Object> Lazy<R> zipWith(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Lazy<R> zipWith(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
         Objects.requireNonNull(l1, "l1 is null");
         Objects.requireNonNull(l2, "l2 is null");
         Objects.requireNonNull(l3, "l3 is null");
@@ -410,7 +444,18 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the tuple of the values
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object> Lazy<Tuple5<T1, T2, T3, T4, T5>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Lazy<Tuple5<T1, T2, T3, T4, T5>> zip(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5) {
         return zipWith(l1, l2, l3, l4, l5, Tuple::of);
     }
 
@@ -436,7 +481,20 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, R extends @Nullable Object> Lazy<R> zipWith(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5, Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Lazy<R> zipWith(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5,
+                    Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
         Objects.requireNonNull(l1, "l1 is null");
         Objects.requireNonNull(l2, "l2 is null");
         Objects.requireNonNull(l3, "l3 is null");
@@ -466,7 +524,20 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the tuple of the values
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object> Lazy<Tuple6<T1, T2, T3, T4, T5, T6>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5, Lazy<? extends T6> l6) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Lazy<Tuple6<T1, T2, T3, T4, T5, T6>> zip(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5,
+                    Lazy<? extends T6> l6) {
         return zipWith(l1, l2, l3, l4, l5, l6, Tuple::of);
     }
 
@@ -494,7 +565,22 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, R extends @Nullable Object> Lazy<R> zipWith(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5, Lazy<? extends T6> l6, Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Lazy<R> zipWith(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5,
+                    Lazy<? extends T6> l6,
+                    Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
         Objects.requireNonNull(l1, "l1 is null");
         Objects.requireNonNull(l2, "l2 is null");
         Objects.requireNonNull(l3, "l3 is null");
@@ -527,7 +613,22 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the tuple of the values
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object> Lazy<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5, Lazy<? extends T6> l6, Lazy<? extends T7> l7) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Lazy<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5,
+                    Lazy<? extends T6> l6,
+                    Lazy<? extends T7> l7) {
         return zipWith(l1, l2, l3, l4, l5, l6, l7, Tuple::of);
     }
 
@@ -557,7 +658,33 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, R extends @Nullable Object> Lazy<R> zipWith(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5, Lazy<? extends T6> l6, Lazy<? extends T7> l7, Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Lazy<R> zipWith(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5,
+                    Lazy<? extends T6> l6,
+                    Lazy<? extends T7> l7,
+                    Function7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(l1, "l1 is null");
         Objects.requireNonNull(l2, "l2 is null");
         Objects.requireNonNull(l3, "l3 is null");
@@ -593,7 +720,24 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the tuple of the values
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object> Lazy<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5, Lazy<? extends T6> l6, Lazy<? extends T7> l7, Lazy<? extends T8> l8) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Lazy<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5,
+                    Lazy<? extends T6> l6,
+                    Lazy<? extends T7> l7,
+                    Lazy<? extends T8> l8) {
         return zipWith(l1, l2, l3, l4, l5, l6, l7, l8, Tuple::of);
     }
 
@@ -625,7 +769,36 @@ public final class Lazy<T extends @Nullable Object> {
      * @return a new, unevaluated {@code Lazy} of the combined value
      * @throws NullPointerException if any argument is null
      */
-    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object, T4 extends @Nullable Object, T5 extends @Nullable Object, T6 extends @Nullable Object, T7 extends @Nullable Object, T8 extends @Nullable Object, R extends @Nullable Object> Lazy<R> zipWith(Lazy<? extends T1> l1, Lazy<? extends T2> l2, Lazy<? extends T3> l3, Lazy<? extends T4> l4, Lazy<? extends T5> l5, Lazy<? extends T6> l6, Lazy<? extends T7> l7, Lazy<? extends T8> l8, Function8<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Lazy<R> zipWith(
+                    Lazy<? extends T1> l1,
+                    Lazy<? extends T2> l2,
+                    Lazy<? extends T3> l3,
+                    Lazy<? extends T4> l4,
+                    Lazy<? extends T5> l5,
+                    Lazy<? extends T6> l6,
+                    Lazy<? extends T7> l7,
+                    Lazy<? extends T8> l8,
+                    Function8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(l1, "l1 is null");
         Objects.requireNonNull(l2, "l2 is null");
         Objects.requireNonNull(l3, "l3 is null");
@@ -676,5 +849,4 @@ public final class Lazy<T extends @Nullable Object> {
     public String toString() {
         return "Lazy(" + (!isEvaluated() ? "?" : value) + ")";
     }
-
 }

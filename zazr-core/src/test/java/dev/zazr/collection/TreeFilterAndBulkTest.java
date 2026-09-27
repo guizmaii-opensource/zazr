@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class TreeFilterAndBulkTest {
 
     private static final long SEED = 20260925L;
-    private static final int[] SIZES = { 0, 1, 2, 3, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025 };
+    private static final int[] SIZES = {0, 1, 2, 3, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025};
 
     private static final Comparator<Integer> NATURAL = Comparator.naturalOrder();
     private static final Comparator<Integer> REVERSED = Comparator.reverseOrder();
@@ -112,7 +112,7 @@ public class TreeFilterAndBulkTest {
 
     // an Iterable whose iterator can be asked for once only
     private static <T> Iterable<T> oneShot(java.util.List<T> elements) {
-        final boolean[] used = { false };
+        final boolean[] used = {false};
         return () -> {
             assertThat(used[0]).as("iterated twice").isFalse();
             used[0] = true;
@@ -153,8 +153,15 @@ public class TreeFilterAndBulkTest {
             }
         }
         final int first = all.isEmpty() ? 0 : all.getFirst();
-        return java.util.List.of(x -> true, x -> false, x -> (x & 1) == 0, x -> x < middle, x -> x >= middle,
-                chosen::contains, x -> !chosen.contains(x), x -> x != first);
+        return java.util.List.of(
+                x -> true,
+                x -> false,
+                x -> (x & 1) == 0,
+                x -> x < middle,
+                x -> x >= middle,
+                chosen::contains,
+                x -> !chosen.contains(x),
+                x -> x != first);
     }
 
     // -- TreeSet: filter, reject, partition, removeAll, retainAll
@@ -167,8 +174,10 @@ public class TreeFilterAndBulkTest {
                 final TreeSet<Integer> set = randomSet(order, size, random);
                 final java.util.List<Integer> before = list(set);
                 for (Predicate<Integer> predicate : predicates(set, random)) {
-                    final TreeSet<Integer> rebuilt = TreeSet.ofAll(order, before.stream().filter(predicate).toList());
-                    final TreeSet<Integer> rejected = TreeSet.ofAll(order, before.stream().filter(predicate.negate()).toList());
+                    final TreeSet<Integer> rebuilt = TreeSet.ofAll(
+                            order, before.stream().filter(predicate).toList());
+                    final TreeSet<Integer> rejected = TreeSet.ofAll(
+                            order, before.stream().filter(predicate.negate()).toList());
 
                     final java.util.List<Integer> calls = new ArrayList<>();
                     final TreeSet<Integer> filtered = set.filter(x -> {
@@ -190,11 +199,13 @@ public class TreeFilterAndBulkTest {
                     assertSameElements(partition._1(), rebuilt);
                     assertSameElements(partition._2(), rejected);
 
-                    final java.util.List<Integer> removed = before.stream().filter(predicate.negate()).toList();
+                    final java.util.List<Integer> removed =
+                            before.stream().filter(predicate.negate()).toList();
                     final TreeSet<Integer> removeAll = set.removeAll(removed);
                     assertValid(removeAll);
                     assertSameElements(removeAll, rebuilt);
-                    final TreeSet<Integer> retainAll = set.retainAll(oneShot(before.stream().filter(predicate).toList()));
+                    final TreeSet<Integer> retainAll = set.retainAll(
+                            oneShot(before.stream().filter(predicate).toList()));
                     assertValid(retainAll);
                     assertSameElements(retainAll, rebuilt);
 
@@ -242,10 +253,16 @@ public class TreeFilterAndBulkTest {
     @Test
     public void shouldPassTheNullChecksOfTheTreeSetFilters() {
         final TreeSet<Integer> set = TreeSet.of(1, 2, 3);
-        assertThatThrownBy(() -> set.filter(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
-        assertThatThrownBy(() -> set.reject(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
-        assertThatThrownBy(() -> set.partition(null)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
-        assertThatThrownBy(() -> TreeSet.<Integer> empty().partition(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> set.filter(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate is null");
+        assertThatThrownBy(() -> set.reject(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate is null");
+        assertThatThrownBy(() -> set.partition(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate is null");
+        assertThatThrownBy(() -> TreeSet.<Integer>empty().partition(null)).isInstanceOf(NullPointerException.class);
     }
 
     // -- TreeMap: the filter family and partition
@@ -254,12 +271,16 @@ public class TreeFilterAndBulkTest {
         return list(map);
     }
 
-    private static void checkMapFilter(TreeMap<Integer, String> map, Comparator<Integer> order,
-            Function<TreeMap<Integer, String>, TreeMap<Integer, String>> operation, Predicate<Tuple2<Integer, String>> kept) {
+    private static void checkMapFilter(
+            TreeMap<Integer, String> map,
+            Comparator<Integer> order,
+            Function<TreeMap<Integer, String>, TreeMap<Integer, String>> operation,
+            Predicate<Tuple2<Integer, String>> kept) {
         final java.util.List<Tuple2<Integer, String>> before = entries(map);
         final TreeMap<Integer, String> result = operation.apply(map);
         assertValid(result);
-        assertSameElements(result, TreeMap.ofEntries(order, before.stream().filter(kept).toList()));
+        assertSameElements(
+                result, TreeMap.ofEntries(order, before.stream().filter(kept).toList()));
         assertThat(result.comparator()).isSameAs(map.comparator());
         if (before.stream().allMatch(kept)) {
             assertThat(result).isSameAs(map);
@@ -288,8 +309,10 @@ public class TreeFilterAndBulkTest {
                     checkMapFilter(map, order, m -> m.removeAll((k, v) -> keys.test(k)), e -> !keys.test(e._1()));
                     checkMapFilter(map, order, m -> m.removeKeys(keys), e -> !keys.test(e._1()));
                     checkMapFilter(map, order, m -> m.removeValues(values), e -> !values.test(e._2()));
-                    checkMapFilter(map, order, m -> m.partition(e -> keys.test(e._1()))._1(), e -> keys.test(e._1()));
-                    checkMapFilter(map, order, m -> m.partition(e -> keys.test(e._1()))._2(), e -> !keys.test(e._1()));
+                    checkMapFilter(
+                            map, order, m -> m.partition(e -> keys.test(e._1()))._1(), e -> keys.test(e._1()));
+                    checkMapFilter(
+                            map, order, m -> m.partition(e -> keys.test(e._1()))._2(), e -> !keys.test(e._1()));
                 }
             }
         }
@@ -321,14 +344,20 @@ public class TreeFilterAndBulkTest {
     @Test
     public void shouldPassTheNullChecksOfTheTreeMapFilters() {
         final TreeMap<Integer, String> map = TreeMap.of(1, "a");
-        for (Function<TreeMap<Integer, String>, Object> operation : java.util.List.<Function<TreeMap<Integer, String>, Object>> of(
-                m -> m.filter((java.util.function.BiPredicate<Integer, String>) null),
-                m -> m.reject((java.util.function.BiPredicate<Integer, String>) null),
-                m -> m.filter((Predicate<Tuple2<Integer, String>>) null),
-                m -> m.reject((Predicate<Tuple2<Integer, String>>) null),
-                m -> m.filterKeys(null), m -> m.rejectKeys(null), m -> m.filterValues(null), m -> m.rejectValues(null),
-                m -> m.partition(null))) {
-            assertThatThrownBy(() -> operation.apply(map)).isInstanceOf(NullPointerException.class).hasMessage("predicate is null");
+        for (Function<TreeMap<Integer, String>, Object> operation :
+                java.util.List.<Function<TreeMap<Integer, String>, Object>>of(
+                        m -> m.filter((java.util.function.BiPredicate<Integer, String>) null),
+                        m -> m.reject((java.util.function.BiPredicate<Integer, String>) null),
+                        m -> m.filter((Predicate<Tuple2<Integer, String>>) null),
+                        m -> m.reject((Predicate<Tuple2<Integer, String>>) null),
+                        m -> m.filterKeys(null),
+                        m -> m.rejectKeys(null),
+                        m -> m.filterValues(null),
+                        m -> m.rejectValues(null),
+                        m -> m.partition(null))) {
+            assertThatThrownBy(() -> operation.apply(map))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("predicate is null");
         }
     }
 
@@ -347,20 +376,21 @@ public class TreeFilterAndBulkTest {
         final Random random = new Random(SEED + 6);
         for (Comparator<Integer> order : orders()) {
             for (int size : SIZES) {
-                for (int count : new int[] { 0, 1, 2, size / 2, size, size + 1, 2 * size + 3 }) {
+                for (int count : new int[] {0, 1, 2, size / 2, size, size + 1, 2 * size + 3}) {
                     final TreeSet<Integer> set = randomSet(order, size, random);
                     final java.util.List<Integer> before = list(set);
                     final java.util.List<Integer> given = new ArrayList<>();
                     for (int i = 0; i < count; i++) {
                         // new objects equal to present elements under every order, and repeated ones among the given
-                        given.add(Integer.valueOf(random.nextInt(4 * size + 3) - 2 * size - 1 + (order == MODULO ? M : 0)));
+                        given.add(Integer.valueOf(
+                                random.nextInt(4 * size + 3) - 2 * size - 1 + (order == MODULO ? M : 0)));
                         if (random.nextInt(4) == 0) {
                             given.add(Integer.valueOf(given.getLast() + (order == MODULO ? 2 * M : 0)));
                         }
                     }
                     final TreeSet<Integer> expected = addedOneByOne(set, given);
-                    for (Iterable<Integer> input : java.util.List.<Iterable<Integer>> of(given, Vector.ofAll(given),
-                            oneShot(given), List.ofAll(given))) {
+                    for (Iterable<Integer> input : java.util.List.<Iterable<Integer>>of(
+                            given, Vector.ofAll(given), oneShot(given), List.ofAll(given))) {
                         final TreeSet<Integer> added = set.addAll(input);
                         assertValid(added);
                         assertSameElements(added, expected);
@@ -368,7 +398,8 @@ public class TreeFilterAndBulkTest {
                             assertThat(added).isSameAs(set);
                         }
                     }
-                    final TreeSet<Integer> fromEmpty = TreeSet.<Integer> empty(order).addAll(given);
+                    final TreeSet<Integer> fromEmpty =
+                            TreeSet.<Integer>empty(order).addAll(given);
                     assertValid(fromEmpty);
                     assertSameElements(fromEmpty, addedOneByOne(TreeSet.empty(order), given));
                     assertValid(set);
@@ -387,18 +418,20 @@ public class TreeFilterAndBulkTest {
         final java.util.List<Integer> given = Arrays.asList(firstGiven, 11, secondGiven, 12, 13);
         final TreeSet<Integer> added = set.addAll(given);
         assertThat(list(added).get(0)).isSameAs(present);
-        final TreeSet<Integer> fromEmpty = TreeSet.<Integer> empty(MODULO).addAll(given);
+        final TreeSet<Integer> fromEmpty = TreeSet.<Integer>empty(MODULO).addAll(given);
         assertThat(list(fromEmpty).get(0)).isSameAs(firstGiven);
         assertThat(set.addAll(Arrays.asList(firstGiven, M + 7, 2 * M + 7))).isSameAs(set);
     }
 
     @Test
     public void shouldRejectANullElementOnAddAll() {
-        for (TreeSet<Integer> set : java.util.List.of(TreeSet.<Integer> empty(), TreeSet.of(1, 2, 3))) {
+        for (TreeSet<Integer> set : java.util.List.of(TreeSet.<Integer>empty(), TreeSet.of(1, 2, 3))) {
             assertThatThrownBy(() -> set.addAll(Arrays.asList(1, null))).isInstanceOf(NullPointerException.class);
             assertThatThrownBy(() -> set.addAll(Arrays.asList(4, 5, 6, null))).isInstanceOf(NullPointerException.class);
         }
-        assertThatThrownBy(() -> TreeSet.of(1).addAll(null)).isInstanceOf(NullPointerException.class).hasMessage("elements is null");
+        assertThatThrownBy(() -> TreeSet.of(1).addAll(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("elements is null");
     }
 
     // -- flatten, of, tabulate, fill: of equal elements, the last one is kept
@@ -437,9 +470,11 @@ public class TreeFilterAndBulkTest {
                 assertSameElements(fromOneShots, expected);
             }
         }
-        assertThat(TreeSet.flatten(java.util.List.<java.util.List<Integer>> of())).isEmpty();
+        assertThat(TreeSet.flatten(java.util.List.<java.util.List<Integer>>of()))
+                .isEmpty();
         assertThatThrownBy(() -> TreeSet.flatten(java.util.List.of(Arrays.asList(1, null))))
-                .isInstanceOf(NullPointerException.class).hasMessage("TreeSet.flatten: element is null");
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("TreeSet.flatten: element is null");
     }
 
     @Test
@@ -460,14 +495,16 @@ public class TreeFilterAndBulkTest {
                 final TreeSet<Integer> tabulated = TreeSet.tabulate(order, size, i -> values[i]);
                 assertValid(tabulated);
                 assertSameElements(tabulated, expected);
-                final int[] next = { 0 };
+                final int[] next = {0};
                 final TreeSet<Integer> filled = TreeSet.fill(order, size, () -> values[next[0]++]);
                 assertValid(filled);
                 assertSameElements(filled, expected);
             }
         }
-        assertThat(TreeSet.<Integer> of()).isEmpty();
-        assertThatThrownBy(() -> TreeSet.of(1, null, 2)).isInstanceOf(NullPointerException.class).hasMessage("TreeSet: element is null");
+        assertThat(TreeSet.<Integer>of()).isEmpty();
+        assertThatThrownBy(() -> TreeSet.of(1, null, 2))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("TreeSet: element is null");
         assertThatThrownBy(() -> TreeSet.tabulate(3, i -> i == 1 ? null : i)).isInstanceOf(NullPointerException.class);
     }
 
@@ -482,7 +519,8 @@ public class TreeFilterAndBulkTest {
                 final java.util.List<Tuple2<Integer, String>> before = entries(map);
                 final java.util.List<Tuple2<Integer, String>> given = new ArrayList<>();
                 for (int i = 0; i < size + 2; i++) {
-                    final int key = random.nextInt(4 * size + 1) - 2 * size + (order == MODULO ? M * random.nextInt(3) : 0);
+                    final int key =
+                            random.nextInt(4 * size + 1) - 2 * size + (order == MODULO ? M * random.nextInt(3) : 0);
                     given.add(Tuple.of(key, "v" + Math.floorMod(key, 7)));
                     if (random.nextInt(3) == 0) {
                         given.add(Tuple.of(key, "other"));
@@ -494,7 +532,8 @@ public class TreeFilterAndBulkTest {
                         expected = expected.put(entry._1(), entry._2());
                     }
                 }
-                for (Iterable<Tuple2<Integer, String>> input : java.util.List.<Iterable<Tuple2<Integer, String>>> of(given, oneShot(given))) {
+                for (Iterable<Tuple2<Integer, String>> input :
+                        java.util.List.<Iterable<Tuple2<Integer, String>>>of(given, oneShot(given))) {
                     final TreeMap<Integer, String> retained = map.retainAll(input);
                     assertValid(retained);
                     assertThat(list(retained)).isEqualTo(list(expected));

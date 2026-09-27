@@ -15,11 +15,10 @@ import org.jspecify.annotations.Nullable;
 ///
 /// @param <K> the key type
 /// @param <V> the value type
-public abstract sealed class MapNode<K extends @Nullable Object, V extends @Nullable Object> extends ChampNode<MapNode<K, V>>
-        permits BitmapIndexedMapNode, HashCollisionMapNode {
+public abstract sealed class MapNode<K extends @Nullable Object, V extends @Nullable Object>
+        extends ChampNode<MapNode<K, V>> permits BitmapIndexedMapNode, HashCollisionMapNode {
 
-    MapNode() {
-    }
+    MapNode() {}
 
     /// The root of the empty map.
     @SuppressWarnings("unchecked")
@@ -67,8 +66,11 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         if (a == b) {
             return true;
         } else if (a instanceof BitmapIndexedMapNode<?, ?> x && b instanceof BitmapIndexedMapNode<?, ?> y) {
-            if (x.keyHashSum != y.keyHashSum || x.dataMap != y.dataMap || x.nodeMap != y.nodeMap || x.size != y.size
-                || !java.util.Arrays.equals(x.hashes, y.hashes)) {
+            if (x.keyHashSum != y.keyHashSum
+                    || x.dataMap != y.dataMap
+                    || x.nodeMap != y.nodeMap
+                    || x.size != y.size
+                    || !java.util.Arrays.equals(x.hashes, y.hashes)) {
                 return false;
             }
             final int payload = 2 * Integer.bitCount(x.dataMap);
@@ -131,7 +133,8 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         return size() == 0 ? Iterator.empty() : new ValueIterator<>(this);
     }
 
-    private static final class EntryIterator<K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object>
+    private static final class EntryIterator<
+                    K extends @Nullable Object, V extends @Nullable Object, T extends @Nullable Object>
             extends ChampIterator<T, MapNode<K, V>> {
 
         private final BiFunction<? super K, ? super V, ? extends T> f;
@@ -148,7 +151,8 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         }
     }
 
-    private static final class KeyIterator<K extends @Nullable Object, V extends @Nullable Object> extends ChampIterator<K, MapNode<K, V>> {
+    private static final class KeyIterator<K extends @Nullable Object, V extends @Nullable Object>
+            extends ChampIterator<K, MapNode<K, V>> {
 
         KeyIterator(MapNode<K, V> root) {
             super(root);
@@ -160,7 +164,8 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         }
     }
 
-    private static final class ValueIterator<K extends @Nullable Object, V extends @Nullable Object> extends ChampIterator<V, MapNode<K, V>> {
+    private static final class ValueIterator<K extends @Nullable Object, V extends @Nullable Object>
+            extends ChampIterator<V, MapNode<K, V>> {
 
         ValueIterator(MapNode<K, V> root) {
             super(root);

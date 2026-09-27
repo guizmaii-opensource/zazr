@@ -138,7 +138,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     }
 
     @Override
-    protected <T extends Comparable<? super T>> IntMap<T> ofJavaStream(java.util.stream.Stream<? extends T> javaStream) {
+    protected <T extends Comparable<? super T>> IntMap<T> ofJavaStream(
+            java.util.stream.Stream<? extends T> javaStream) {
         return ofAll(Vector.ofAll(javaStream));
     }
 
@@ -213,7 +214,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCollectWithKeyValueMappers() {
-            Map<Integer, String> map = java.util.stream.Stream.of(1, 2, 3).collect(collectorWithMappers(i -> i * 2, String::valueOf));
+            Map<Integer, String> map =
+                    java.util.stream.Stream.of(1, 2, 3).collect(collectorWithMappers(i -> i * 2, String::valueOf));
             assertThat(map).isEqualTo(mapOf(2, "1", 4, "2", 6, "3"));
         }
     }
@@ -242,15 +244,14 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldConstructFromJavaStream() {
         final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
         final Map<String, Integer> map = mapOf(javaStream, String::valueOf, Function.identity());
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map)
+                .isEqualTo(
+                        this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
     public void shouldConstructFromJavaStreamWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream()
-                , i -> Math.max(1, Math.min(i, 2))
-                , i -> String.valueOf(i + 1)
-        ))
+        assertThat(mapOf(Stream.range(0, 4).stream(), i -> Math.max(1, Math.min(i, 2)), i -> String.valueOf(i + 1)))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -259,14 +260,16 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldConstructFromJavaStreamEntries() {
         final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
         final Map<String, Integer> map = mapOf(javaStream, i -> Tuple.of(String.valueOf(i), i));
-        assertThat(map).isEqualTo(this.<String, Integer> emptyMap().put("1", 1).put("2", 2).put("3", 3));
+        assertThat(map)
+                .isEqualTo(
+                        this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
     }
 
     @Test
     public void shouldConstructFromJavaStreamEntriesWithDuplicatedKeys() {
-        assertThat(mapOf(Stream.range(0, 4).stream(), i ->
-                Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))
-        ))
+        assertThat(mapOf(
+                        Stream.range(0, 4).stream(),
+                        i -> Map.entry(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -275,9 +278,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldConstructFromUtilEntriesWithDuplicatedKeys() {
         assertThat(mapOfEntries(
-                asJavaEntry(1, "1"), asJavaEntry(1, "2"),
-                asJavaEntry(2, "3"), asJavaEntry(2, "4")
-        ))
+                        asJavaEntry(1, "1"), asJavaEntry(1, "2"),
+                        asJavaEntry(2, "3"), asJavaEntry(2, "4")))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -286,7 +288,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldConstructFromEntriesVararg() {
         final Map<String, Integer> actual = mapOfTuples(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected =
+                this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -294,26 +297,26 @@ public class TreeMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldConstructFromEntriesVarargWithDuplicatedKeys() {
         assertThat(mapOfTuples(
-                Map.entry(1, "1"), Map.entry(1, "2"),
-                Map.entry(2, "3"), Map.entry(2, "4")
-        ))
+                        Map.entry(1, "1"), Map.entry(1, "2"),
+                        Map.entry(2, "3"), Map.entry(2, "4")))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
 
     @Test
     public void shouldConstructFromEntriesIterable() {
-        final Map<String, Integer> actual = mapOfTuples(asList(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3)));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> actual =
+                mapOfTuples(asList(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3)));
+        final Map<String, Integer> expected =
+                this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFromEntriesIterableWithDuplicatedKeys() {
         assertThat(mapOfTuples(asList(
-                Map.entry(1, "1"), Map.entry(1, "2"),
-                Map.entry(2, "3"), Map.entry(2, "4")
-        )))
+                        Map.entry(1, "1"), Map.entry(1, "2"),
+                        Map.entry(2, "3"), Map.entry(2, "4"))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -321,29 +324,33 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFromPairs() {
         final Map<String, Integer> actual = mapOf("1", 1, "2", 2, "3", 3);
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected =
+                this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFromPairsWithDuplicatedKeys() {
         final Map<Integer, String> actual = mapOf(1, "1", 1, "2", 2, "3");
-        final Map<Integer, String> expected = this.<Integer, String>emptyMap().put(1, "2").put(2, "3");
+        final Map<Integer, String> expected =
+                this.<Integer, String>emptyMap().put(1, "2").put(2, "3");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructWithTabulate() {
         final Map<String, Integer> actual = mapTabulate(4, i -> Tuple.of(i.toString(), i));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("0", 0).put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected = this.<String, Integer>emptyMap()
+                .put("0", 0)
+                .put("1", 1)
+                .put("2", 2)
+                .put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructWithTabulateWithDuplicatedKeys() {
-        assertThat(mapTabulate(4, i ->
-                Tuple.of(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))
-        ))
+        assertThat(mapTabulate(4, i -> Tuple.of(Math.max(1, Math.min(i, 2)), String.valueOf(i + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -352,16 +359,19 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldConstructWithFill() {
         AtomicInteger i = new AtomicInteger();
         final Map<String, Integer> actual = mapFill(4, () -> Tuple.of(String.valueOf(i.get()), i.getAndIncrement()));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap().put("0", 0).put("1", 1).put("2", 2).put("3", 3);
+        final Map<String, Integer> expected = this.<String, Integer>emptyMap()
+                .put("0", 0)
+                .put("1", 1)
+                .put("2", 2)
+                .put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructWithFillWithDuplicatedKeys() {
         AtomicInteger i = new AtomicInteger();
-        assertThat(mapFill(4, () ->
-                Tuple.of(Math.max(1, Math.min(i.get(), 2)), String.valueOf(i.getAndIncrement() + 1))
-        ))
+        assertThat(mapFill(
+                        4, () -> Tuple.of(Math.max(1, Math.min(i.get(), 2)), String.valueOf(i.getAndIncrement() + 1))))
                 .hasSize(2)
                 .isEqualTo(mapOf(1, "2", 2, "4"));
     }
@@ -373,15 +383,19 @@ public class TreeMapTest extends AbstractTraversableTest {
 
             // sequential collections
             assertThat(emptyMap().equals(dev.zazr.collection.HashMap.empty())).isTrue();
-            assertThat(mapOf(1, "a").equals(dev.zazr.collection.HashMap.of(1, "a"))).isTrue();
-            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(1, "a", 2, "b",3, "c"))).isTrue();
-            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(3, "c", 2, "b",1, "a"))).isTrue();
+            assertThat(mapOf(1, "a").equals(dev.zazr.collection.HashMap.of(1, "a")))
+                    .isTrue();
+            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(1, "a", 2, "b", 3, "c")))
+                    .isTrue();
+            assertThat(mapOf(1, "a", 2, "b", 3, "c").equals(dev.zazr.collection.HashMap.of(3, "c", 2, "b", 1, "a")))
+                    .isTrue();
 
             // other classes
             assertThat(empty().equals(dev.zazr.collection.List.empty())).isFalse();
             assertThat(empty().equals(dev.zazr.collection.HashSet.empty())).isFalse();
 
-            assertThat(empty().equals(dev.zazr.collection.LinkedHashSet.empty())).isFalse();
+            assertThat(empty().equals(dev.zazr.collection.LinkedHashSet.empty()))
+                    .isFalse();
 
             assertThat(empty().equals(dev.zazr.collection.TreeSet.empty())).isFalse();
         }
@@ -397,8 +411,7 @@ public class TreeMapTest extends AbstractTraversableTest {
     }
 
     @Nested
-    class TojavamapTests {
-    }
+    class TojavamapTests {}
 
     @Nested
     class ContainsTests {
@@ -416,13 +429,15 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRecognizeNotContainedKeyValuePair() {
-            final dev.zazr.collection.TreeMap<String, Integer> testee = dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
+            final dev.zazr.collection.TreeMap<String, Integer> testee =
+                    dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 0))).isFalse();
         }
 
         @Test
         public void shouldRecognizeContainedKeyValuePair() {
-            final dev.zazr.collection.TreeMap<String, Integer> testee = dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
+            final dev.zazr.collection.TreeMap<String, Integer> testee =
+                    dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 1))).isTrue();
         }
     }
@@ -433,11 +448,16 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldFlatMapUsingBiFunction() {
             final Map<Integer, Integer> testee = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33));
-            final Map<String, String> actual = testee
-                    .flatMap((k, v) -> dev.zazr.collection.List.of(Tuple.of(String.valueOf(k), String.valueOf(v)),
-                            Tuple.of(String.valueOf(k * 10), String.valueOf(v * 10))));
-            final Map<String, String> expected = mapOfTuples(Tuple.of("1", "11"), Tuple.of("10", "110"), Tuple.of("2", "22"),
-                    Tuple.of("20", "220"), Tuple.of("3", "33"), Tuple.of("30", "330"));
+            final Map<String, String> actual = testee.flatMap((k, v) -> dev.zazr.collection.List.of(
+                    Tuple.of(String.valueOf(k), String.valueOf(v)),
+                    Tuple.of(String.valueOf(k * 10), String.valueOf(v * 10))));
+            final Map<String, String> expected = mapOfTuples(
+                    Tuple.of("1", "11"),
+                    Tuple.of("10", "110"),
+                    Tuple.of("2", "22"),
+                    Tuple.of("20", "220"),
+                    Tuple.of("3", "33"),
+                    Tuple.of("30", "330"));
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -447,10 +467,11 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnKeySet() {
-            final dev.zazr.collection.Set<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).keySet();
+            final dev.zazr.collection.Set<Integer> actual = mapOfTuples(
+                            Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
+                    .keySet();
             assertThat(actual).isEqualTo(dev.zazr.collection.HashSet.of(1, 2, 3));
         }
-
     }
 
     // -- mapBoth
@@ -462,24 +483,36 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnTuple2SetOfANonEmptyMap() {
-        assertThat(emptyInt().put(1, "1").put(2, "2").toSet()).isEqualTo(dev.zazr.collection.HashSet.of(Tuple.of(1, "1"), Tuple.of(2, "2")));
+        assertThat(emptyInt().put(1, "1").put(2, "2").toSet())
+                .isEqualTo(dev.zazr.collection.HashSet.of(Tuple.of(1, "1"), Tuple.of(2, "2")));
     }
 
     @Test
     public void shouldReturnModifiedKeysMap() {
-        final Map<String, String> actual = emptyIntString().put(1, "1").put(2, "2").mapKeys(k -> k * 12).mapKeys(Integer::toHexString).mapKeys(String::toUpperCase);
-        final Map<String, String> expected = this.<String, String> emptyMap().put("C", "1").put("18", "2");
+        final Map<String, String> actual = emptyIntString()
+                .put(1, "1")
+                .put(2, "2")
+                .mapKeys(k -> k * 12)
+                .mapKeys(Integer::toHexString)
+                .mapKeys(String::toUpperCase);
+        final Map<String, String> expected =
+                this.<String, String>emptyMap().put("C", "1").put("18", "2");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldReturnModifiedKeysMapWithNonUniqueMapper() {
         final Map<Integer, String> actual = emptyIntString()
-                .put(1, "1").put(2, "2").put(3, "3")
-                .mapKeys(k -> k * 118).mapKeys(Integer::toHexString).mapKeys(TreeMapTest::md5).mapKeys(String::length);
+                .put(1, "1")
+                .put(2, "2")
+                .put(3, "3")
+                .mapKeys(k -> k * 118)
+                .mapKeys(Integer::toHexString)
+                .mapKeys(TreeMapTest::md5)
+                .mapKeys(String::length);
         assertThat(actual).hasSize(1);
         assertThat(actual.values()).hasSize(1);
-        //In different cases (based on items order) transformed map may contain different values
+        // In different cases (based on items order) transformed map may contain different values
         assertThat(actual.values().head()).isIn("1", "2", "3");
     }
 
@@ -516,16 +549,26 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldReturnModifiedKeysMapWithNonUniqueMapperAndMergedValues() {
         final Map<Integer, String> actual = emptyIntString()
-                .put(1, "1").put(2, "2").put(3, "3")
-                .mapKeys(k -> k * 118).mapKeys(Integer::toHexString).mapKeys(TreeMapTest::md5)//Unique key mappers
-                .mapKeys(String::length, (v1, v2) -> dev.zazr.collection.List.of(v1.split("#")).append(v2).sorted().mkString("#"));
+                .put(1, "1")
+                .put(2, "2")
+                .put(3, "3")
+                .mapKeys(k -> k * 118)
+                .mapKeys(Integer::toHexString)
+                .mapKeys(TreeMapTest::md5) // Unique key mappers
+                .mapKeys(
+                        String::length,
+                        (v1, v2) -> dev.zazr.collection.List.of(v1.split("#"))
+                                .append(v2)
+                                .sorted()
+                                .mkString("#"));
         final Map<Integer, String> expected = emptyIntString().put(32, "1#2#3");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldReturnModifiedValuesMap() {
-        assertThat(emptyIntString().put(1, "1").put(2, "2").mapValues(Integer::parseInt)).isEqualTo(emptyInt().put(1, 1).put(2, 2));
+        assertThat(emptyIntString().put(1, "1").put(2, "2").mapValues(Integer::parseInt))
+                .isEqualTo(emptyInt().put(1, 1).put(2, 2));
     }
 
     // -- merge(Map)
@@ -536,7 +579,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         final Map<Integer, Integer> m2 = emptyIntInt().put(1, 1).put(4, 4);
         final Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
         assertThat(m1.merge(m2)).isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(4, 4));
-        assertThat(m1.merge(m3)).isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
+        assertThat(m1.merge(m3))
+                .isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
     }
 
     @Test
@@ -549,9 +593,9 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmpty() {
         final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
         if (map instanceof SortedMap) {
-            assertThat(this.<Integer, String> emptyMap().merge(map)).isEqualTo(map);
+            assertThat(this.<Integer, String>emptyMap().merge(map)).isEqualTo(map);
         } else {
-            assertThat(this.<Integer, String> emptyMap().merge(map)).isSameAs(map);
+            assertThat(this.<Integer, String>emptyMap().merge(map)).isSameAs(map);
         }
     }
 
@@ -564,8 +608,10 @@ public class TreeMapTest extends AbstractTraversableTest {
         final Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
         assertThat(emptyIntInt().merge(m2, Math::max)).isEqualTo(m2);
         assertThat(m2.merge(emptyIntInt(), Math::max)).isEqualTo(m2);
-        assertThat(m1.merge(m2, Math::max)).isEqualTo(emptyIntInt().put(1, 2).put(2, 2).put(4, 4));
-        assertThat(m1.merge(m3, Math::max)).isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
+        assertThat(m1.merge(m2, Math::max))
+                .isEqualTo(emptyIntInt().put(1, 2).put(2, 2).put(4, 4));
+        assertThat(m1.merge(m3, Math::max))
+                .isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
     }
 
     @Test
@@ -578,9 +624,9 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmptyUsingCollisionResolution() {
         final Map<Integer, Integer> map = mapOf(1, 1, 2, 2, 3, 3);
         if (map instanceof SortedMap) {
-            assertThat(this.<Integer, Integer> emptyMap().merge(map, Math::max)).isEqualTo(map);
+            assertThat(this.<Integer, Integer>emptyMap().merge(map, Math::max)).isEqualTo(map);
         } else {
-            assertThat(this.<Integer, Integer> emptyMap().merge(map, Math::max)).isSameAs(map);
+            assertThat(this.<Integer, Integer>emptyMap().merge(map, Math::max)).isSameAs(map);
         }
     }
 
@@ -589,7 +635,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldIgnoreOrderOfEntriesWhenComparingForEquality() {
             final Map<?, ?> map1 = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
-            final Map<?, ?> map2 = emptyInt().put(3, 'c').put(2, 'b').put(1, 'a').remove(2).put(2, 'b');
+            final Map<?, ?> map2 =
+                    emptyInt().put(3, 'c').put(2, 'b').put(1, 'a').remove(2).put(2, 'b');
             assertThat(map1).isEqualTo(map2);
         }
     }
@@ -598,7 +645,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     class PutTests {
         @Test
         public void shouldPutTuple() {
-            assertThat(emptyIntInt().put(Tuple.of(1, 2))).isEqualTo(emptyIntInt().put(1, 2));
+            assertThat(emptyIntInt().put(Tuple.of(1, 2)))
+                    .isEqualTo(emptyIntInt().put(1, 2));
         }
 
         @Test
@@ -639,7 +687,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldRemoveAllKeys() {
             final Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
-            assertThat(src.removeAll(dev.zazr.collection.List.of(1, 3))).isEqualTo(emptyInt().put(2, 'b'));
+            assertThat(src.removeAll(dev.zazr.collection.List.of(1, 3)))
+                    .isEqualTo(emptyInt().put(2, 'b'));
             assertThat(src.removeAll(dev.zazr.collection.List.of(33))).isSameAs(src);
             assertThat(src.removeAll(dev.zazr.collection.List.empty())).isSameAs(src);
         }
@@ -662,7 +711,7 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void forEachByKeyValue() {
             final Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-            final int[] result = { 0 };
+            final int[] result = {0};
             map.forEach((k, v) -> {
                 result[0] += k + v;
             });
@@ -672,7 +721,7 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void forEachByTuple() {
             final Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-            final int[] result = { 0 };
+            final int[] result = {0};
             map.forEach(t -> {
                 result[0] += t._1() + t._2();
             });
@@ -684,29 +733,25 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void putWithWasntPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(2, 3, (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(2, 3, (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 2).put(2, 3));
     }
 
     @Test
     public void putWithWasPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(1, 3, (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(1, 3, (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 5));
     }
 
     @Test
     public void putWithTupleWasntPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(Tuple.of(2, 3), (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(2, 3), (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 2).put(2, 3));
     }
 
     @Test
     public void putWithTupleWasPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2)
-                .put(Tuple.of(1, 3), (x, y) -> x + y);
+        final Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(1, 3), (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 5));
     }
 
@@ -722,7 +767,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldTabulateTheSeqCallingTheFunctionInTheRightOrder() {
         final LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
-        final Function<Integer, Tuple2<Long, Float>> f = i -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
+        final Function<Integer, Tuple2<Long, Float>> f =
+                i -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
         final Map<Long, Float> map = mapTabulate(3, f);
         assertThat(map).isEqualTo(mapOfTuples(new Tuple2<>(0l, 0f), new Tuple2<>(1l, 1f), new Tuple2<>(2l, 2f)));
     }
@@ -743,7 +789,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldFillTheSeqCallingTheSupplierInTheRightOrder() {
         final LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
-        final Supplier<Tuple2<Long, Float>> s = () -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
+        final Supplier<Tuple2<Long, Float>> s =
+                () -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
         final Map<Long, Float> actual = mapFill(3, s);
         assertThat(actual).isEqualTo(mapOfTuples(new Tuple2<>(0l, 0f), new Tuple2<>(1l, 1f), new Tuple2<>(2l, 2f)));
     }
@@ -769,14 +816,18 @@ public class TreeMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     @Test
     public void mapOfTuplesShouldReturnTheSingletonEmpty() {
-        if (!emptyMapShouldBeSingleton()) { return; }
+        if (!emptyMapShouldBeSingleton()) {
+            return;
+        }
         assertThat(mapOfTuples()).isSameAs(emptyMap());
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void mapOfEntriesShouldReturnTheSingletonEmpty() {
-        if (!emptyMapShouldBeSingleton()) { return; }
+        if (!emptyMapShouldBeSingleton()) {
+            return;
+        }
         assertThat(mapOfEntries()).isSameAs(emptyMap());
     }
 
@@ -786,23 +837,55 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldBiFilterWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.filter((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(0, "0").put(2, "2").put(4, "4").put(6, "6").put(8, "8").put(16, "10").put(18, "12"));
+            final Map<Integer, String> dst =
+                    src.filter((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(0, "0")
+                            .put(2, "2")
+                            .put(4, "4")
+                            .put(6, "6")
+                            .put(8, "8")
+                            .put(16, "10")
+                            .put(18, "12"));
         }
 
         @Test
         public void shouldKeyFilterWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Map<Integer, String> dst = src.filterKeys(k -> k % 2 == 0);
-            assertThat(dst).isEqualTo(emptyIntString().put(0, "0").put(2, "2").put(4, "4").put(6, "6").put(8, "8").put(10, "a").put(12, "c").put(14, "e").put(16, "10").put(18, "12"));
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(0, "0")
+                            .put(2, "2")
+                            .put(4, "4")
+                            .put(6, "6")
+                            .put(8, "8")
+                            .put(10, "a")
+                            .put(12, "c")
+                            .put(14, "e")
+                            .put(16, "10")
+                            .put(18, "12"));
         }
 
         @Test
         public void shouldValueFilterWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(10, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.filterValues(v -> isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(0, "0").put(1, "1").put(2, "2").put(3, "3").put(4, "4").put(5, "5").put(6, "6").put(7, "7").put(8, "8").put(9, "9"));
+            final Map<Integer, String> dst =
+                    src.filterValues(v -> isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(0, "0")
+                            .put(1, "1")
+                            .put(2, "2")
+                            .put(3, "3")
+                            .put(4, "4")
+                            .put(5, "5")
+                            .put(6, "6")
+                            .put(7, "7")
+                            .put(8, "8")
+                            .put(9, "9"));
         }
     }
 
@@ -812,23 +895,56 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldBiRejectWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.reject((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e").put(15, "f").put(17, "11").put(19, "13"));
+            final Map<Integer, String> dst =
+                    src.reject((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @Test
         public void shouldKeyRejectWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Map<Integer, String> dst = src.rejectKeys(k -> k % 2 == 0);
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(11, "b").put(13, "d").put(15, "f").put(17, "11").put(19, "13"));
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(11, "b")
+                            .put(13, "d")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @Test
         public void shouldValueRejectWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(15, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.rejectValues(v -> isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e"));
+            final Map<Integer, String> dst =
+                    src.rejectValues(v -> isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e"));
         }
     }
 
@@ -839,8 +955,23 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldBiRemoveWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.removeAll((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e").put(15, "f").put(17, "11").put(19, "13"));
+            final Map<Integer, String> dst =
+                    src.removeAll((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @SuppressWarnings("deprecation")
@@ -848,7 +979,18 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldKeyRemoveWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Map<Integer, String> dst = src.removeKeys(k -> k % 2 == 0);
-            assertThat(dst).isEqualTo(emptyIntString().put(1, "1").put(3, "3").put(5, "5").put(7, "7").put(9, "9").put(11, "b").put(13, "d").put(15, "f").put(17, "11").put(19, "13"));
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(1, "1")
+                            .put(3, "3")
+                            .put(5, "5")
+                            .put(7, "7")
+                            .put(9, "9")
+                            .put(11, "b")
+                            .put(13, "d")
+                            .put(15, "f")
+                            .put(17, "11")
+                            .put(19, "13"));
         }
 
         @SuppressWarnings("deprecation")
@@ -856,8 +998,16 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldValueRemoveWork() throws Exception {
             final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
             final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst = src.removeValues(v -> isDigits.matcher(v).matches());
-            assertThat(dst).isEqualTo(emptyIntString().put(10, "a").put(11, "b").put(12, "c").put(13, "d").put(14, "e").put(15, "f"));
+            final Map<Integer, String> dst =
+                    src.removeValues(v -> isDigits.matcher(v).matches());
+            assertThat(dst)
+                    .isEqualTo(emptyIntString()
+                            .put(10, "a")
+                            .put(11, "b")
+                            .put(12, "c")
+                            .put(13, "d")
+                            .put(14, "e")
+                            .put(15, "f"));
         }
     }
 
@@ -867,7 +1017,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldComputeIfAbsent() {
             final Map<Integer, String> map = emptyIntString().put(1, "v");
             assertThat(map.computeIfAbsent(1, k -> "b")).isEqualTo(Tuple.of("v", map));
-            assertThat(map.computeIfAbsent(2, k -> "n")).isEqualTo(Tuple.of("n", emptyIntString().put(1, "v").put(2, "n")));
+            assertThat(map.computeIfAbsent(2, k -> "n"))
+                    .isEqualTo(Tuple.of("n", emptyIntString().put(1, "v").put(2, "n")));
         }
     }
 
@@ -876,7 +1027,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldComputeIfPresent() {
             final Map<Integer, String> map = emptyIntString().put(1, "v");
-            assertThat(map.computeIfPresent(1, (k, v) -> "b")).isEqualTo(Tuple.of(Option.some("b"), emptyIntString().put(1, "b")));
+            assertThat(map.computeIfPresent(1, (k, v) -> "b"))
+                    .isEqualTo(Tuple.of(Option.some("b"), emptyIntString().put(1, "b")));
             assertThat(map.computeIfPresent(2, (k, v) -> "n")).isEqualTo(Tuple.of(Option.none(), map));
         }
 
@@ -973,10 +1125,11 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldPartitionInOneIteration() {
             final AtomicInteger count = new AtomicInteger(0);
             final Map<String, Integer> map = mapOf("1", 1, "2", 2, "3", 3);
-            final Tuple2<? extends Map<String, Integer>, ? extends Map<String, Integer>> results = map.partition(entry -> {
-                count.incrementAndGet();
-                return true;
-            });
+            final Tuple2<? extends Map<String, Integer>, ? extends Map<String, Integer>> results =
+                    map.partition(entry -> {
+                        count.incrementAndGet();
+                        return true;
+                    });
             assertThat(results._1()).isEqualTo(mapOf("1", 1, "2", 2, "3", 3));
             assertThat(results._2()).isEmpty();
             assertThat(count.get()).isEqualTo(3);
@@ -987,12 +1140,14 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldHaveSizedSpliterator() {
-        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED)).isTrue();
+        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.SIZED | Spliterator.SUBSIZED))
+                .isTrue();
     }
 
     @Test
     public void shouldHaveDistinctSpliterator() {
-        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT)).isTrue();
+        assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.DISTINCT))
+                .isTrue();
     }
 
     @Test
@@ -1013,28 +1168,37 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectPutOfNullValue() {
-            assertThatNullPointerException().isThrownBy(() -> TreeMapTest.this.<String, String>mapOf("k", "v").put("k", null));
+            assertThatNullPointerException()
+                    .isThrownBy(() ->
+                            TreeMapTest.this.<String, String>mapOf("k", "v").put("k", null));
         }
 
         @Test
         public void shouldRejectPutWithMergeResultingInNull() {
-            assertThatNullPointerException().isThrownBy(() -> TreeMapTest.this.<String, String>mapOf("k", "v").put("k", "w", (a, b) -> null));
+            assertThatNullPointerException()
+                    .isThrownBy(() ->
+                            TreeMapTest.this.<String, String>mapOf("k", "v").put("k", "w", (a, b) -> null));
         }
 
         @Test
         public void shouldRejectComputeIfPresentWithNullResult() {
-            assertThatNullPointerException().isThrownBy(() -> TreeMapTest.this.<String, String>mapOf("k", "v").computeIfPresent("k", (k, v) -> null));
+            assertThatNullPointerException()
+                    .isThrownBy(() ->
+                            TreeMapTest.this.<String, String>mapOf("k", "v").computeIfPresent("k", (k, v) -> null));
         }
 
         @Test
         public void shouldRejectComputeIfAbsentWithNullResult() {
-            assertThatNullPointerException().isThrownBy(() -> TreeMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> null));
+            assertThatNullPointerException()
+                    .isThrownBy(
+                            () -> TreeMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> null));
         }
 
         @Test
         public void shouldRejectReplaceWithNullValue() {
             final Map<String, String> map = mapOf("k", "v");
-            assertThatNullPointerException().isThrownBy(() -> map.replace(Tuple.of("k", "v"), Tuple.<String, String>of("k", null)));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> map.replace(Tuple.of("k", "v"), Tuple.<String, String>of("k", null)));
             assertThatNullPointerException().isThrownBy(() -> map.replaceAll((k, v) -> null));
         }
 
@@ -1067,14 +1231,16 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void computeIfAbsentOnAbsentKeyComputes() {
-            final Tuple2<String, ? extends Map<String, String>> result = TreeMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> "computed");
+            final Tuple2<String, ? extends Map<String, String>> result =
+                    TreeMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> "computed");
             assertThat(result._1()).isEqualTo("computed");
         }
 
         @Test
         public void computeIfPresentOnAbsentKeyIsNoop() {
             final Map<String, String> map = mapOf("k", "v");
-            final Tuple2<Option<String>, ? extends Map<String, String>> result = map.computeIfPresent("missing", (k, v) -> "x");
+            final Tuple2<Option<String>, ? extends Map<String, String>> result =
+                    map.computeIfPresent("missing", (k, v) -> "x");
             assertThat(result._1()).isEqualTo(Option.none());
             assertThat(result._2()).isSameAs(map);
         }
@@ -1088,7 +1254,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void putWithMergeOnAbsentKeyPutsWithoutMerging() {
-            final Map<String, String> map = TreeMapTest.this.<String, String>emptyMap().put("k", "v", (a, b) -> "merged");
+            final Map<String, String> map =
+                    TreeMapTest.this.<String, String>emptyMap().put("k", "v", (a, b) -> "merged");
             assertThat(map).isEqualTo(mapOf("k", "v"));
         }
 
@@ -1104,8 +1271,10 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldCollectEntriesIntoAMapOfTheSameKind() {
         final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-        final Map<String, Integer> actual = map.collect((k, v) -> k % 2 == 1 ? Option.some(Tuple.of(v, k * 10)) : Option.none());
-        assertThat(actual).isEqualTo(this.<String, Integer>emptyMap().put("a", 10).put("c", 30));
+        final Map<String, Integer> actual =
+                map.collect((k, v) -> k % 2 == 1 ? Option.some(Tuple.of(v, k * 10)) : Option.none());
+        assertThat(actual)
+                .isEqualTo(this.<String, Integer>emptyMap().put("a", 10).put("c", 30));
         assertThat(actual.getClass()).isSameAs(map.getClass());
     }
 
@@ -1118,9 +1287,10 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldCollectNothingFromAnEmptyMap() {
         final AtomicInteger calls = new AtomicInteger();
         assertThat(this.<Integer, String>emptyMap().collect((k, v) -> {
-            calls.incrementAndGet();
-            return Option.some(Tuple.of(k, v));
-        })).isEqualTo(emptyMap());
+                    calls.incrementAndGet();
+                    return Option.some(Tuple.of(k, v));
+                }))
+                .isEqualTo(emptyMap());
         assertThat(calls.get()).isEqualTo(0);
     }
 
@@ -1150,7 +1320,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldNarrowMap() {
         final SortedMap<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
         final SortedMap<Integer, Number> number2numberMap = SortedMap.narrow(int2doubleMap);
-        final int actual = number2numberMap.put(2, new BigDecimal("2.0")).values().sum().intValue();
+        final int actual =
+                number2numberMap.put(2, new BigDecimal("2.0")).values().sum().intValue();
         assertThat(actual).isEqualTo(3);
     }
 
@@ -1159,23 +1330,31 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldNotClaimSortedEntries() {
             // the keys are ordered, the entries are not sorted in their own order
-            assertThat(TreeMap.of(1, "a", 2, "b").spliterator().hasCharacteristics(Spliterator.SORTED)).isFalse();
-            assertThat(TreeMap.of(1, "a", 2, "b").spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
+            assertThat(TreeMap.of(1, "a", 2, "b").spliterator().hasCharacteristics(Spliterator.SORTED))
+                    .isFalse();
+            assertThat(TreeMap.of(1, "a", 2, "b").spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isTrue();
         }
 
         @Test
         public void shouldSortTheEntriesOfAReversedMapWithAJavaStream() {
-            final TreeMap<Integer, String> reversed = TreeMap.of(Comparator.<Integer>reverseOrder(), 3, "c", 1, "a", 2, "b");
-            assertThat(new java.util.ArrayList<>(reversed.asJava())).isEqualTo(java.util.List.of(Tuple.of(3, "c"), Tuple.of(2, "b"), Tuple.of(1, "a")));
-            assertThat(reversed.stream().sorted().toList()).isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
+            final TreeMap<Integer, String> reversed =
+                    TreeMap.of(Comparator.<Integer>reverseOrder(), 3, "c", 1, "a", 2, "b");
+            assertThat(new java.util.ArrayList<>(reversed.asJava()))
+                    .isEqualTo(java.util.List.of(Tuple.of(3, "c"), Tuple.of(2, "b"), Tuple.of(1, "a")));
+            assertThat(reversed.stream().sorted().toList())
+                    .isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
             final TreeMap<Integer, String> natural = TreeMap.of(3, "c", 1, "a", 2, "b");
-            assertThat(natural.stream().sorted().toList()).isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
-            assertThat(natural.stream().sorted(Comparator.reverseOrder()).toList()).isEqualTo(new java.util.ArrayList<>(reversed.asJava()));
+            assertThat(natural.stream().sorted().toList())
+                    .isEqualTo(java.util.List.of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c")));
+            assertThat(natural.stream().sorted(Comparator.reverseOrder()).toList())
+                    .isEqualTo(new java.util.ArrayList<>(reversed.asJava()));
         }
 
         @Test
         public void shouldHaveOrderedSpliterator() {
-            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED)).isTrue();
+            assertThat(of(1, 2, 3).spliterator().hasCharacteristics(Spliterator.ORDERED))
+                    .isTrue();
         }
     }
 
@@ -1204,7 +1383,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldBeAwareOfNonExistingUniqueElement() {
-        assertThat(this.<Integer, Integer>emptyMap().existsUnique(t -> t._2() == 1)).isFalse();
+        assertThat(this.<Integer, Integer>emptyMap().existsUnique(t -> t._2() == 1))
+                .isFalse();
     }
 
     @Test
@@ -1268,12 +1448,15 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldFoldNil() {
-        assertThat(this.<Integer, Integer>emptyMap().fold(entry(0, 0), TreeMapTest::sumOfEntries)).isEqualTo(entry(0, 0));
+        assertThat(this.<Integer, Integer>emptyMap().fold(entry(0, 0), TreeMapTest::sumOfEntries))
+                .isEqualTo(entry(0, 0));
     }
 
     @Test
     public void shouldThrowWhenFoldNullOperator() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>emptyMap().fold(null, null));
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap().fold(null, null));
     }
 
     @Test
@@ -1283,7 +1466,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldFoldMultipleElements() {
-        assertThat(entries(1, 2, 3).fold(entry(0, 0), TreeMapTest::sumOfEntries)).isEqualTo(entry(3, 6));
+        assertThat(entries(1, 2, 3).fold(entry(0, 0), TreeMapTest::sumOfEntries))
+                .isEqualTo(entry(3, 6));
     }
 
     // -- groupBy
@@ -1296,7 +1480,10 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldNonNilGroupByIdentity() {
         final Map<?, ?> actual = entries('a', 'b', 'c').groupBy(Tuple2::_2);
-        final Map<?, ?> expected = LinkedHashMap.empty().put('a', mapOf(0, 'a')).put('b', mapOf(1, 'b')).put('c', mapOf(2, 'c'));
+        final Map<?, ?> expected = LinkedHashMap.empty()
+                .put('a', mapOf(0, 'a'))
+                .put('b', mapOf(1, 'b'))
+                .put('c', mapOf(2, 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1316,14 +1503,19 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNonNilArrangeByIdentity() {
-        final Option<Map<Character, Tuple2<Integer, Character>>> actual = entries('a', 'b', 'c').arrangeBy(Tuple2::_2);
-        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty().put('a', entry(0, 'a')).put('b', entry(1, 'b')).put('c', entry(2, 'c')));
+        final Option<Map<Character, Tuple2<Integer, Character>>> actual =
+                entries('a', 'b', 'c').arrangeBy(Tuple2::_2);
+        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty()
+                .put('a', entry(0, 'a'))
+                .put('b', entry(1, 'b'))
+                .put('c', entry(2, 'c')));
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldNonNilArrangeByEqual() {
-        final Option<Map<Integer, Tuple2<Integer, Character>>> actual = entries('a', 'b', 'c').arrangeBy(c -> 1);
+        final Option<Map<Integer, Tuple2<Integer, Character>>> actual =
+                entries('a', 'b', 'c').arrangeBy(c -> 1);
         final Option<Map<?, ?>> expected = Option.none();
         assertThat(actual).isEqualTo(expected);
     }
@@ -1352,7 +1544,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMaxOfByte() {
-        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).max()).isEqualTo(Option.some(entry((byte) 2, (byte) 2)));
+        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).max())
+                .isEqualTo(Option.some(entry((byte) 2, (byte) 2)));
     }
 
     @Test
@@ -1382,27 +1575,37 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMaxOfShort() {
-        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3).max()).isEqualTo(Option.some(entry((short) 3, (short) 3)));
+        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3)
+                        .max())
+                .isEqualTo(Option.some(entry((short) 3, (short) 3)));
     }
 
     @Test
     public void shouldComputeMaxOfBigInteger() {
-        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE).max()).isEqualTo(Option.some(entry(BigInteger.ONE, BigInteger.ONE)));
+        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE)
+                        .max())
+                .isEqualTo(Option.some(entry(BigInteger.ONE, BigInteger.ONE)));
     }
 
     @Test
     public void shouldComputeMaxOfBigDecimal() {
-        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE).max()).isEqualTo(Option.some(entry(BigDecimal.ONE, BigDecimal.ONE)));
+        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE)
+                        .max())
+                .isEqualTo(Option.some(entry(BigDecimal.ONE, BigDecimal.ONE)));
     }
 
     @Test
     public void shouldThrowNPEWhenMaxOfNullAndInt() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(null, 1).max());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(null, 1).max());
     }
 
     @Test
     public void shouldThrowNPEWhenMaxOfIntAndNull() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(1, null).max());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(1, null).max());
     }
 
     @Test
@@ -1418,12 +1621,20 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCalculateMaxOfDoublePositiveAndNegativeInfinity() {
-        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-").max().get()._1()).isEqualTo(Double.POSITIVE_INFINITY);
+        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-")
+                        .max()
+                        .get()
+                        ._1())
+                .isEqualTo(Double.POSITIVE_INFINITY);
     }
 
     @Test
     public void shouldCalculateMaxOfFloatPositiveAndNegativeInfinity() {
-        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-").max().get()._1()).isEqualTo(Float.POSITIVE_INFINITY);
+        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-")
+                        .max()
+                        .get()
+                        ._1())
+                .isEqualTo(Float.POSITIVE_INFINITY);
     }
 
     /** A map whose keys are not mutually comparable (a Double and a Float), so that comparing its entries fails. */
@@ -1473,7 +1684,9 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenMaxByWithNullFunction() {
-        assertThrows(NullPointerException.class, () -> mapOf(1, 1).maxBy((Function<Tuple2<Integer, Integer>, Integer>) null));
+        assertThrows(
+                NullPointerException.class,
+                () -> mapOf(1, 1).maxBy((Function<Tuple2<Integer, Integer>, Integer>) null));
     }
 
     @Test
@@ -1495,9 +1708,10 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldCallMaxFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(entries(1, 2, 3).maxBy(t -> {
-            cnt[0]++;
-            return t._2();
-        })).isEqualTo(Option.some(entry(2, 3)));
+                    cnt[0]++;
+                    return t._2();
+                }))
+                .isEqualTo(Option.some(entry(2, 3)));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -1525,7 +1739,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMinOfByte() {
-        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).min()).isEqualTo(Option.some(entry((byte) 1, (byte) 1)));
+        assertThat(mapOf((byte) 1, (byte) 1, (byte) 2, (byte) 2).min())
+                .isEqualTo(Option.some(entry((byte) 1, (byte) 1)));
     }
 
     @Test
@@ -1555,27 +1770,37 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldComputeMinOfShort() {
-        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3).min()).isEqualTo(Option.some(entry((short) 1, (short) 1)));
+        assertThat(mapOf((short) 1, (short) 1, (short) 2, (short) 2, (short) 3, (short) 3)
+                        .min())
+                .isEqualTo(Option.some(entry((short) 1, (short) 1)));
     }
 
     @Test
     public void shouldComputeMinOfBigInteger() {
-        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE).min()).isEqualTo(Option.some(entry(BigInteger.ZERO, BigInteger.ZERO)));
+        assertThat(mapOf(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE)
+                        .min())
+                .isEqualTo(Option.some(entry(BigInteger.ZERO, BigInteger.ZERO)));
     }
 
     @Test
     public void shouldComputeMinOfBigDecimal() {
-        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE).min()).isEqualTo(Option.some(entry(BigDecimal.ZERO, BigDecimal.ZERO)));
+        assertThat(mapOf(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE, BigDecimal.ONE)
+                        .min())
+                .isEqualTo(Option.some(entry(BigDecimal.ZERO, BigDecimal.ZERO)));
     }
 
     @Test
     public void shouldThrowNPEWhenMinOfNullAndInt() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(null, 1).min());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(null, 1).min());
     }
 
     @Test
     public void shouldThrowNPEWhenMinOfIntAndNull() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>mapOf(1, null).min());
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>mapOf(1, null).min());
     }
 
     @Test
@@ -1591,12 +1816,20 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCalculateMinOfDoublePositiveAndNegativeInfinity() {
-        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-").min().get()._1()).isEqualTo(Double.NEGATIVE_INFINITY);
+        assertThat(mapOf(Double.POSITIVE_INFINITY, "+", Double.NEGATIVE_INFINITY, "-")
+                        .min()
+                        .get()
+                        ._1())
+                .isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     @Test
     public void shouldCalculateMinOfFloatPositiveAndNegativeInfinity() {
-        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-").min().get()._1()).isEqualTo(Float.NEGATIVE_INFINITY);
+        assertThat(mapOf(Float.POSITIVE_INFINITY, "+", Float.NEGATIVE_INFINITY, "-")
+                        .min()
+                        .get()
+                        ._1())
+                .isEqualTo(Float.NEGATIVE_INFINITY);
     }
 
     // -- minBy(Comparator)
@@ -1625,7 +1858,9 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenMinByWithNullFunction() {
-        assertThrows(NullPointerException.class, () -> mapOf(1, 1).minBy((Function<Tuple2<Integer, Integer>, Integer>) null));
+        assertThrows(
+                NullPointerException.class,
+                () -> mapOf(1, 1).minBy((Function<Tuple2<Integer, Integer>, Integer>) null));
     }
 
     @Test
@@ -1647,9 +1882,10 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldCallMinFunctionOncePerElement() {
         final int[] cnt = {0};
         assertThat(entries(1, 2, 3).minBy(t -> {
-            cnt[0]++;
-            return t._2();
-        })).isEqualTo(Option.some(entry(0, 1)));
+                    cnt[0]++;
+                    return t._2();
+                }))
+                .isEqualTo(Option.some(entry(0, 1)));
         assertThat(cnt[0]).isEqualTo(3);
     }
 
@@ -1663,7 +1899,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCaclEmptyOrElseEqualOther() {
-        assertThat(this.<Integer, Integer>emptyMap().orElse(asList(entry(1, 1), entry(2, 2)))).isEqualTo(mapOf(1, 1, 2, 2));
+        assertThat(this.<Integer, Integer>emptyMap().orElse(asList(entry(1, 1), entry(2, 2))))
+                .isEqualTo(mapOf(1, 1, 2, 2));
     }
 
     @Test
@@ -1681,7 +1918,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCaclEmptyOrElseEqualSupplier() {
-        assertThat(this.<Integer, Integer>emptyMap().orElse(() -> asList(entry(1, 1), entry(2, 2)))).isEqualTo(mapOf(1, 1, 2, 2));
+        assertThat(this.<Integer, Integer>emptyMap().orElse(() -> asList(entry(1, 1), entry(2, 2))))
+                .isEqualTo(mapOf(1, 1, 2, 2));
     }
 
     @Test
@@ -1706,8 +1944,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldPartitionIntsInOddAndEvenHavingOddAndEvenNumbers() {
         assertThat(entries(1, 2, 3, 4).partition(t -> t._2() % 2 != 0))
-                .isEqualTo(Tuple.of(mapOfTuples(Tuple.of(0, 1), Tuple.of(2, 3)),
-                        mapOfTuples(Tuple.of(1, 2), Tuple.of(3, 4))));
+                .isEqualTo(Tuple.of(
+                        mapOfTuples(Tuple.of(0, 1), Tuple.of(2, 3)), mapOfTuples(Tuple.of(1, 2), Tuple.of(3, 4))));
     }
 
     @Test
@@ -1724,12 +1962,15 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenReduceOptionNil() {
-        assertThat(this.<Integer, Integer>emptyMap().reduceOption(TreeMapTest::sumOfEntries)).isSameAs(Option.none());
+        assertThat(this.<Integer, Integer>emptyMap().reduceOption(TreeMapTest::sumOfEntries))
+                .isSameAs(Option.none());
     }
 
     @Test
     public void shouldThrowWhenReduceOptionNullOperator() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>emptyMap().reduceOption(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap().reduceOption(null));
     }
 
     @Test
@@ -1741,12 +1982,16 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenReduceNil() {
-        assertThrows(NoSuchElementException.class, () -> this.<Integer, Integer>emptyMap().reduce(TreeMapTest::sumOfEntries));
+        assertThrows(
+                NoSuchElementException.class,
+                () -> this.<Integer, Integer>emptyMap().reduce(TreeMapTest::sumOfEntries));
     }
 
     @Test
     public void shouldThrowWhenReduceNullOperator() {
-        assertThrows(NullPointerException.class, () -> this.<Integer, Integer>emptyMap().reduce(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap().reduce(null));
     }
 
     @Test
@@ -1758,14 +2003,16 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldReduceEntriesOfOneAndTwoElementMaps() {
         assertThat(entries(7).reduce(TreeMapTest::sumOfEntries)).isEqualTo(entry(0, 7));
         assertThat(entries(7, 8).reduce(TreeMapTest::sumOfEntries)).isEqualTo(entry(1, 15));
-        assertThat(entries(7, 8).fold(entry(100, 100), TreeMapTest::sumOfEntries)).isEqualTo(entry(101, 115));
+        assertThat(entries(7, 8).fold(entry(100, 100), TreeMapTest::sumOfEntries))
+                .isEqualTo(entry(101, 115));
     }
 
     // -- replace(entry, entry)
 
     @Test
     public void shouldReplaceElementOfNilUsingCurrNew() {
-        assertThat(this.<Integer, Integer>emptyMap().replace(entry(0, 1), entry(0, 2))).isEqualTo(emptyMap());
+        assertThat(this.<Integer, Integer>emptyMap().replace(entry(0, 1), entry(0, 2)))
+                .isEqualTo(emptyMap());
     }
 
     @Test
@@ -1780,7 +2027,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldReplaceElementOfNonNilUsingCurrNewWhenOneOccurrenceExists() {
-        assertThat(entries(0, 1, 2).replace(entry(1, 1), entry(1, 3))).isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2)));
+        assertThat(entries(0, 1, 2).replace(entry(1, 1), entry(1, 3)))
+                .isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2)));
     }
 
     @Test
@@ -1792,7 +2040,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReplaceAllElementsOfNilUsingCurrNew() {
-        assertThat(this.<Integer, Integer>emptyMap().replaceAll(entry(0, 1), entry(0, 2))).isEqualTo(emptyMap());
+        assertThat(this.<Integer, Integer>emptyMap().replaceAll(entry(0, 1), entry(0, 2)))
+                .isEqualTo(emptyMap());
     }
 
     @Test
@@ -1804,7 +2053,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     public void shouldReplaceAllElementsOfNonNilUsingCurrNew() {
         // a map holds an entry once, so replaceAll replaces that one entry
-        assertThat(entries(0, 1, 2, 1).replaceAll(entry(1, 1), entry(1, 3))).isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2), entry(3, 1)));
+        assertThat(entries(0, 1, 2, 1).replaceAll(entry(1, 1), entry(1, 3)))
+                .isEqualTo(mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2), entry(3, 1)));
     }
 
     // -- retainAll
@@ -1914,22 +2164,28 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPropagateWhatTheTapActionThrows() {
-        assertThrows(IllegalStateException.class, () -> entries(1, 2).tap(t -> {
-            throw new IllegalStateException();
-        }).size());
+        assertThrows(
+                IllegalStateException.class,
+                () -> entries(1, 2)
+                        .tap(t -> {
+                            throw new IllegalStateException();
+                        })
+                        .size());
     }
 
     // -- collect(Collector)
 
     @Test
     public void shouldCollectWithACollector() {
-        final java.util.List<Tuple2<Integer, Integer>> actual = entries(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        final java.util.List<Tuple2<Integer, Integer>> actual =
+                entries(1, 2, 3).collect(java.util.stream.Collectors.toList());
         assertThat(actual).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
     }
 
     @Test
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Tuple2<Integer, Integer>> actual = entries(1, 2, 3).collect(ArrayList<Tuple2<Integer, Integer>>::new, ArrayList::add, ArrayList::addAll);
+        final ArrayList<Tuple2<Integer, Integer>> actual =
+                entries(1, 2, 3).collect(ArrayList<Tuple2<Integer, Integer>>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
     }
 
@@ -1938,7 +2194,7 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertNilToJavaArray() {
         final Object[] actual = emptyMap().toArray();
-        assertThat(actual).isEqualTo(new Object[]{});
+        assertThat(actual).isEqualTo(new Object[] {});
     }
 
     @Test
@@ -1952,7 +2208,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertToHashMap() {
         assertThat(entries(9, 5, 1).toMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(HashMap.of(1, 1, 5, 5, 9, 9));
-        assertThat(this.<Integer, Integer>emptyMap().toMap(t -> Tuple.of(t._2(), t._2()))).isSameAs(HashMap.empty());
+        assertThat(this.<Integer, Integer>emptyMap().toMap(t -> Tuple.of(t._2(), t._2())))
+                .isSameAs(HashMap.empty());
     }
 
     @Test
@@ -1962,8 +2219,10 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertToLinkedMap() {
-        assertThat(entries(1, 5, 9).toLinkedMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
-        assertThat(this.<Integer, Integer>emptyMap().toLinkedMap(t -> Tuple.of(t._2(), t._2()))).isSameAs(LinkedHashMap.empty());
+        assertThat(entries(1, 5, 9).toLinkedMap(t -> Tuple.of(t._2(), t._2())))
+                .isEqualTo(LinkedHashMap.of(1, 1, 5, 5, 9, 9));
+        assertThat(this.<Integer, Integer>emptyMap().toLinkedMap(t -> Tuple.of(t._2(), t._2())))
+                .isSameAs(LinkedHashMap.empty());
     }
 
     @Test
@@ -1974,7 +2233,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertToSortedMap() {
         assertThat(entries(9, 5, 1).toSortedMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(TreeMap.of(1, 1, 5, 5, 9, 9));
-        assertThat(this.<Integer, Integer>emptyMap().toSortedMap(t -> Tuple.of(t._2(), t._2()))).isEqualTo(TreeMap.empty());
+        assertThat(this.<Integer, Integer>emptyMap().toSortedMap(t -> Tuple.of(t._2(), t._2())))
+                .isEqualTo(TreeMap.empty());
     }
 
     @Test
@@ -1985,13 +2245,15 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConvertToSortedMapWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(entries(9, 5, 1).toSortedMap(comparator, t -> Tuple.of(t._2(), t._2()))).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(entries(9, 5, 1).toSortedMap(comparator, t -> Tuple.of(t._2(), t._2())))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @Test
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
         final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
-        assertThat(entries(9, 5, 1).toSortedMap(comparator, Tuple2::_2, Tuple2::_2)).isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
+        assertThat(entries(9, 5, 1).toSortedMap(comparator, Tuple2::_2, Tuple2::_2))
+                .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @Test
@@ -2005,20 +2267,23 @@ public class TreeMapTest extends AbstractTraversableTest {
         final Map<Integer, Integer> value = entries(3, 7, 1, 15, 0);
         final Set<Tuple2<Integer, Integer>> set = value.toLinkedSet();
         assertThat(set).isEqualTo(value.toList().foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
-        Assertions.assertThat(new java.util.ArrayList<>(set.asJava())).isEqualTo(new java.util.ArrayList<>(value.asJava()));
+        Assertions.assertThat(new java.util.ArrayList<>(set.asJava()))
+                .isEqualTo(new java.util.ArrayList<>(value.asJava()));
         assertThat(emptyMap().toLinkedSet()).isSameAs(LinkedHashSet.empty());
     }
 
     @Test
     public void shouldConvertToSortedSetWithoutComparatorOnComparable() {
-        assertThat(entries(3, 7, 1, 15, 0).toSortedSet()).isEqualTo(TreeSet.of(entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
+        assertThat(entries(3, 7, 1, 15, 0).toSortedSet())
+                .isEqualTo(TreeSet.of(entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
     }
 
     @Test
     public void shouldConvertToSortedSet() {
         final Comparator<Tuple2<Integer, Integer>> comparator = Comparator.comparingInt(t -> Integer.bitCount(t._2()));
         assertThat(entries(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
-                .isEqualTo(TreeSet.of(comparator.reversed(), entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
+                .isEqualTo(TreeSet.of(
+                        comparator.reversed(), entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
     }
 
     @Test
@@ -2034,15 +2299,20 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnValuesVector() {
-            final Vector<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33)).values();
+            final Vector<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
+                    .values();
             assertThat(actual).isEqualTo(Vector.of(11, 22, 33));
         }
 
         @Test
         public void shouldReturnValuesInTheIterationOrderOfTheMap() {
             final Map<Integer, String> map = mapOf(3, "c", 1, "a", 2, "b");
-            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava())).isEqualTo(new java.util.ArrayList<>(map.toList().map(Tuple2::_2).asJava()));
-            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava())).isEqualTo(new java.util.ArrayList<>(map.keySet().toList().map(k -> map.get(k).get()).asJava()));
+            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava()))
+                    .isEqualTo(new java.util.ArrayList<>(
+                            map.toList().map(Tuple2::_2).asJava()));
+            Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava()))
+                    .isEqualTo(new java.util.ArrayList<>(
+                            map.keySet().toList().map(k -> map.get(k).get()).asJava()));
         }
 
         @Test
@@ -2082,11 +2352,13 @@ public class TreeMapTest extends AbstractTraversableTest {
         return TreeMap.empty();
     }
 
-    protected <K extends Comparable<? super K>, V, T extends V> Collector<T, ?, ? extends Map<K, V>> collectorWithMapper(Function<? super T, ? extends K> keyMapper) {
+    protected <K extends Comparable<? super K>, V, T extends V>
+            Collector<T, ?, ? extends Map<K, V>> collectorWithMapper(Function<? super T, ? extends K> keyMapper) {
         return TreeMap.collector(keyMapper);
     }
 
-    protected <K extends Comparable<? super K>, V, T> Collector<T, ?, ? extends Map<K, V>> collectorWithMappers(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    protected <K extends Comparable<? super K>, V, T> Collector<T, ?, ? extends Map<K, V>> collectorWithMappers(
+            Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         return TreeMap.collector(keyMapper, valueMapper);
     }
 
@@ -2105,17 +2377,20 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @SuppressWarnings("varargs")
     @SafeVarargs
-    protected final <K extends Comparable<? super K>, V> TreeMap<K, V> mapOfTuples(Tuple2<? extends K, ? extends V>... entries) {
+    protected final <K extends Comparable<? super K>, V> TreeMap<K, V> mapOfTuples(
+            Tuple2<? extends K, ? extends V>... entries) {
         return TreeMap.ofEntries(entries);
     }
 
-    protected <K extends Comparable<? super K>, V> Map<K, V> mapOfTuples(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+    protected <K extends Comparable<? super K>, V> Map<K, V> mapOfTuples(
+            Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         return TreeMap.ofEntries(entries);
     }
 
     @SuppressWarnings("varargs")
     @SafeVarargs
-    protected final <K extends Comparable<? super K>, V> TreeMap<K, V> mapOfEntries(java.util.Map.Entry<? extends K, ? extends V>... entries) {
+    protected final <K extends Comparable<? super K>, V> TreeMap<K, V> mapOfEntries(
+            java.util.Map.Entry<? extends K, ? extends V>... entries) {
         return TreeMap.ofEntries(entries);
     }
 
@@ -2131,19 +2406,25 @@ public class TreeMapTest extends AbstractTraversableTest {
         return TreeMap.of(k1, v1, k2, v2, k3, v3);
     }
 
-    protected <T, K extends Comparable<? super K>, V> TreeMap<K, V> mapOf(java.util.stream.Stream<? extends T> stream, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
+    protected <T, K extends Comparable<? super K>, V> TreeMap<K, V> mapOf(
+            java.util.stream.Stream<? extends T> stream,
+            Function<? super T, ? extends K> keyMapper,
+            Function<? super T, ? extends V> valueMapper) {
         return TreeMap.ofAll(stream, keyMapper, valueMapper);
     }
 
-    protected <T, K extends Comparable<? super K>, V> TreeMap<K, V> mapOf(java.util.stream.Stream<? extends T> stream, Function<? super T, Tuple2<? extends K, ? extends V>> f) {
+    protected <T, K extends Comparable<? super K>, V> TreeMap<K, V> mapOf(
+            java.util.stream.Stream<? extends T> stream, Function<? super T, Tuple2<? extends K, ? extends V>> f) {
         return TreeMap.ofAll(stream, f);
     }
 
-    protected <K extends Comparable<? super K>, V> TreeMap<K, V> mapTabulate(int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
+    protected <K extends Comparable<? super K>, V> TreeMap<K, V> mapTabulate(
+            int n, Function<? super Integer, ? extends Tuple2<? extends K, ? extends V>> f) {
         return TreeMap.tabulate(n, f);
     }
 
-    protected <K extends Comparable<? super K>, V> TreeMap<K, V> mapFill(int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
+    protected <K extends Comparable<? super K>, V> TreeMap<K, V> mapFill(
+            int n, Supplier<? extends Tuple2<? extends K, ? extends V>> s) {
         return TreeMap.fill(n, s);
     }
 
@@ -2151,12 +2432,14 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapBothEmpty() {
-        assertThat(TreeMap.empty().mapBoth(Function.identity(), Function.identity())).isEmpty();
+        assertThat(TreeMap.empty().mapBoth(Function.identity(), Function.identity()))
+                .isEmpty();
     }
 
     @Test
     public void shouldMapBothNonEmpty() {
-        final TreeMap<String, Integer> actual = TreeMap.of(1, "1", 2, "2").mapBoth(Comparators.naturalComparator(), String::valueOf, Integer::parseInt);
+        final TreeMap<String, Integer> actual =
+                TreeMap.of(1, "1", 2, "2").mapBoth(Comparators.naturalComparator(), String::valueOf, Integer::parseInt);
         final TreeMap<String, Integer> expected = TreeMap.of("1", 1, "2", 2);
         assertThat(actual).isEqualTo(expected);
     }
@@ -2165,7 +2448,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     class CollectorTests {
         @Test
         public void shouldCollectFromJavaStream() {
-            final TreeMap<Integer, String> actual = java.util.stream.Stream.of(Tuple.of(1, "1"), Tuple.of(2, "2")).collect(TreeMap.collector(Comparators.naturalComparator()));
+            final TreeMap<Integer, String> actual = java.util.stream.Stream.of(Tuple.of(1, "1"), Tuple.of(2, "2"))
+                    .collect(TreeMap.collector(Comparators.naturalComparator()));
             final TreeMap<Integer, String> expected = TreeMap.of(1, "1", 2, "2");
             assertThat(actual).isEqualTo(expected);
         }
@@ -2174,10 +2458,11 @@ public class TreeMapTest extends AbstractTraversableTest {
     // -- construct
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void shouldConstructFromJavaStreamWithKeyMapperAndValueMapper() {
         final java.util.stream.Stream javaStream = java.util.stream.Stream.of(1, 2, 3);
-        final TreeMap<Integer, String> actual = TreeMap.ofAll(Comparators.naturalComparator(), javaStream, Function.identity(), String::valueOf);
+        final TreeMap<Integer, String> actual =
+                TreeMap.ofAll(Comparators.naturalComparator(), javaStream, Function.identity(), String::valueOf);
         final TreeMap<Integer, String> expected = TreeMap.of(1, "1", 2, "2", 3, "3");
         assertThat(actual).isEqualTo(expected);
     }
@@ -2185,7 +2470,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFromJavaStreamWithEntryMapper() {
         final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
-        final Map<Integer, String> actual = TreeMap.ofAll(Comparators.naturalComparator(), javaStream, i -> Tuple.of(i, String.valueOf(i)));
+        final Map<Integer, String> actual =
+                TreeMap.ofAll(Comparators.naturalComparator(), javaStream, i -> Tuple.of(i, String.valueOf(i)));
         final TreeMap<Integer, String> expected = TreeMap.of(1, "1", 2, "2", 3, "3");
         assertThat(actual).isEqualTo(expected);
     }
@@ -2193,7 +2479,9 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldConstructFromUtilEntries() {
-        final TreeMap<Integer, String> actual = TreeMap.ofAll(Comparators.naturalComparator(), asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3")));
+        final TreeMap<Integer, String> actual = TreeMap.ofAll(
+                Comparators.naturalComparator(),
+                asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3")));
         final TreeMap<Integer, String> expected = TreeMap.of(1, "1", 2, "2", 3, "3");
         assertThat(actual).isEqualTo(expected);
     }
@@ -2222,56 +2510,147 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructFrom3EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"));
+        final java.util.Map<Integer, String> expected =
+                asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom4EntriesWithComparator() {
         final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"));
+        final java.util.Map<Integer, String> expected =
+                asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom5EntriesWithComparator() {
-        final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"));
+        final Map<Integer, String> actual =
+                TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5");
+        final java.util.Map<Integer, String> expected = asJavaMap(
+                asJavaEntry(1, "1"),
+                asJavaEntry(2, "2"),
+                asJavaEntry(3, "3"),
+                asJavaEntry(4, "4"),
+                asJavaEntry(5, "5"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom6EntriesWithComparator() {
-        final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"));
+        final Map<Integer, String> actual =
+                TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6");
+        final java.util.Map<Integer, String> expected = asJavaMap(
+                asJavaEntry(1, "1"),
+                asJavaEntry(2, "2"),
+                asJavaEntry(3, "3"),
+                asJavaEntry(4, "4"),
+                asJavaEntry(5, "5"),
+                asJavaEntry(6, "6"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom7EntriesWithComparator() {
-        final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"));
+        final Map<Integer, String> actual =
+                TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7");
+        final java.util.Map<Integer, String> expected = asJavaMap(
+                asJavaEntry(1, "1"),
+                asJavaEntry(2, "2"),
+                asJavaEntry(3, "3"),
+                asJavaEntry(4, "4"),
+                asJavaEntry(5, "5"),
+                asJavaEntry(6, "6"),
+                asJavaEntry(7, "7"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom8EntriesWithComparator() {
-        final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"), asJavaEntry(8, "8"));
+        final Map<Integer, String> actual = TreeMap.of(
+                Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8");
+        final java.util.Map<Integer, String> expected = asJavaMap(
+                asJavaEntry(1, "1"),
+                asJavaEntry(2, "2"),
+                asJavaEntry(3, "3"),
+                asJavaEntry(4, "4"),
+                asJavaEntry(5, "5"),
+                asJavaEntry(6, "6"),
+                asJavaEntry(7, "7"),
+                asJavaEntry(8, "8"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom9EntriesWithComparator() {
-        final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8", 9, "9");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"), asJavaEntry(8, "8"), asJavaEntry(9, "9"));
+        final Map<Integer, String> actual = TreeMap.of(
+                Comparators.naturalComparator(),
+                1,
+                "1",
+                2,
+                "2",
+                3,
+                "3",
+                4,
+                "4",
+                5,
+                "5",
+                6,
+                "6",
+                7,
+                "7",
+                8,
+                "8",
+                9,
+                "9");
+        final java.util.Map<Integer, String> expected = asJavaMap(
+                asJavaEntry(1, "1"),
+                asJavaEntry(2, "2"),
+                asJavaEntry(3, "3"),
+                asJavaEntry(4, "4"),
+                asJavaEntry(5, "5"),
+                asJavaEntry(6, "6"),
+                asJavaEntry(7, "7"),
+                asJavaEntry(8, "8"),
+                asJavaEntry(9, "9"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFrom10EntriesWithComparator() {
-        final Map<Integer, String> actual = TreeMap.of(Comparators.naturalComparator(), 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8", 9, "9", 10, "10");
-        final java.util.Map<Integer, String> expected = asJavaMap(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"), asJavaEntry(4, "4"), asJavaEntry(5, "5"), asJavaEntry(6, "6"), asJavaEntry(7, "7"), asJavaEntry(8, "8"), asJavaEntry(9, "9"), asJavaEntry(10, "10"));
+        final Map<Integer, String> actual = TreeMap.of(
+                Comparators.naturalComparator(),
+                1,
+                "1",
+                2,
+                "2",
+                3,
+                "3",
+                4,
+                "4",
+                5,
+                "5",
+                6,
+                "6",
+                7,
+                "7",
+                8,
+                "8",
+                9,
+                "9",
+                10,
+                "10");
+        final java.util.Map<Integer, String> expected = asJavaMap(
+                asJavaEntry(1, "1"),
+                asJavaEntry(2, "2"),
+                asJavaEntry(3, "3"),
+                asJavaEntry(4, "4"),
+                asJavaEntry(5, "5"),
+                asJavaEntry(6, "6"),
+                asJavaEntry(7, "7"),
+                asJavaEntry(8, "8"),
+                asJavaEntry(9, "9"),
+                asJavaEntry(10, "10"));
         assertThat(actual.asJavaMap()).isEqualTo(expected);
     }
 
@@ -2293,7 +2672,8 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCreateOfEntriesUsingKeyComparator() {
-            final TreeMap<Integer, String> actual = TreeMap.ofEntries(Comparators.naturalComparator(), asJavaEntry(1, "a"), asJavaEntry(2, "b"));
+            final TreeMap<Integer, String> actual =
+                    TreeMap.ofEntries(Comparators.naturalComparator(), asJavaEntry(1, "a"), asJavaEntry(2, "b"));
             final List<Tuple2<Integer, String>> expected = List.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
             assertThat(actual.toList()).isEqualTo(expected);
         }
@@ -2313,7 +2693,11 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldNarrowTreeMap() {
             final TreeMap<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
             final TreeMap<Integer, Number> number2numberMap = TreeMap.narrow(int2doubleMap);
-            final int actual = number2numberMap.put(2, new BigDecimal("2.0")).values().sum().intValue();
+            final int actual = number2numberMap
+                    .put(2, new BigDecimal("2.0"))
+                    .values()
+                    .sum()
+                    .intValue();
             assertThat(actual).isEqualTo(3);
         }
 
@@ -2330,7 +2714,9 @@ public class TreeMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCreateKeyComparatorForJavaUtilMap() {
-        final TreeMap<String, Integer> actual = TreeMap.ofAll(new java.util.HashMap<>(mapOfTuples(Tuple.of("c", 0), Tuple.of("a", 0), Tuple.of("b", 0)).asJavaMap()));
+        final TreeMap<String, Integer> actual =
+                TreeMap.ofAll(new java.util.HashMap<>(mapOfTuples(Tuple.of("c", 0), Tuple.of("a", 0), Tuple.of("b", 0))
+                        .asJavaMap()));
         final List<String> expected = List.of("a", "b", "c");
         assertThat(actual.keySet().toList()).isEqualTo(expected);
     }
@@ -2340,7 +2726,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         @Test
         public void shouldFillWithComparator() {
             final LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
-            final Supplier<Tuple2<Long, Float>> supplier = () -> Tuple.of(ints.remove().longValue(), ints.remove().floatValue());
+            final Supplier<Tuple2<Long, Float>> supplier =
+                    () -> Tuple.of(ints.remove().longValue(), ints.remove().floatValue());
             final TreeMap<Long, Float> actual = TreeMap.fill(Comparators.naturalComparator(), 3, supplier);
             final TreeMap<Long, Float> expected = TreeMap.of(0l, 0f, 1l, 1f, 2l, 2f);
             assertThat(actual).isEqualTo(expected);
@@ -2367,9 +2754,9 @@ public class TreeMapTest extends AbstractTraversableTest {
     class MapTests {
         @Test
         public void shouldReturnModifiedKeysMapWithNonUniqueMapperAndPredictableOrder() {
-            final TreeMap<Integer, String> actual = TreeMap
-                    .of(3, "3", 1, "1", 2, "2")
-                    .mapKeys(Integer::toHexString).mapKeys(String::length);
+            final TreeMap<Integer, String> actual = TreeMap.of(3, "3", 1, "1", 2, "2")
+                    .mapKeys(Integer::toHexString)
+                    .mapKeys(String::length);
             final TreeMap<Integer, String> expected = TreeMap.of(1, "3");
             assertThat(actual).isEqualTo(expected);
         }
@@ -2385,7 +2772,8 @@ public class TreeMapTest extends AbstractTraversableTest {
     class TabulateTests {
         @Test
         public void shouldTabulateWithComparator() {
-            final TreeMap<Integer, String> actual = TreeMap.tabulate(Comparators.naturalComparator(), 3, i -> Tuple.of(i, String.valueOf(i)));
+            final TreeMap<Integer, String> actual =
+                    TreeMap.tabulate(Comparators.naturalComparator(), 3, i -> Tuple.of(i, String.valueOf(i)));
             final TreeMap<Integer, String> expected = TreeMap.of(0, "0", 1, "1", 2, "2");
             assertThat(actual).isEqualTo(expected);
         }
@@ -2407,21 +2795,25 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Test
     public void shouldCollectWithAKeyComparator() {
         final TreeMap<String, Integer> actual = TreeMap.of(1, "a", 2, "b", 3, "c")
-          .collect(java.util.Comparator.reverseOrder(), (k, v) -> k == 2 ? Option.<Tuple2<String, Integer>>none() : Option.some(Tuple.of(v, k)));
+                .collect(
+                        java.util.Comparator.reverseOrder(),
+                        (k, v) -> k == 2 ? Option.<Tuple2<String, Integer>>none() : Option.some(Tuple.of(v, k)));
         assertThat(actual.keySet().mkString()).isEqualTo("ca");
         assertThat(actual.comparator().compare("a", "b")).isGreaterThan(0);
     }
 
     @Test
     public void shouldCollectWithTheNaturalKeyOrder() {
-        final TreeMap<String, Integer> actual = TreeMap.of(2, "b", 1, "a").collect((k, v) -> Option.some(Tuple.of(v, k)));
+        final TreeMap<String, Integer> actual =
+                TreeMap.of(2, "b", 1, "a").collect((k, v) -> Option.some(Tuple.of(v, k)));
         assertThat(actual.keySet().mkString()).isEqualTo("ab");
     }
 
     @Test
     public void shouldThrowOnCollectWithNullComparator() {
-        org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class,
-          () -> TreeMap.of(1, "a").collect(null, (k, v) -> Option.some(Tuple.of(v, k))));
+        org.junit.jupiter.api.Assertions.assertThrows(
+                NullPointerException.class,
+                () -> TreeMap.of(1, "a").collect(null, (k, v) -> Option.some(Tuple.of(v, k))));
     }
 
     // -- positional operations, in key order
@@ -2429,12 +2821,12 @@ public class TreeMapTest extends AbstractTraversableTest {
     @Nested
     class PositionalTests {
 
-        private static final int[] WINDOW_SIZES = { 1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE };
-        private static final int[] WINDOW_STEPS = { 1, 2, 3, 70, 71, Integer.MAX_VALUE };
+        private static final int[] WINDOW_SIZES = {1, 2, 3, 5, 69, 70, 71, Integer.MAX_VALUE};
+        private static final int[] WINDOW_STEPS = {1, 2, 3, 70, 71, Integer.MAX_VALUE};
 
         private java.util.List<TreeMap<Integer, String>> receivers() {
             return java.util.List.of(
-                    TreeMap.<Integer, String> empty(),
+                    TreeMap.<Integer, String>empty(),
                     TreeMap.of(7, "v7"),
                     mk(5, 3, 9, 1, 7),
                     mkReversed(5, 3, 9, 1, 7),
@@ -2444,7 +2836,7 @@ public class TreeMapTest extends AbstractTraversableTest {
         }
 
         private int[] counts(int size) {
-            return new int[] { Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE };
+            return new int[] {Integer.MIN_VALUE, -1, 0, 1, 2, size / 2, size - 1, size, size + 1, Integer.MAX_VALUE};
         }
 
         // Vector's own takeRight/dropRight compute length - n, so the reference is given an n that cannot overflow
@@ -2453,7 +2845,10 @@ public class TreeMapTest extends AbstractTraversableTest {
         }
 
         // `actual` holds exactly `expected`, in order, and behaves as a TreeMap built from it
-        private void assertValid(TreeMap<Integer, String> receiver, TreeMap<Integer, String> actual, Vector<Tuple2<Integer, String>> expected) {
+        private void assertValid(
+                TreeMap<Integer, String> receiver,
+                TreeMap<Integer, String> actual,
+                Vector<Tuple2<Integer, String>> expected) {
             assertEquals(expected, actual.toVector());
             assertEquals(expected.size(), actual.size());
             assertSame(receiver.comparator(), actual.comparator());
@@ -2461,11 +2856,15 @@ public class TreeMapTest extends AbstractTraversableTest {
                 assertEquals(Option.some(entry._2()), actual.get(entry._1()));
             }
             // the result is a tree like any other: an insertion and a removal land in order
-            assertEquals(TreeMap.ofEntries(receiver.comparator(), expected.append(Tuple.of(1000, "new"))).toVector(),
+            assertEquals(
+                    TreeMap.ofEntries(receiver.comparator(), expected.append(Tuple.of(1000, "new")))
+                            .toVector(),
                     actual.put(1000, "new").toVector());
             if (!expected.isEmpty()) {
-                assertEquals(expected.tail(), actual.remove(expected.head()._1()).toVector());
-                assertEquals(expected.init(), actual.remove(expected.last()._1()).toVector());
+                assertEquals(
+                        expected.tail(), actual.remove(expected.head()._1()).toVector());
+                assertEquals(
+                        expected.init(), actual.remove(expected.last()._1()).toVector());
             }
         }
 
@@ -2502,8 +2901,14 @@ public class TreeMapTest extends AbstractTraversableTest {
             for (TreeMap<Integer, String> receiver : receivers()) {
                 final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
                 if (elements.isEmpty()) {
-                    assertEquals("head of empty TreeMap", assertThrows(NoSuchElementException.class, receiver::head).getMessage());
-                    assertEquals("last of empty TreeMap", assertThrows(NoSuchElementException.class, receiver::last).getMessage());
+                    assertEquals(
+                            "head of empty TreeMap",
+                            assertThrows(NoSuchElementException.class, receiver::head)
+                                    .getMessage());
+                    assertEquals(
+                            "last of empty TreeMap",
+                            assertThrows(NoSuchElementException.class, receiver::last)
+                                    .getMessage());
                     assertEquals(Option.none(), receiver.headOption());
                     assertEquals(Option.none(), receiver.lastOption());
                 } else {
@@ -2524,8 +2929,14 @@ public class TreeMapTest extends AbstractTraversableTest {
             for (TreeMap<Integer, String> receiver : receivers()) {
                 final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
                 if (elements.isEmpty()) {
-                    assertEquals("tail of empty TreeMap", assertThrows(UnsupportedOperationException.class, receiver::tail).getMessage());
-                    assertEquals("init of empty TreeMap", assertThrows(UnsupportedOperationException.class, receiver::init).getMessage());
+                    assertEquals(
+                            "tail of empty TreeMap",
+                            assertThrows(UnsupportedOperationException.class, receiver::tail)
+                                    .getMessage());
+                    assertEquals(
+                            "init of empty TreeMap",
+                            assertThrows(UnsupportedOperationException.class, receiver::init)
+                                    .getMessage());
                     assertEquals(Option.none(), receiver.tailOption());
                     assertEquals(Option.none(), receiver.initOption());
                 } else {
@@ -2558,7 +2969,7 @@ public class TreeMapTest extends AbstractTraversableTest {
                     assertValid(receiver, dropUntil, elements.dropUntil(predicate));
                 }
                 // the walk stops at the first element that ends the prefix
-                final int[] calls = { 0 };
+                final int[] calls = {0};
                 receiver.takeWhile(e -> {
                     calls[0]++;
                     return false;
@@ -2607,25 +3018,42 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSlideFollowingTheWindowRules() {
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)), mk(1, 2, 3, 4).sliding(3).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(4, 5)), mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(5)), mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)), mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(2, 3, 4)),
+                    mk(1, 2, 3, 4).sliding(3).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(4, 5)),
+                    mk(1, 2, 3, 4, 5).sliding(2, 3).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(5)),
+                    mk(1, 2, 3, 4, 5).sliding(2, 4).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5)),
+                    mk(1, 2, 3, 4, 5).sliding(3, 2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(3, 4, 5), Vector.of(5, 6)),
                     mk(1, 2, 3, 4, 5, 6).sliding(3, 2).map(this::keys));
             assertEquals(Vector.of(Vector.of(1)), mk(1, 2, 3).sliding(1, 3).map(this::keys));
             assertEquals(Vector.of(Vector.of(1, 2)), mk(1, 2).sliding(5).map(this::keys));
             assertEquals(Vector.of(Vector.of(1)), mk(1).sliding(1).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)), mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
-            assertEquals(Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
+            assertEquals(
+                    Vector.of(Vector.of(1, 2), Vector.of(3, 4), Vector.of(5)),
+                    mk(1, 2, 3, 4, 5).grouped(2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(1, 2, 3), Vector.of(10, 12), Vector.of(20, 29)),
                     mk(1, 2, 3, 10, 12, 20, 29).slideBy(e -> e._1() / 10).map(this::keys));
             // a huge step or size does not overflow the window start
-            assertEquals(Vector.of(Vector.range(0, 3)), mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
-            assertEquals(Vector.of(Vector.range(0, 40)),
-                    mk(Vector.range(0, 40)).sliding(Integer.MAX_VALUE, Integer.MAX_VALUE).map(this::keys));
-            assertTrue(TreeMap.<Integer, String> empty().sliding(1).isEmpty());
-            assertTrue(TreeMap.<Integer, String> empty().sliding(2, 3).isEmpty());
-            assertTrue(TreeMap.<Integer, String> empty().grouped(2).isEmpty());
+            assertEquals(
+                    Vector.of(Vector.range(0, 3)),
+                    mk(Vector.range(0, 40)).sliding(3, Integer.MAX_VALUE).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.range(0, 40)),
+                    mk(Vector.range(0, 40))
+                            .sliding(Integer.MAX_VALUE, Integer.MAX_VALUE)
+                            .map(this::keys));
+            assertTrue(TreeMap.<Integer, String>empty().sliding(1).isEmpty());
+            assertTrue(TreeMap.<Integer, String>empty().sliding(2, 3).isEmpty());
+            assertTrue(TreeMap.<Integer, String>empty().grouped(2).isEmpty());
         }
 
         @Test
@@ -2655,7 +3083,9 @@ public class TreeMapTest extends AbstractTraversableTest {
                 for (int i = 0; i < runs.size(); i++) {
                     assertValid(receiver, runs.get(i), expected.get(i));
                 }
-                assertEquals(receiver.isEmpty() ? 0 : 1, receiver.slideBy(e -> "same").size());
+                assertEquals(
+                        receiver.isEmpty() ? 0 : 1,
+                        receiver.slideBy(e -> "same").size());
                 assertEquals(receiver.size(), receiver.slideBy(e -> e).size());
                 assertThrows(NullPointerException.class, () -> receiver.slideBy(null));
             }
@@ -2663,32 +3093,74 @@ public class TreeMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldDeclareThePositionalMembersWithTheOwnType() throws Exception {
-            for (String name : new String[] { "init", "tail" }) {
-                assertEquals(TreeMap.class, TreeMap.class.getDeclaredMethod(name).getReturnType());
-                assertEquals(SortedMap.class, SortedMap.class.getDeclaredMethod(name).getReturnType());
+            for (String name : new String[] {"init", "tail"}) {
+                assertEquals(
+                        TreeMap.class, TreeMap.class.getDeclaredMethod(name).getReturnType());
+                assertEquals(
+                        SortedMap.class, SortedMap.class.getDeclaredMethod(name).getReturnType());
             }
-            for (String name : new String[] { "take", "takeRight", "drop", "dropRight" }) {
-                assertEquals(TreeMap.class, TreeMap.class.getDeclaredMethod(name, int.class).getReturnType());
-                assertEquals(SortedMap.class, SortedMap.class.getDeclaredMethod(name, int.class).getReturnType());
+            for (String name : new String[] {"take", "takeRight", "drop", "dropRight"}) {
+                assertEquals(
+                        TreeMap.class,
+                        TreeMap.class.getDeclaredMethod(name, int.class).getReturnType());
+                assertEquals(
+                        SortedMap.class,
+                        SortedMap.class.getDeclaredMethod(name, int.class).getReturnType());
             }
-            for (String name : new String[] { "takeWhile", "takeUntil", "dropWhile", "dropUntil" }) {
-                assertEquals(TreeMap.class, TreeMap.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
-                assertEquals(SortedMap.class, SortedMap.class.getDeclaredMethod(name, java.util.function.Predicate.class).getReturnType());
+            for (String name : new String[] {"takeWhile", "takeUntil", "dropWhile", "dropUntil"}) {
+                assertEquals(
+                        TreeMap.class,
+                        TreeMap.class
+                                .getDeclaredMethod(name, java.util.function.Predicate.class)
+                                .getReturnType());
+                assertEquals(
+                        SortedMap.class,
+                        SortedMap.class
+                                .getDeclaredMethod(name, java.util.function.Predicate.class)
+                                .getReturnType());
             }
-            assertEquals("dev.zazr.control.Option<dev.zazr.collection.TreeMap<K, V>>",
-                    TreeMap.class.getDeclaredMethod("tailOption").getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.control.Option<dev.zazr.collection.TreeMap<K, V>>",
-                    TreeMap.class.getDeclaredMethod("initOption").getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
-                    TreeMap.class.getDeclaredMethod("grouped", int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
-                    TreeMap.class.getDeclaredMethod("sliding", int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
-                    TreeMap.class.getDeclaredMethod("sliding", int.class, int.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
-                    TreeMap.class.getDeclaredMethod("slideBy", Function.class).getGenericReturnType().getTypeName());
-            assertEquals("dev.zazr.collection.Vector<dev.zazr.Tuple2<dev.zazr.Tuple2<K, V>, java.lang.Integer>>",
-                    TreeMap.class.getDeclaredMethod("zipWithIndex").getGenericReturnType().getTypeName());
+            assertEquals(
+                    "dev.zazr.control.Option<dev.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class
+                            .getDeclaredMethod("tailOption")
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.control.Option<dev.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class
+                            .getDeclaredMethod("initOption")
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class
+                            .getDeclaredMethod("grouped", int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class
+                            .getDeclaredMethod("sliding", int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class
+                            .getDeclaredMethod("sliding", int.class, int.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.collection.TreeMap<K, V>>",
+                    TreeMap.class
+                            .getDeclaredMethod("slideBy", Function.class)
+                            .getGenericReturnType()
+                            .getTypeName());
+            assertEquals(
+                    "dev.zazr.collection.Vector<dev.zazr.Tuple2<dev.zazr.Tuple2<K, V>, java.lang.Integer>>",
+                    TreeMap.class
+                            .getDeclaredMethod("zipWithIndex")
+                            .getGenericReturnType()
+                            .getTypeName());
             final java.util.Set<String> declared = new java.util.HashSet<>();
             for (java.lang.reflect.Method method : SortedMap.class.getDeclaredMethods()) {
                 declared.add(method.getName());
@@ -2703,7 +3175,9 @@ public class TreeMapTest extends AbstractTraversableTest {
             assertEquals(Vector.of(2, 1), keys(reversed.takeRight(2)));
             assertEquals(Vector.of(3, 2, 1), keys(reversed.drop(2)));
             assertEquals(Vector.of(5, 4, 3), keys(reversed.takeWhile(e -> e._1() > 2)));
-            assertEquals(Vector.of(Vector.of(5, 4), Vector.of(3, 2), Vector.of(1)), reversed.grouped(2).map(this::keys));
+            assertEquals(
+                    Vector.of(Vector.of(5, 4), Vector.of(3, 2), Vector.of(1)),
+                    reversed.grouped(2).map(this::keys));
             assertSame(reversed.comparator(), reversed.take(0).comparator());
             assertSame(reversed.comparator(), reversed.drop(9).comparator());
             // the comparator keeps ordering what is put into a result
@@ -2731,7 +3205,7 @@ public class TreeMapTest extends AbstractTraversableTest {
         }
 
         private TreeMap<Integer, String> mkReversed(Iterable<Integer> keys) {
-            TreeMap<Integer, String> map = TreeMap.empty(Comparator.<Integer> reverseOrder());
+            TreeMap<Integer, String> map = TreeMap.empty(Comparator.<Integer>reverseOrder());
             for (Integer key : keys) {
                 map = map.put(key, "v" + key);
             }

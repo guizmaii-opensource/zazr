@@ -38,8 +38,7 @@ public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, 
 
     static final int[] EMPTY_INTS = new int[0];
 
-    ChampNode() {
-    }
+    ChampNode() {}
 
     /// Scala's `Hashing.improve`: the bits of a hash code mixed, so that every bit of it counts in every fragment.
     static int improve(int hashCode) {

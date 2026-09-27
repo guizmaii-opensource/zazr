@@ -44,5 +44,4 @@ public class Euler19Test {
                 .filter(t -> isFirstDayOfMonthSunday(t._1(), t._2()))
                 .size();
     }
-
 }

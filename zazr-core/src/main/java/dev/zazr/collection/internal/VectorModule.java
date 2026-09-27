@@ -8,9 +8,10 @@ public interface VectorModule {
     final class Combinations {
         public static <T extends @Nullable Object> Vector<Vector<T>> apply(Vector<T> elements, int k) {
             return (k == 0)
-                   ? Vector.of(Vector.empty())
-                   : elements.zipWithIndex().flatMap(
-                    t -> apply(elements.drop(t._2() + 1), (k - 1)).map((Vector<T> c) -> c.prepend(t._1())));
+                    ? Vector.of(Vector.empty())
+                    : elements.zipWithIndex()
+                            .flatMap(t ->
+                                    apply(elements.drop(t._2() + 1), (k - 1)).map((Vector<T> c) -> c.prepend(t._1())));
         }
     }
 
@@ -18,7 +19,8 @@ public interface VectorModule {
      * Vector), so that a one-shot argument is iterated only once */
     final class Slice {
 
-        public static <T extends @Nullable Object> int indexOfSlice(Vector<T> source, Iterable<? extends T> slice, int from) {
+        public static <T extends @Nullable Object> int indexOfSlice(
+                Vector<T> source, Iterable<? extends T> slice, int from) {
             final Vector<? extends T> _slice = Vector.ofAll(slice);
             if (source.isEmpty()) {
                 return from == 0 && _slice.isEmpty() ? 0 : -1;
@@ -27,7 +29,8 @@ public interface VectorModule {
             return findSlice(source, _slice, Math.max(from, 0), maxIndex);
         }
 
-        public static <T extends @Nullable Object> int lastIndexOfSlice(Vector<T> source, Iterable<? extends T> slice, int end) {
+        public static <T extends @Nullable Object> int lastIndexOfSlice(
+                Vector<T> source, Iterable<? extends T> slice, int end) {
             if (end < 0) {
                 return -1;
             }
@@ -56,7 +59,8 @@ public interface VectorModule {
             return result;
         }
 
-        private static <T extends @Nullable Object> int findSlice(Vector<T> source, Vector<? extends T> slice, int index, int maxIndex) {
+        private static <T extends @Nullable Object> int findSlice(
+                Vector<T> source, Vector<? extends T> slice, int index, int maxIndex) {
             while (index <= maxIndex) {
                 if (source.startsWith(slice, index)) {
                     return index;

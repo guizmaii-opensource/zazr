@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class JavaViewMutatorTest {
 
-    private static final int[] SIZES = { 0, 1, 3 };
+    private static final int[] SIZES = {0, 1, 3};
 
     private final java.util.List<String> failures = new java.util.ArrayList<>();
 
@@ -44,7 +44,7 @@ class JavaViewMutatorTest {
 
     // -- the mutators of each interface
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void collection(String name, Collection<?> elements) {
         final Collection view = elements;
         final java.util.List<Object> copy = new java.util.ArrayList<>(view);
@@ -76,7 +76,7 @@ class JavaViewMutatorTest {
         refused(name + ".remove", iterator::remove);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private void sequenced(String name, SequencedCollection<?> elements) {
         final SequencedCollection view = elements;
         refused(name + ".addFirst", () -> view.addFirst(1));
@@ -94,7 +94,8 @@ class JavaViewMutatorTest {
         refused(name + ".replaceAll(identity)", () -> view.replaceAll(UnaryOperator.identity()));
         refused(name + ".sort(null)", () -> view.sort(null));
         refused(name + ".sort(natural)", () -> view.sort(Comparator.naturalOrder()));
-        for (java.util.ListIterator<Integer> iterator : java.util.List.of(view.listIterator(), view.listIterator(view.size()))) {
+        for (java.util.ListIterator<Integer> iterator :
+                java.util.List.of(view.listIterator(), view.listIterator(view.size()))) {
             refused(name + ".listIterator().add", () -> iterator.add(1));
             refused(name + ".listIterator().set", () -> iterator.set(1));
             refused(name + ".listIterator().remove", iterator::remove);
@@ -124,8 +125,12 @@ class JavaViewMutatorTest {
                 set(name + ".tailSet(1)", navigable.tailSet(1, true), depth + 1);
                 // 1 is inside every range this test makes, so the nested sub-views are within their parent's bounds
                 if (depth == 0) {
-                    final boolean ascending = navigable.comparator() == null || navigable.comparator().compare(-10, 10) < 0;
-                    set(name + ".subSet(-10, 10)", ascending ? navigable.subSet(-10, true, 10, true) : navigable.subSet(10, true, -10, true), depth + 1);
+                    final boolean ascending = navigable.comparator() == null
+                            || navigable.comparator().compare(-10, 10) < 0;
+                    set(
+                            name + ".subSet(-10, 10)",
+                            ascending ? navigable.subSet(-10, true, 10, true) : navigable.subSet(10, true, -10, true),
+                            depth + 1);
                 } else {
                     set(name + ".subSet(1, 1)", navigable.subSet(1, true, 1, true), depth + 1);
                 }
@@ -163,21 +168,32 @@ class JavaViewMutatorTest {
             refused(name + ".pollFirstEntry", sequenced::pollFirstEntry);
             refused(name + ".pollLastEntry", sequenced::pollLastEntry);
             if (sequenced.firstEntry() != null) {
-                refused(name + ".firstEntry().setValue", () -> sequenced.firstEntry().setValue("b"));
-                refused(name + ".lastEntry().setValue", () -> sequenced.lastEntry().setValue("b"));
+                refused(
+                        name + ".firstEntry().setValue",
+                        () -> sequenced.firstEntry().setValue("b"));
+                refused(
+                        name + ".lastEntry().setValue",
+                        () -> sequenced.lastEntry().setValue("b"));
             }
             collection(name + ".sequencedKeySet()", sequenced.sequencedKeySet());
             collection(name + ".sequencedValues()", sequenced.sequencedValues());
             entries(name + ".sequencedEntrySet()", sequenced.sequencedEntrySet());
-            collection(name + ".sequencedKeySet().reversed()", sequenced.sequencedKeySet().reversed());
-            entries(name + ".sequencedEntrySet().reversed()", sequenced.sequencedEntrySet().reversed());
+            collection(
+                    name + ".sequencedKeySet().reversed()",
+                    sequenced.sequencedKeySet().reversed());
+            entries(
+                    name + ".sequencedEntrySet().reversed()",
+                    sequenced.sequencedEntrySet().reversed());
             if (depth < 2) {
                 map(name + ".reversed()", sequenced.reversed(), depth + 1);
             }
         }
         if (view instanceof NavigableMap<Integer, String> navigable) {
-            for (java.util.Map.Entry<Integer, String> entry : java.util.Arrays.asList(navigable.ceilingEntry(0), navigable.floorEntry(10),
-                    navigable.higherEntry(-10), navigable.lowerEntry(10))) {
+            for (java.util.Map.Entry<Integer, String> entry : java.util.Arrays.asList(
+                    navigable.ceilingEntry(0),
+                    navigable.floorEntry(10),
+                    navigable.higherEntry(-10),
+                    navigable.lowerEntry(10))) {
                 if (entry != null) {
                     refused(name + " navigation entry.setValue", () -> entry.setValue("b"));
                 }
@@ -190,8 +206,12 @@ class JavaViewMutatorTest {
                 map(name + ".tailMap(1)", navigable.tailMap(1, true), depth + 1);
                 // 1 is inside every range this test makes, so the nested sub-views are within their parent's bounds
                 if (depth == 0) {
-                    final boolean ascending = navigable.comparator() == null || navigable.comparator().compare(-10, 10) < 0;
-                    map(name + ".subMap(-10, 10)", ascending ? navigable.subMap(-10, true, 10, true) : navigable.subMap(10, true, -10, true), depth + 1);
+                    final boolean ascending = navigable.comparator() == null
+                            || navigable.comparator().compare(-10, 10) < 0;
+                    map(
+                            name + ".subMap(-10, 10)",
+                            ascending ? navigable.subMap(-10, true, 10, true) : navigable.subMap(10, true, -10, true),
+                            depth + 1);
                 } else {
                     map(name + ".subMap(1, 1)", navigable.subMap(1, true, 1, true), depth + 1);
                 }
@@ -235,47 +255,92 @@ class JavaViewMutatorTest {
     }
 
     private java.util.stream.Stream<DynamicTest> each(String kind, java.util.function.IntConsumer check) {
-        return IntStream.of(SIZES).mapToObj(n -> DynamicTest.dynamicTest(kind + " of " + n, () -> {
-            failures.clear();
-            check.accept(n);
-            assertAllRefused();
-        }));
+        return IntStream.of(SIZES)
+                .mapToObj(n -> DynamicTest.dynamicTest(kind + " of " + n, () -> {
+                    failures.clear();
+                    check.accept(n);
+                    assertAllRefused();
+                }));
     }
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldRefuseEveryMutatorOfTheListViews() {
-        final java.util.Map<String, Function<java.util.List<Integer>, java.util.List<Integer>>> views = new java.util.LinkedHashMap<>();
+        final java.util.Map<String, Function<java.util.List<Integer>, java.util.List<Integer>>> views =
+                new java.util.LinkedHashMap<>();
         views.put("Vector", elements -> Vector.ofAll(elements).asJava());
         views.put("List", elements -> List.ofAll(elements).asJava());
         views.put("Queue", elements -> Queue.ofAll(elements).asJava());
         views.put("Stream", elements -> Stream.ofAll(elements).asJava());
-        return views.entrySet().stream().flatMap(view -> each(view.getKey() + ".asJava()", n -> list(view.getKey(), view.getValue().apply(elements(n)), 0)));
+        return views.entrySet().stream()
+                .flatMap(view -> each(
+                        view.getKey() + ".asJava()",
+                        n -> list(view.getKey(), view.getValue().apply(elements(n)), 0)));
     }
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldRefuseEveryMutatorOfTheCollectionViews() {
         return java.util.stream.Stream.concat(
-                each("HashMap.asJava()", n -> collection("HashMap.asJava()", HashMap.ofEntries(entries(n)).asJava())),
-                each("TreeMap.asJava()", n -> collection("TreeMap.asJava()", TreeMap.ofEntries(entries(n)).asJava())));
+                each(
+                        "HashMap.asJava()",
+                        n -> collection(
+                                "HashMap.asJava()",
+                                HashMap.ofEntries(entries(n)).asJava())),
+                each(
+                        "TreeMap.asJava()",
+                        n -> collection(
+                                "TreeMap.asJava()",
+                                TreeMap.ofEntries(entries(n)).asJava())));
     }
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldRefuseEveryMutatorOfTheSetViews() {
         return java.util.stream.Stream.of(
-                each("HashSet.asJava()", n -> set("HashSet", HashSet.ofAll(elements(n)).asJava(), 0)),
-                each("LinkedHashSet.asJava()", n -> set("LinkedHashSet", LinkedHashSet.ofAll(elements(n)).asJava(), 0)),
-                each("TreeSet.asJava()", n -> set("TreeSet", TreeSet.ofAll(elements(n)).asJava(), 0)),
-                each("TreeSet(reversed).asJava()", n -> set("TreeSet(reversed)", TreeSet.ofAll(Comparator.<Integer> reverseOrder(), elements(n)).asJava(), 0))
-        ).flatMap(Function.identity());
+                        each(
+                                "HashSet.asJava()",
+                                n -> set("HashSet", HashSet.ofAll(elements(n)).asJava(), 0)),
+                        each(
+                                "LinkedHashSet.asJava()",
+                                n -> set(
+                                        "LinkedHashSet",
+                                        LinkedHashSet.ofAll(elements(n)).asJava(),
+                                        0)),
+                        each(
+                                "TreeSet.asJava()",
+                                n -> set("TreeSet", TreeSet.ofAll(elements(n)).asJava(), 0)),
+                        each(
+                                "TreeSet(reversed).asJava()",
+                                n -> set(
+                                        "TreeSet(reversed)",
+                                        TreeSet.ofAll(Comparator.<Integer>reverseOrder(), elements(n))
+                                                .asJava(),
+                                        0)))
+                .flatMap(Function.identity());
     }
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldRefuseEveryMutatorOfTheMapViews() {
         return java.util.stream.Stream.of(
-                each("HashMap.asJavaMap()", n -> map("HashMap", HashMap.ofEntries(entries(n)).asJavaMap(), 0)),
-                each("LinkedHashMap.asJavaMap()", n -> map("LinkedHashMap", LinkedHashMap.ofEntries(entries(n)).asJavaMap(), 0)),
-                each("TreeMap.asJavaMap()", n -> map("TreeMap", TreeMap.ofEntries(entries(n)).asJavaMap(), 0)),
-                each("TreeMap(reversed).asJavaMap()", n -> map("TreeMap(reversed)", TreeMap.ofEntries(Comparator.<Integer> reverseOrder(), entries(n)).asJavaMap(), 0))
-        ).flatMap(Function.identity());
+                        each(
+                                "HashMap.asJavaMap()",
+                                n -> map(
+                                        "HashMap", HashMap.ofEntries(entries(n)).asJavaMap(), 0)),
+                        each(
+                                "LinkedHashMap.asJavaMap()",
+                                n -> map(
+                                        "LinkedHashMap",
+                                        LinkedHashMap.ofEntries(entries(n)).asJavaMap(),
+                                        0)),
+                        each(
+                                "TreeMap.asJavaMap()",
+                                n -> map(
+                                        "TreeMap", TreeMap.ofEntries(entries(n)).asJavaMap(), 0)),
+                        each(
+                                "TreeMap(reversed).asJavaMap()",
+                                n -> map(
+                                        "TreeMap(reversed)",
+                                        TreeMap.ofEntries(Comparator.<Integer>reverseOrder(), entries(n))
+                                                .asJavaMap(),
+                                        0)))
+                .flatMap(Function.identity());
     }
 }

@@ -49,25 +49,34 @@ class CheckConfigTest {
 
     @Test
     void theSeedPropertyAcceptsTheWholeLongRange() {
-        assertThat(from(Map.of(CheckConfig.SEED_PROPERTY, String.valueOf(Long.MIN_VALUE))).seed()).isEqualTo(Long.MIN_VALUE);
-        assertThat(from(Map.of(CheckConfig.SEED_PROPERTY, String.valueOf(Long.MAX_VALUE))).seed()).isEqualTo(Long.MAX_VALUE);
+        assertThat(from(Map.of(CheckConfig.SEED_PROPERTY, String.valueOf(Long.MIN_VALUE)))
+                        .seed())
+                .isEqualTo(Long.MIN_VALUE);
+        assertThat(from(Map.of(CheckConfig.SEED_PROPERTY, String.valueOf(Long.MAX_VALUE)))
+                        .seed())
+                .isEqualTo(Long.MAX_VALUE);
     }
 
     @Test
     void rejectsAPropertyThatIsNotANumber() {
         assertThatThrownBy(() -> from(Map.of(CheckConfig.SEED_PROPERTY, "abc")))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("zazr.check.seed");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("zazr.check.seed");
         assertThatThrownBy(() -> from(Map.of(CheckConfig.SAMPLES_PROPERTY, "1.5")))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("zazr.check.samples");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("zazr.check.samples");
     }
 
     @Test
     void rejectsANegativeOrTooLargeIntProperty() {
         assertThatThrownBy(() -> from(Map.of(CheckConfig.SIZE_PROPERTY, "-1")))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("zazr.check.size");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("zazr.check.size");
         assertThatThrownBy(() -> from(Map.of(CheckConfig.MAX_DISCARDS_PROPERTY, "2147483648")))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("zazr.check.maxDiscards");
-        assertThat(from(Map.of(CheckConfig.SAMPLES_PROPERTY, "2147483647")).samples()).isEqualTo(Integer.MAX_VALUE);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("zazr.check.maxDiscards");
+        assertThat(from(Map.of(CheckConfig.SAMPLES_PROPERTY, "2147483647")).samples())
+                .isEqualTo(Integer.MAX_VALUE);
     }
 
     @Test
@@ -90,14 +99,22 @@ class CheckConfigTest {
 
     @Test
     void acceptsZeroes() {
-        assertThat(new CheckConfig(0, 0, 0L, 0)).isEqualTo(new CheckConfig(1, 1, 0L, 1).withSamples(0).withSize(0).withMaxDiscards(0));
+        assertThat(new CheckConfig(0, 0, 0L, 0))
+                .isEqualTo(
+                        new CheckConfig(1, 1, 0L, 1).withSamples(0).withSize(0).withMaxDiscards(0));
     }
 
     @Test
     void rejectsNegativeComponents() {
-        assertThatThrownBy(() -> new CheckConfig(-1, 0, 0L, 0)).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("samples");
-        assertThatThrownBy(() -> new CheckConfig(0, -1, 0L, 0)).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("size");
-        assertThatThrownBy(() -> new CheckConfig(0, 0, 0L, -1)).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("maxDiscards");
+        assertThatThrownBy(() -> new CheckConfig(-1, 0, 0L, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("samples");
+        assertThatThrownBy(() -> new CheckConfig(0, -1, 0L, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("size");
+        assertThatThrownBy(() -> new CheckConfig(0, 0, 0L, -1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("maxDiscards");
         final CheckConfig config = new CheckConfig(1, 1, 1L, 1);
         assertThatThrownBy(() -> config.withSamples(-1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> config.withSize(-1)).isInstanceOf(IllegalArgumentException.class);

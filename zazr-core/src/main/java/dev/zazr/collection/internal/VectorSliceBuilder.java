@@ -172,7 +172,8 @@ final class VectorSliceBuilder {
                 final Object[] suffix2 = suffixOr(2);
                 final int len12 = len1 + (prefix2.length * WIDTH);
                 final int len123 = len12 + (prefix3.length * WIDTH2);
-                return new RadixVector.Vector4<>(prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, suffix1, len);
+                return new RadixVector.Vector4<>(
+                        prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, suffix1, len);
             }
             case 5: {
                 final Object[] prefix2 = prefixOr(2);
@@ -185,8 +186,9 @@ final class VectorSliceBuilder {
                 final int len12 = len1 + (prefix2.length * WIDTH);
                 final int len123 = len12 + (prefix3.length * WIDTH2);
                 final int len1234 = len123 + (prefix4.length * WIDTH3);
-                return new RadixVector.Vector5<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3,
-                    suffix2, suffix1, len);
+                return new RadixVector.Vector5<>(
+                        prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3,
+                        suffix2, suffix1, len);
             }
             case 6: {
                 final Object[] prefix2 = prefixOr(2);
@@ -202,8 +204,9 @@ final class VectorSliceBuilder {
                 final int len123 = len12 + (prefix3.length * WIDTH2);
                 final int len1234 = len123 + (prefix4.length * WIDTH3);
                 final int len12345 = len1234 + (prefix5.length * WIDTH4);
-                return new RadixVector.Vector6<>(prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6,
-                    suffix5, suffix4, suffix3, suffix2, suffix1, len);
+                return new RadixVector.Vector6<>(
+                        prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6,
+                        suffix5, suffix4, suffix3, suffix2, suffix1, len);
             }
             default:
                 throw new IllegalStateException("VectorSliceBuilder: dimension " + resultDim);

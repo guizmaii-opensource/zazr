@@ -22,8 +22,7 @@ public class CheckedRunnableTest {
         assertThat(runnable).isNotNull();
     }
 
-    private static void run() {
-    }
+    private static void run() {}
 
     @Nested
     class UncheckedTests {
@@ -32,14 +31,17 @@ public class CheckedRunnableTest {
             final Runnable runnable = CheckedRunnable.of(() -> {}).unchecked();
             try {
                 runnable.run();
-            } catch(Throwable x) {
+            } catch (Throwable x) {
                 Assertions.fail("Did not expect an exception but received: " + x.getMessage());
             }
         }
 
         @Test
         public void shouldApplyAnUncheckedFunctionThatThrows() {
-            final Runnable runnable = CheckedRunnable.of(() -> { throw new Error(); }).unchecked();
+            final Runnable runnable = CheckedRunnable.of(() -> {
+                        throw new Error();
+                    })
+                    .unchecked();
             Assertions.assertThrows(Error.class, () -> runnable.run());
         }
     }
