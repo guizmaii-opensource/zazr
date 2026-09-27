@@ -6,10 +6,12 @@ import dev.zazr.collection.List;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import dev.zazr.control.Validation;
+import dev.zazr.test.Assertion;
 import dev.zazr.test.Check;
 import dev.zazr.test.CheckConfig;
 import dev.zazr.test.CheckResult;
 import dev.zazr.test.Gen;
+import dev.zazr.test.TestResult;
 import dev.zazr.test.laws.MapLaws;
 import dev.zazr.test.laws.MapSubject;
 import java.time.DayOfWeek;
@@ -18,6 +20,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static dev.zazr.test.Assertion.*;
+import static dev.zazr.test.Assertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -36,7 +40,7 @@ public class DocsTestingExamplesTest {
         @Test
         void reversingTwiceGivesTheListBack() {
             var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
-            Check.check(lists, list -> list.reverse().reverse().equals(list));
+            Check.check(lists, list -> assertThat(list.reverse().reverse(), equalTo(list)));
         }
     }
 
@@ -51,7 +55,7 @@ public class DocsTestingExamplesTest {
     @Test
     void aFirstProperty() {
         var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
-        Check.check(lists, list -> list.reverse().reverse().equals(list));
+        Check.check(lists, list -> assertThat(list.reverse().reverse(), equalTo(list)));
 
         Gen<List<Integer>> typed = lists;
         assertThat(Check.evaluate(typed, list -> list.reverse().reverse().equals(list)))
@@ -61,11 +65,62 @@ public class DocsTestingExamplesTest {
     @Test
     void whatAFailurePrints() {
         assertThatThrownBy(() -> {
-            var config = CheckConfig.defaults().withSeed(42);                        // CheckConfig
-            Check.check(config, Gen.list(Gen.integers()), list -> list.size() < 5);  // throws an AssertionError
+            var config = CheckConfig.defaults().withSeed(42);                  // CheckConfig
+            Check.check(config, Gen.list(Gen.integers()), hasSize(isLessThan(5))); // throws an AssertionError
         })
             .isExactlyInstanceOf(AssertionError.class)
-            .hasMessage("falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42)");
+            .hasMessage("falsified at sample 14 by (List(1064429137, -1, 2147483646, -499641955, 2147483647)) (seed 42, replay with -Dzazr.check.seed=42):\n"
+                + "  List(1064429137, -1, 2147483646, -499641955, 2147483647) has size 5:\n"
+                + "    5 is not less than 5");
+    }
+
+    @Test
+    void assertions() {
+        var result = assertThat(Option.some(4), isSome(isGreaterThan(5))); // TestResult
+        // Failure: "Some(4) holds 4:\n  4 is not greater than 5"
+
+        TestResult typed = result;
+        assertThat(typed).isEqualTo(TestResult.fail("Some(4) holds 4:\n  4 is not greater than 5"));
+    }
+
+    @Test
+    void combiningAssertions() {
+        var digit  = isGreaterThanOrEqualTo(0).and(isLessThan(10)).label("a digit"); // Assertion<Integer>
+        var result = assertThat(12, digit);                                         // TestResult
+        // Failure: "a digit: 12 is not less than 10"
+
+        Assertion<Integer> typedDigit = digit;
+        TestResult typedResult = result;
+        assertThat(typedDigit).hasToString("a digit");
+        assertThat(typedResult).isEqualTo(TestResult.fail("a digit: 12 is not less than 10"));
+    }
+
+    @Test
+    void severalAssertionsAtOnce() {
+        var result = assertThat(15, isLessThan(10), not(equalTo(15))); // TestResult
+        // Failure: "15 is not less than 10\n15 satisfies equalTo(15), but must not"
+        Check.check(Gen.integers(0, 9), isGreaterThanOrEqualTo(0), isLessThan(10));
+
+        TestResult typed = result;
+        assertThat(typed).isEqualTo(TestResult.fail("15 is not less than 10\n15 satisfies equalTo(15), but must not"));
+    }
+
+    @Test
+    void resultsCombineInABody() {
+        var ints = Gen.integers(); // Gen<Integer>
+        Check.check(ints, ints, (a, b) -> assertThat(a + b, equalTo(b + a)).and(assertThat(a * b, equalTo(b * a))));
+
+        Gen<Integer> typed = ints;
+        assertThat(typed).isNotNull();
+    }
+
+    @Test
+    void codeThatMustThrow() {
+        var result = assertThat(() -> Integer.parseInt("x"), throwsA(NumberFormatException.class)); // TestResult
+        // Success
+
+        TestResult typed = result;
+        assertThat(typed).isEqualTo(TestResult.succeed());
     }
 
     @Test
@@ -94,14 +149,15 @@ public class DocsTestingExamplesTest {
     @Test
     void assertionsInTheProperty() {
         var digits = Gen.vector(Gen.integers(0, 9)); // Gen<Vector<Integer>>
-        var result = Check.evaluate(CheckConfig.defaults().withSeed(42), digits, vector -> {
-            assertThat(vector.distinct()).isEqualTo(vector);
-            return true;
-        }); // CheckResult
+        var config = CheckConfig.defaults().withSeed(42); // CheckConfig
+        // CheckResult
+        var result = Check.evaluate(config, digits, vector -> assertThat(vector.distinct()).isEqualTo(vector));
         var message = result.message(); // Option<String>
         // Some("expected: Vector(9, 1, 2, 9, 8, 9) but was: Vector(9, 1, 2, 8)"), AssertJ's message on three lines
 
         Gen<Vector<Integer>> typedDigits = digits;
+        CheckConfig typedConfig = config;
+        assertThat(typedConfig.seed()).isEqualTo(42L);
         CheckResult typedResult = result;
         Option<String> typedMessage = message;
         assertThat(typedDigits).isNotNull();
@@ -122,7 +178,7 @@ public class DocsTestingExamplesTest {
         var coin = Gen.elements("heads", "tails"); // Gen<String>
         // Gen<String>
         var loadedCoin = Gen.weighted(Tuple.of(Gen.constant("heads"), 9.0), Tuple.of(Gen.constant("tails"), 1.0));
-        Check.check(twoDice, sum -> sum >= 2 && sum <= 12);
+        Check.check(twoDice, isWithin(2, 12));
 
         Gen<Integer> typedDice = dice;
         Gen<Integer> typedTwoDice = twoDice;
@@ -216,7 +272,7 @@ public class DocsTestingExamplesTest {
     @Test
     void configuration() {
         var config = CheckConfig.defaults().withSamples(1_000).withSeed(42); // CheckConfig
-        Check.check(config, Gen.integers(), n -> Integer.parseInt(Integer.toString(n)) == n);
+        Check.check(config, Gen.integers(), n -> assertThat(Integer.parseInt(Integer.toString(n)), equalTo(n)));
         Check.checkN(50, Gen.alphaNumericStrings(), s -> s.strip().equals(s));
 
         CheckConfig typed = config;
@@ -243,7 +299,7 @@ public class DocsTestingExamplesTest {
     @Test
     void generatorsForEveryZazrType() {
         var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.integers()); // Gen<Validation<String, Integer>>
-        Check.check(checks, checks, (a, b) -> a.zip(b).isValid() == (a.isValid() && b.isValid()));
+        Check.check(checks, checks, (a, b) -> assertThat(a.zip(b).isValid(), equalTo(a.isValid() && b.isValid())));
 
         Gen<Validation<String, Integer>> typed = checks;
         assertThat(typed).isNotNull();
