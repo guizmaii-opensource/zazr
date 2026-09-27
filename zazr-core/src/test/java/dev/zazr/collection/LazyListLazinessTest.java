@@ -219,14 +219,6 @@ class LazyListLazinessTest {
             calls.incrementAndGet();
             return Option.some(Tuple.of(x + 1, x));
         }));
-        built.put("unfoldRight(Object, Function)", LazyList.unfoldRight(0, x -> {
-            calls.incrementAndGet();
-            return x > 2 ? Option.none() : Option.some(Tuple.of(x, x + 1));
-        }));
-        built.put("unfoldLeft(Object, Function)", LazyList.unfoldLeft(0, x -> {
-            calls.incrementAndGet();
-            return x > 2 ? Option.none() : Option.some(Tuple.of(x + 1, x));
-        }));
         built.put("cons(Object, Supplier)", LazyList.cons(0, () -> {
             calls.incrementAndGet();
             return LazyList.empty();

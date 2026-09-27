@@ -1322,6 +1322,16 @@ library, which Scala 3 ships unchanged):
   result is a new cell, even when it turns out equal to the receiver (`orElse` on a non-empty list, `rotateLeft` by the
   length), since deciding would evaluate. `toString` never evaluates: `LazyList(?)` for an unevaluated list.
 
+**Decided 2026-09-28, #193: `unfold` has Scala's and ZIO's meaning; `unfoldLeft` and `unfoldRight` are deleted.**
+Vavr's `unfold` was its `unfoldLeft`: `f` returned `(nextSeed, element)`, seed and element shared one type, and the
+result was built and then reversed, so `LazyList.unfold` never returned on an infinite generator. `unfoldRight` was
+element-first and forward, though its javadoc said right-to-left. There is now one
+`unfold(S init, Function<S, Option<Tuple2<A, S>>> f)` on `Vector`, `List`, `Queue`, `LazyList` and the internal
+`Iterator`: element first, in the order produced, separate state and element types (Scala `Factory.unfold`,
+`LazyList.unfold`; ZIO `Chunk.unfold`). `LazyList.unfold` is lazy, as Scala's: `f` runs once per element read, so an
+infinite generator is fine. The type parameters are `<A, S>`, Scala's order. A null from `f` is rejected by name
+(`<Type>.unfold: f returned null`), on `LazyList` when the list reaches it; a null element as any null element.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
@@ -2169,6 +2179,7 @@ the previous item's branch where it depends on it, rebased on `main` before revi
 | #27 | Builders for the other collections | 3.8.1 | #24 |
 | #28 | Rename `Stream` to `LazyList` | 3.7 | #24 |
 | #191 | `LazyList` fully lazy (lazy head and emptiness), ported from Scala's `LazyList` | 3.7 | #28 |
+| #193 | `unfold` with Scala's and ZIO's meaning; `unfoldLeft`/`unfoldRight` deleted | 3.7 | #191 |
 | #29 | Primitive specialisation without `ClassCastException` fallbacks; `collector()` decision | 3.8 | #12 |
 | #30 | `zazr-test` adapted; law suites | 4 | #11 |
 | #31 | Documentation: `docs/`, README, CHANGELOG, JaCoCo | 4 | the API items |

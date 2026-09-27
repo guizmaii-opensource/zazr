@@ -1,6 +1,8 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.Tuple2;
 import dev.zazr.collection.LazyList;
+import dev.zazr.control.Option;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import org.jspecify.annotations.Nullable;
@@ -19,6 +21,20 @@ public interface LazyListModule {
                     && !(elements instanceof java.util.Iterator)
                     && traversable.isEmpty();
         }
+    }
+
+    // the elements f produces from state, each computed when the list reaches it
+    static <A extends @Nullable Object, S extends @Nullable Object> LazyList<A> unfolded(
+            S state, Function<? super S, ? extends Option<? extends Tuple2<? extends A, ? extends S>>> f) {
+        return LazyList.defer(() -> {
+            Option<? extends Tuple2<? extends A, ? extends S>> step =
+                    java.util.Objects.requireNonNull(f.apply(state), "LazyList.unfold: f returned null");
+            if (step.isEmpty()) {
+                return LazyList.empty();
+            }
+            Tuple2<? extends A, ? extends S> next = step.get();
+            return LazyCell.cons(next._1(), unfolded(next._2(), f));
+        });
     }
 
     // acc, then the result of operation on acc and each element of list in turn, each computed when it is read

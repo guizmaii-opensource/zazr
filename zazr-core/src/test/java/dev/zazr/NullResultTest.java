@@ -395,14 +395,6 @@ public class NullResultTest {
                 "Vector.unfold: f returned null",
                 () -> Vector.unfold(1, x -> null)));
         cases.add(throwing(
-                "Vector.unfoldLeft(java.lang.Object, java.util.function.Function)",
-                "Vector.unfoldLeft: f returned null",
-                () -> Vector.unfoldLeft(1, x -> null)));
-        cases.add(throwing(
-                "Vector.unfoldRight(java.lang.Object, java.util.function.Function)",
-                "Vector.unfoldRight: f returned null",
-                () -> Vector.unfoldRight(1, x -> null)));
-        cases.add(throwing(
                 "Vector.unzip(java.util.function.Function)",
                 "Vector.unzip: unzipper returned null",
                 () -> Vector.of(1).unzip(x -> null)));
@@ -452,14 +444,6 @@ public class NullResultTest {
                 "List.unfold: f returned null",
                 () -> List.unfold(1, x -> null)));
         cases.add(throwing(
-                "List.unfoldLeft(java.lang.Object, java.util.function.Function)",
-                "List.unfoldLeft: f returned null",
-                () -> List.unfoldLeft(1, x -> null)));
-        cases.add(throwing(
-                "List.unfoldRight(java.lang.Object, java.util.function.Function)",
-                "List.unfoldRight: f returned null",
-                () -> List.unfoldRight(1, x -> null)));
-        cases.add(throwing(
                 "List.unzip(java.util.function.Function)",
                 "List.unzip: unzipper returned null",
                 () -> List.of(1).unzip(x -> null)));
@@ -508,14 +492,6 @@ public class NullResultTest {
                 "Queue.unfold(java.lang.Object, java.util.function.Function)",
                 "Queue.unfold: f returned null",
                 () -> Queue.unfold(1, x -> null)));
-        cases.add(throwing(
-                "Queue.unfoldLeft(java.lang.Object, java.util.function.Function)",
-                "Queue.unfoldLeft: f returned null",
-                () -> Queue.unfoldLeft(1, x -> null)));
-        cases.add(throwing(
-                "Queue.unfoldRight(java.lang.Object, java.util.function.Function)",
-                "Queue.unfoldRight: f returned null",
-                () -> Queue.unfoldRight(1, x -> null)));
         cases.add(throwing(
                 "Queue.unzip(java.util.function.Function)",
                 "Queue.unzip: unzipper returned null",
@@ -582,14 +558,6 @@ public class NullResultTest {
                 "LazyList.unfold(java.lang.Object, java.util.function.Function)",
                 "LazyList.unfold: f returned null",
                 () -> LazyList.unfold(1, x -> null).size()));
-        cases.add(throwing(
-                "LazyList.unfoldLeft(java.lang.Object, java.util.function.Function)",
-                "LazyList.unfoldLeft: f returned null",
-                () -> LazyList.unfoldLeft(1, x -> null).size()));
-        cases.add(throwing(
-                "LazyList.unfoldRight(java.lang.Object, java.util.function.Function)",
-                "LazyList.unfoldRight: f returned null",
-                () -> LazyList.unfoldRight(1, x -> null).size()));
         cases.add(throwing(
                 "LazyList.unzip(java.util.function.Function)",
                 "LazyList.unzip: unzipper returned null",
@@ -1243,7 +1211,7 @@ public class NullResultTest {
 
         // stateful functions that return null once: the failure is remembered, the function is not called again
         java.util.concurrent.atomic.AtomicInteger unfoldCalls = new java.util.concurrent.atomic.AtomicInteger();
-        LazyList<Integer> unfolded = LazyList.unfoldRight(
+        LazyList<Integer> unfolded = LazyList.unfold(
                 0,
                 x -> x > 4
                         ? Option.none()
@@ -1251,7 +1219,7 @@ public class NullResultTest {
         for (int i = 0; i < 3; i++) {
             assertThatNullPointerException()
                     .isThrownBy(unfolded::toVector)
-                    .withMessage("LazyList.unfoldRight: f returned null");
+                    .withMessage("LazyList.unfold: f returned null");
         }
         assertThat(unfoldCalls.get()).isEqualTo(1);
         java.util.concurrent.atomic.AtomicInteger appendCalls = new java.util.concurrent.atomic.AtomicInteger();

@@ -830,36 +830,66 @@ public class LazyListTest extends AbstractTraversableTest {
     @Nested
     class UnfoldTests {
         @Test
-        public void shouldUnfoldRightToEmpty() {
-            assertThat(LazyList.unfoldRight(0, x -> Option.none())).isEqualTo(empty());
-        }
-
-        @Test
-        public void shouldUnfoldRightSimpleLazyList() {
-            assertThat(LazyList.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))))
-                    .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
-        }
-
-        @Test
-        public void shouldUnfoldLeftToEmpty() {
-            assertThat(LazyList.unfoldLeft(0, x -> Option.none())).isEqualTo(empty());
-        }
-
-        @Test
-        public void shouldUnfoldLeftSimpleLazyList() {
-            assertThat(LazyList.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
-                    .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
-        }
-
-        @Test
         public void shouldUnfoldToEmpty() {
             assertThat(LazyList.unfold(0, x -> Option.none())).isEqualTo(empty());
         }
 
         @Test
-        public void shouldUnfoldSimpleLazyList() {
-            assertThat(LazyList.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
-                    .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        public void shouldUnfoldElementFirstInTheOrderProduced() {
+            assertThat(LazyList.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x, x - 1))))
+                    .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
+        }
+
+        @Test
+        public void shouldUnfoldWithAStateOfAnotherType() {
+            // the Fibonacci numbers below 100, the state being the pair of the last two
+            LazyList<Integer> fibonacci = LazyList.unfold(
+                    Tuple.of(0, 1),
+                    s -> s._1() > 100
+                            ? Option.none()
+                            : Option.some(Tuple.of(s._1(), Tuple.of(s._2(), s._1() + s._2()))));
+            assertThat(fibonacci).isEqualTo(of(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89));
+            LazyList<String> labels =
+                    LazyList.unfold(1, i -> i > 3 ? Option.none() : Option.some(Tuple.of("#" + i, i + 1)));
+            assertThat(labels.mkString(",")).isEqualTo("#1,#2,#3");
+        }
+
+        @Test
+        public void shouldRejectANullResultFromF() {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LazyList.unfold(0, x -> null).size())
+                    .withMessage("LazyList.unfold: f returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LazyList.unfold(0, x -> x < 2 ? Option.some(Tuple.of(x, x + 1)) : null)
+                            .size())
+                    .withMessage("LazyList.unfold: f returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> LazyList.unfold(0, null))
+                    .withMessage("f is null");
+        }
+
+        @Test
+        public void shouldUnfoldAnInfiniteGeneratorLazily() {
+            java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+            LazyList<Integer> naturals = LazyList.unfold(0, x -> {
+                calls.incrementAndGet();
+                return Option.some(Tuple.of(x, x + 1));
+            });
+            assertThat(calls.get()).isZero();
+            assertThat(naturals.take(5)).isEqualTo(LazyList.of(0, 1, 2, 3, 4));
+            assertThat(calls.get()).isEqualTo(5);
+            // memoised: reading the same prefix again calls nothing
+            assertThat(naturals.take(5).toVector()).isEqualTo(Vector.of(0, 1, 2, 3, 4));
+            assertThat(calls.get()).isEqualTo(5);
+            assertThat(naturals.get(9)).isEqualTo(9);
+            assertThat(calls.get()).isEqualTo(10);
+        }
+
+        @Test
+        public void shouldRejectANullElementWhenTheListReachesIt() {
+            LazyList<Integer> list = LazyList.unfold(0, x -> Option.some(Tuple.of(x == 2 ? null : x, x + 1)));
+            assertThat(list.take(2)).isEqualTo(LazyList.of(0, 1));
+            assertThatNullPointerException().isThrownBy(() -> list.get(2)).withMessage("LazyList: element is null");
         }
     }
 

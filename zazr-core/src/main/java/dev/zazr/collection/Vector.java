@@ -738,94 +738,29 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * Creates a Vector from a seed value and a function.
-     * The function takes the seed at first.
-     * The function should return {@code None} when it's
-     * done generating the Vector, otherwise {@code Some} {@code Tuple}
-     * of the value to add to the resulting Vector and the element for
-     * the next call.
+     * The elements {@code f} produces from {@code init}, in order, as Scala's and ZIO's {@code unfold}: {@code f}
+     * returns {@code None} to end, or {@code Some} of the next element and the state for the next call.
      * <p>
      * Example:
      * <pre>
      * {@code
-     * Vector.unfoldRight(10, x -> x == 0
-     *             ? Option.none()
-     *             : Option.some(new Tuple2<>(x, x-1)));
+     * Vector.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x, x - 1)));
      * // Vector(10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
      * }
      * </pre>
-     *
-     * @param <T>  type of seeds
-     * @param <U>  type of unfolded values
-     * @param seed the start value for the iteration
-     * @param f    the function to get the next step of the iteration
-     * @return a Vector with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null or returns null
-     */
-    public static <T extends @Nullable Object, U extends @Nullable Object> Vector<U> unfoldRight(
-            T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f) {
-        return Iterator.unfoldRight(seed, f, "Vector.unfoldRight: f returned null")
-                .toVector();
-    }
-
-    /**
-     * Creates a Vector from a seed value and a function.
-     * The function takes the seed at first.
-     * The function should return {@code None} when it's
-     * done generating the Vector, otherwise {@code Some} {@code Tuple}
-     * of the element for the next call and
-     * the value to add to the resulting Vector.
      * <p>
-     * Example:
-     * <pre>
-     * {@code
-     * Vector.unfoldLeft(10, x -> x == 0
-     *             ? Option.none()
-     *             : Option.some(new Tuple2<>(x-1, x)));
-     * // Vector(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-     * }
-     * </pre>
+     * Complexity: O(n) for n elements; {@code f} runs n + 1 times now.
      *
-     * @param <T>  type of seeds
-     * @param <U>  type of unfolded values
-     * @param seed the start value for the iteration
-     * @param f    the function to get the next step of the iteration
-     * @return a Vector with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null or returns null
+     * @param <A>  the type of the elements
+     * @param <S>  the type of the state
+     * @param init the first state
+     * @param f    computes the next element and state from a state, or ends
+     * @return the elements, in the order {@code f} produces them
+     * @throws NullPointerException if {@code f} is null, or when it returns null
      */
-    public static <T extends @Nullable Object, U extends @Nullable Object> Vector<U> unfoldLeft(
-            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends U>>> f) {
-        return Iterator.unfoldLeft(seed, f, "Vector.unfoldLeft: f returned null")
-                .toVector();
-    }
-
-    /**
-     * Creates a Vector from a seed value and a function.
-     * The function takes the seed at first.
-     * The function should return {@code None} when it's
-     * done generating the Vector, otherwise {@code Some} {@code Tuple}
-     * of the element for the next call and
-     * the value to add to the resulting Vector.
-     * <p>
-     * Example:
-     * <pre>
-     * {@code
-     * Vector.unfold(10, x -> x == 0
-     *             ? Option.none()
-     *             : Option.some(new Tuple2<>(x-1, x)));
-     * // Vector(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-     * }
-     * </pre>
-     *
-     * @param <T>  type of seeds and unfolded values
-     * @param seed the start value for the iteration
-     * @param f    the function to get the next step of the iteration
-     * @return a Vector with the values built up by the iteration
-     * @throws NullPointerException if {@code f} is null or returns null
-     */
-    public static <T extends @Nullable Object> Vector<T> unfold(
-            T seed, Function<? super T, Option<Tuple2<? extends T, ? extends T>>> f) {
-        return Iterator.unfold(seed, f, "Vector.unfold: f returned null").toVector();
+    public static <A extends @Nullable Object, S extends @Nullable Object> Vector<A> unfold(
+            S init, Function<? super S, ? extends Option<? extends Tuple2<? extends A, ? extends S>>> f) {
+        return Iterator.<A, S>unfold(init, f, "Vector.unfold: f returned null").toVector();
     }
 
     /**
