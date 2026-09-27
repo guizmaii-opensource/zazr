@@ -79,7 +79,7 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
             CheckedFunction1<? super T1, ? extends R> partialFunction) {
         return t1 -> {
             try {
-                final R result = partialFunction.apply(t1);
+                R result = partialFunction.apply(t1);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {
@@ -177,9 +177,9 @@ public interface CheckedFunction1<T1 extends @Nullable Object, R extends @Nullab
                 if (isFatal(throwable)) {
                     return sneakyThrow(throwable);
                 }
-                final Function<? super T1, ? extends R> func = recover.apply(throwable);
+                Function<? super T1, ? extends R> func = recover.apply(throwable);
                 if (func == null) {
-                    final NullPointerException nullResult =
+                    NullPointerException nullResult =
                             new NullPointerException("CheckedFunction1.recover: recover returned null");
                     nullResult.initCause(throwable);
                     throw nullResult;

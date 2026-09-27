@@ -11,14 +11,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LinkedHashMapOfEntriesTest {
     @Test
     public void shouldConstructFrom1Entries() {
-        final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1");
+        LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1");
         assertThat(map.size()).isEqualTo(1);
         assertThat(map.get(1).get()).isEqualTo("1");
     }
 
     @Test
     public void shouldConstructFrom2Entries() {
-        final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2");
+        LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2");
         assertThat(map.size()).isEqualTo(2);
         assertThat(map.get(1).get()).isEqualTo("1");
         assertThat(map.get(2).get()).isEqualTo("2");
@@ -26,7 +26,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom3Entries() {
-        final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3");
+        LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3");
         assertThat(map.size()).isEqualTo(3);
         assertThat(map.get(1).get()).isEqualTo("1");
         assertThat(map.get(2).get()).isEqualTo("2");
@@ -35,7 +35,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom4Entries() {
-        final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4");
+        LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4");
         assertThat(map.size()).isEqualTo(4);
         assertThat(map.get(1).get()).isEqualTo("1");
         assertThat(map.get(2).get()).isEqualTo("2");
@@ -45,7 +45,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom5Entries() {
-        final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5");
+        LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5");
         assertThat(map.size()).isEqualTo(5);
         assertThat(map.get(1).get()).isEqualTo("1");
         assertThat(map.get(2).get()).isEqualTo("2");
@@ -56,7 +56,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom6Entries() {
-        final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6");
+        LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6");
         assertThat(map.size()).isEqualTo(6);
         assertThat(map.get(1).get()).isEqualTo("1");
         assertThat(map.get(2).get()).isEqualTo("2");
@@ -68,8 +68,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom7Entries() {
-        final LinkedHashMap<Integer, String> map =
-                LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7");
+        LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7");
         assertThat(map.size()).isEqualTo(7);
         assertThat(map.get(1).get()).isEqualTo("1");
         assertThat(map.get(2).get()).isEqualTo("2");
@@ -82,7 +81,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom8Entries() {
-        final LinkedHashMap<Integer, String> map =
+        LinkedHashMap<Integer, String> map =
                 LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8");
         assertThat(map.size()).isEqualTo(8);
         assertThat(map.get(1).get()).isEqualTo("1");
@@ -97,7 +96,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom9Entries() {
-        final LinkedHashMap<Integer, String> map =
+        LinkedHashMap<Integer, String> map =
                 LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8", 9, "9");
         assertThat(map.size()).isEqualTo(9);
         assertThat(map.get(1).get()).isEqualTo("1");
@@ -113,7 +112,7 @@ public class LinkedHashMapOfEntriesTest {
 
     @Test
     public void shouldConstructFrom10Entries() {
-        final LinkedHashMap<Integer, String> map =
+        LinkedHashMap<Integer, String> map =
                 LinkedHashMap.of(1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8", 9, "9", 10, "10");
         assertThat(map.size()).isEqualTo(10);
         assertThat(map.get(1).get()).isEqualTo("1");

@@ -74,8 +74,8 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         checkOpen();
         compact();
         done = true;
-        final Empty<T> empty = new Empty<>(comparator);
-        final RedBlackTree<T> tree = Node.fromOrdered(empty, buffer, length);
+        Empty<T> empty = new Empty<>(comparator);
+        RedBlackTree<T> tree = Node.fromOrdered(empty, buffer, length);
         buffer = EMPTY_BUFFER;
         length = 0;
         compacted = 0;
@@ -96,8 +96,8 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
         if (compacted == length) {
             return;
         }
-        final Comparator<Object> order = (Comparator<Object>) comparator;
-        final Object[] elements = (Object[]) buffer;
+        Comparator<Object> order = (Comparator<Object>) comparator;
+        Object[] elements = (Object[]) buffer;
         // a throwing comparator can leave a partly merged buffer behind
         sorting = true;
         Arrays.sort(elements, 0, length, order);

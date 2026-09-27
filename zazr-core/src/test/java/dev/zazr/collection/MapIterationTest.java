@@ -40,9 +40,9 @@ public class MapIterationTest {
     public void shouldIterateLinkedHashMapInInsertionOrderAfterRemovals() {
         for (int size : SIZES) {
             for (Removal removal : REMOVALS) {
-                final IntPredicate removed = removal.removed().apply(size);
+                IntPredicate removed = removal.removed().apply(size);
                 LinkedHashMap<Integer, String> actual = LinkedHashMap.empty();
-                final java.util.LinkedHashMap<Integer, String> expected = new java.util.LinkedHashMap<>();
+                java.util.LinkedHashMap<Integer, String> expected = new java.util.LinkedHashMap<>();
                 for (int i = 0; i < size; i++) {
                     actual = actual.put(i, "v" + i);
                     expected.put(i, "v" + i);
@@ -62,7 +62,7 @@ public class MapIterationTest {
     public void shouldIterateLinkedHashMapAfterRemovalsAndReinsertions() {
         for (int size : SIZES) {
             LinkedHashMap<Integer, String> actual = LinkedHashMap.empty();
-            final java.util.LinkedHashMap<Integer, String> expected = new java.util.LinkedHashMap<>();
+            java.util.LinkedHashMap<Integer, String> expected = new java.util.LinkedHashMap<>();
             for (int i = 0; i < size; i++) {
                 actual = actual.put(i, "v" + i);
                 expected.put(i, "v" + i);
@@ -90,23 +90,23 @@ public class MapIterationTest {
                 continue;
             }
             LinkedHashMap<Integer, String> m0 = LinkedHashMap.empty();
-            final java.util.LinkedHashMap<Integer, String> e0 = new java.util.LinkedHashMap<>();
+            java.util.LinkedHashMap<Integer, String> e0 = new java.util.LinkedHashMap<>();
             for (int i = 0; i < size; i++) {
                 m0 = m0.put(i, "v" + i);
                 e0.put(i, "v" + i);
             }
-            final int k = size / 2;
-            final LinkedHashMap<Integer, String> removed = m0.remove(k);
-            final LinkedHashMap<Integer, String> added = m0.put(size, "new");
-            final LinkedHashMap<Integer, String> replaced = m0.put(k, "replaced");
-            final LinkedHashMap<Integer, String> reinserted = m0.remove(k).put(k, "again");
-            final LinkedHashMap<Integer, String> headRemoved = m0.remove(0);
+            int k = size / 2;
+            LinkedHashMap<Integer, String> removed = m0.remove(k);
+            LinkedHashMap<Integer, String> added = m0.put(size, "new");
+            LinkedHashMap<Integer, String> replaced = m0.put(k, "replaced");
+            LinkedHashMap<Integer, String> reinserted = m0.remove(k).put(k, "again");
+            LinkedHashMap<Integer, String> headRemoved = m0.remove(0);
 
-            final java.util.LinkedHashMap<Integer, String> eAdded = new java.util.LinkedHashMap<>(e0);
+            java.util.LinkedHashMap<Integer, String> eAdded = new java.util.LinkedHashMap<>(e0);
             eAdded.put(size, "new");
-            final java.util.LinkedHashMap<Integer, String> eReplaced = new java.util.LinkedHashMap<>(e0);
+            java.util.LinkedHashMap<Integer, String> eReplaced = new java.util.LinkedHashMap<>(e0);
             eReplaced.put(k, "replaced");
-            final java.util.LinkedHashMap<Integer, String> eReinserted = withoutKey(e0, k);
+            java.util.LinkedHashMap<Integer, String> eReinserted = withoutKey(e0, k);
             eReinserted.put(k, "again");
 
             assertLinkedHashMap(removed, withoutKey(e0, k), "removed " + size);
@@ -116,7 +116,7 @@ public class MapIterationTest {
             assertLinkedHashMap(headRemoved, withoutKey(e0, 0), "head removed " + size);
             // the version they all came from is untouched
             assertLinkedHashMap(m0, e0, "original " + size);
-            final java.util.LinkedHashMap<Integer, String> eBack = withoutKey(e0, k);
+            java.util.LinkedHashMap<Integer, String> eBack = withoutKey(e0, k);
             eBack.put(k, "back");
             assertLinkedHashMap(removed.put(k, "back"), eBack, "removed then back " + size);
         }
@@ -128,12 +128,12 @@ public class MapIterationTest {
         for (int i = 0; i < 100; i++) {
             map = map.put(i, i);
         }
-        final java.util.Iterator<Tuple2<Integer, Integer>> iterator = map.iterator();
+        java.util.Iterator<Tuple2<Integer, Integer>> iterator = map.iterator();
         LinkedHashMap<Integer, Integer> other = map;
         for (int i = 0; i < 100; i += 2) {
             other = other.remove(i).put(i + 1000, i);
         }
-        final java.util.List<Integer> keys = new ArrayList<>();
+        java.util.List<Integer> keys = new ArrayList<>();
         iterator.forEachRemaining(entry -> keys.add(entry._1()));
         assertThat(keys)
                 .containsExactlyElementsOf(
@@ -144,9 +144,9 @@ public class MapIterationTest {
     public void shouldReturnLinkedHashSetElementsInInsertionOrderAfterRemovals() {
         for (int size : SIZES) {
             for (Removal removal : REMOVALS) {
-                final IntPredicate removed = removal.removed().apply(size);
+                IntPredicate removed = removal.removed().apply(size);
                 LinkedHashSet<Integer> actual = LinkedHashSet.empty();
-                final java.util.LinkedHashSet<Integer> expected = new java.util.LinkedHashSet<>();
+                java.util.LinkedHashSet<Integer> expected = new java.util.LinkedHashSet<>();
                 for (int i = 0; i < size; i++) {
                     actual = actual.add(i);
                     expected.add(i);
@@ -169,12 +169,12 @@ public class MapIterationTest {
         for (Comparator<Integer> order : java.util.List.of(NATURAL, REVERSED)) {
             for (int size : SIZES) {
                 for (Removal removal : REMOVALS) {
-                    final IntPredicate removed = removal.removed().apply(size);
+                    IntPredicate removed = removal.removed().apply(size);
                     TreeMap<Integer, String> actual = TreeMap.empty(order);
-                    final java.util.TreeMap<Integer, String> expected = new java.util.TreeMap<>(order);
+                    java.util.TreeMap<Integer, String> expected = new java.util.TreeMap<>(order);
                     // inserted in a scrambled order so that the tree is built by rebalancing
                     for (int j = 0; j < size; j++) {
-                        final int i = (int) ((j * 7919L) % Math.max(size, 1));
+                        int i = (int) ((j * 7919L) % Math.max(size, 1));
                         actual = actual.put(i, "v" + i);
                         expected.put(i, "v" + i);
                     }
@@ -193,8 +193,8 @@ public class MapIterationTest {
     @Test
     public void shouldIterateTreeMapBuiltFromOrderedEntries() {
         for (int size : SIZES) {
-            final java.util.List<Tuple2<Integer, String>> entries = new ArrayList<>();
-            final java.util.TreeMap<Integer, String> expected = new java.util.TreeMap<>();
+            java.util.List<Tuple2<Integer, String>> entries = new ArrayList<>();
+            java.util.TreeMap<Integer, String> expected = new java.util.TreeMap<>();
             for (int i = 0; i < size; i++) {
                 entries.add(Tuple.of(i, "v" + i));
                 expected.put(i, "v" + i);
@@ -210,21 +210,21 @@ public class MapIterationTest {
                 continue;
             }
             TreeMap<Integer, String> m0 = TreeMap.empty();
-            final java.util.TreeMap<Integer, String> e0 = new java.util.TreeMap<>();
+            java.util.TreeMap<Integer, String> e0 = new java.util.TreeMap<>();
             for (int i = 0; i < size; i++) {
                 m0 = m0.put(i, "v" + i);
                 e0.put(i, "v" + i);
             }
-            final int k = size / 2;
-            final TreeMap<Integer, String> removed = m0.remove(k);
-            final TreeMap<Integer, String> added = m0.put(-1, "new");
-            final TreeMap<Integer, String> replaced = m0.put(k, "replaced");
+            int k = size / 2;
+            TreeMap<Integer, String> removed = m0.remove(k);
+            TreeMap<Integer, String> added = m0.put(-1, "new");
+            TreeMap<Integer, String> replaced = m0.put(k, "replaced");
 
-            final java.util.TreeMap<Integer, String> eRemoved = new java.util.TreeMap<>(e0);
+            java.util.TreeMap<Integer, String> eRemoved = new java.util.TreeMap<>(e0);
             eRemoved.remove(k);
-            final java.util.TreeMap<Integer, String> eAdded = new java.util.TreeMap<>(e0);
+            java.util.TreeMap<Integer, String> eAdded = new java.util.TreeMap<>(e0);
             eAdded.put(-1, "new");
-            final java.util.TreeMap<Integer, String> eReplaced = new java.util.TreeMap<>(e0);
+            java.util.TreeMap<Integer, String> eReplaced = new java.util.TreeMap<>(e0);
             eReplaced.put(k, "replaced");
 
             assertTreeMap(removed, eRemoved, "removed " + size);
@@ -239,11 +239,11 @@ public class MapIterationTest {
         for (Comparator<Integer> order : java.util.List.of(NATURAL, REVERSED)) {
             for (int size : SIZES) {
                 for (Removal removal : REMOVALS) {
-                    final IntPredicate removed = removal.removed().apply(size);
+                    IntPredicate removed = removal.removed().apply(size);
                     TreeSet<Integer> actual = TreeSet.empty(order);
-                    final java.util.TreeSet<Integer> expected = new java.util.TreeSet<>(order);
+                    java.util.TreeSet<Integer> expected = new java.util.TreeSet<>(order);
                     for (int j = 0; j < size; j++) {
-                        final int i = (int) ((j * 7919L) % Math.max(size, 1));
+                        int i = (int) ((j * 7919L) % Math.max(size, 1));
                         actual = actual.add(i);
                         expected.add(i);
                     }
@@ -264,13 +264,13 @@ public class MapIterationTest {
     // -- helpers
 
     private static <T> java.util.List<T> javaList(Iterable<T> elements) {
-        final java.util.List<T> result = new ArrayList<>();
+        java.util.List<T> result = new ArrayList<>();
         elements.forEach(result::add);
         return result;
     }
 
     private static <K, V> java.util.LinkedHashMap<K, V> withoutKey(java.util.LinkedHashMap<K, V> map, K key) {
-        final java.util.LinkedHashMap<K, V> copy = new java.util.LinkedHashMap<>(map);
+        java.util.LinkedHashMap<K, V> copy = new java.util.LinkedHashMap<>(map);
         copy.remove(key);
         return copy;
     }
@@ -279,7 +279,7 @@ public class MapIterationTest {
             LinkedHashMap<K, V> actual, java.util.LinkedHashMap<K, V> expected, String description) {
         assertEntries(actual, expected, description);
         // the reversed view walks the insertion order backwards without the forward iterator
-        final java.util.List<K> reversedKeys =
+        java.util.List<K> reversedKeys =
                 new ArrayList<>(actual.asJavaMap().reversed().keySet());
         java.util.Collections.reverse(reversedKeys);
         assertThat(reversedKeys).as(description + " reversed view").containsExactlyElementsOf(expected.keySet());
@@ -292,12 +292,12 @@ public class MapIterationTest {
     }
 
     private static <K, V> void assertEntries(Map<K, V> actual, java.util.Map<K, V> expected, String description) {
-        final java.util.List<Tuple2<K, V>> expectedEntries = new ArrayList<>();
+        java.util.List<Tuple2<K, V>> expectedEntries = new ArrayList<>();
         expected.forEach((k, v) -> expectedEntries.add(Tuple.of(k, v)));
-        final java.util.List<V> expectedValues = new ArrayList<>(expected.values());
+        java.util.List<V> expectedValues = new ArrayList<>(expected.values());
 
-        final java.util.List<Tuple2<K, V>> iterated = new ArrayList<>();
-        final java.util.Iterator<Tuple2<K, V>> iterator = actual.iterator();
+        java.util.List<Tuple2<K, V>> iterated = new ArrayList<>();
+        java.util.Iterator<Tuple2<K, V>> iterator = actual.iterator();
         while (iterator.hasNext()) {
             // hasNext() is idempotent: asking twice does not skip an entry
             assertThat(iterator.hasNext()).isTrue();
@@ -306,11 +306,11 @@ public class MapIterationTest {
         assertThat(iterator.hasNext()).isFalse();
         assertThat(iterated).as(description + " iterator").containsExactlyElementsOf(expectedEntries);
 
-        final java.util.List<Tuple2<K, V>> visited = new ArrayList<>();
+        java.util.List<Tuple2<K, V>> visited = new ArrayList<>();
         actual.forEach((k, v) -> visited.add(Tuple.of(k, v)));
         assertThat(visited).as(description + " forEach").containsExactlyElementsOf(expectedEntries);
 
-        final Vector<V> values = actual.values();
+        Vector<V> values = actual.values();
         assertThat(values.size()).as(description + " values size").isEqualTo(expected.size());
         assertThat(javaList(values)).as(description + " values").containsExactlyElementsOf(expectedValues);
         assertThat(values)

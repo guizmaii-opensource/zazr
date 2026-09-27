@@ -39,7 +39,7 @@ class GenTest {
 
     @Test
     void aSeedReplaysTheSameValues() {
-        final Gen<Tuple2<Integer, String>> gen = Gen.zip(Gen.integers(), Gen.alphaNumericStrings());
+        Gen<Tuple2<Integer, String>> gen = Gen.zip(Gen.integers(), Gen.alphaNumericStrings());
         assertThat(gen.runCollectN(300, config(7))).isEqualTo(gen.runCollectN(300, config(7)));
         assertThat(gen.runCollect(config(7))).isEqualTo(gen.runCollect(config(7)));
     }
@@ -52,8 +52,8 @@ class GenTest {
 
     @Test
     void aGeneratorHoldsNoState() {
-        final Gen<Integer> gen = Gen.integers(0, 1_000_000).map(i -> i * 2);
-        final List<Integer> first = gen.runCollectN(100, config(3));
+        Gen<Integer> gen = Gen.integers(0, 1_000_000).map(i -> i * 2);
+        List<Integer> first = gen.runCollectN(100, config(3));
         Gen.integers().runCollectN(100, config(4));
         assertThat(gen.runCollectN(100, config(3))).isEqualTo(first);
     }
@@ -74,7 +74,7 @@ class GenTest {
 
     @Test
     void aNullValueReachesTheCheckButNotAList() {
-        final java.util.List<Object> seen = new ArrayList<>();
+        java.util.List<Object> seen = new ArrayList<>();
         Check.checkAll(Gen.fromIterable(Arrays.asList(1, null)), value -> seen.add(value));
         assertThat(seen).containsExactly(1, null);
         assertThatThrownBy(() -> pass(Gen.constant(null))).isInstanceOf(NullPointerException.class);
@@ -106,16 +106,16 @@ class GenTest {
 
     @Test
     void fromIterableCopiesItsInput() {
-        final java.util.List<Integer> source = new ArrayList<>(java.util.List.of(1, 2));
-        final Gen<Integer> gen = Gen.fromIterable(source);
+        java.util.List<Integer> source = new ArrayList<>(java.util.List.of(1, 2));
+        Gen<Integer> gen = Gen.fromIterable(source);
         source.add(3);
         assertThat(pass(gen)).isEqualTo(List.of(1, 2));
     }
 
     @Test
     void fromIterableAcceptsAOneShotIterable() {
-        final Iterator<Integer> iterator = java.util.List.of(1, 2).iterator();
-        final Gen<Integer> gen = Gen.fromIterable(() -> iterator);
+        Iterator<Integer> iterator = java.util.List.of(1, 2).iterator();
+        Gen<Integer> gen = Gen.fromIterable(() -> iterator);
         assertThat(pass(gen)).isEqualTo(List.of(1, 2));
         assertThat(pass(gen)).isEqualTo(List.of(1, 2));
         assertThat(values(gen, 4)).isEqualTo(List.of(1, 2, 1, 2));
@@ -131,17 +131,17 @@ class GenTest {
 
     @Test
     void elementsCopiesItsArray() {
-        final String[] array = {"a"};
-        final Gen<String> gen = Gen.elements(array);
+        String[] array = {"a"};
+        Gen<String> gen = Gen.elements(array);
         array[0] = "b";
         assertThat(values(gen, 5)).containsOnly("a");
     }
 
     @Test
     void fromRandomDrawsFromTheSeededSource() {
-        final Gen<Long> gen = Gen.fromRandom(random -> random.nextLong());
-        final List<Long> drawn = gen.runCollectN(5, config(11));
-        final java.util.SplittableRandom random = new java.util.SplittableRandom(11);
+        Gen<Long> gen = Gen.fromRandom(random -> random.nextLong());
+        List<Long> drawn = gen.runCollectN(5, config(11));
+        java.util.SplittableRandom random = new java.util.SplittableRandom(11);
         assertThat(drawn)
                 .isEqualTo(List.of(
                         random.nextLong(), random.nextLong(), random.nextLong(), random.nextLong(), random.nextLong()));
@@ -149,8 +149,8 @@ class GenTest {
 
     @Test
     void suspendBuildsTheGeneratorWhenItRuns() {
-        final AtomicInteger built = new AtomicInteger();
-        final Gen<Integer> gen = Gen.suspend(() -> {
+        AtomicInteger built = new AtomicInteger();
+        Gen<Integer> gen = Gen.suspend(() -> {
             built.incrementAndGet();
             return Gen.constant(1);
         });
@@ -183,9 +183,9 @@ class GenTest {
 
     @Test
     void weightedFollowsTheWeights() {
-        final List<Boolean> drawn =
+        List<Boolean> drawn =
                 values(Gen.weighted(Tuple.of(Gen.constant(true), 9.0), Tuple.of(Gen.constant(false), 1.0)), 10_000);
-        final long trues = drawn.count(b -> b);
+        long trues = drawn.count(b -> b);
         assertThat(trues).isBetween(8_700L, 9_300L);
     }
 
@@ -251,7 +251,7 @@ class GenTest {
 
     @Test
     void unfoldGenIsSmall() {
-        final List<List<Integer>> drawn = Gen.unfoldGen(0, s -> Gen.constant(Tuple.of(s + 1, s)))
+        List<List<Integer>> drawn = Gen.unfoldGen(0, s -> Gen.constant(Tuple.of(s + 1, s)))
                 .runCollect(config(1))
                 .appendAll(Gen.unfoldGen(0, s -> Gen.constant(Tuple.of(s + 1, s)))
                         .runCollectN(200, config(2)));
@@ -282,8 +282,8 @@ class GenTest {
 
     @Test
     void collectAllCopiesItsInput() {
-        final java.util.List<Gen<Integer>> gens = new ArrayList<>(java.util.List.of(Gen.constant(1)));
-        final Gen<List<Integer>> gen = Gen.collectAll(gens);
+        java.util.List<Gen<Integer>> gens = new ArrayList<>(java.util.List.of(Gen.constant(1)));
+        Gen<List<Integer>> gen = Gen.collectAll(gens);
         gens.add(Gen.constant(2));
         assertThat(pass(gen)).isEqualTo(List.of(List.of(1)));
     }
@@ -300,7 +300,7 @@ class GenTest {
         assertThat(Gen.size().runCollectN(5, config(1))).isEqualTo(List.of(0, 25, 50, 75, 100));
         assertThat(Gen.size().runCollectN(1, config(1))).isEqualTo(List.of(100));
         assertThat(Gen.size().runCollectN(3, config(1).withSize(0))).isEqualTo(List.of(0, 0, 0));
-        final List<Integer> sizes = Gen.size().runCollectN(200, config(1));
+        List<Integer> sizes = Gen.size().runCollectN(200, config(1));
         assertThat(sizes.asJava()).isSorted().startsWith(0, 0, 1, 1, 2).endsWith(99, 100);
     }
 
@@ -320,7 +320,7 @@ class GenTest {
 
     @Test
     void smallFavoursSmallSizes() {
-        final List<Integer> sizes = Gen.small(Gen::constant).withSize(100).runCollectN(2_000, config(5));
+        List<Integer> sizes = Gen.small(Gen::constant).withSize(100).runCollectN(2_000, config(5));
         assertThat(sizes).allMatch(n -> n >= 0 && n <= 100);
         // an exponential distribution of mean 4
         assertThat(sizes.count(n -> n <= 10)).isGreaterThan(1_800);
@@ -343,7 +343,7 @@ class GenTest {
 
     @Test
     void largeIsUniformUpToTheSize() {
-        final List<Integer> sizes = Gen.large(Gen::constant).withSize(100).runCollectN(5_000, config(5));
+        List<Integer> sizes = Gen.large(Gen::constant).withSize(100).runCollectN(5_000, config(5));
         assertThat(sizes).allMatch(n -> n >= 0 && n <= 100).contains(0, 100);
         assertThat(sizes.average().get()).isBetween(45.0, 55.0);
         assertThat(Gen.large(Gen::constant, 10).withSize(100).runCollectN(500, config(5)))
@@ -367,7 +367,7 @@ class GenTest {
 
     @Test
     void withSizeDoesNotLeakIntoTheNextGenerators() {
-        final Gen<Tuple2<Integer, Integer>> gen =
+        Gen<Tuple2<Integer, Integer>> gen =
                 Gen.size().withSize(3).flatMap(inner -> Gen.size().map(outer -> Tuple.of(inner, outer)));
         assertThat(gen.runCollect(config(1).withSize(50))).isEqualTo(List.of(Tuple.of(3, 50)));
         assertThat(Gen.zip(Gen.size().withSize(3), Gen.size())
@@ -386,7 +386,7 @@ class GenTest {
 
     @Test
     void flatMapRunsTheNextGeneratorForEveryValue() {
-        final Gen<String> gen = Gen.fromIterable(java.util.List.of(1, 2))
+        Gen<String> gen = Gen.fromIterable(java.util.List.of(1, 2))
                 .flatMap(i -> Gen.fromIterable(java.util.List.of(i + "a", i + "b")));
         assertThat(pass(gen)).isEqualTo(List.of("1a", "1b", "2a", "2b"));
         assertThat(values(gen, 3)).isEqualTo(List.of("1a", "1b", "2a"));
@@ -407,12 +407,11 @@ class GenTest {
 
     @Test
     void theRunStopsInTheMiddleOfAPass() {
-        final AtomicInteger generated = new AtomicInteger();
-        final Gen<Integer> gen = Gen.fromIterable(java.util.List.of(1, 2, 3, 4, 5))
-                .map(i -> {
-                    generated.incrementAndGet();
-                    return i;
-                });
+        AtomicInteger generated = new AtomicInteger();
+        Gen<Integer> gen = Gen.fromIterable(java.util.List.of(1, 2, 3, 4, 5)).map(i -> {
+            generated.incrementAndGet();
+            return i;
+        });
         assertThat(values(gen, 2)).isEqualTo(List.of(1, 2));
         assertThat(generated).hasValue(2);
     }
@@ -441,14 +440,14 @@ class GenTest {
 
     @Test
     void aFilteredRandomGeneratorStillGivesOneValuePerPass() {
-        final Gen<Integer> evens = Gen.integers().filter(i -> i % 2 == 0);
+        Gen<Integer> evens = Gen.integers().filter(i -> i % 2 == 0);
         assertThat(pass(evens)).hasSize(1);
         assertThat(values(evens, 500)).hasSize(500).allMatch(i -> i % 2 == 0);
     }
 
     @Test
     void aFilteredElementGeneratorStillFillsAString() {
-        final List<String> strings = Gen.stringsN(100, Gen.alphaNumericChars().filter(Character::isDigit))
+        List<String> strings = Gen.stringsN(100, Gen.alphaNumericChars().filter(Character::isDigit))
                 .runCollectN(50, config(1));
         assertThat(strings)
                 .hasSize(50)
@@ -457,8 +456,8 @@ class GenTest {
 
     @Test
     void aFilteredFiniteGeneratorIsNotRunAgain() {
-        final AtomicInteger runs = new AtomicInteger();
-        final Gen<Integer> gen = Gen.suspend(() -> {
+        AtomicInteger runs = new AtomicInteger();
+        Gen<Integer> gen = Gen.suspend(() -> {
                     runs.incrementAndGet();
                     return Gen.fromIterable(java.util.List.of(1, 3));
                 })
@@ -535,7 +534,7 @@ class GenTest {
     @Test
     void aFilterThatNeverPassesCallsItsPredicateAtMostOnceMoreThanTheBudget() {
         for (int budget : new int[] {0, 1, 2, 15, 16, 17, 100, 1000}) {
-            final java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
+            java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
             assertThatThrownBy(() -> Gen.integers()
                             .filter(counting(calls, i -> false))
                             .runCollectN(10, config(1).withMaxDiscards(budget)))
@@ -547,8 +546,8 @@ class GenTest {
 
     @Test
     void nestedFiltersShareOneBudget() {
-        final java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
-        final Gen<Integer> nested = Gen.fromIterable(java.util.List.of(1, 2))
+        java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
+        Gen<Integer> nested = Gen.fromIterable(java.util.List.of(1, 2))
                 .flatMap(i -> i == 1 ? Gen.integers().filter(counting(calls, x -> false)) : Gen.integers())
                 .filter(counting(calls, x -> false));
         assertThatThrownBy(() -> nested.runCollectN(200, config(1)))
@@ -556,9 +555,9 @@ class GenTest {
                 .hasMessageStartingWith("Gen.filter rejected too many values: 1001 discards");
         assertThat(calls.get()).isLessThanOrEqualTo(1001L);
 
-        final java.util.concurrent.atomic.AtomicLong outer = new java.util.concurrent.atomic.AtomicLong();
-        final java.util.concurrent.atomic.AtomicLong inner = new java.util.concurrent.atomic.AtomicLong();
-        final Gen<Integer> threeLevels = Gen.integers()
+        java.util.concurrent.atomic.AtomicLong outer = new java.util.concurrent.atomic.AtomicLong();
+        java.util.concurrent.atomic.AtomicLong inner = new java.util.concurrent.atomic.AtomicLong();
+        Gen<Integer> threeLevels = Gen.integers()
                 .filter(counting(inner, x -> x % 2 == 0))
                 .filter(counting(inner, x -> x % 3 == 0))
                 .filter(counting(outer, x -> false));
@@ -569,8 +568,8 @@ class GenTest {
 
     @Test
     void anInnerFilterThatAcceptsDoesNotRefillTheBudgetOfAnOuterOne() {
-        final java.util.concurrent.atomic.AtomicLong outer = new java.util.concurrent.atomic.AtomicLong();
-        final Gen<Integer> gen = Gen.integers().filter(i -> i % 2 == 0).filter(counting(outer, i -> false));
+        java.util.concurrent.atomic.AtomicLong outer = new java.util.concurrent.atomic.AtomicLong();
+        Gen<Integer> gen = Gen.integers().filter(i -> i % 2 == 0).filter(counting(outer, i -> false));
         assertThatThrownBy(() -> gen.runCollectN(10, config(1)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageStartingWith("Gen.filter rejected too many values");
@@ -583,7 +582,7 @@ class GenTest {
         assertThat(Sampling.exceeds(Integer.MAX_VALUE + 1L, Integer.MAX_VALUE)).isTrue();
         assertThat(Sampling.exceeds(1, 0)).isTrue();
         assertThat(Sampling.exceeds(0, 0)).isFalse();
-        final CheckConfig largest = config(1).withMaxDiscards(Integer.MAX_VALUE);
+        CheckConfig largest = config(1).withMaxDiscards(Integer.MAX_VALUE);
         assertThat(Gen.integers().filter(i -> i % 2 == 0).runCollectN(20, largest))
                 .hasSize(20);
         assertThat(Gen.sized(n -> n < 5 ? Gen.<Integer>empty() : Gen.constant(n))
@@ -608,7 +607,7 @@ class GenTest {
 
     @Test
     void anEmptyPassMovesTheNextOneToADoubledSize() {
-        final Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
+        Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
         // the first sample runs at size 0, finds nothing at 0 and 1, and is taken at size 3
         assertThat(fromSizeThree.runCollectN(5, config(1))).isEqualTo(List.of(3, 25, 50, 75, 100));
         // 0, 1, 3, 7, 15, 31, 63, then the configured size
@@ -618,7 +617,7 @@ class GenTest {
 
     @Test
     void theSizeAfterEmptyPassesStopsAtTheConfiguredSize() {
-        final Gen<Integer> never = Gen.sized(n -> n <= 5 ? Gen.<Integer>empty() : Gen.constant(n));
+        Gen<Integer> never = Gen.sized(n -> n <= 5 ? Gen.<Integer>empty() : Gen.constant(n));
         assertThatThrownBy(() -> never.runCollectN(1, config(1).withSize(5).withMaxDiscards(50)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage(
@@ -627,7 +626,7 @@ class GenTest {
 
     @Test
     void theGrowthDoublesUpToTheLargestSize() {
-        final Sampling sampling = new Sampling(1, 10, 100);
+        Sampling sampling = new Sampling(1, 10, 100);
         assertThat(sampling.grow(0, 0)).isEqualTo(0);
         assertThat(sampling.grow(0, 1)).isEqualTo(1);
         assertThat(sampling.grow(0, 2)).isEqualTo(3);
@@ -644,7 +643,7 @@ class GenTest {
     @Test
     void aFilterThatRejectsTheSmallestValuesWorksWithTheDefaultConfiguration() {
         for (long seed = 0; seed < 20; seed++) {
-            final CheckConfig config = CheckConfig.defaults().withSeed(seed);
+            CheckConfig config = CheckConfig.defaults().withSeed(seed);
             assertThat(Gen.alphaNumericStrings().filter(s -> !s.isEmpty()).runCollectN(200, config))
                     .hasSize(200)
                     .noneMatch(String::isEmpty);
@@ -665,7 +664,7 @@ class GenTest {
 
     @Test
     void zipGivesEveryPairOfFiniteGenerators() {
-        final Gen<Integer> ab = Gen.fromIterable(java.util.List.of(1, 2));
+        Gen<Integer> ab = Gen.fromIterable(java.util.List.of(1, 2));
         assertThat(pass(ab.zip(Gen.fromIterable(java.util.List.of("a", "b")))))
                 .isEqualTo(List.of(Tuple.of(1, "a"), Tuple.of(1, "b"), Tuple.of(2, "a"), Tuple.of(2, "b")));
         assertThat(pass(ab.zipWith(Gen.constant(10), Integer::sum))).isEqualTo(List.of(11, 12));
@@ -674,14 +673,14 @@ class GenTest {
 
     @Test
     void zipAtEveryArityGivesTheComponentsInOrder() {
-        final Gen<Integer> g1 = Gen.constant(1);
-        final Gen<Integer> g2 = Gen.constant(2);
-        final Gen<Integer> g3 = Gen.constant(3);
-        final Gen<Integer> g4 = Gen.constant(4);
-        final Gen<Integer> g5 = Gen.constant(5);
-        final Gen<Integer> g6 = Gen.constant(6);
-        final Gen<Integer> g7 = Gen.constant(7);
-        final Gen<Integer> g8 = Gen.constant(8);
+        Gen<Integer> g1 = Gen.constant(1);
+        Gen<Integer> g2 = Gen.constant(2);
+        Gen<Integer> g3 = Gen.constant(3);
+        Gen<Integer> g4 = Gen.constant(4);
+        Gen<Integer> g5 = Gen.constant(5);
+        Gen<Integer> g6 = Gen.constant(6);
+        Gen<Integer> g7 = Gen.constant(7);
+        Gen<Integer> g8 = Gen.constant(8);
         assertThat(pass(Gen.zip(g1, g2))).isEqualTo(List.of(Tuple.of(1, 2)));
         assertThat(pass(Gen.zip(g1, g2, g3))).isEqualTo(List.of(Tuple.of(1, 2, 3)));
         assertThat(pass(Gen.zip(g1, g2, g3, g4))).isEqualTo(List.of(Tuple.of(1, 2, 3, 4)));
@@ -715,7 +714,7 @@ class GenTest {
 
     @Test
     void zipAtEveryArityGivesEveryCombination() {
-        final Gen<Integer> two = Gen.fromIterable(java.util.List.of(0, 1));
+        Gen<Integer> two = Gen.fromIterable(java.util.List.of(0, 1));
         assertThat(pass(Gen.zip(two, two, two))).hasSize(8).doesNotHaveDuplicates();
         assertThat(pass(Gen.zip(two, two, two, two, two, two, two, two)))
                 .hasSize(256)
@@ -726,7 +725,7 @@ class GenTest {
 
     @Test
     void zipRejectsNulls() {
-        final Gen<Integer> g = Gen.constant(1);
+        Gen<Integer> g = Gen.constant(1);
         assertThatThrownBy(() -> g.zip(null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> g.zipWith(g, null)).isInstanceOf(NullPointerException.class);
         assertThatThrownBy(() -> Gen.zip(null, g)).isInstanceOf(NullPointerException.class);
@@ -745,14 +744,14 @@ class GenTest {
 
     @Test
     void drawTakesTheFirstValueOfAPass() {
-        final Sampling sampling = new Sampling(1, 10);
+        Sampling sampling = new Sampling(1, 10);
         assertThat(Gen.fromIterable(java.util.List.of(5, 6)).draw(sampling, 0)).isEqualTo(5);
     }
 
     @Test
     void drawRunsARandomPassAgainUntilItGivesAValue() {
-        final Sampling sampling = new Sampling(1, 1000);
-        final Gen<Integer> sometimes = Gen.oneOf(Gen.empty(), Gen.constant(1));
+        Sampling sampling = new Sampling(1, 1000);
+        Gen<Integer> sometimes = Gen.oneOf(Gen.empty(), Gen.constant(1));
         for (int i = 0; i < 100; i++) {
             assertThat(sometimes.draw(sampling, 0)).isEqualTo(1);
         }
@@ -775,9 +774,9 @@ class GenTest {
 
     @Test
     void drawRetriesAnEmptyPassAtALargerSize() {
-        final Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
+        Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
         assertThat(fromSizeThree.draw(new Sampling(1, 10, 10), 0)).isEqualTo(3);
-        final Gen<Character> firstLetters =
+        Gen<Character> firstLetters =
                 Gen.strings(Gen.alphaChars()).filter(s -> !s.isEmpty()).map(s -> s.charAt(0));
         assertThat(Gen.stringsN(5, firstLetters)
                         .withSize(0)
@@ -788,17 +787,17 @@ class GenTest {
 
     @Test
     void drawDoesNotGoAboveTheConfiguredSize() {
-        final Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
+        Gen<Integer> fromSizeThree = Gen.sized(n -> n < 3 ? Gen.<Integer>empty() : Gen.constant(n));
         assertThatThrownBy(() -> fromSizeThree.draw(new Sampling(1, 10, 2), 0))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage(
                         "the generator produced no value: 11 discards since the last sample, more than the discard budget of 10");
-        final Gen<Character> firstLetters =
+        Gen<Character> firstLetters =
                 Gen.strings(Gen.alphaChars()).filter(s -> !s.isEmpty()).map(s -> s.charAt(0));
         assertThatThrownBy(
                         () -> Gen.stringsN(5, firstLetters).runCollect(config(1).withSize(0)))
                 .isInstanceOf(IllegalStateException.class);
-        final CheckResult result = Check.evaluate(
+        CheckResult result = Check.evaluate(
                 config(1),
                 Gen.stringsN(1, Gen.sized(n -> Gen.constant((char) (int) n)).filter(c -> c > 150))
                         .map(s -> (int) s.charAt(0)),
@@ -809,8 +808,7 @@ class GenTest {
     @Test
     void aDrawThatSucceedsAfterAFilterGaveUpLosesNoValue() {
         // the element filter gives its first pass up (budget 32: after 2 rejections), the draw runs it again
-        final Gen<String> gen =
-                Gen.stringsN(1, counter().filter(i -> i % 4 == 3).map(i -> (char) ('a' + i)));
+        Gen<String> gen = Gen.stringsN(1, counter().filter(i -> i % 4 == 3).map(i -> (char) ('a' + i)));
         assertThat(gen.runCollect(config(1).withMaxDiscards(32))).isEqualTo(List.of("d"));
     }
 
@@ -844,7 +842,7 @@ class GenTest {
 
     @Test
     void anIteratorThatEndsEarlyIsCopiedOnce() {
-        final Iterable<Integer> twice = () -> new Iterator<>() {
+        Iterable<Integer> twice = () -> new Iterator<>() {
             private int left = 2;
 
             @Override
@@ -866,12 +864,12 @@ class GenTest {
     @Test
     void everyValueOfARandomGeneratorComesFromTheSameRun() {
         // two draws in one pass differ: the source is shared, not reset
-        final Set<Tuple2<Long, Long>> pairs =
+        Set<Tuple2<Long, Long>> pairs =
                 new HashSet<>(Gen.zip(Gen.fromRandom(r -> r.nextLong()), Gen.fromRandom(r -> r.nextLong()))
                         .runCollectN(100, config(1))
                         .asJava());
         assertThat(pairs).hasSize(100).allMatch(pair -> !pair._1().equals(pair._2()));
-        final Map<Long, Integer> counts = new HashMap<>();
+        Map<Long, Integer> counts = new HashMap<>();
         Gen.longs(0, 1_000_000_000L).runCollectN(1_000, config(1)).forEach(l -> counts.merge(l, 1, Integer::sum));
         assertThat(counts.size()).isGreaterThan(400);
     }

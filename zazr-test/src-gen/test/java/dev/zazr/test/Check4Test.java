@@ -24,8 +24,8 @@ class Check4Test {
 
     @Test
     void passesTheValuesInOrder() {
-        final ArrayList<Object> seen = new ArrayList<>();
-        final CheckResult result = Check.evaluate(
+        ArrayList<Object> seen = new ArrayList<>();
+        CheckResult result = Check.evaluate(
                 CONFIG,
                 Gen.constant(1),
                 Gen.constant(2),
@@ -65,7 +65,7 @@ class Check4Test {
 
     @Test
     void checkAllRunsEveryCombinationOnce() {
-        final ArrayList<Object> seen = new ArrayList<>();
+        ArrayList<Object> seen = new ArrayList<>();
         assertThat(Check.evaluateAll(TWO, TWO, TWO, TWO, (v1, v2, v3, v4) -> seen.add(Tuple.of(v1, v2, v3, v4))))
                 .isEqualTo(new CheckResult.Satisfied(16));
         assertThat(seen).hasSize(16).doesNotHaveDuplicates();
@@ -157,7 +157,7 @@ class Check4Test {
 
     @Test
     void checkReturnsWhenEveryValuePasses() {
-        final ArrayList<Object> seen = new ArrayList<>();
+        ArrayList<Object> seen = new ArrayList<>();
         Check.check(
                 CONFIG,
                 Gen.constant(1),

@@ -17,19 +17,19 @@ public class Tuple7Test {
 
     @Test
     public void shouldCreateTuple() {
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
         assertThat(tuple).isNotNull();
     }
 
     @Test
     public void shouldGetArity() {
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
         assertThat(tuple.arity()).isEqualTo(7);
     }
 
     @Test
     public void shouldReturnElements() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7);
         assertThat(tuple._1()).isEqualTo(1);
         assertThat(tuple._2()).isEqualTo(2);
@@ -42,7 +42,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUpdate1() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7).update1(42);
         assertThat(tuple._1()).isEqualTo(42);
         assertThat(tuple._2()).isEqualTo(2);
@@ -55,7 +55,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUpdate2() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7).update2(42);
         assertThat(tuple._1()).isEqualTo(1);
         assertThat(tuple._2()).isEqualTo(42);
@@ -68,7 +68,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUpdate3() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7).update3(42);
         assertThat(tuple._1()).isEqualTo(1);
         assertThat(tuple._2()).isEqualTo(2);
@@ -81,7 +81,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUpdate4() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7).update4(42);
         assertThat(tuple._1()).isEqualTo(1);
         assertThat(tuple._2()).isEqualTo(2);
@@ -94,7 +94,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUpdate5() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7).update5(42);
         assertThat(tuple._1()).isEqualTo(1);
         assertThat(tuple._2()).isEqualTo(2);
@@ -107,7 +107,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUpdate6() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7).update6(42);
         assertThat(tuple._1()).isEqualTo(1);
         assertThat(tuple._2()).isEqualTo(2);
@@ -120,7 +120,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUpdate7() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple =
                 createIntTuple(1, 2, 3, 4, 5, 6, 7).update7(42);
         assertThat(tuple._1()).isEqualTo(1);
         assertThat(tuple._2()).isEqualTo(2);
@@ -133,31 +133,27 @@ public class Tuple7Test {
 
     @Test
     public void shouldConvertToVector() {
-        final Vector<?> actual = createIntTuple(1, 0, 0, 0, 0, 0, 0).toVector();
+        Vector<?> actual = createIntTuple(1, 0, 0, 0, 0, 0, 0).toVector();
         assertThat(actual).isEqualTo(Vector.of(1, 0, 0, 0, 0, 0, 0));
     }
 
     @Test
     public void shouldCompareEqual() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
         assertThat(t0.compareTo(t0)).isZero();
         assertThat(intTupleComparator.compare(t0, t0)).isZero();
     }
 
     @Test
     public void shouldThrowWhenComparingToNull() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
         assertThrows(NullPointerException.class, () -> t0.compareTo(null));
     }
 
     @Test
     public void shouldCompare1stArg() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t1 =
-                createIntTuple(1, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t1 = createIntTuple(1, 0, 0, 0, 0, 0, 0);
         assertThat(t0.compareTo(t1)).isNegative();
         assertThat(t1.compareTo(t0)).isPositive();
         assertThat(intTupleComparator.compare(t0, t1)).isNegative();
@@ -166,10 +162,8 @@ public class Tuple7Test {
 
     @Test
     public void shouldCompare2ndArg() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t2 =
-                createIntTuple(0, 1, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t2 = createIntTuple(0, 1, 0, 0, 0, 0, 0);
         assertThat(t0.compareTo(t2)).isNegative();
         assertThat(t2.compareTo(t0)).isPositive();
         assertThat(intTupleComparator.compare(t0, t2)).isNegative();
@@ -178,10 +172,8 @@ public class Tuple7Test {
 
     @Test
     public void shouldCompare3rdArg() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t3 =
-                createIntTuple(0, 0, 1, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t3 = createIntTuple(0, 0, 1, 0, 0, 0, 0);
         assertThat(t0.compareTo(t3)).isNegative();
         assertThat(t3.compareTo(t0)).isPositive();
         assertThat(intTupleComparator.compare(t0, t3)).isNegative();
@@ -190,10 +182,8 @@ public class Tuple7Test {
 
     @Test
     public void shouldCompare4thArg() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t4 =
-                createIntTuple(0, 0, 0, 1, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t4 = createIntTuple(0, 0, 0, 1, 0, 0, 0);
         assertThat(t0.compareTo(t4)).isNegative();
         assertThat(t4.compareTo(t0)).isPositive();
         assertThat(intTupleComparator.compare(t0, t4)).isNegative();
@@ -202,10 +192,8 @@ public class Tuple7Test {
 
     @Test
     public void shouldCompare5thArg() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t5 =
-                createIntTuple(0, 0, 0, 0, 1, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t5 = createIntTuple(0, 0, 0, 0, 1, 0, 0);
         assertThat(t0.compareTo(t5)).isNegative();
         assertThat(t5.compareTo(t0)).isPositive();
         assertThat(intTupleComparator.compare(t0, t5)).isNegative();
@@ -214,10 +202,8 @@ public class Tuple7Test {
 
     @Test
     public void shouldCompare6thArg() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t6 =
-                createIntTuple(0, 0, 0, 0, 0, 1, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t6 = createIntTuple(0, 0, 0, 0, 0, 1, 0);
         assertThat(t0.compareTo(t6)).isNegative();
         assertThat(t6.compareTo(t0)).isPositive();
         assertThat(intTupleComparator.compare(t0, t6)).isNegative();
@@ -226,10 +212,8 @@ public class Tuple7Test {
 
     @Test
     public void shouldCompare7thArg() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 0);
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t7 =
-                createIntTuple(0, 0, 0, 0, 0, 0, 1);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t0 = createIntTuple(0, 0, 0, 0, 0, 0, 0);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> t7 = createIntTuple(0, 0, 0, 0, 0, 0, 1);
         assertThat(t0.compareTo(t7)).isNegative();
         assertThat(t7.compareTo(t0)).isPositive();
         assertThat(intTupleComparator.compare(t0, t7)).isNegative();
@@ -238,30 +222,29 @@ public class Tuple7Test {
 
     @Test
     public void shouldMap() {
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> actual =
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> actual =
                 tuple.map((o1, o2, o3, o4, o5, o6, o7) -> tuple);
         assertThat(actual).isEqualTo(tuple);
     }
 
     @Test
     public void shouldMapComponents() {
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
-        final Function<Object, Object> f1 = Function.identity();
-        final Function<Object, Object> f2 = Function.identity();
-        final Function<Object, Object> f3 = Function.identity();
-        final Function<Object, Object> f4 = Function.identity();
-        final Function<Object, Object> f5 = Function.identity();
-        final Function<Object, Object> f6 = Function.identity();
-        final Function<Object, Object> f7 = Function.identity();
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> actual =
-                tuple.map(f1, f2, f3, f4, f5, f6, f7);
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
+        Function<Object, Object> f1 = Function.identity();
+        Function<Object, Object> f2 = Function.identity();
+        Function<Object, Object> f3 = Function.identity();
+        Function<Object, Object> f4 = Function.identity();
+        Function<Object, Object> f5 = Function.identity();
+        Function<Object, Object> f6 = Function.identity();
+        Function<Object, Object> f7 = Function.identity();
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> actual = tuple.map(f1, f2, f3, f4, f5, f6, f7);
         assertThat(actual).isEqualTo(tuple);
     }
 
     @Test
     public void shouldReturnTuple7OfUnzip7() {
-        final List<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(
+        List<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable = List.of(
                 Tuple.of(2, 3, 4, 5, 6, 7, 8),
                 Tuple.of(4, 5, 6, 7, 8, 9, 10),
                 Tuple.of(6, 7, 8, 9, 10, 11, 12),
@@ -269,7 +252,7 @@ public class Tuple7Test {
                 Tuple.of(10, 11, 12, 13, 14, 15, 16),
                 Tuple.of(12, 13, 14, 15, 16, 17, 18),
                 Tuple.of(14, 15, 16, 17, 18, 19, 20));
-        final Tuple7<
+        Tuple7<
                         Vector<Integer>,
                         Vector<Integer>,
                         Vector<Integer>,
@@ -290,7 +273,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldUnzip7Nothing() {
-        final Tuple7<
+        Tuple7<
                         Vector<Integer>,
                         Vector<Integer>,
                         Vector<Integer>,
@@ -330,9 +313,9 @@ public class Tuple7Test {
 
     @Test
     public void shouldReturnTuple7OfUnzip1() {
-        final List<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable =
+        List<Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> iterable =
                 List.of(Tuple.of(1, 2, 3, 4, 5, 6, 7));
-        final Tuple7<
+        Tuple7<
                         Vector<Integer>,
                         Vector<Integer>,
                         Vector<Integer>,
@@ -353,109 +336,102 @@ public class Tuple7Test {
 
     @Test
     public void shouldMap1stComponent() {
-        final Tuple7<String, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple7<String, Integer, Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple.of(1, 1, 1, 1, 1, 1, 1).map1(i -> "X");
-        final Tuple7<String, Integer, Integer, Integer, Integer, Integer, Integer> expected =
-                Tuple.of("X", 1, 1, 1, 1, 1, 1);
+        Tuple7<String, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of("X", 1, 1, 1, 1, 1, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap2ndComponent() {
-        final Tuple7<Integer, String, Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple7<Integer, String, Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple.of(1, 1, 1, 1, 1, 1, 1).map2(i -> "X");
-        final Tuple7<Integer, String, Integer, Integer, Integer, Integer, Integer> expected =
-                Tuple.of(1, "X", 1, 1, 1, 1, 1);
+        Tuple7<Integer, String, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, "X", 1, 1, 1, 1, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap3rdComponent() {
-        final Tuple7<Integer, Integer, String, Integer, Integer, Integer, Integer> actual =
+        Tuple7<Integer, Integer, String, Integer, Integer, Integer, Integer> actual =
                 Tuple.of(1, 1, 1, 1, 1, 1, 1).map3(i -> "X");
-        final Tuple7<Integer, Integer, String, Integer, Integer, Integer, Integer> expected =
-                Tuple.of(1, 1, "X", 1, 1, 1, 1);
+        Tuple7<Integer, Integer, String, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 1, "X", 1, 1, 1, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap4thComponent() {
-        final Tuple7<Integer, Integer, Integer, String, Integer, Integer, Integer> actual =
+        Tuple7<Integer, Integer, Integer, String, Integer, Integer, Integer> actual =
                 Tuple.of(1, 1, 1, 1, 1, 1, 1).map4(i -> "X");
-        final Tuple7<Integer, Integer, Integer, String, Integer, Integer, Integer> expected =
-                Tuple.of(1, 1, 1, "X", 1, 1, 1);
+        Tuple7<Integer, Integer, Integer, String, Integer, Integer, Integer> expected = Tuple.of(1, 1, 1, "X", 1, 1, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap5thComponent() {
-        final Tuple7<Integer, Integer, Integer, Integer, String, Integer, Integer> actual =
+        Tuple7<Integer, Integer, Integer, Integer, String, Integer, Integer> actual =
                 Tuple.of(1, 1, 1, 1, 1, 1, 1).map5(i -> "X");
-        final Tuple7<Integer, Integer, Integer, Integer, String, Integer, Integer> expected =
-                Tuple.of(1, 1, 1, 1, "X", 1, 1);
+        Tuple7<Integer, Integer, Integer, Integer, String, Integer, Integer> expected = Tuple.of(1, 1, 1, 1, "X", 1, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap6thComponent() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, String, Integer> actual =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, String, Integer> actual =
                 Tuple.of(1, 1, 1, 1, 1, 1, 1).map6(i -> "X");
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, String, Integer> expected =
-                Tuple.of(1, 1, 1, 1, 1, "X", 1);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, String, Integer> expected = Tuple.of(1, 1, 1, 1, 1, "X", 1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldMap7thComponent() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, String> actual =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, String> actual =
                 Tuple.of(1, 1, 1, 1, 1, 1, 1).map7(i -> "X");
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, String> expected =
-                Tuple.of(1, 1, 1, 1, 1, 1, "X");
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, String> expected = Tuple.of(1, 1, 1, 1, 1, 1, "X");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldApplyTuple() {
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
-        final Tuple0 actual = tuple.apply((o1, o2, o3, o4, o5, o6, o7) -> Tuple0.instance());
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
+        Tuple0 actual = tuple.apply((o1, o2, o3, o4, o5, o6, o7) -> Tuple0.instance());
         assertThat(actual).isEqualTo(Tuple0.instance());
     }
 
     @Test
     public void shouldAppendValue() {
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple.of(1, 2, 3, 4, 5, 6, 7).append(8);
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+        Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
                 Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple1() {
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple.of(1, 2, 3, 4, 5, 6, 7).concat(Tuple.of(8));
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+        Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
                 Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldRecognizeEquality() {
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple1 = createTuple();
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple2 = createTuple();
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple1 = createTuple();
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple2 = createTuple();
         assertThat((Object) tuple1).isEqualTo(tuple2);
     }
 
     @Test
     public void shouldRecognizeNonEquality() {
-        final Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
-        final Object other = new Object();
+        Tuple7<Object, Object, Object, Object, Object, Object, Object> tuple = createTuple();
+        Object other = new Object();
         assertThat(tuple).isNotEqualTo(other);
     }
 
     @Test
     public void shouldRecognizeNonEqualityPerComponent() {
-        final Tuple7<String, String, String, String, String, String, String> tuple =
+        Tuple7<String, String, String, String, String, String, String> tuple =
                 Tuple.of("1", "2", "3", "4", "5", "6", "7");
         assertThat(tuple.equals(Tuple.of("X", "2", "3", "4", "5", "6", "7"))).isFalse();
         assertThat(tuple.equals(Tuple.of("1", "X", "3", "4", "5", "6", "7"))).isFalse();
@@ -477,7 +453,7 @@ public class Tuple7Test {
 
     @Test
     public void shouldDeconstructWithRecordPattern() {
-        final Object o = createIntTuple(1, 2, 3, 4, 5, 6, 7);
+        Object o = createIntTuple(1, 2, 3, 4, 5, 6, 7);
         if (o instanceof Tuple7(var v1, var v2, var v3, var v4, var v5, var v6, var v7)) {
             assertThat(v1).isEqualTo(1);
             assertThat(v2).isEqualTo(2);
@@ -493,8 +469,8 @@ public class Tuple7Test {
 
     @Test
     public void shouldImplementToString() {
-        final String actual = createTuple().toString();
-        final String expected = "(null, null, null, null, null, null, null)";
+        String actual = createTuple().toString();
+        String expected = "(null, null, null, null, null, null, null)";
         assertThat(actual).isEqualTo(expected);
     }
 

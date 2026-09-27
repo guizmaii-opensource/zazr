@@ -81,7 +81,7 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
     @Test
     void builderResultEqualsOfAllAtTrieBoundaries() {
         for (int size : TRIE_BOUNDARIES) {
-            final Gen<Iterable<Integer>> elements =
+            Gen<Iterable<Integer>> elements =
                     atBoundary(size, Gen.vectorN(size, Values.integers()), Gen.list(Values.integers()));
             Laws.of(BuilderLaws.builderResultEqualsOfAll())
                     .assertSatisfied(
@@ -93,9 +93,8 @@ class VectorLawsTest extends SequenceLawsSuite<Vector<?>, Vector<Integer>, Vecto
     @Test
     void sequenceLawsAtTrieBoundaries() {
         for (int size : TRIE_BOUNDARIES) {
-            final CollectionSubject<Integer, Vector<Integer>> collection = collection();
-            final Gen<Vector<Integer>> vectors =
-                    atBoundary(size, Gen.vectorN(size, Values.integers()), collection.values());
+            CollectionSubject<Integer, Vector<Integer>> collection = collection();
+            Gen<Vector<Integer>> vectors = atBoundary(size, Gen.vectorN(size, Values.integers()), collection.values());
             CollectionLaws.<Integer, Vector<Integer>>sequence()
                     .assertSatisfied(
                             new CollectionSubject<>(

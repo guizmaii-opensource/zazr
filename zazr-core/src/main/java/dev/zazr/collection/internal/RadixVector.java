@@ -76,11 +76,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     /** A vector of the elements of {@code elements}, which is copied (never adopted: the caller may reuse it). */
     public static <T extends @Nullable Object> RadixVector<T> ofAll(@Nullable Object[] elements) {
-        final int n = elements.length;
+        int n = elements.length;
         if (n == 0) {
             return empty();
         } else if (n <= WIDTH) {
-            final Object[] a1 = Arrays.copyOf(elements, n, Object[].class);
+            Object[] a1 = Arrays.copyOf(elements, n, Object[].class);
             for (Object element : a1) {
                 Objects.requireNonNull(element, "Vector: element is null");
             }
@@ -185,7 +185,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     /** @throws NoSuchElementException if this vector is empty */
     @SuppressWarnings("unchecked")
     public final T last() {
-        final Object[] a = (this instanceof BigVector<?> big) ? big.suffix1 : prefix1;
+        Object[] a = (this instanceof BigVector<?> big) ? big.suffix1 : prefix1;
         if (a.length == 0) {
             throw new NoSuchElementException("last of empty Vector");
         }
@@ -197,8 +197,8 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     /** The elements in {@code [max(from, 0), min(until, length()))}; this vector when that is all of it. */
     public final RadixVector<T> slice(int from, int until) {
-        final int lo = Math.max(from, 0);
-        final int hi = Math.min(until, length());
+        int lo = Math.max(from, 0);
+        int hi = Math.min(until, length());
         if (hi <= lo) {
             return empty();
         } else if (hi - lo == length()) {
@@ -246,7 +246,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      */
     public final RadixVector<T> appendedAll(Iterable<? extends T> suffix) {
         Objects.requireNonNull(suffix, "suffix is null");
-        final int k = knownSize(suffix);
+        int k = knownSize(suffix);
         if (k == 0) {
             return this;
         } else if ((long) length() + k > Integer.MAX_VALUE) {
@@ -268,7 +268,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      */
     public final RadixVector<T> prependedAll(Iterable<? extends T> prefix) {
         Objects.requireNonNull(prefix, "prefix is null");
-        final int k = knownSize(prefix);
+        int k = knownSize(prefix);
         if (k == 0) {
             return this;
         } else if ((long) length() + k > Integer.MAX_VALUE) {
@@ -292,10 +292,10 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     /* k = knownSize(prefix) > 0; the shapes first try to fit prefix in prefix1 */
     @SuppressWarnings("unchecked")
     RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-        final long total = (long) length() + k;
-        final int tinyAppendLimit = 4 + vectorSliceCount();
+        long total = (long) length() + k;
+        int tinyAppendLimit = 4 + vectorSliceCount();
         if (k < tinyAppendLimit && total <= FAR_FROM_THE_LIMIT) {
-            final Object[] elements = new Object[k];
+            Object[] elements = new Object[k];
             VectorStatics.copyToArray(prefix, k, elements, 0);
             RadixVector<T> v = this;
             for (int i = k - 1; i >= 0; i--) {
@@ -306,7 +306,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                 && total <= FAR_FROM_THE_LIMIT
                 && prefix instanceof RadixVector<?> pv) {
             RadixVector<T> v = (RadixVector<T>) pv;
-            final int len = length();
+            int len = length();
             for (int i = 0; i < len; i++) {
                 v = v.appended0(get(i));
             }
@@ -330,7 +330,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     /* k = knownSize(suffix) > 0; the shapes first try to fit suffix in suffix1 */
     @SuppressWarnings("unchecked")
     RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-        final int tinyAppendLimit = 4 + vectorSliceCount();
+        int tinyAppendLimit = 4 + vectorSliceCount();
         if (k < tinyAppendLimit && (long) length() + k <= FAR_FROM_THE_LIMIT) {
             RadixVector<T> v = this;
             for (T element : suffix) {
@@ -346,7 +346,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
             }
             return v;
         } else if (length() < k - ALIGN_TO_FASTER && suffix instanceof RadixVector<?> sv) {
-            final RadixVector<T> v = (RadixVector<T>) sv;
+            RadixVector<T> v = (RadixVector<T>) sv;
             return new VectorBuilder<T>()
                     .alignTo(length(), v)
                     .addAll(this)
@@ -373,7 +373,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
     @Override
     public final void forEach(Consumer<? super T> action) {
         Objects.requireNonNull(action, "action is null");
-        final int c = vectorSliceCount();
+        int c = vectorSliceCount();
         for (int i = 0; i < c; i++) {
             foreachRec(vectorSliceDim(c, i) - 1, vectorSlice(i), action);
         }
@@ -389,9 +389,9 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     /* copies the first n elements into dest from index start, one whole-leaf copy at a time */
     final void copyToArray(Object[] dest, int start, int n) {
-        final int end = start + n;
+        int end = start + n;
         int pos = start;
-        final int c = vectorSliceCount();
+        int c = vectorSliceCount();
         for (int i = 0; i < c && pos < end; i++) {
             pos = copyRec(vectorSliceDim(c, i) - 1, vectorSlice(i), dest, pos, end);
         }
@@ -399,7 +399,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     private static int copyRec(int level, Object[] a, Object[] dest, int pos, int end) {
         if (level == 0) {
-            final int k = Math.min(a.length, end - pos);
+            int k = Math.min(a.length, end - pos);
             System.arraycopy(a, 0, dest, pos, k);
             return pos + k;
         }
@@ -429,7 +429,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         final RadixVector<T> sliceWith(VectorSliceBuilder b) {
-            final int c = vectorSliceCount();
+            int c = vectorSliceCount();
             for (int i = 0; i < c; i++) {
                 b.consider(vectorSliceDim(c, i), vectorSlice(i));
             }
@@ -538,7 +538,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> appended0(Object element) {
-            final int len1 = prefix1.length;
+            int len1 = prefix1.length;
             if (len1 < WIDTH) {
                 return new Vector1<>(copyAppend(prefix1, element));
             } else {
@@ -548,7 +548,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prepended0(Object element) {
-            final int len1 = prefix1.length;
+            int len1 = prefix1.length;
             if (len1 < WIDTH) {
                 return new Vector1<>(copyPrepend(element, prefix1));
             } else {
@@ -593,13 +593,13 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] data1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] data1b = prepend1IfSpace(prefix1, prefix, k);
             return (data1b == null) ? super.prependedAll0(prefix, k) : new Vector1<>(data1b);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] data1b = append1IfSpace(prefix1, suffix, k);
+            Object[] data1b = append1IfSpace(prefix1, suffix, k);
             return (data1b == null) ? super.appendedAll0(suffix, k) : new Vector1<>(data1b);
         }
     }
@@ -620,10 +620,10 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len1;
+                int io = index - len1;
                 if (io >= 0) {
-                    final int i2 = io >>> BITS;
-                    final int i1 = io & MASK;
+                    int i2 = io >>> BITS;
+                    int i1 = io & MASK;
                     if (i2 < data2.length) {
                         return (T) ((Object[]) data2[i2])[i1];
                     } else {
@@ -640,9 +640,9 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len1) {
-                    final int io = index - len1;
-                    final int i2 = io >>> BITS;
-                    final int i1 = io & MASK;
+                    int io = index - len1;
+                    int i2 = io >>> BITS;
+                    int i1 = io & MASK;
                     if (i2 < data2.length) {
                         return new Vector2<>(prefix1, len1, copyUpdate(data2, i2, i1, elem), suffix1, length0);
                     } else {
@@ -736,17 +736,17 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
+            int diff = prefix1b.length - prefix1.length;
             return new Vector2<>(prefix1b, len1 + diff, data2, suffix1, length0 + diff);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
@@ -784,11 +784,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len12;
+                int io = index - len12;
                 if (io >= 0) {
-                    final int i3 = io >>> BITS2;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i3 = io >>> BITS2;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i3 < data3.length) {
                         return (T) ((Object[]) ((Object[]) data3[i3])[i2])[i1];
                     } else if (i2 < suffix2.length) {
@@ -797,7 +797,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -810,10 +810,10 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len12) {
-                    final int io = index - len12;
-                    final int i3 = io >>> BITS2;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len12;
+                    int i3 = io >>> BITS2;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i3 < data3.length) {
                         return new Vector3<>(
                                 prefix1,
@@ -839,7 +839,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                                 prefix1, len1, prefix2, len12, data3, suffix2, copyUpdate(suffix1, i1, elem), length0);
                     }
                 } else if (index >= len1) {
-                    final int io = index - len1;
+                    int io = index - len1;
                     return new Vector3<>(
                             prefix1,
                             len1,
@@ -989,17 +989,17 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
+            int diff = prefix1b.length - prefix1.length;
             return new Vector3<>(prefix1b, len1 + diff, prefix2, len12 + diff, data3, suffix2, suffix1, length0 + diff);
         }
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
@@ -1054,12 +1054,12 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len123;
+                int io = index - len123;
                 if (io >= 0) {
-                    final int i4 = io >>> BITS3;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i4 = io >>> BITS3;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i4 < data4.length) {
                         return (T) ((Object[]) ((Object[]) ((Object[]) data4[i4])[i3])[i2])[i1];
                     } else if (i3 < suffix3.length) {
@@ -1070,10 +1070,10 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len12) {
-                    final int io3 = index - len12;
+                    int io3 = index - len12;
                     return (T) ((Object[]) ((Object[]) prefix3[io3 >>> BITS2])[(io3 >>> BITS) & MASK])[io3 & MASK];
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -1086,11 +1086,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len123) {
-                    final int io = index - len123;
-                    final int i4 = io >>> BITS3;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len123;
+                    int i4 = io >>> BITS3;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i4 < data4.length) {
                         return new Vector4<>(
                                 prefix1,
@@ -1145,7 +1145,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                                 length0);
                     }
                 } else if (index >= len12) {
-                    final int io = index - len12;
+                    int io = index - len12;
                     return new Vector4<>(
                             prefix1,
                             len1,
@@ -1159,7 +1159,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                             suffix1,
                             length0);
                 } else if (index >= len1) {
-                    final int io = index - len1;
+                    int io = index - len1;
                     return new Vector4<>(
                             prefix1,
                             len1,
@@ -1428,11 +1428,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
+            int diff = prefix1b.length - prefix1.length;
             return new Vector4<>(
                     prefix1b,
                     len1 + diff,
@@ -1449,7 +1449,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
@@ -1516,13 +1516,13 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len1234;
+                int io = index - len1234;
                 if (io >= 0) {
-                    final int i5 = io >>> BITS4;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i5 = io >>> BITS4;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i5 < data5.length) {
                         return (T) ((Object[]) ((Object[]) ((Object[]) ((Object[]) data5[i5])[i4])[i3])[i2])[i1];
                     } else if (i4 < suffix4.length) {
@@ -1535,15 +1535,15 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len123) {
-                    final int io4 = index - len123;
+                    int io4 = index - len123;
                     return (T) ((Object[]) ((Object[]) ((Object[]) prefix4[io4 >>> BITS3])[(io4 >>> BITS2) & MASK])
                                     [(io4 >>> BITS) & MASK])
                             [io4 & MASK];
                 } else if (index >= len12) {
-                    final int io3 = index - len12;
+                    int io3 = index - len12;
                     return (T) ((Object[]) ((Object[]) prefix3[io3 >>> BITS2])[(io3 >>> BITS) & MASK])[io3 & MASK];
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -1556,12 +1556,12 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len1234) {
-                    final int io = index - len1234;
-                    final int i5 = io >>> BITS4;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len1234;
+                    int i5 = io >>> BITS4;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i5 < data5.length) {
                         return new Vector5<>(
                                 prefix1,
@@ -1644,7 +1644,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                                 length0);
                     }
                 } else if (index >= len123) {
-                    final int io = index - len123;
+                    int io = index - len123;
                     return new Vector5<>(
                             prefix1,
                             len1,
@@ -1667,7 +1667,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                             suffix1,
                             length0);
                 } else if (index >= len12) {
-                    final int io = index - len12;
+                    int io = index - len12;
                     return new Vector5<>(
                             prefix1,
                             len1,
@@ -1684,7 +1684,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                             suffix1,
                             length0);
                 } else if (index >= len1) {
-                    final int io = index - len1;
+                    int io = index - len1;
                     return new Vector5<>(
                             prefix1,
                             len1,
@@ -2034,11 +2034,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
+            int diff = prefix1b.length - prefix1.length;
             return new Vector5<>(
                     prefix1b,
                     len1 + diff,
@@ -2058,7 +2058,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
-            final Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
+            Object[] suffix1b = append1IfSpace(suffix1, suffix, k);
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }
@@ -2137,14 +2137,14 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @SuppressWarnings("unchecked")
         public T get(int index) {
             if (index >= 0 && index < length0) {
-                final int io = index - len12345;
+                int io = index - len12345;
                 if (io >= 0) {
-                    final int i6 = io >>> BITS5;
-                    final int i5 = (io >>> BITS4) & MASK;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int i6 = io >>> BITS5;
+                    int i5 = (io >>> BITS4) & MASK;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i6 < data6.length) {
                         return (T) ((Object[]) ((Object[]) ((Object[]) ((Object[]) ((Object[]) data6[i6])[i5])[i4])[i3])
                                         [i2])
@@ -2161,22 +2161,22 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                         return (T) suffix1[i1];
                     }
                 } else if (index >= len1234) {
-                    final int io5 = index - len1234;
+                    int io5 = index - len1234;
                     return (T) ((Object[]) ((Object[])
                                             ((Object[]) ((Object[]) prefix5[io5 >>> BITS4])[(io5 >>> BITS3) & MASK])
                                                     [(io5 >>> BITS2) & MASK])
                                     [(io5 >>> BITS) & MASK])
                             [io5 & MASK];
                 } else if (index >= len123) {
-                    final int io4 = index - len123;
+                    int io4 = index - len123;
                     return (T) ((Object[]) ((Object[]) ((Object[]) prefix4[io4 >>> BITS3])[(io4 >>> BITS2) & MASK])
                                     [(io4 >>> BITS) & MASK])
                             [io4 & MASK];
                 } else if (index >= len12) {
-                    final int io3 = index - len12;
+                    int io3 = index - len12;
                     return (T) ((Object[]) ((Object[]) prefix3[io3 >>> BITS2])[(io3 >>> BITS) & MASK])[io3 & MASK];
                 } else if (index >= len1) {
-                    final int io2 = index - len1;
+                    int io2 = index - len1;
                     return (T) ((Object[]) prefix2[io2 >>> BITS])[io2 & MASK];
                 } else {
                     return (T) prefix1[index];
@@ -2189,13 +2189,13 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> updated0(int index, Object elem) {
             if (index >= 0 && index < length0) {
                 if (index >= len12345) {
-                    final int io = index - len12345;
-                    final int i6 = io >>> BITS5;
-                    final int i5 = (io >>> BITS4) & MASK;
-                    final int i4 = (io >>> BITS3) & MASK;
-                    final int i3 = (io >>> BITS2) & MASK;
-                    final int i2 = (io >>> BITS) & MASK;
-                    final int i1 = io & MASK;
+                    int io = index - len12345;
+                    int i6 = io >>> BITS5;
+                    int i5 = (io >>> BITS4) & MASK;
+                    int i4 = (io >>> BITS3) & MASK;
+                    int i3 = (io >>> BITS2) & MASK;
+                    int i2 = (io >>> BITS) & MASK;
+                    int i1 = io & MASK;
                     if (i6 < data6.length) {
                         return new Vector6<>(
                                 prefix1,
@@ -2312,7 +2312,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                                 length0);
                     }
                 } else if (index >= len1234) {
-                    final int io = index - len1234;
+                    int io = index - len1234;
                     return new Vector6<>(
                             prefix1,
                             len1,
@@ -2339,7 +2339,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                             suffix1,
                             length0);
                 } else if (index >= len123) {
-                    final int io = index - len123;
+                    int io = index - len123;
                     return new Vector6<>(
                             prefix1,
                             len1,
@@ -2365,7 +2365,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                             suffix1,
                             length0);
                 } else if (index >= len12) {
-                    final int io = index - len12;
+                    int io = index - len12;
                     return new Vector6<>(
                             prefix1,
                             len1,
@@ -2385,7 +2385,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                             suffix1,
                             length0);
                 } else if (index >= len1) {
-                    final int io = index - len1;
+                    int io = index - len1;
                     return new Vector6<>(
                             prefix1,
                             len1,
@@ -2805,11 +2805,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
         @Override
         RadixVector<T> prependedAll0(Iterable<? extends T> prefix, int k) {
-            final Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
+            Object[] prefix1b = prepend1IfSpace(prefix1, prefix, k);
             if (prefix1b == null) {
                 return super.prependedAll0(prefix, k);
             }
-            final int diff = prefix1b.length - prefix1.length;
+            int diff = prefix1b.length - prefix1.length;
             return new Vector6<>(
                     prefix1b,
                     len1 + diff,
@@ -2834,8 +2834,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         RadixVector<T> appendedAll0(Iterable<? extends T> suffix, int k) {
             // near the limit, suffix1's room may reach the tree's last position, which the builder does not use: the
             // builder decides, for every kind of argument (see FAR_FROM_THE_LIMIT)
-            final Object[] suffix1b =
-                    ((long) length0 + k <= FAR_FROM_THE_LIMIT) ? append1IfSpace(suffix1, suffix, k) : null;
+            Object[] suffix1b = ((long) length0 + k <= FAR_FROM_THE_LIMIT) ? append1IfSpace(suffix1, suffix, k) : null;
             if (suffix1b == null) {
                 return super.appendedAll0(suffix, k);
             }

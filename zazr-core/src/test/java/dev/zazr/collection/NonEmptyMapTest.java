@@ -35,7 +35,7 @@ public class NonEmptyMapTest {
 
     /* (size, map) */
     static Stream<Arguments> maps() {
-        final ArrayList<Arguments> cases = new ArrayList<>();
+        ArrayList<Arguments> cases = new ArrayList<>();
         for (int n : SIZES) {
             cases.add(Arguments.of(n, entries(0, n)));
         }
@@ -60,7 +60,7 @@ public class NonEmptyMapTest {
     }
 
     static <A> Iterable<A> once(Iterable<A> elements) {
-        final boolean[] read = {false};
+        boolean[] read = {false};
         return () -> {
             if (read[0]) {
                 throw new IllegalStateException("read twice");
@@ -80,10 +80,10 @@ public class NonEmptyMapTest {
                             .toMap())
                     .isEqualTo(HashMap.of(1, "c", 2, "b"));
             for (int n : SIZES) {
-                final HashMap<Integer, String> expected = entries(0, n);
-                final Vector<Tuple2<Integer, String>> tail = entries(1, n).toVector();
+                HashMap<Integer, String> expected = entries(0, n);
+                Vector<Tuple2<Integer, String>> tail = entries(1, n).toVector();
                 @SuppressWarnings("unchecked")
-                final Tuple2<Integer, String>[] array = tail.toArray(Tuple2[]::new);
+                Tuple2<Integer, String>[] array = tail.toArray(Tuple2[]::new);
                 assertThat(NonEmptyMap.of(Tuple.of(0, "v0"), array).toMap()).isEqualTo(expected);
                 assertThat(NonEmptyMap.fromIterable(Tuple.of(0, "v0"), once(tail))
                                 .toMap())
@@ -107,7 +107,7 @@ public class NonEmptyMapTest {
         @Test
         public void shouldWrapWithoutCopyingAndNarrow() {
             for (int n : SIZES) {
-                final HashMap<Integer, String> map = entries(0, n);
+                HashMap<Integer, String> map = entries(0, n);
                 assertThat(NonEmptyMap.fromMap(map).get().toMap()).isSameAs(map);
                 assertThat(NonEmptyMap.unsafeFromMap(map).toMap()).isSameAs(map);
                 assertThat(map.toNonEmptyMap().get().toMap()).isSameAs(map);
@@ -170,7 +170,7 @@ public class NonEmptyMapTest {
             assertThatNullPointerException()
                     .isThrownBy(() -> NonEmptyMap.unsafeFromMap(null))
                     .withMessage("NonEmptyMap.unsafeFromMap: map is null");
-            final NonEmptyMap<Integer, String> nem = NonEmptyMap.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+            NonEmptyMap<Integer, String> nem = NonEmptyMap.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
             assertThatNullPointerException()
                     .isThrownBy(() -> nem.put(null, "a"))
                     .withMessage("NonEmptyMap.put: key is null");
@@ -226,7 +226,7 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldPutAndKeepTheOriginal(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             assertThat(nem.put(-1, "x").toMap()).isEqualTo(map.put(-1, "x"));
             assertThat(nem.put(-1, "x").size()).isEqualTo(n + 1);
             assertThat(nem.put(0, "x").toMap()).isEqualTo(map.put(0, "x"));
@@ -241,9 +241,9 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldMergeAndCompute(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             for (int m : new int[] {0, 1, 33, 1025}) {
-                final HashMap<Integer, String> that =
+                HashMap<Integer, String> that =
                         HashMap.ofEntries(Vector.range(n / 2, n / 2 + m).map(i -> Tuple.of(i, "w" + i)));
                 assertThat(nem.merge(that).toMap()).isEqualTo(map.merge(that));
                 assertThat(nem.merge(that, String::concat).toMap()).isEqualTo(map.merge(that, String::concat));
@@ -262,7 +262,7 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldMapCollapsingEqualKeys(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             assertThat(nem.map((k, v) -> Tuple.of(-k, v + "!")).toMap())
                     .isEqualTo(map.map((k, v) -> Tuple.of(-k, v + "!")));
             assertThat(nem.map((k, v) -> Tuple.of(0, v)).size()).isEqualTo(1);
@@ -282,7 +282,7 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldReplace(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             assertThat(nem.replace(Tuple.of(0, "v0"), Tuple.of(-1, "x")).toMap())
                     .isEqualTo(map.replace(Tuple.of(0, "v0"), Tuple.of(-1, "x")));
             // replacing by an entry whose key is present shrinks the map, never below one entry
@@ -301,8 +301,8 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldTapKeySetValuesAndGroupBy(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
-            final java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
+            NonEmptyMap<Integer, String> nem = nem(map);
+            java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
             assertThat(nem.tap(seen::add)).isSameAs(nem);
             assertThat(seen).containsExactlyElementsOf(map);
             assertThat(nem.keySet().toSet()).isEqualTo(map.keySet());
@@ -310,7 +310,7 @@ public class NonEmptyMapTest {
             for (Function<Tuple2<Integer, String>, Integer> classifier :
                     java.util.List.<Function<Tuple2<Integer, String>, Integer>>of(
                             t -> 0, t -> t._1() % 3, Tuple2::_1)) {
-                final NonEmptyMap<Integer, NonEmptyMap<Integer, String>> groups = nem.groupBy(classifier);
+                NonEmptyMap<Integer, NonEmptyMap<Integer, String>> groups = nem.groupBy(classifier);
                 assertThat(groups.mapValues(NonEmptyMap::toMap).toMap()).isEqualTo(map.groupBy(classifier));
             }
         }
@@ -322,7 +322,7 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldShrinkDownToEmpty(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             assertThat(nem.filter((k, v) -> k % 2 == 0)).isEqualTo(map.filter((k, v) -> k % 2 == 0));
             assertThat(nem.filter(t -> t._1() % 2 == 0)).isEqualTo(map.filter(t -> t._1() % 2 == 0));
             assertThat(nem.filter((k, v) -> false)).isEmpty();
@@ -358,7 +358,7 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldReturnAggregates(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             assertThat(nem.max()).isEqualTo(map.max().get()).isEqualTo(Tuple.of(n - 1, "v" + (n - 1)));
             assertThat(nem.min()).isEqualTo(map.min().get()).isEqualTo(Tuple.of(0, "v0"));
             assertThat(nem.maxBy(Comparator.comparing(Tuple2::_1))).isEqualTo(Tuple.of(n - 1, "v" + (n - 1)));
@@ -386,7 +386,7 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldQuery(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             assertThat(nem.size()).isEqualTo(n);
             assertThat(nem.get(n - 1)).isEqualTo(Option.some("v" + (n - 1)));
             assertThat(nem.get(n)).isEqualTo(Option.none());
@@ -405,7 +405,7 @@ public class NonEmptyMapTest {
             assertThat(nem.find(t -> t._1() == 0)).isEqualTo(Option.some(Tuple.of(0, "v0")));
             assertThat(nem.foldLeft(0, (acc, t) -> acc + t._1())).isEqualTo(n * (n - 1) / 2);
             assertThat(nem.arrangeBy(Tuple2::_2)).isEqualTo(map.arrangeBy(Tuple2::_2));
-            final java.util.Map<Integer, String> seen = new java.util.HashMap<>();
+            java.util.Map<Integer, String> seen = new java.util.HashMap<>();
             nem.forEach(seen::put);
             assertThat(seen).isEqualTo(map.asJavaMap());
         }
@@ -413,7 +413,7 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldIterateStreamAndConvert(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> nem = nem(map);
             assertThat(nem).containsExactlyElementsOf(map);
             assertThat(nem.spliterator().characteristics())
                     .isEqualTo(map.spliterator().characteristics());
@@ -431,7 +431,7 @@ public class NonEmptyMapTest {
                     .containsExactlyElementsOf(map);
             assertThat(nem.toArray()).isEqualTo(map.toArray());
             @SuppressWarnings("unchecked")
-            final Tuple2<Integer, String>[] array = nem.toArray(Tuple2[]::new);
+            Tuple2<Integer, String>[] array = nem.toArray(Tuple2[]::new);
             assertThat(array).containsExactlyElementsOf(map);
             assertThat(nem.toVector()).isEqualTo(map.toVector());
             assertThat(nem.toList()).isEqualTo(map.toList());
@@ -465,9 +465,9 @@ public class NonEmptyMapTest {
         @Test
         public void shouldKeepTheContractOnCollidingKeys() {
             for (int n : SIZES) {
-                final HashMap<Colliding, Integer> map =
+                HashMap<Colliding, Integer> map =
                         HashMap.ofEntries(Vector.range(0, n).map(i -> Tuple.of(new Colliding(i), i)));
-                final NonEmptyMap<Colliding, Integer> nem = nem(map);
+                NonEmptyMap<Colliding, Integer> nem = nem(map);
                 assertThat(nem.size()).isEqualTo(n);
                 assertThat(nem.put(new Colliding(n), n).toMap()).isEqualTo(map.put(new Colliding(n), n));
                 assertThat(nem.put(new Colliding(0), -1).get(new Colliding(0))).isEqualTo(Option.some(-1));
@@ -489,7 +489,7 @@ public class NonEmptyMapTest {
     class NonEmptyGuarantee {
 
         static java.util.Map<String, Function<NonEmptyMap<Integer, String>, java.util.List<Object>>> calls() {
-            final java.util.Map<String, Function<NonEmptyMap<Integer, String>, java.util.List<Object>>> calls =
+            java.util.Map<String, Function<NonEmptyMap<Integer, String>, java.util.List<Object>>> calls =
                     new java.util.HashMap<>();
             // constructors and narrowings
             calls.put("single(Object, Object)", m -> java.util.List.of(NonEmptyMap.single(0, "a")));
@@ -618,8 +618,8 @@ public class NonEmptyMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
         public void shouldBeEqualToANonEmptyMapWithTheSameEntries(int n, HashMap<Integer, String> map) {
-            final NonEmptyMap<Integer, String> nem = nem(map);
-            final NonEmptyMap<Integer, String> copy =
+            NonEmptyMap<Integer, String> nem = nem(map);
+            NonEmptyMap<Integer, String> copy =
                     NonEmptyMap.fromIterable(map.toVector().reverse()).get();
             assertThat(nem).isEqualTo(nem);
             assertThat(nem).isEqualTo(copy);
@@ -629,7 +629,7 @@ public class NonEmptyMapTest {
             assertThat(nem).isNotEqualTo(map);
             assertThat(map).isNotEqualTo(nem);
             assertThat(nem).isNotEqualTo(null);
-            final NonEmptySortedMap<Integer, String> sorted =
+            NonEmptySortedMap<Integer, String> sorted =
                     NonEmptySortedMap.unsafeFromSortedMap(TreeMap.ofEntries(Comparator.reverseOrder(), map));
             assertThat(nem).isEqualTo(sorted);
             assertThat(sorted).isEqualTo(nem);

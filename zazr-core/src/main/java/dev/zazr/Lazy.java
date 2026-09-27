@@ -112,7 +112,7 @@ public final class Lazy<T extends @Nullable Object> {
             Iterable<? extends Lazy<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
         return Lazy.of(() -> {
-            final Vector.Builder<T> builder = Vector.newBuilder();
+            Vector.Builder<T> builder = Vector.newBuilder();
             for (Lazy<? extends T> value : values) {
                 builder.add(value.get());
             }
@@ -137,7 +137,7 @@ public final class Lazy<T extends @Nullable Object> {
     private T computeValue() {
         lock.lock();
         try {
-            final Supplier<? extends T> s = supplier;
+            Supplier<? extends T> s = supplier;
             if (s != null) {
                 value = s.get();
                 supplier = null;
@@ -240,7 +240,7 @@ public final class Lazy<T extends @Nullable Object> {
     public <U extends @Nullable Object> Lazy<T> zipLeft(Lazy<? extends U> that) {
         Objects.requireNonNull(that, "that is null");
         return Lazy.of(() -> {
-            final T value = get();
+            T value = get();
             that.get();
             return value;
         });

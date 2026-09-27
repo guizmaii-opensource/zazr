@@ -289,10 +289,10 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
                     Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(f, "f is null");
-        final Vector.Builder<B> results = Vector.newBuilder();
+        Vector.Builder<B> results = Vector.newBuilder();
         Vector.Builder<E> errors = null;
         for (A value : values) {
-            final Validation<? extends E, ? extends B> validation =
+            Validation<? extends E, ? extends B> validation =
                     Objects.requireNonNull(f.apply(value), "Validation.forEach: f returned null");
             if (validation instanceof Invalid(var es)) {
                 if (errors == null) {
@@ -350,8 +350,8 @@ public sealed interface Validation<E extends @Nullable Object, A extends @Nullab
                     Function<? super A, ? extends Validation<? extends E, ? extends B>> f) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(f, "f is null");
-        final Vector.Builder<E> errors = Vector.newBuilder();
-        final Vector.Builder<B> results = Vector.newBuilder();
+        Vector.Builder<E> errors = Vector.newBuilder();
+        Vector.Builder<B> results = Vector.newBuilder();
         for (A value : values) {
             switch (Objects.requireNonNull(f.apply(value), "Validation.partition: f returned null")) {
                 case Valid(var v) -> results.add(v);

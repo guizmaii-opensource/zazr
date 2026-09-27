@@ -70,7 +70,7 @@ public record CheckConfig(int samples, int size, long seed, int maxDiscards) {
     }
 
     static CheckConfig fromProperties(UnaryOperator<String> properties) {
-        final String seed = properties.apply(SEED_PROPERTY);
+        String seed = properties.apply(SEED_PROPERTY);
         return new CheckConfig(
                 intProperty(properties, SAMPLES_PROPERTY, DEFAULT_SAMPLES),
                 intProperty(properties, SIZE_PROPERTY, DEFAULT_SIZE),
@@ -79,11 +79,11 @@ public record CheckConfig(int samples, int size, long seed, int maxDiscards) {
     }
 
     private static int intProperty(UnaryOperator<String> properties, String name, int fallback) {
-        final String value = properties.apply(name);
+        String value = properties.apply(name);
         if (value == null) {
             return fallback;
         }
-        final long parsed = parse(name, value);
+        long parsed = parse(name, value);
         if (parsed < 0 || parsed > Integer.MAX_VALUE) {
             throw new IllegalArgumentException(name + " is not an int >= 0: " + value);
         }

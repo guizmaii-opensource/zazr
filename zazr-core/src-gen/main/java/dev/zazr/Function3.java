@@ -106,7 +106,7 @@ public interface Function3<
                     Function3<? super T1, ? super T2, ? super T3, ? extends R> partialFunction) {
         return (t1, t2, t3) -> {
             try {
-                final R result = partialFunction.apply(t1, t2, t3);
+                R result = partialFunction.apply(t1, t2, t3);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {

@@ -57,8 +57,8 @@ final class Sampling {
     /// The size of the attempt that follows `failed` attempts without a value from `size`: `size + 2^failed - 1`, up
     /// to the largest size (or `size` when it is larger).
     int grow(int size, long failed) {
-        final long cap = Math.max(size, maxSize);
-        final long bump = failed >= 62 ? Long.MAX_VALUE : (1L << failed) - 1;
+        long cap = Math.max(size, maxSize);
+        long bump = failed >= 62 ? Long.MAX_VALUE : (1L << failed) - 1;
         return (int) (bump >= cap - size ? cap : size + bump);
     }
 

@@ -32,8 +32,8 @@ public class Euler36Test {
     }
 
     private static boolean isDoubleBasePalindrome(int x) {
-        final Vector<Character> seq = Vector.ofAll(Integer.toString(x).toCharArray());
-        final Vector<Character> rev = Vector.ofAll(Integer.toBinaryString(x).toCharArray());
+        Vector<Character> seq = Vector.ofAll(Integer.toString(x).toCharArray());
+        Vector<Character> rev = Vector.ofAll(Integer.toBinaryString(x).toCharArray());
         return isPalindrome(seq) && isPalindrome(rev);
     }
 }

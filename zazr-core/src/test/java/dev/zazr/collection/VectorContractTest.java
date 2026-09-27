@@ -19,14 +19,14 @@ public class VectorContractTest {
 
     /* the same elements 0 .. n-1, built in six ways */
     private static java.util.List<Vector<Integer>> histories(int n) {
-        final java.util.List<Integer> list = IntStream.range(0, n).boxed().toList();
+        java.util.List<Integer> list = IntStream.range(0, n).boxed().toList();
         Vector<Integer> appended = Vector.empty();
         Vector<Integer> prepended = Vector.empty();
         for (int i = 0; i < n; i++) {
             appended = appended.append(i);
             prepended = prepended.prepend(n - 1 - i);
         }
-        final Vector<Integer> sliced = Vector.range(-40, n + 40).slice(40, n + 40);
+        Vector<Integer> sliced = Vector.range(-40, n + 40).slice(40, n + 40);
         return java.util.List.of(
                 Vector.ofAll(list),
                 Vector.range(0, n),
@@ -37,7 +37,7 @@ public class VectorContractTest {
     }
 
     private static java.util.List<Integer> withNull(int size, int at) {
-        final java.util.List<Integer> list = new ArrayList<>();
+        java.util.List<Integer> list = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             list.add(i == at ? null : i);
         }
@@ -45,7 +45,7 @@ public class VectorContractTest {
     }
 
     private static Iterable<Integer> oneShot(java.util.List<Integer> list) {
-        final java.util.Iterator<Integer> it = list.iterator();
+        java.util.Iterator<Integer> it = list.iterator();
         return () -> it;
     }
 
@@ -123,9 +123,9 @@ public class VectorContractTest {
         if (actual.size() != expected.size()) {
             throw new AssertionError("size " + actual.size() + ", expected " + expected.size());
         }
-        final java.util.Iterator<Integer> it = actual.iterator();
+        java.util.Iterator<Integer> it = actual.iterator();
         for (int i = 0; i < expected.size(); i++) {
-            final Integer e = expected.get(i);
+            Integer e = expected.get(i);
             if (!e.equals(it.next()) || !e.equals(actual.get(i))) {
                 throw new AssertionError("element " + i + ": " + actual.get(i) + ", expected " + e);
             }
@@ -148,7 +148,7 @@ public class VectorContractTest {
     public void identityOfTheResultsAtEverySize() {
         for (int n : SIZES) {
             for (Vector<Integer> v : histories(n)) {
-                final Vector<Integer> empty = Vector.empty();
+                Vector<Integer> empty = Vector.empty();
                 assertThat(v.drop(0)).isSameAs(v);
                 assertThat(v.drop(Integer.MIN_VALUE)).isSameAs(v);
                 assertThat(v.take(n)).isSameAs(v);
@@ -182,7 +182,7 @@ public class VectorContractTest {
     @Test
     public void nonEmptyVectorNamesItselfWhenRejectingANullElement() {
         for (int n : new int[] {1, 32, 33, 1025}) {
-            final NonEmptyVector<Integer> nev =
+            NonEmptyVector<Integer> nev =
                     NonEmptyVector.fromVector(Vector.range(0, n)).get();
             throwsExactly(() -> nev.append(null), NullPointerException.class, "NonEmptyVector.append: element is null");
             throwsExactly(
@@ -193,8 +193,8 @@ public class VectorContractTest {
     @Test
     public void ofCopiesTheCallersArray() {
         for (int n : new int[] {1, 31, 32, 33, 1025}) {
-            final Integer[] elements = IntStream.range(0, n).boxed().toArray(Integer[]::new);
-            final Vector<Integer> v = Vector.of(elements);
+            Integer[] elements = IntStream.range(0, n).boxed().toArray(Integer[]::new);
+            Vector<Integer> v = Vector.of(elements);
             elements[0] = -1;
             elements[n - 1] = -1;
             assertElements(v, IntStream.range(0, n).boxed().toList());
@@ -209,8 +209,8 @@ public class VectorContractTest {
                     if (firstRejected < 0 || firstRejected >= n) {
                         continue;
                     }
-                    final Function<Integer, Boolean> keep = i -> i < firstRejected || i % 3 == 0;
-                    final java.util.List<Integer> expected =
+                    Function<Integer, Boolean> keep = i -> i < firstRejected || i % 3 == 0;
+                    java.util.List<Integer> expected =
                             IntStream.range(0, n).filter(keep::apply).boxed().toList();
                     assertElements(v.filter(keep::apply), expected);
                     assertElements(v.reject(i -> !keep.apply(i)), expected);
@@ -221,28 +221,27 @@ public class VectorContractTest {
 
     @Test
     public void concatenationOfEveryPairOfShapes() {
-        final int[] sizes = {0, 1, 2, 31, 32, 33, 65, 1024, 1025, 1057, 32769};
+        int[] sizes = {0, 1, 2, 31, 32, 33, 65, 1024, 1025, 1057, 32769};
         for (int left : sizes) {
-            final java.util.List<Vector<Integer>> lefts = histories(left);
+            java.util.List<Vector<Integer>> lefts = histories(left);
             for (int right : sizes) {
-                final java.util.List<Integer> l =
-                        IntStream.range(0, left).boxed().toList();
-                final java.util.List<Integer> r =
+                java.util.List<Integer> l = IntStream.range(0, left).boxed().toList();
+                java.util.List<Integer> r =
                         IntStream.range(left, left + right).boxed().toList();
-                final java.util.List<Integer> both =
+                java.util.List<Integer> both =
                         IntStream.range(0, left + right).boxed().toList();
                 for (Vector<Integer> lv : lefts) {
-                    final Vector<Integer> rv = Vector.range(left, left + right);
-                    final Vector<Integer> rvDropped =
+                    Vector<Integer> rv = Vector.range(left, left + right);
+                    Vector<Integer> rvDropped =
                             Vector.range(left - 7, left + right).drop(7);
                     for (Iterable<Integer> argument :
                             java.util.List.of(rv, rvDropped, rv.asJava(), r, oneShot(r), List.ofAll(r))) {
                         assertElements(lv.appendAll(argument), both);
                     }
-                    final Vector<Integer> shifted = lv.map(i -> i + right);
-                    final java.util.List<Integer> front =
+                    Vector<Integer> shifted = lv.map(i -> i + right);
+                    java.util.List<Integer> front =
                             IntStream.range(0, right).boxed().toList();
-                    final Vector<Integer> fv = Vector.range(0, right);
+                    Vector<Integer> fv = Vector.range(0, right);
                     for (Iterable<Integer> argument :
                             java.util.List.of(fv, fv.asJava(), front, oneShot(front), List.ofAll(front))) {
                         assertElements(shifted.prependAll(argument), both);
@@ -272,7 +271,7 @@ public class VectorContractTest {
                                 .boxed()
                                 .toList());
                 assertThat(v.flatMap(i -> Vector.of(i, i))).hasSize(2 * n);
-                final Vector<Integer> mapped = v.map(i -> i + 1);
+                Vector<Integer> mapped = v.map(i -> i + 1);
                 assertElements(mapped, IntStream.range(1, n + 1).boxed().toList());
                 assertThat(v.map(i -> i)).isEqualTo(v);
             }

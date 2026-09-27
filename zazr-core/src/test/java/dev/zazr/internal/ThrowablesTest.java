@@ -13,13 +13,13 @@ public class ThrowablesTest {
     class SneakyThrowTests {
         @Test
         public void shouldRethrowACheckedExceptionUndeclared() {
-            final IOException error = new IOException("checked");
+            IOException error = new IOException("checked");
             assertThatThrownBy(() -> Throwables.sneakyThrow(error)).isSameAs(error);
         }
 
         @Test
         public void shouldRethrowAnError() {
-            final StackOverflowError error = new StackOverflowError();
+            StackOverflowError error = new StackOverflowError();
             assertThatThrownBy(() -> Throwables.sneakyThrow(error)).isSameAs(error);
         }
     }

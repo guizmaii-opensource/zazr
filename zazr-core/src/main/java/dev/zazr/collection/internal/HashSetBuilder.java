@@ -51,11 +51,11 @@ public final class HashSetBuilder<T extends @Nullable Object> {
     }
 
     private void addAllOf(SetNode<T> node) {
-        final int payload = node.payloadArity();
+        int payload = node.payloadArity();
         for (int i = 0; i < payload; i++) {
             root = root.addInPlace(owner, node.getPayload(i), node.getHash(i), 0);
         }
-        final int children = node.nodeArity();
+        int children = node.nodeArity();
         for (int i = 0; i < children; i++) {
             addAllOf(node.getNode(i));
         }
@@ -71,7 +71,7 @@ public final class HashSetBuilder<T extends @Nullable Object> {
     public BitmapIndexedSetNode<T> result() {
         checkOpen();
         done = true;
-        final BitmapIndexedSetNode<T> trie = root;
+        BitmapIndexedSetNode<T> trie = root;
         root = SetNode.empty();
         // the owned nodes were written through non-final fields: order those writes before the publication of the
         // trie, as the end of a constructor does for final fields (Scala's HashSetBuilder.result does the same)

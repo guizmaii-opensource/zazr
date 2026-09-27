@@ -95,8 +95,8 @@ final class JavaViewContract {
     /** The view and the reference give the same result, or fail with the same exception type. */
     void same(String path, String operation, Supplier<?> actual, Supplier<?> expected) {
         checks++;
-        final Outcome a = Outcome.of(actual, ordered);
-        final Outcome e = Outcome.of(expected, ordered);
+        Outcome a = Outcome.of(actual, ordered);
+        Outcome e = Outcome.of(expected, ordered);
         if (!Objects.equals(a, e)) {
             fail(path + "." + operation + ": expected " + describe(e) + " but was " + describe(a));
         }
@@ -117,7 +117,7 @@ final class JavaViewContract {
         if (outcome.failure() != null) {
             return "a " + outcome.failure();
         }
-        final String value = String.valueOf(outcome.value());
+        String value = String.valueOf(outcome.value());
         return value.length() > 300 ? value.substring(0, 300) + "..." : value;
     }
 
@@ -142,7 +142,7 @@ final class JavaViewContract {
     }
 
     private static Object normalizeAll(java.util.Iterator<?> iterator, boolean ordered) {
-        final Collection<Object> result = ordered ? new ArrayList<>() : new HashSet<>();
+        Collection<Object> result = ordered ? new ArrayList<>() : new HashSet<>();
         int count = 0;
         while (iterator.hasNext()) {
             result.add(normalize(iterator.next(), ordered));
@@ -175,12 +175,12 @@ final class JavaViewContract {
                 path,
                 "forEach",
                 () -> {
-                    final java.util.List<E> seen = new ArrayList<>();
+                    java.util.List<E> seen = new ArrayList<>();
                     view.forEach(seen::add);
                     return seen;
                 },
                 () -> {
-                    final java.util.List<E> seen = new ArrayList<>();
+                    java.util.List<E> seen = new ArrayList<>();
                     reference.forEach(seen::add);
                     return seen;
                 });
@@ -188,8 +188,8 @@ final class JavaViewContract {
                 path,
                 "iterator().forEachRemaining",
                 () -> {
-                    final java.util.List<E> seen = new ArrayList<>();
-                    final java.util.Iterator<E> iterator = view.iterator();
+                    java.util.List<E> seen = new ArrayList<>();
+                    java.util.Iterator<E> iterator = view.iterator();
                     // the element taken by next() is kept: an unordered view need not start with the reference's first
                     if (iterator.hasNext()) {
                         seen.add(iterator.next());
@@ -198,8 +198,8 @@ final class JavaViewContract {
                     return seen;
                 },
                 () -> {
-                    final java.util.List<E> seen = new ArrayList<>();
-                    final java.util.Iterator<E> iterator = reference.iterator();
+                    java.util.List<E> seen = new ArrayList<>();
+                    java.util.Iterator<E> iterator = reference.iterator();
                     // the element taken by next() is kept: an unordered view need not start with the reference's first
                     if (iterator.hasNext()) {
                         seen.add(iterator.next());
@@ -265,7 +265,7 @@ final class JavaViewContract {
     }
 
     private static java.util.List<Object> nonNull(java.util.List<Object> probes) {
-        final java.util.List<Object> result = new ArrayList<>();
+        java.util.List<Object> result = new ArrayList<>();
         for (Object probe : probes) {
             if (probe != null && probe != FOREIGN) {
                 result.add(probe);
@@ -275,11 +275,11 @@ final class JavaViewContract {
     }
 
     private static long sizeOf(Spliterator<?> spliterator) {
-        final long exact = spliterator.getExactSizeIfKnown();
+        long exact = spliterator.getExactSizeIfKnown();
         if (exact >= 0) {
             return exact;
         }
-        final long[] count = {0};
+        long[] count = {0};
         spliterator.forEachRemaining(ignored -> count[0]++);
         return count[0];
     }
@@ -297,7 +297,7 @@ final class JavaViewContract {
     }
 
     private static Object[] fillAndCopy(Collection<?> collection, int size) {
-        final Object[] array = new Object[size + 2];
+        Object[] array = new Object[size + 2];
         Arrays.fill(array, "sentinel");
         return collection.toArray(array);
     }
@@ -311,8 +311,8 @@ final class JavaViewContract {
             java.util.List<Object> probes,
             int depth) {
         collection(path, view, reference, probes);
-        final int n = reference.size();
-        final int[] indexes = distinct(-1, 0, 1, n / 2, n - 1, n, n + 1);
+        int n = reference.size();
+        int[] indexes = distinct(-1, 0, 1, n / 2, n - 1, n, n + 1);
         for (int i : indexes) {
             same(path, "get(" + i + ")", () -> view.get(i), () -> reference.get(i));
         }
@@ -357,7 +357,7 @@ final class JavaViewContract {
 
     /** Every move of a list iterator, forward to the end and back to the start, with the indexes it reports. */
     private static java.util.List<Object> walk(ListIterator<?> iterator) {
-        final java.util.List<Object> steps = new ArrayList<>();
+        java.util.List<Object> steps = new ArrayList<>();
         steps.add(iterator.nextIndex());
         steps.add(iterator.previousIndex());
         while (iterator.hasNext()) {
@@ -439,7 +439,7 @@ final class JavaViewContract {
         spliteratorReportsTheComparator(path, view);
         for (Object probe : probes) {
             @SuppressWarnings("unchecked")
-            final E key = (E) probe;
+            E key = (E) probe;
             same(path, "lower(" + probe + ")", () -> view.lower(key), () -> reference.lower(key));
             same(path, "floor(" + probe + ")", () -> view.floor(key), () -> reference.floor(key));
             same(path, "ceiling(" + probe + ")", () -> view.ceiling(key), () -> reference.ceiling(key));
@@ -451,12 +451,12 @@ final class JavaViewContract {
         navigableSet(
                 path + ".descendingSet()", view.descendingSet(), reference.descendingSet(), probes, bounds, depth + 1);
         same(path, "reversed()", view::reversed, reference::reversed);
-        final java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
+        java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
         for (Object from : subBounds) {
             @SuppressWarnings("unchecked")
-            final E lo = (E) from;
+            E lo = (E) from;
             for (boolean fromInclusive : new boolean[] {true, false}) {
-                final String head = "headSet(" + from + ", " + fromInclusive + ")";
+                String head = "headSet(" + from + ", " + fromInclusive + ")";
                 subSet(
                         path,
                         head,
@@ -465,7 +465,7 @@ final class JavaViewContract {
                         probes,
                         bounds,
                         depth);
-                final String tail = "tailSet(" + from + ", " + fromInclusive + ")";
+                String tail = "tailSet(" + from + ", " + fromInclusive + ")";
                 subSet(
                         path,
                         tail,
@@ -476,13 +476,12 @@ final class JavaViewContract {
                         depth);
                 for (Object to : subBounds) {
                     @SuppressWarnings("unchecked")
-                    final E hi = (E) to;
+                    E hi = (E) to;
                     for (boolean toInclusive : new boolean[] {true, false}) {
                         if (depth > 0 && toInclusive != fromInclusive) {
                             continue; // the nested sub-views take the two same-kind bound pairs only
                         }
-                        final String sub =
-                                "subSet(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
+                        String sub = "subSet(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
                         subSet(
                                 path,
                                 sub,
@@ -498,7 +497,7 @@ final class JavaViewContract {
             same(path, "tailSet(" + from + ")", () -> view.tailSet(lo), () -> reference.tailSet(lo));
             for (Object to : subBounds) {
                 @SuppressWarnings("unchecked")
-                final E hi = (E) to;
+                E hi = (E) to;
                 same(
                         path,
                         "subSet(" + from + ", " + to + ")",
@@ -539,7 +538,7 @@ final class JavaViewContract {
 
     private void spliteratorReportsTheComparator(String path, SortedSet<?> view) {
         checks++;
-        final Spliterator<?> spliterator = view.spliterator();
+        Spliterator<?> spliterator = view.spliterator();
         if (!spliterator.hasCharacteristics(Spliterator.SORTED)
                 || !Objects.equals(spliterator.getComparator(), view.comparator())) {
             fail(path + ".spliterator(): not SORTED by comparator() " + view.comparator());
@@ -583,12 +582,12 @@ final class JavaViewContract {
                 path,
                 "forEach",
                 () -> {
-                    final java.util.List<Object> seen = new ArrayList<>();
+                    java.util.List<Object> seen = new ArrayList<>();
                     view.forEach((k, v) -> seen.add(Arrays.asList(k, v)));
                     return seen;
                 },
                 () -> {
-                    final java.util.List<Object> seen = new ArrayList<>();
+                    java.util.List<Object> seen = new ArrayList<>();
                     reference.forEach((k, v) -> seen.add(Arrays.asList(k, v)));
                     return seen;
                 });
@@ -596,7 +595,7 @@ final class JavaViewContract {
             same(path, "toString()", view::toString, reference::toString);
         }
         equality(path, view, reference, new java.util.HashMap<>(reference), new ArrayList<>(reference.entrySet()));
-        final java.util.List<Object> entryProbes = entryProbes(reference, probes);
+        java.util.List<Object> entryProbes = entryProbes(reference, probes);
         set(path + ".entrySet()", view.entrySet(), reference.entrySet(), entryProbes);
         set(path + ".keySet()", view.keySet(), reference.keySet(), probes);
         collection(path + ".values()", view.values(), reference.values(), values, reference.size() <= 64);
@@ -605,14 +604,13 @@ final class JavaViewContract {
     /** Entries of the map, entries with a present key and another value, with an absent key, and non-entries. */
     private static <K, V> java.util.List<Object> entryProbes(
             java.util.Map<K, V> reference, java.util.List<Object> probes) {
-        final java.util.List<Object> result = new ArrayList<>();
+        java.util.List<Object> result = new ArrayList<>();
         for (Object probe : probes) {
             result.add(new AbstractMap.SimpleImmutableEntry<>(probe, "v" + probe));
             result.add(new AbstractMap.SimpleImmutableEntry<>(probe, "other"));
         }
         if (!reference.isEmpty()) {
-            final java.util.Map.Entry<K, V> first =
-                    reference.entrySet().iterator().next();
+            java.util.Map.Entry<K, V> first = reference.entrySet().iterator().next();
             result.add(new AbstractMap.SimpleImmutableEntry<>(first.getKey(), first.getValue()));
             result.add(new AbstractMap.SimpleImmutableEntry<>(first.getKey(), null));
         }
@@ -712,7 +710,7 @@ final class JavaViewContract {
         same(path, "lastKey()", view::lastKey, reference::lastKey);
         for (Object probe : probes) {
             @SuppressWarnings("unchecked")
-            final K key = (K) probe;
+            K key = (K) probe;
             same(path, "lowerEntry(" + probe + ")", () -> view.lowerEntry(key), () -> reference.lowerEntry(key));
             same(path, "lowerKey(" + probe + ")", () -> view.lowerKey(key), () -> reference.lowerKey(key));
             same(path, "floorEntry(" + probe + ")", () -> view.floorEntry(key), () -> reference.floorEntry(key));
@@ -726,7 +724,7 @@ final class JavaViewContract {
             return;
         }
         // the key sets share the map's tree range: their own sub-views are those of the sets, checked from depth 0 only
-        final int keySetDepth = depth == 0 ? depth + 1 : MAX_DEPTH;
+        int keySetDepth = depth == 0 ? depth + 1 : MAX_DEPTH;
         navigableSet(
                 path + ".navigableKeySet()",
                 view.navigableKeySet(),
@@ -755,12 +753,12 @@ final class JavaViewContract {
                 bounds,
                 depth + 1);
         same(path, "reversed()", view::reversed, reference::reversed);
-        final java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
+        java.util.List<Object> subBounds = depth == 0 ? bounds : bounds.subList(0, Math.min(3, bounds.size()));
         for (Object from : subBounds) {
             @SuppressWarnings("unchecked")
-            final K lo = (K) from;
+            K lo = (K) from;
             for (boolean fromInclusive : new boolean[] {true, false}) {
-                final String head = "headMap(" + from + ", " + fromInclusive + ")";
+                String head = "headMap(" + from + ", " + fromInclusive + ")";
                 subMap(
                         path,
                         head,
@@ -770,7 +768,7 @@ final class JavaViewContract {
                         values,
                         bounds,
                         depth);
-                final String tail = "tailMap(" + from + ", " + fromInclusive + ")";
+                String tail = "tailMap(" + from + ", " + fromInclusive + ")";
                 subMap(
                         path,
                         tail,
@@ -782,13 +780,12 @@ final class JavaViewContract {
                         depth);
                 for (Object to : subBounds) {
                     @SuppressWarnings("unchecked")
-                    final K hi = (K) to;
+                    K hi = (K) to;
                     for (boolean toInclusive : new boolean[] {true, false}) {
                         if (depth > 0 && toInclusive != fromInclusive) {
                             continue; // the nested sub-views take the two same-kind bound pairs only
                         }
-                        final String sub =
-                                "subMap(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
+                        String sub = "subMap(" + from + ", " + fromInclusive + ", " + to + ", " + toInclusive + ")";
                         subMap(
                                 path,
                                 sub,
@@ -805,7 +802,7 @@ final class JavaViewContract {
             same(path, "tailMap(" + from + ")", () -> view.tailMap(lo), () -> reference.tailMap(lo));
             for (Object to : subBounds) {
                 @SuppressWarnings("unchecked")
-                final K hi = (K) to;
+                K hi = (K) to;
                 same(
                         path,
                         "subMap(" + from + ", " + to + ")",
@@ -854,7 +851,7 @@ final class JavaViewContract {
 
     /** The keys of the set and map fixtures: the even numbers {@code 0, 2, ..., 2(n - 1)}. */
     static java.util.List<Integer> evens(int n) {
-        final java.util.List<Integer> result = new ArrayList<>();
+        java.util.List<Integer> result = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             result.add(2 * i);
         }
@@ -866,11 +863,11 @@ final class JavaViewContract {
      * below the smallest, the smallest, between two keys, the middle, the largest, above the largest.
      */
     static java.util.List<Object> keyProbes(int n) {
-        final int max = 2 * (n - 1);
-        final int middle = 2 * (n / 2);
-        final java.util.Set<Object> probes = new LinkedHashSet<>(
+        int max = 2 * (n - 1);
+        int middle = 2 * (n / 2);
+        java.util.Set<Object> probes = new LinkedHashSet<>(
                 java.util.List.of(-2, -1, 0, 1, 2, 3, middle - 1, middle, middle + 1, max - 1, max, max + 1, max + 2));
-        final java.util.List<Object> result = new ArrayList<>(probes);
+        java.util.List<Object> result = new ArrayList<>(probes);
         result.add(null);
         result.add(FOREIGN);
         return result;
@@ -878,14 +875,14 @@ final class JavaViewContract {
 
     /** Bounds for the sub-views: outside, on and between the keys. The first three serve the nested sub-views. */
     static java.util.List<Object> bounds(int n) {
-        final int max = 2 * (n - 1);
-        final int middle = 2 * (n / 2);
+        int max = 2 * (n - 1);
+        int middle = 2 * (n / 2);
         return new ArrayList<>(new LinkedHashSet<>(java.util.List.of(middle, -1, max + 1, 0, 1, max - 1, max)));
     }
 
     /** The values of the map fixtures, {@code "v" + key}, present and absent, and a {@code null}. */
     static java.util.List<Object> valueProbes(int n) {
-        final java.util.List<Object> result = new ArrayList<>();
+        java.util.List<Object> result = new ArrayList<>();
         for (Object key : keyProbes(n)) {
             if (key instanceof Integer) {
                 result.add("v" + key);
@@ -898,7 +895,7 @@ final class JavaViewContract {
 
     /** Elements with repeats, so that {@code indexOf} and {@code lastIndexOf} differ: {@code 0, 0, 1, 1, 2, ...}. */
     static java.util.List<Integer> pairs(int n) {
-        final java.util.List<Integer> result = new ArrayList<>();
+        java.util.List<Integer> result = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             result.add(i / 2);
         }
@@ -906,8 +903,8 @@ final class JavaViewContract {
     }
 
     static java.util.List<Object> elementProbes(int n) {
-        final int max = (n - 1) / 2;
-        final java.util.List<Object> result =
+        int max = (n - 1) / 2;
+        java.util.List<Object> result =
                 new ArrayList<>(new LinkedHashSet<>(java.util.List.of(-1, 0, 1, max / 2, max, max + 1)));
         result.add(null);
         result.add(FOREIGN);

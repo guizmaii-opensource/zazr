@@ -114,7 +114,7 @@ public interface Function4<
                     Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> partialFunction) {
         return (t1, t2, t3, t4) -> {
             try {
-                final R result = partialFunction.apply(t1, t2, t3, t4);
+                R result = partialFunction.apply(t1, t2, t3, t4);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {

@@ -1433,7 +1433,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public SortedSet<K> keySet() {
-        final Comparator<K> comparator = comparator();
+        Comparator<K> comparator = comparator();
         if (isEmpty()) {
             return TreeSet.empty(comparator);
         }
@@ -1477,7 +1477,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public <K2 extends @Nullable Object> TreeMap<K2, V> mapKeys(
             Function<? super K, ? extends K2> keyMapper, BiFunction<? super V, ? super V, ? extends V> valueMerge) {
-        final Comparator<K2> comparator = Comparators.naturalComparator();
+        Comparator<K2> comparator = Comparators.naturalComparator();
         return Collections.mapKeys(this, TreeMap.<K2, V>empty(comparator), keyMapper, valueMerge);
     }
 
@@ -1544,7 +1544,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final Tuple2<RedBlackTree<Tuple2<K, V>>, RedBlackTree<Tuple2<K, V>>> trees =
+        Tuple2<RedBlackTree<Tuple2<K, V>>, RedBlackTree<Tuple2<K, V>>> trees =
                 RedBlackTreeModule.Node.partition(entries, predicate);
         return Tuple.of(withEntries(trees._1()), withEntries(trees._2()));
     }
@@ -1579,7 +1579,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> remove(K key) {
-        final Tuple2<K, V> entry = lookupEntry(key);
+        Tuple2<K, V> entry = lookupEntry(key);
         if (entries.contains(entry)) {
             return new TreeMap<>(entries.delete(entry));
         } else {
@@ -1598,7 +1598,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     public TreeMap<K, V> removeAll(Iterable<? extends K> keys) {
         RedBlackTree<Tuple2<K, V>> removed = entries;
         for (K key : keys) {
-            final Tuple2<K, V> entry = lookupEntry(key);
+            Tuple2<K, V> entry = lookupEntry(key);
             if (removed.contains(entry)) {
                 removed = removed.delete(entry);
             }
@@ -1655,8 +1655,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     @SuppressWarnings("unchecked")
     private <W extends @Nullable Object> TreeMap<K, W> withValues(
             BiFunction<? super K, ? super V, ? extends W> function) {
-        final EntryComparator<K, W> entryComparator =
-                (EntryComparator<K, W>) (EntryComparator<K, ?>) entries.comparator();
+        EntryComparator<K, W> entryComparator = (EntryComparator<K, W>) (EntryComparator<K, ?>) entries.comparator();
         return new TreeMap<>(RedBlackTreeModule.Node.mapOrdered(
                 entries,
                 entryComparator,
@@ -1667,8 +1666,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     public TreeMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
         Objects.requireNonNull(elements, "elements is null");
         // of equal given entries, the last one is kept, as successive insertions would
-        final RedBlackTreeBuilder<Tuple2<K, V>> tree =
-                new RedBlackTreeBuilder<>(entries.comparator(), "TreeMap.Builder");
+        RedBlackTreeBuilder<Tuple2<K, V>> tree = new RedBlackTreeBuilder<>(entries.comparator(), "TreeMap.Builder");
         for (Tuple2<K, V> entry : elements) {
             if (contains(entry)) {
                 tree.add(entry);
@@ -1697,7 +1695,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         if (isEmpty()) {
             return Vector.empty();
         }
-        final Vector.Builder<V> builder = Vector.newBuilder(size());
+        Vector.Builder<V> builder = Vector.newBuilder(size());
         for (Tuple2<K, V> entry : entries) {
             builder.add(entry._2());
         }
@@ -1845,7 +1843,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     // the elements of rank from (inclusive) to until (exclusive), clamped; this map when nothing is cut off
     private TreeMap<K, V> slice(int from, int until) {
-        final RedBlackTree<Tuple2<K, V>> sliced = RedBlackTreeModule.Node.slice(entries, from, until);
+        RedBlackTree<Tuple2<K, V>> sliced = RedBlackTreeModule.Node.slice(entries, from, until);
         return sliced == entries ? this : new TreeMap<>(sliced);
     }
 
@@ -1951,10 +1949,10 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     private static <K extends @Nullable Object, V extends @Nullable Object>
             Collector<Tuple2<K, V>, Builder<K, V>, TreeMap<K, V>> createCollector(
                     EntryComparator<K, V> entryComparator) {
-        final Supplier<Builder<K, V>> supplier = () -> new Builder<>(entryComparator);
-        final BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
-        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
-        final Function<Builder<K, V>, TreeMap<K, V>> finisher = Builder::result;
+        Supplier<Builder<K, V>> supplier = () -> new Builder<>(entryComparator);
+        BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
+        BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        Function<Builder<K, V>, TreeMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -1963,18 +1961,18 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
                     EntryComparator<K, V> entryComparator,
                     Function<? super T, ? extends K> keyMapper,
                     Function<? super T, ? extends V> valueMapper) {
-        final Supplier<Builder<K, V>> supplier = () -> new Builder<>(entryComparator);
-        final BiConsumer<Builder<K, V>, T> accumulator =
+        Supplier<Builder<K, V>> supplier = () -> new Builder<>(entryComparator);
+        BiConsumer<Builder<K, V>, T> accumulator =
                 (builder, t) -> builder.put(keyMapper.apply(t), valueMapper.apply(t));
-        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
-        final Function<Builder<K, V>, TreeMap<K, V>> finisher = Builder::result;
+        BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        Function<Builder<K, V>, TreeMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createTreeMap(
             EntryComparator<K, V> entryComparator, Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final Builder<K, V> builder = new Builder<>(entryComparator);
+        Builder<K, V> builder = new Builder<>(entryComparator);
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             builder.put(Objects.requireNonNull(entry, "TreeMap.ofEntries: entry is null"));
         }
@@ -1990,7 +1988,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
                     EntryComparator<K2, V2> entryComparator,
                     Iterable<Tuple2<K, V>> entries,
                     Function<Tuple2<K, V>, Tuple2<K2, V2>> entryMapper) {
-        final Builder<K2, V2> builder = new Builder<>(entryComparator);
+        Builder<K2, V2> builder = new Builder<>(entryComparator);
         for (Tuple2<K, V> entry : entries) {
             builder.put(Objects.requireNonNull(entryMapper.apply(entry), "TreeMap.map: entry is null"));
         }
@@ -2005,7 +2003,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
                 && underlying.comparator() == entryComparator.keyComparator()) {
             return (TreeMap<K, V>) underlying;
         }
-        final Builder<K, V> builder = new Builder<>(entryComparator);
+        Builder<K, V> builder = new Builder<>(entryComparator);
         for (java.util.Map.Entry<K, V> entry : ((java.util.Map<K, V>) map).entrySet()) {
             builder.put(entry.getKey(), entry.getValue());
         }
@@ -2033,7 +2031,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createFromTuples(
             EntryComparator<K, V> entryComparator, Tuple2<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final Builder<K, V> builder = new Builder<>(entryComparator);
+        Builder<K, V> builder = new Builder<>(entryComparator);
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             builder.put(Objects.requireNonNull(entry, "entries: entry is null"));
         }
@@ -2044,7 +2042,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     private static <K extends @Nullable Object, V extends @Nullable Object> TreeMap<K, V> createFromMapEntries(
             EntryComparator<K, V> entryComparator, java.util.Map.Entry<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final Builder<K, V> builder = new Builder<>(entryComparator);
+        Builder<K, V> builder = new Builder<>(entryComparator);
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
             builder.put(entry.getKey(), entry.getValue());
         }
@@ -2056,8 +2054,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
             EntryComparator<K, V> entryComparator, Object... pairs) {
         RedBlackTree<Tuple2<K, V>> tree = RedBlackTree.empty(entryComparator);
         for (int i = 0; i < pairs.length; i += 2) {
-            final K key = requireKey((K) pairs[i]);
-            final V value = requireValue((V) pairs[i + 1]);
+            K key = requireKey((K) pairs[i]);
+            V value = requireValue((V) pairs[i + 1]);
             tree = tree.insert(Tuple.of(key, value));
         }
         return new TreeMap<>(tree);
@@ -2248,8 +2246,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
             @SuppressWarnings("unchecked")
             @Override
             public int compare(Tuple2<K, V> e1, Tuple2<K, V> e2) {
-                final K key1 = e1._1();
-                final K key2 = e2._1();
+                K key1 = e1._1();
+                K key2 = e2._1();
                 return ((Comparable<K>) key1).compareTo(key2);
             }
 

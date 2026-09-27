@@ -42,7 +42,7 @@ final class VectorModel<T> implements Iterable<T> {
         if (iterable instanceof VectorModel<?> v) {
             return v.elements;
         }
-        final ArrayList<Object> list = new ArrayList<>();
+        ArrayList<Object> list = new ArrayList<>();
         for (Object element : iterable) {
             list.add(Objects.requireNonNull(element, "Vector: element is null"));
         }
@@ -50,7 +50,7 @@ final class VectorModel<T> implements Iterable<T> {
     }
 
     private static Object[] concat(Object[] first, Object[] second) {
-        final Object[] result = Arrays.copyOf(first, first.length + second.length);
+        Object[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
         return result;
     }
@@ -89,7 +89,7 @@ final class VectorModel<T> implements Iterable<T> {
         if (index < 0 || index >= elements.length) {
             throw new IndexOutOfBoundsException("update(" + index + ")");
         }
-        final Object[] result = elements.clone();
+        Object[] result = elements.clone();
         result[index] = Objects.requireNonNull(element, "Vector.update: element is null");
         return new VectorModel<>(result);
     }
@@ -103,18 +103,18 @@ final class VectorModel<T> implements Iterable<T> {
     }
 
     VectorModel<T> appendAll(Iterable<? extends T> iterable) {
-        final Object[] suffix = toArray(iterable);
+        Object[] suffix = toArray(iterable);
         return (suffix.length == 0) ? this : of(concat(elements, suffix));
     }
 
     VectorModel<T> prependAll(Iterable<? extends T> iterable) {
-        final Object[] prefix = toArray(iterable);
+        Object[] prefix = toArray(iterable);
         return (prefix.length == 0) ? this : of(concat(prefix, elements));
     }
 
     VectorModel<T> slice(int beginIndex, int endIndex) {
-        final int lo = Math.max(beginIndex, 0);
-        final int hi = Math.min(endIndex, elements.length);
+        int lo = Math.max(beginIndex, 0);
+        int hi = Math.min(endIndex, elements.length);
         if (hi <= lo) {
             return empty();
         } else if (hi - lo == elements.length) {
@@ -156,7 +156,7 @@ final class VectorModel<T> implements Iterable<T> {
 
     @SuppressWarnings("unchecked")
     <U> VectorModel<U> map(Function<? super T, ? extends U> mapper) {
-        final Object[] result = new Object[elements.length];
+        Object[] result = new Object[elements.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = Objects.requireNonNull(mapper.apply((T) elements[i]), "Vector: element is null");
         }

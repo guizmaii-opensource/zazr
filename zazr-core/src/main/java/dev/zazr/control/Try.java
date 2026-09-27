@@ -86,7 +86,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     static <T extends @Nullable Object> Try<T> of(Callable<? extends T> supplier) {
         Objects.requireNonNull(supplier, "supplier is null");
         try {
-            final T value = supplier.call();
+            T value = supplier.call();
             return value == null ? TryModule.nullResult("Try.of") : new Success<>(value);
         } catch (Throwable t) {
             return new Failure<>(t);
@@ -132,7 +132,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     static <T extends @Nullable Object> Try<Vector<T>> collectAll(Iterable<? extends Try<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
-        final Vector.Builder<T> builder = Vector.newBuilder();
+        Vector.Builder<T> builder = Vector.newBuilder();
         for (Try<? extends T> value : values) {
             if (value.isFailure()) {
                 return Try.failure(value.getCause());
@@ -163,10 +163,9 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             Iterable<? extends T> values, Function<? super T, ? extends Try<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final Vector.Builder<U> builder = Vector.newBuilder();
+        Vector.Builder<U> builder = Vector.newBuilder();
         for (T value : values) {
-            final Try<? extends U> mapped =
-                    Objects.requireNonNull(mapper.apply(value), "Try.forEach: mapper returned null");
+            Try<? extends U> mapped = Objects.requireNonNull(mapper.apply(value), "Try.forEach: mapper returned null");
             if (mapped.isFailure()) {
                 return Try.failure(mapped.getCause());
             }
@@ -261,13 +260,13 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
      */
     static <T extends @Nullable Object> Try<T> fromCompletableFuture(CompletableFuture<? extends T> future) {
         Objects.requireNonNull(future, "future is null");
-        final T value;
+        T value;
         try {
             value = future.join();
         } catch (CancellationException e) {
             return new Failure<>(e);
         } catch (CompletionException e) {
-            final Throwable cause = e.getCause();
+            Throwable cause = e.getCause();
             return new Failure<>(cause != null ? cause : e);
         }
         return value == null ? TryModule.nullResult("Try.fromCompletableFuture") : new Success<>(value);
@@ -389,7 +388,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return this;
         }
         try {
-            final T value = get();
+            T value = get();
             return predicate.test(value)
                     ? this
                     : new Failure<>(Objects.requireNonNull(ifFalse.apply(value), "Try.filter: ifFalse returned null"));
@@ -485,8 +484,8 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Failure<U>) this;
         }
         try {
-            final T value = get();
-            final Option<? extends U> collected =
+            T value = get();
+            Option<? extends U> collected =
                     Objects.requireNonNull(mapper.apply(value), "Try.collect: mapper returned null");
             return collected.isDefined()
                     ? new Success<>(collected.get())
@@ -579,7 +578,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Failure<U>) this;
         } else {
             try {
-                final U value = mapper.apply(get());
+                U value = mapper.apply(get());
                 return value == null ? TryModule.nullResult("Try.mapTry") : new Success<>(value);
             } catch (Throwable t) {
                 return new Failure<>(t);
@@ -1042,7 +1041,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return this;
         } catch (Throwable t) {
             if (isFailure() && !isFatal(t)) {
-                final Throwable cause = getCause();
+                Throwable cause = getCause();
                 if (t != cause) {
                     cause.addSuppressed(t);
                 }
@@ -1062,7 +1061,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
         if (isSuccess()) {
             return CompletableFuture.completedFuture(get());
         } else {
-            final CompletableFuture<T> completableFuture = new CompletableFuture<>();
+            CompletableFuture<T> completableFuture = new CompletableFuture<>();
             completableFuture.completeExceptionally(getCause());
             return completableFuture;
         }
@@ -1243,7 +1242,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<V>) that;
         }
         try {
-            final V value = f.apply(get(), that.get());
+            V value = f.apply(get(), that.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1330,7 +1329,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t2;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get());
+            R value = f.apply(t1.get(), t2.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1401,7 +1400,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t3;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1487,7 +1486,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t4;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1588,7 +1587,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t5;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1701,7 +1700,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t6;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1835,7 +1834,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t7;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);
@@ -1982,7 +1981,7 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
             return (Try<R>) t8;
         }
         try {
-            final R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get(), t8.get());
+            R value = f.apply(t1.get(), t2.get(), t3.get(), t4.get(), t5.get(), t6.get(), t7.get(), t8.get());
             return value == null ? TryModule.nullZipResult() : new Success<>(value);
         } catch (Throwable x) {
             return new Failure<>(x);

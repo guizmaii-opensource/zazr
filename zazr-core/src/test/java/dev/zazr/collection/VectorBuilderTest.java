@@ -24,7 +24,7 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldBuildEmptyVector() {
-        final Vector<Integer> actual = Vector.<Integer>newBuilder().result();
+        Vector<Integer> actual = Vector.<Integer>newBuilder().result();
         assertThat(actual).isEmpty();
         assertThat(actual).isSameAs(Vector.empty());
     }
@@ -32,13 +32,13 @@ public class VectorBuilderTest {
     @Test
     public void shouldPushAndFinaliseAFourthLevel() {
         for (int size : LEVEL4_SIZES) {
-            final Vector.Builder<Integer> builder = Vector.newBuilder();
+            Vector.Builder<Integer> builder = Vector.newBuilder();
             for (int i = 0; i < size; i++) {
                 builder.add(i);
             }
             assertSameShape(builder.result(), Vector.range(0, size), size);
             // the same boundary reached through shared leaves of an Object[]-backed source
-            final Vector<Integer> boxed =
+            Vector<Integer> boxed =
                     Vector.ofAll(IntStream.range(0, size).boxed().toList());
             assertSameShape(Vector.<Integer>newBuilder().addAll(boxed).result(), boxed, size);
             assertSameShape(
@@ -49,7 +49,7 @@ public class VectorBuilderTest {
     @Test
     public void shouldBuildTheSameVectorAsOfAllAtEveryBoundary() {
         for (int size : SIZES) {
-            final Vector.Builder<Integer> builder = Vector.newBuilder();
+            Vector.Builder<Integer> builder = Vector.newBuilder();
             for (int i = 0; i < size; i++) {
                 builder.add(i);
             }
@@ -65,7 +65,7 @@ public class VectorBuilderTest {
     public void shouldHonourSizeHintAtEveryBoundary() {
         for (int size : SIZES) {
             for (int hint : new int[] {0, 1, size / 2, size, size + 1, 2 * size + 1}) {
-                final Vector.Builder<Integer> builder = Vector.newBuilder(hint);
+                Vector.Builder<Integer> builder = Vector.newBuilder(hint);
                 for (int i = 0; i < size; i++) {
                     builder.add(i);
                 }
@@ -89,7 +89,7 @@ public class VectorBuilderTest {
                 if (size > 32769) {
                     continue;
                 }
-                final Vector.Builder<Integer> builder = Vector.newBuilder();
+                Vector.Builder<Integer> builder = Vector.newBuilder();
                 for (int i = 0; i < prefix; i++) {
                     builder.add(i);
                 }
@@ -101,14 +101,14 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldAddAllSlicedVectorsWhoseLeavesAreNotAligned() {
-        final Vector<Integer> source = Vector.range(0, 5000);
+        Vector<Integer> source = Vector.range(0, 5000);
         for (int from : new int[] {0, 1, 17, 31, 32, 33, 1000, 1024, 1025}) {
             for (int to : new int[] {from, from + 1, from + 31, from + 32, from + 33, 3000, 4095, 4096, 4097, 5000}) {
                 if (to < from) {
                     continue;
                 }
-                final Vector<Integer> slice = source.slice(from, to);
-                final Vector<Integer> actual = Vector.<Integer>newBuilder()
+                Vector<Integer> slice = source.slice(from, to);
+                Vector<Integer> actual = Vector.<Integer>newBuilder()
                         .add(-1)
                         .addAll(slice)
                         .add(-2)
@@ -121,12 +121,11 @@ public class VectorBuilderTest {
     @Test
     public void shouldAddAllObjectBackedVectorsAndKeepTheShapeOfOfAll() {
         for (int size : new int[] {1, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 32768, 32769}) {
-            final java.util.List<Integer> list =
-                    IntStream.range(0, size).boxed().toList();
-            final Vector<Integer> boxed = Vector.ofAll(list); // via toArray
-            final Vector<Integer> varargs = Vector.of(list.toArray(new Integer[0])); // via of(T...)
+            java.util.List<Integer> list = IntStream.range(0, size).boxed().toList();
+            Vector<Integer> boxed = Vector.ofAll(list); // via toArray
+            Vector<Integer> varargs = Vector.of(list.toArray(new Integer[0])); // via of(T...)
             for (Vector<Integer> source : java.util.List.of(boxed, varargs)) {
-                final Vector<Integer> built =
+                Vector<Integer> built =
                         Vector.<Integer>newBuilder().addAll(source).result();
                 assertSameShape(built, boxed, size);
                 assertSharesFullLeaves(built, source);
@@ -150,14 +149,12 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldNotLeaveAnEmptyTrailingLeafAfterSharingFullLeaves() {
-        final Vector<Integer> v32 = Vector.ofAll(IntStream.range(0, 32).boxed().toList());
-        final Vector<Integer> built32 = Vector.<Integer>newBuilder().addAll(v32).result();
+        Vector<Integer> v32 = Vector.ofAll(IntStream.range(0, 32).boxed().toList());
+        Vector<Integer> built32 = Vector.<Integer>newBuilder().addAll(v32).result();
         assertThat(depth(built32.trie)).isEqualTo(1);
         assertThat(leafAt(built32.trie, 0)).hasSize(32);
-        final Vector<Integer> v1024 =
-                Vector.ofAll(IntStream.range(0, 1024).boxed().toList());
-        final Vector<Integer> built1024 =
-                Vector.<Integer>newBuilder().addAll(v1024).result();
+        Vector<Integer> v1024 = Vector.ofAll(IntStream.range(0, 1024).boxed().toList());
+        Vector<Integer> built1024 = Vector.<Integer>newBuilder().addAll(v1024).result();
         assertThat(depth(built1024.trie)).isEqualTo(2);
         assertSameShape(built1024, v1024, 1024);
     }
@@ -167,13 +164,12 @@ public class VectorBuilderTest {
         // a slice's outer leaves are trimmed copies, so every leaf of a slice holds only live elements: a builder that
         // starts from the slice keeps its arrays, at the same positions, the partial first leaf of a slice of two
         // levels or more included (a slice of one leaf is copied into the builder's leaf, which is filled in place)
-        final Vector<Integer> source =
-                Vector.ofAll(IntStream.range(0, 4200).boxed().toList());
+        Vector<Integer> source = Vector.ofAll(IntStream.range(0, 4200).boxed().toList());
         for (int k : new int[] {1, 5, 31, 32, 33}) {
             for (int n : new int[] {0, 1, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 2047, 2048, 2049}) {
-                final Vector<Integer> slice = source.drop(k).take(n);
-                final Vector<Integer> expected = Vector.range(k, k + n);
-                final Vector<Integer> built =
+                Vector<Integer> slice = source.drop(k).take(n);
+                Vector<Integer> expected = Vector.range(k, k + n);
+                Vector<Integer> built =
                         Vector.<Integer>newBuilder().addAll(slice).result();
                 assertSameElements(built, expected, n);
                 assertThat(depth(built.trie)).isEqualTo(depth(slice.trie));
@@ -203,29 +199,28 @@ public class VectorBuilderTest {
     public void shouldShareTheInnerLeavesOfTheSourceWhenTheCurrentLeafIsExactlyFull() {
         // 32 adds leave the current leaf full; the following addAll shares the source's inner leaves (its slices of
         // dimension 2 and more) and copies its outer leaves, prefix1 and suffix1, which are single arrays
-        final Vector<Integer> v2048 =
-                Vector.ofAll(IntStream.range(0, 2048).boxed().toList());
-        final Vector.Builder<Integer> builder = Vector.newBuilder();
+        Vector<Integer> v2048 = Vector.ofAll(IntStream.range(0, 2048).boxed().toList());
+        Vector.Builder<Integer> builder = Vector.newBuilder();
         for (int i = 0; i < 32; i++) {
             builder.add(-i);
         }
-        final Vector<Integer> built = builder.addAll(v2048).result();
+        Vector<Integer> built = builder.addAll(v2048).result();
         assertSameElements(built, Vector.tabulate(32, i -> -i).appendAll(v2048), 2080);
         assertSharesInnerLeaves(built, 32, v2048);
         // the same through a sized builder
-        final Vector.Builder<Integer> hinted = Vector.newBuilder(32);
+        Vector.Builder<Integer> hinted = Vector.newBuilder(32);
         for (int i = 0; i < 32; i++) {
             hinted.add(i);
         }
         assertSharesInnerLeaves(hinted.addAll(v2048).result(), 32, v2048);
         // and a collector combiner whose left side ends on a full leaf
-        final Vector<Integer> combined = Vector.<Integer>newBuilder()
+        Vector<Integer> combined = Vector.<Integer>newBuilder()
                 .addAll(Vector.tabulate(32, i -> i))
                 .addAll(v2048)
                 .result();
         assertSharesInnerLeaves(combined, 32, v2048);
         // a partially filled current leaf copies every leaf
-        final Vector<Integer> unaligned =
+        Vector<Integer> unaligned =
                 Vector.<Integer>newBuilder().add(0).addAll(v2048).result();
         assertSameElements(unaligned, Vector.of(0).appendAll(v2048), 2049);
         for (int i = 0; i < 2048; i += 32) {
@@ -245,14 +240,12 @@ public class VectorBuilderTest {
     @Test
     public void shouldNeverWriteIntoSharedLeavesFromEitherSide() {
         for (int size : new int[] {32, 64, 1024, 1056}) {
-            final java.util.List<Integer> list =
-                    IntStream.range(0, size).boxed().toList();
-            final Vector<Integer> source = Vector.ofAll(list);
-            final Vector<Integer> built =
-                    Vector.<Integer>newBuilder().addAll(source).result();
+            java.util.List<Integer> list = IntStream.range(0, size).boxed().toList();
+            Vector<Integer> source = Vector.ofAll(list);
+            Vector<Integer> built = Vector.<Integer>newBuilder().addAll(source).result();
             assertSharesFullLeaves(built, source);
-            final java.util.List<Object> sourceLeaves = leafIdentities(source);
-            final java.util.List<Object> builtLeaves = leafIdentities(built);
+            java.util.List<Object> sourceLeaves = leafIdentities(source);
+            java.util.List<Object> builtLeaves = leafIdentities(built);
             for (Vector<Integer> mutated : mutations(built, size)) {
                 assertThat(mutated).isNotNull();
                 assertThat(new java.util.ArrayList<>(source.asJava()))
@@ -299,7 +292,7 @@ public class VectorBuilderTest {
     }
 
     private static java.util.List<Object> leafIdentities(Vector<?> v) {
-        final java.util.List<Object> leaves = new ArrayList<>();
+        java.util.List<Object> leaves = new ArrayList<>();
         for (int i = 0; i < v.size(); i += 32) {
             leaves.add(leafAt(v.trie, i));
         }
@@ -308,11 +301,11 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldRouteTheRemainingShapesThroughTheBuilder() {
-        final java.util.List<Integer> list32 = IntStream.range(0, 32).boxed().toList();
-        final Vector<Integer> full32 = Vector.ofAll(list32);
-        final Vector<Integer> range = Vector.range(0, 100);
+        java.util.List<Integer> list32 = IntStream.range(0, 32).boxed().toList();
+        Vector<Integer> full32 = Vector.ofAll(list32);
+        Vector<Integer> range = Vector.range(0, 100);
         // flatMap whose mapper returns Vectors of two leaves
-        final Vector<Integer> boxed = range.flatMap(i -> Vector.range(0, 40));
+        Vector<Integer> boxed = range.flatMap(i -> Vector.range(0, 40));
         assertSameShape(
                 boxed,
                 Vector.ofAll(new java.util.ArrayList<>(range.asJava())
@@ -320,7 +313,7 @@ public class VectorBuilderTest {
                 4000);
         // flatMap whose mapper returns the same one-leaf Vector: the first is the builder's start, the others are
         // copied
-        final Vector<Integer> shared = range.flatMap(i -> full32);
+        Vector<Integer> shared = range.flatMap(i -> full32);
         assertSameShape(
                 shared,
                 Vector.ofAll(java.util.Collections.nCopies(100, list32).stream()
@@ -329,15 +322,15 @@ public class VectorBuilderTest {
                 3200);
         assertThat(leafAt(shared.trie, 0)).isSameAs(leafAt(full32.trie, 0));
         // ofAll of a parallel stream relies on forEachOrdered
-        final java.util.List<Integer> big = IntStream.range(0, 100_000).boxed().toList();
+        java.util.List<Integer> big = IntStream.range(0, 100_000).boxed().toList();
         assertSameShape(Vector.ofAll(big.parallelStream()), Vector.range(0, 100_000), 100_000);
         assertSameShape(
                 Vector.ofAll(big.parallelStream().filter(i -> i % 2 == 0)), Vector.rangeBy(0, 100_000, 2), 50_000);
         // map / filter on receivers with an offset, so the first visited leaf starts after index 0
         for (Vector<Integer> receiver : java.util.List.of(Vector.ofAll(big).take(5000), Vector.range(0, 5000))) {
             for (int k : new int[] {1, 5, 31, 32, 33, 1025}) {
-                final Vector<Integer> offset = receiver.prepend(-1).drop(k);
-                final java.util.List<Integer> expected =
+                Vector<Integer> offset = receiver.prepend(-1).drop(k);
+                java.util.List<Integer> expected =
                         new java.util.ArrayList<>(receiver.prepend(-1).drop(k).asJava());
                 assertSameShape(
                         offset.map(i -> i * 2),
@@ -351,12 +344,12 @@ public class VectorBuilderTest {
             }
         }
         // filter starts from the kept prefix: its arrays are shared
-        final Vector<Integer> big5000 = Vector.ofAll(big).take(5000);
-        final Vector<Integer> filtered = big5000.filter(i -> i < 4000 || i % 2 == 0);
+        Vector<Integer> big5000 = Vector.ofAll(big).take(5000);
+        Vector<Integer> filtered = big5000.filter(i -> i < 4000 || i % 2 == 0);
         assertSameElements(filtered, Vector.range(0, 4000).appendAll(Vector.rangeBy(4000, 5000, 2)), 4500);
         assertSharesInnerLeaves(filtered, 0, big5000.take(4000));
         // a plain java.lang.Iterable (neither Collection nor Traversable) is a one-shot source for ofAll and appendAll
-        final Iterable<Integer> plain = big::iterator;
+        Iterable<Integer> plain = big::iterator;
         assertSameShape(Vector.ofAll(plain), Vector.range(0, 100_000), 100_000);
         assertSameShape(Vector.of(-1).appendAll(plain), Vector.range(-1, 100_000), 100_001);
         assertThat(Vector.<Integer>empty().appendAll(plain)).isEqualTo(Vector.range(0, 100_000));
@@ -382,16 +375,16 @@ public class VectorBuilderTest {
         // can be shared; after a prefix of whole leaves, the source's inner leaves are
         for (int hint : new int[] {1, 5, 31}) {
             for (int size : new int[] {1, 31, 32, 33, 64, 65, 1023, 1024, 1025}) {
-                final Vector<Integer> source =
+                Vector<Integer> source =
                         Vector.ofAll(IntStream.range(0, size).boxed().toList());
                 for (int prefix : new int[] {0, 1, hint, hint + 1}) {
-                    final Vector.Builder<Integer> builder = Vector.newBuilder(hint);
+                    Vector.Builder<Integer> builder = Vector.newBuilder(hint);
                     for (int i = 0; i < prefix; i++) {
                         builder.add(-1 - i);
                     }
-                    final Vector<Integer> expected =
+                    Vector<Integer> expected =
                             Vector.tabulate(prefix, i -> -1 - i).appendAll(source);
-                    final Vector<Integer> built =
+                    Vector<Integer> built =
                             builder.addAll(source).addAll(source).result();
                     assertSameShape(built, expected.appendAll(source), prefix + 2 * size);
                     if (prefix == 0) {
@@ -410,13 +403,13 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldAddAllPrimitiveBackedVector() {
-        final Vector<Integer> ints = Vector.ofAll(IntStream.range(0, 1025).toArray());
+        Vector<Integer> ints = Vector.ofAll(IntStream.range(0, 1025).toArray());
         assertSameElements(Vector.<Integer>newBuilder().addAll(ints).result(), ints, 1025);
     }
 
     @Test
     public void shouldAddAllNonVectorIterables() {
-        final Vector<Integer> actual = Vector.<Integer>newBuilder()
+        Vector<Integer> actual = Vector.<Integer>newBuilder()
                 .addAll(List.range(0, 100))
                 .addAll(java.util.List.of(100, 101))
                 .addAll(HashSet.of(102))
@@ -431,19 +424,19 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldKeepElementsAddedBeforeANullOnRejectedAddAll() {
-        final java.util.List<Integer> withNullElement = new java.util.ArrayList<>();
+        java.util.List<Integer> withNullElement = new java.util.ArrayList<>();
         withNullElement.add(1);
         withNullElement.add(2);
         withNullElement.add(null);
         withNullElement.add(3);
-        final Vector.Builder<Integer> builder = Vector.newBuilder();
+        Vector.Builder<Integer> builder = Vector.newBuilder();
         assertThatThrownBy(() -> builder.addAll(withNullElement)).isInstanceOf(NullPointerException.class);
         assertThat(builder.result()).isEqualTo(Vector.of(1, 2));
     }
 
     @Test
     public void shouldThrowOnAnyUseAfterResult() {
-        final Vector.Builder<Integer> builder = Vector.newBuilder();
+        Vector.Builder<Integer> builder = Vector.newBuilder();
         builder.add(1);
         builder.result();
         assertThatThrownBy(() -> builder.add(2)).isInstanceOf(IllegalStateException.class);
@@ -463,21 +456,21 @@ public class VectorBuilderTest {
     public void shouldRunTheBulkLoopsAcrossLeafBoundaries() {
         // tabulate and fill start from an empty builder; here the bulk loops also run after other elements
         for (int n : new int[] {6, 31, 32, 33, 64, 65, 1025}) {
-            final Vector.Builder<Integer> tabulated = Vector.newBuilder(5);
+            Vector.Builder<Integer> tabulated = Vector.newBuilder(5);
             tabulated.addTabulated(n, i -> i);
             assertSameShape(tabulated.result(), Vector.range(0, n), n);
 
-            final Vector.Builder<Integer> repeated = Vector.newBuilder(5);
+            Vector.Builder<Integer> repeated = Vector.newBuilder(5);
             repeated.addRepeated(n, 7);
             assertSameShape(repeated.result(), Vector.fill(n, 7), n);
 
             // and after a partial prefix, so a leaf is split between prefix and bulk elements
-            final Vector.Builder<Integer> prefixed = Vector.newBuilder(5);
+            Vector.Builder<Integer> prefixed = Vector.newBuilder(5);
             prefixed.add(-1).add(-2);
             prefixed.addTabulated(n, i -> i);
             assertSameShape(prefixed.result(), Vector.of(-1, -2).appendAll(Vector.range(0, n)), n + 2);
 
-            final Vector.Builder<Integer> prefixedRepeat = Vector.newBuilder();
+            Vector.Builder<Integer> prefixedRepeat = Vector.newBuilder();
             prefixedRepeat.add(-1).add(-2);
             prefixedRepeat.addRepeated(n, 7);
             assertSameShape(prefixedRepeat.result(), Vector.of(-1, -2).appendAll(Vector.fill(n, 7)), n + 2);
@@ -491,7 +484,7 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldProduceVectorsThatSupportEveryOperation() {
-        final Vector<Integer> built = Vector.<Integer>newBuilder()
+        Vector<Integer> built = Vector.<Integer>newBuilder()
                 .addAll(Vector.range(0, 5000))
                 .add(5000)
                 .result();
@@ -508,41 +501,41 @@ public class VectorBuilderTest {
 
     @Test
     public void shouldMatchArrayListOracleUnderRandomMixOfAddAndAddAll() {
-        final Random random = new Random(20260915L);
-        final Vector<Integer> boxed3000 =
+        Random random = new Random(20260915L);
+        Vector<Integer> boxed3000 =
                 Vector.ofAll(IntStream.range(0, 3000).boxed().toList());
         for (int round = 0; round < 50; round++) {
-            final ArrayList<Integer> expected = new ArrayList<>();
-            final Vector.Builder<Integer> builder = Vector.newBuilder(random.nextInt(50));
-            final int steps = 1 + random.nextInt(200);
+            ArrayList<Integer> expected = new ArrayList<>();
+            Vector.Builder<Integer> builder = Vector.newBuilder(random.nextInt(50));
+            int steps = 1 + random.nextInt(200);
             for (int step = 0; step < steps; step++) {
                 switch (random.nextInt(5)) {
                     case 0 -> {
-                        final int value = random.nextInt();
+                        int value = random.nextInt();
                         expected.add(value);
                         builder.add(value);
                     }
                     case 1 -> {
-                        final int from = random.nextInt(2000), count = random.nextInt(1100);
-                        final Vector<Integer> vector = Vector.range(0, 3000).slice(from, Math.min(3000, from + count));
+                        int from = random.nextInt(2000), count = random.nextInt(1100);
+                        Vector<Integer> vector = Vector.range(0, 3000).slice(from, Math.min(3000, from + count));
                         expected.addAll(new java.util.ArrayList<>(vector.asJava()));
                         builder.addAll(vector);
                     }
                     case 2 -> {
-                        final java.util.List<Integer> list =
+                        java.util.List<Integer> list =
                                 IntStream.range(0, random.nextInt(70)).boxed().toList();
                         expected.addAll(list);
                         builder.addAll(list);
                     }
                     case 3 -> {
                         // an Object[]-backed sliced source: shared leaves once aligned, copied ones otherwise
-                        final int from = random.nextInt(2000), count = random.nextInt(1100);
-                        final Vector<Integer> vector = boxed3000.slice(from, Math.min(3000, from + count));
+                        int from = random.nextInt(2000), count = random.nextInt(1100);
+                        Vector<Integer> vector = boxed3000.slice(from, Math.min(3000, from + count));
                         expected.addAll(new java.util.ArrayList<>(vector.asJava()));
                         builder.addAll(vector);
                     }
                     default -> {
-                        final Vector<Integer> vector = Vector.ofAll(
+                        Vector<Integer> vector = Vector.ofAll(
                                 IntStream.range(0, random.nextInt(100)).toArray());
                         expected.addAll(new java.util.ArrayList<>(vector.asJava()));
                         builder.addAll(vector);
@@ -557,8 +550,8 @@ public class VectorBuilderTest {
     @ParameterizedTest
     @ValueSource(ints = {0, 1, 32, 33, 1024, 1025, 100_000})
     public void shouldRouteBulkOperationsThroughTheBuilder(int size) {
-        final Vector<Integer> range = Vector.range(0, size);
-        final java.util.List<Integer> list = IntStream.range(0, size).boxed().toList();
+        Vector<Integer> range = Vector.range(0, size);
+        java.util.List<Integer> list = IntStream.range(0, size).boxed().toList();
         assertSameElements(Vector.ofAll(Iterator.ofAll(list.iterator())), range, size);
         assertSameElements(Vector.ofAll(list.stream()), range, size);
         assertSameElements(list.stream().collect(Vector.collector()), range, size);
@@ -588,8 +581,8 @@ public class VectorBuilderTest {
     private static <T> void assertSharesFullLeaves(Vector<T> built, Vector<T> source) {
         int shared = 0;
         for (int i = 0; i < source.size(); ) {
-            final Object[] sourceLeaf = leafAt(source.trie, i);
-            final int start = i - indexInLeaf(source.trie, i);
+            Object[] sourceLeaf = leafAt(source.trie, i);
+            int start = i - indexInLeaf(source.trie, i);
             if (sourceLeaf.length == 32) {
                 assertThat(leafAt(built.trie, start))
                         .as("leaf at %d is shared", start)
@@ -611,9 +604,9 @@ public class VectorBuilderTest {
     private static <T> void assertSameElements(Vector<T> actual, Vector<T> expected, int size) {
         assertThat(actual.size()).isEqualTo(size);
         assertThat(expected.size()).isEqualTo(size);
-        final java.util.Iterator<T> it = actual.iterator();
+        java.util.Iterator<T> it = actual.iterator();
         for (int i = 0; i < size; i++) {
-            final T e = expected.get(i);
+            T e = expected.get(i);
             assertThat(actual.get(i)).as("get(%d)", i).isEqualTo(e);
             assertThat(it.next()).as("iterator element %d", i).isEqualTo(e);
         }

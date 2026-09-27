@@ -78,7 +78,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public static <A extends @Nullable Object> NonEmptySet<A> of(A head, A... tail) {
         Objects.requireNonNull(head, "NonEmptySet: head is null");
         Objects.requireNonNull(tail, "NonEmptySet: tail is null");
-        final HashSet.Builder<A> builder = HashSet.newBuilder();
+        HashSet.Builder<A> builder = HashSet.newBuilder();
         builder.add(head);
         for (A element : tail) {
             builder.add(Objects.requireNonNull(element, "NonEmptySet: element is null"));
@@ -100,7 +100,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public static <A extends @Nullable Object> NonEmptySet<A> fromIterable(A head, Iterable<? extends A> tail) {
         Objects.requireNonNull(head, "NonEmptySet: head is null");
         Objects.requireNonNull(tail, "NonEmptySet: tail is null");
-        final HashSet.Builder<A> builder = HashSet.newBuilder();
+        HashSet.Builder<A> builder = HashSet.newBuilder();
         builder.add(head);
         return new NonEmptySet<>(addAll(builder, tail).result());
     }
@@ -181,7 +181,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public static <A extends @Nullable Object> NonEmptySet<A> flatten(
             NonEmptySet<? extends NonEmptySet<? extends A>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        final HashSet.Builder<A> builder = HashSet.newBuilder();
+        HashSet.Builder<A> builder = HashSet.newBuilder();
         for (NonEmptySet<? extends A> inner : nested) {
             builder.addAll(inner.set);
         }
@@ -260,7 +260,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     public <B extends @Nullable Object> NonEmptySet<B> flatMap(
             Function<? super A, ? extends NonEmptySet<? extends B>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final HashSet.Builder<B> builder = HashSet.newBuilder();
+        HashSet.Builder<B> builder = HashSet.newBuilder();
         for (A element : set) {
             builder.addAll(
                     Objects.requireNonNull(mapper.apply(element), "NonEmptySet.flatMap: mapper returned null").set);
@@ -328,7 +328,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      */
     public <K extends @Nullable Object> NonEmptyMap<K, NonEmptySet<A>> groupBy(
             Function<? super A, ? extends K> classifier) {
-        final HashMap.Builder<K, NonEmptySet<A>> groups = HashMap.newBuilder();
+        HashMap.Builder<K, NonEmptySet<A>> groups = HashMap.newBuilder();
         Objects.requireNonNull(classifier, "classifier is null");
         for (Tuple2<K, HashSet<A>> group : set.<K>groupBy(element ->
                 Objects.requireNonNull(classifier.apply(element), "NonEmptySet.groupBy: classifier returned null"))) {

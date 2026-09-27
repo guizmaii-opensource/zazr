@@ -22,8 +22,8 @@ public class ValidationZipTest {
 
     @Test
     public void shouldZipWith2Valids() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Validation<String, String> actual = Validation.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Validation<String, String> actual = Validation.zipWith(
                 Validation.<String, Integer>valid(1), Validation.<String, Integer>valid(2), (a1, a2) -> {
                     calls.incrementAndGet();
                     return "" + a1 + a2;
@@ -65,7 +65,7 @@ public class ValidationZipTest {
 
     @Test
     public void shouldConcatenateSeveralErrorsOfOneInvalidOf2InArgumentOrder() {
-        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
         assertThat(Validation.zip(first, Validation.<String, Integer>invalid("e2")))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e2")));
         assertThat(Validation.zipWith(first, Validation.<String, Integer>invalid("e2"), (_, _) -> {
@@ -130,8 +130,8 @@ public class ValidationZipTest {
 
     @Test
     public void shouldZipWith3Valids() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Validation<String, String> actual = Validation.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Validation<String, String> actual = Validation.zipWith(
                 Validation.<String, Integer>valid(1),
                 Validation.<String, Integer>valid(2),
                 Validation.<String, Integer>valid(3),
@@ -231,7 +231,7 @@ public class ValidationZipTest {
 
     @Test
     public void shouldConcatenateSeveralErrorsOfOneInvalidOf3InArgumentOrder() {
-        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
         assertThat(Validation.zip(
                         first, Validation.<String, Integer>valid(2), Validation.<String, Integer>invalid("e3")))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e3")));
@@ -243,7 +243,7 @@ public class ValidationZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e3")));
-        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
         assertThat(Validation.zip(
                         Validation.<String, Integer>invalid("e1"), middle, Validation.<String, Integer>invalid("e3")))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1", "e2a", "e2b", "e3")));
@@ -338,8 +338,8 @@ public class ValidationZipTest {
 
     @Test
     public void shouldZipWith4Valids() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Validation<String, String> actual = Validation.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Validation<String, String> actual = Validation.zipWith(
                 Validation.<String, Integer>valid(1),
                 Validation.<String, Integer>valid(2),
                 Validation.<String, Integer>valid(3),
@@ -512,7 +512,7 @@ public class ValidationZipTest {
 
     @Test
     public void shouldConcatenateSeveralErrorsOfOneInvalidOf4InArgumentOrder() {
-        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
         assertThat(Validation.zip(
                         first,
                         Validation.<String, Integer>valid(2),
@@ -528,7 +528,7 @@ public class ValidationZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e4")));
-        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
         assertThat(Validation.zip(
                         Validation.<String, Integer>invalid("e1"),
                         middle,
@@ -670,8 +670,8 @@ public class ValidationZipTest {
 
     @Test
     public void shouldZipWith5Valids() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Validation<String, String> actual = Validation.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Validation<String, String> actual = Validation.zipWith(
                 Validation.<String, Integer>valid(1),
                 Validation.<String, Integer>valid(2),
                 Validation.<String, Integer>valid(3),
@@ -950,7 +950,7 @@ public class ValidationZipTest {
 
     @Test
     public void shouldConcatenateSeveralErrorsOfOneInvalidOf5InArgumentOrder() {
-        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
         assertThat(Validation.zip(
                         first,
                         Validation.<String, Integer>valid(2),
@@ -968,7 +968,7 @@ public class ValidationZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e5")));
-        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
         assertThat(Validation.zip(
                         Validation.<String, Integer>invalid("e1"),
                         middle,
@@ -1144,8 +1144,8 @@ public class ValidationZipTest {
 
     @Test
     public void shouldZipWith6Valids() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Validation<String, String> actual = Validation.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Validation<String, String> actual = Validation.zipWith(
                 Validation.<String, Integer>valid(1),
                 Validation.<String, Integer>valid(2),
                 Validation.<String, Integer>valid(3),
@@ -1569,7 +1569,7 @@ public class ValidationZipTest {
 
     @Test
     public void shouldConcatenateSeveralErrorsOfOneInvalidOf6InArgumentOrder() {
-        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
         assertThat(Validation.zip(
                         first,
                         Validation.<String, Integer>valid(2),
@@ -1589,7 +1589,7 @@ public class ValidationZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e6")));
-        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
         assertThat(Validation.zip(
                         Validation.<String, Integer>invalid("e1"),
                         middle,
@@ -1803,8 +1803,8 @@ public class ValidationZipTest {
 
     @Test
     public void shouldZipWith7Valids() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Validation<String, String> actual = Validation.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Validation<String, String> actual = Validation.zipWith(
                 Validation.<String, Integer>valid(1),
                 Validation.<String, Integer>valid(2),
                 Validation.<String, Integer>valid(3),
@@ -2418,7 +2418,7 @@ public class ValidationZipTest {
 
     @Test
     public void shouldConcatenateSeveralErrorsOfOneInvalidOf7InArgumentOrder() {
-        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
         assertThat(Validation.zip(
                         first,
                         Validation.<String, Integer>valid(2),
@@ -2440,7 +2440,7 @@ public class ValidationZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e7")));
-        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
         assertThat(Validation.zip(
                         Validation.<String, Integer>invalid("e1"),
                         middle,
@@ -2696,8 +2696,8 @@ public class ValidationZipTest {
 
     @Test
     public void shouldZipWith8Valids() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Validation<String, String> actual = Validation.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Validation<String, String> actual = Validation.zipWith(
                 Validation.<String, Integer>valid(1),
                 Validation.<String, Integer>valid(2),
                 Validation.<String, Integer>valid(3),
@@ -3552,7 +3552,7 @@ public class ValidationZipTest {
 
     @Test
     public void shouldConcatenateSeveralErrorsOfOneInvalidOf8InArgumentOrder() {
-        final Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
+        Validation<String, Integer> first = Validation.invalidAll(NonEmptyVector.of("e1a", "e1b"));
         assertThat(Validation.zip(
                         first,
                         Validation.<String, Integer>valid(2),
@@ -3576,7 +3576,7 @@ public class ValidationZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Validation.invalidAll(NonEmptyVector.of("e1a", "e1b", "e8")));
-        final Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
+        Validation<String, Integer> middle = Validation.invalidAll(NonEmptyVector.of("e2a", "e2b"));
         assertThat(Validation.zip(
                         Validation.<String, Integer>invalid("e1"),
                         middle,

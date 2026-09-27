@@ -30,22 +30,21 @@ class ModulePathConsumerTest {
 
     /// A tool of the running JDK, such as `javac` or `java`.
     private static String tool(String name) {
-        final Path java = Path.of(ProcessHandle.current().info().command().orElseThrow());
+        Path java = Path.of(ProcessHandle.current().info().command().orElseThrow());
         return java.resolveSibling(name).toString();
     }
 
     /// Runs a command, and returns its exit code followed by its output.
     private static String run(List<String> command) throws IOException, InterruptedException {
-        final Process process =
-                new ProcessBuilder(command).redirectErrorStream(true).start();
-        final String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         assertThat(process.waitFor(2, TimeUnit.MINUTES)).isTrue();
         return process.exitValue() + "\n" + output;
     }
 
     @Test
     void theModuleIsNamedAndExportsItsApi() throws URISyntaxException {
-        final ModuleDescriptor descriptor = ModuleFinder.of(location(Gen.class))
+        ModuleDescriptor descriptor = ModuleFinder.of(location(Gen.class))
                 .find("dev.zazr.test")
                 .orElseThrow()
                 .descriptor();
@@ -61,7 +60,7 @@ class ModulePathConsumerTest {
 
     @Test
     void aConsumerModuleCompilesAndRunsACheck(@TempDir Path dir) throws Exception {
-        final Path sources = dir.resolve("src");
+        Path sources = dir.resolve("src");
         Files.createDirectories(sources.resolve("consumer"));
         Files.writeString(sources.resolve("module-info.java"), """
                 module consumer {
@@ -86,9 +85,9 @@ class ModulePathConsumerTest {
                     }
                 }
                 """);
-        final String modulePath = location(Gen.class) + File.pathSeparator + location(dev.zazr.Tuple.class);
-        final Path classes = dir.resolve("classes");
-        final List<String> javac = new ArrayList<>(List.of(
+        String modulePath = location(Gen.class) + File.pathSeparator + location(dev.zazr.Tuple.class);
+        Path classes = dir.resolve("classes");
+        List<String> javac = new ArrayList<>(List.of(
                 tool("javac"),
                 "--module-path",
                 modulePath,
@@ -97,7 +96,7 @@ class ModulePathConsumerTest {
                 sources.resolve("module-info.java").toString(),
                 sources.resolve("consumer/Main.java").toString()));
         assertThat(run(javac)).startsWith("0\n");
-        final String output = run(List.of(
+        String output = run(List.of(
                 tool("java"),
                 "--module-path",
                 classes + File.pathSeparator + modulePath,

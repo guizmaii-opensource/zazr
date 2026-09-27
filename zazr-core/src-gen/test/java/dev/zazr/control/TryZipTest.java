@@ -20,8 +20,8 @@ public class TryZipTest {
 
     @Test
     public void shouldZipWith2Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Try<String> actual = Try.zipWith(Try.success(1), Try.success(2), (a1, a2) -> {
+        AtomicInteger calls = new AtomicInteger();
+        Try<String> actual = Try.zipWith(Try.success(1), Try.success(2), (a1, a2) -> {
             calls.incrementAndGet();
             return "" + a1 + a2;
         });
@@ -31,13 +31,13 @@ public class TryZipTest {
 
     @Test
     public void shouldFailWhenOneOf2Fails() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
         assertThat(Try.zip(failing1, Try.success(2))).isSameAs(failing1);
         assertThat(Try.zipWith(failing1, Try.success(2), (_, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isSameAs(failing1);
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(Try.success(1), failing2)).isSameAs(failing2);
         assertThat(Try.zipWith(Try.success(1), failing2, (_, _) -> {
                     throw new AssertionError("must not be called");
@@ -47,8 +47,8 @@ public class TryZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf2InArgumentOrder() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(failing1, failing2)).isSameAs(failing1);
         assertThat(Try.zipWith(failing1, failing2, (_, _) -> {
                     throw new AssertionError("must not be called");
@@ -63,7 +63,7 @@ public class TryZipTest {
 
     @Test
     public void shouldCaptureWhatTheCombinerOf2Throws() {
-        final RuntimeException boom = new IllegalStateException("boom");
+        RuntimeException boom = new IllegalStateException("boom");
         assertThat(Try.zipWith(Try.success(1), Try.success(2), (_, _) -> {
                     throw boom;
                 }))
@@ -72,7 +72,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRethrowAFatalCombinerErrorOf2() {
-        final UnknownError fatal = new UnknownError("fatal");
+        UnknownError fatal = new UnknownError("fatal");
         assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), (_, _) -> {
                     throw fatal;
                 }))
@@ -81,7 +81,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRejectANullResultOfZipWith2() {
-        final Try<Object> actual = Try.zipWith(Try.success(1), Try.success(2), (a1, a2) -> null);
+        Try<Object> actual = Try.zipWith(Try.success(1), Try.success(2), (a1, a2) -> null);
         assertThat(actual.isFailure()).isTrue();
         assertThat(actual.getCause())
                 .isInstanceOf(NullPointerException.class)
@@ -118,8 +118,8 @@ public class TryZipTest {
 
     @Test
     public void shouldZipWith3Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Try<String> actual = Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (a1, a2, a3) -> {
+        AtomicInteger calls = new AtomicInteger();
+        Try<String> actual = Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (a1, a2, a3) -> {
             calls.incrementAndGet();
             return "" + a1 + a2 + a3;
         });
@@ -129,19 +129,19 @@ public class TryZipTest {
 
     @Test
     public void shouldFailWhenOneOf3Fails() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
         assertThat(Try.zip(failing1, Try.success(2), Try.success(3))).isSameAs(failing1);
         assertThat(Try.zipWith(failing1, Try.success(2), Try.success(3), (_, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isSameAs(failing1);
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(Try.success(1), failing2, Try.success(3))).isSameAs(failing2);
         assertThat(Try.zipWith(Try.success(1), failing2, Try.success(3), (_, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isSameAs(failing2);
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
         assertThat(Try.zip(Try.success(1), Try.success(2), failing3)).isSameAs(failing3);
         assertThat(Try.zipWith(Try.success(1), Try.success(2), failing3, (_, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -151,9 +151,9 @@ public class TryZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf3InArgumentOrder() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
         assertThat(Try.zip(failing1, failing2, failing3)).isSameAs(failing1);
         assertThat(Try.zipWith(failing1, failing2, failing3, (_, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -173,7 +173,7 @@ public class TryZipTest {
 
     @Test
     public void shouldCaptureWhatTheCombinerOf3Throws() {
-        final RuntimeException boom = new IllegalStateException("boom");
+        RuntimeException boom = new IllegalStateException("boom");
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (_, _, _) -> {
                     throw boom;
                 }))
@@ -182,7 +182,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRethrowAFatalCombinerErrorOf3() {
-        final UnknownError fatal = new UnknownError("fatal");
+        UnknownError fatal = new UnknownError("fatal");
         assertThatThrownBy(() -> Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (_, _, _) -> {
                     throw fatal;
                 }))
@@ -191,7 +191,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRejectANullResultOfZipWith3() {
-        final Try<Object> actual = Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (a1, a2, a3) -> null);
+        Try<Object> actual = Try.zipWith(Try.success(1), Try.success(2), Try.success(3), (a1, a2, a3) -> null);
         assertThat(actual.isFailure()).isTrue();
         assertThat(actual.getCause())
                 .isInstanceOf(NullPointerException.class)
@@ -237,8 +237,8 @@ public class TryZipTest {
 
     @Test
     public void shouldZipWith4Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Try<String> actual =
+        AtomicInteger calls = new AtomicInteger();
+        Try<String> actual =
                 Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), (a1, a2, a3, a4) -> {
                     calls.incrementAndGet();
                     return "" + a1 + a2 + a3 + a4;
@@ -249,28 +249,28 @@ public class TryZipTest {
 
     @Test
     public void shouldFailWhenOneOf4Fails() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
         assertThat(Try.zip(failing1, Try.success(2), Try.success(3), Try.success(4)))
                 .isSameAs(failing1);
         assertThat(Try.zipWith(failing1, Try.success(2), Try.success(3), Try.success(4), (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isSameAs(failing1);
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(Try.success(1), failing2, Try.success(3), Try.success(4)))
                 .isSameAs(failing2);
         assertThat(Try.zipWith(Try.success(1), failing2, Try.success(3), Try.success(4), (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isSameAs(failing2);
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
         assertThat(Try.zip(Try.success(1), Try.success(2), failing3, Try.success(4)))
                 .isSameAs(failing3);
         assertThat(Try.zipWith(Try.success(1), Try.success(2), failing3, Try.success(4), (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isSameAs(failing3);
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
         assertThat(Try.zip(Try.success(1), Try.success(2), Try.success(3), failing4))
                 .isSameAs(failing4);
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), failing4, (_, _, _, _) -> {
@@ -281,10 +281,10 @@ public class TryZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf4InArgumentOrder() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
         assertThat(Try.zip(failing1, failing2, failing3, failing4)).isSameAs(failing1);
         assertThat(Try.zipWith(failing1, failing2, failing3, failing4, (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -310,7 +310,7 @@ public class TryZipTest {
 
     @Test
     public void shouldCaptureWhatTheCombinerOf4Throws() {
-        final RuntimeException boom = new IllegalStateException("boom");
+        RuntimeException boom = new IllegalStateException("boom");
         assertThat(Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), (_, _, _, _) -> {
                     throw boom;
                 }))
@@ -319,7 +319,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRethrowAFatalCombinerErrorOf4() {
-        final UnknownError fatal = new UnknownError("fatal");
+        UnknownError fatal = new UnknownError("fatal");
         assertThatThrownBy(() ->
                         Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), (_, _, _, _) -> {
                             throw fatal;
@@ -329,7 +329,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRejectANullResultOfZipWith4() {
-        final Try<Object> actual =
+        Try<Object> actual =
                 Try.zipWith(Try.success(1), Try.success(2), Try.success(3), Try.success(4), (a1, a2, a3, a4) -> null);
         assertThat(actual.isFailure()).isTrue();
         assertThat(actual.getCause())
@@ -384,8 +384,8 @@ public class TryZipTest {
 
     @Test
     public void shouldZipWith5Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Try<String> actual = Try.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Try<String> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),
@@ -401,7 +401,7 @@ public class TryZipTest {
 
     @Test
     public void shouldFailWhenOneOf5Fails() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
         assertThat(Try.zip(failing1, Try.success(2), Try.success(3), Try.success(4), Try.success(5)))
                 .isSameAs(failing1);
         assertThat(Try.zipWith(
@@ -409,7 +409,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(Try.success(1), failing2, Try.success(3), Try.success(4), Try.success(5)))
                 .isSameAs(failing2);
         assertThat(Try.zipWith(
@@ -417,7 +417,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
         assertThat(Try.zip(Try.success(1), Try.success(2), failing3, Try.success(4), Try.success(5)))
                 .isSameAs(failing3);
         assertThat(Try.zipWith(
@@ -425,7 +425,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
         assertThat(Try.zip(Try.success(1), Try.success(2), Try.success(3), failing4, Try.success(5)))
                 .isSameAs(failing4);
         assertThat(Try.zipWith(
@@ -433,7 +433,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
         assertThat(Try.zip(Try.success(1), Try.success(2), Try.success(3), Try.success(4), failing5))
                 .isSameAs(failing5);
         assertThat(Try.zipWith(
@@ -445,11 +445,11 @@ public class TryZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf5InArgumentOrder() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
         assertThat(Try.zip(failing1, failing2, failing3, failing4, failing5)).isSameAs(failing1);
         assertThat(Try.zipWith(failing1, failing2, failing3, failing4, failing5, (_, _, _, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -484,7 +484,7 @@ public class TryZipTest {
 
     @Test
     public void shouldCaptureWhatTheCombinerOf5Throws() {
-        final RuntimeException boom = new IllegalStateException("boom");
+        RuntimeException boom = new IllegalStateException("boom");
         assertThat(Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -499,7 +499,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRethrowAFatalCombinerErrorOf5() {
-        final UnknownError fatal = new UnknownError("fatal");
+        UnknownError fatal = new UnknownError("fatal");
         assertThatThrownBy(() -> Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -514,7 +514,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRejectANullResultOfZipWith5() {
-        final Try<Object> actual = Try.zipWith(
+        Try<Object> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),
@@ -589,8 +589,8 @@ public class TryZipTest {
 
     @Test
     public void shouldZipWith6Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Try<String> actual = Try.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Try<String> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),
@@ -607,7 +607,7 @@ public class TryZipTest {
 
     @Test
     public void shouldFailWhenOneOf6Fails() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
         assertThat(Try.zip(failing1, Try.success(2), Try.success(3), Try.success(4), Try.success(5), Try.success(6)))
                 .isSameAs(failing1);
         assertThat(Try.zipWith(
@@ -621,7 +621,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(Try.success(1), failing2, Try.success(3), Try.success(4), Try.success(5), Try.success(6)))
                 .isSameAs(failing2);
         assertThat(Try.zipWith(
@@ -635,7 +635,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
         assertThat(Try.zip(Try.success(1), Try.success(2), failing3, Try.success(4), Try.success(5), Try.success(6)))
                 .isSameAs(failing3);
         assertThat(Try.zipWith(
@@ -649,7 +649,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
         assertThat(Try.zip(Try.success(1), Try.success(2), Try.success(3), failing4, Try.success(5), Try.success(6)))
                 .isSameAs(failing4);
         assertThat(Try.zipWith(
@@ -663,7 +663,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
         assertThat(Try.zip(Try.success(1), Try.success(2), Try.success(3), Try.success(4), failing5, Try.success(6)))
                 .isSameAs(failing5);
         assertThat(Try.zipWith(
@@ -677,7 +677,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing5);
-        final Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
+        Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
         assertThat(Try.zip(Try.success(1), Try.success(2), Try.success(3), Try.success(4), Try.success(5), failing6))
                 .isSameAs(failing6);
         assertThat(Try.zipWith(
@@ -695,12 +695,12 @@ public class TryZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf6InArgumentOrder() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
-        final Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
         assertThat(Try.zip(failing1, failing2, failing3, failing4, failing5, failing6))
                 .isSameAs(failing1);
         assertThat(Try.zipWith(failing1, failing2, failing3, failing4, failing5, failing6, (_, _, _, _, _, _) -> {
@@ -763,7 +763,7 @@ public class TryZipTest {
 
     @Test
     public void shouldCaptureWhatTheCombinerOf6Throws() {
-        final RuntimeException boom = new IllegalStateException("boom");
+        RuntimeException boom = new IllegalStateException("boom");
         assertThat(Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -779,7 +779,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRethrowAFatalCombinerErrorOf6() {
-        final UnknownError fatal = new UnknownError("fatal");
+        UnknownError fatal = new UnknownError("fatal");
         assertThatThrownBy(() -> Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -795,7 +795,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRejectANullResultOfZipWith6() {
-        final Try<Object> actual = Try.zipWith(
+        Try<Object> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),
@@ -934,8 +934,8 @@ public class TryZipTest {
 
     @Test
     public void shouldZipWith7Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Try<String> actual = Try.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Try<String> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),
@@ -953,7 +953,7 @@ public class TryZipTest {
 
     @Test
     public void shouldFailWhenOneOf7Fails() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
         assertThat(Try.zip(
                         failing1,
                         Try.success(2),
@@ -975,7 +975,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(
                         Try.success(1),
                         failing2,
@@ -997,7 +997,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1019,7 +1019,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1041,7 +1041,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1063,7 +1063,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing5);
-        final Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
+        Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1085,7 +1085,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing6);
-        final Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
+        Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1111,13 +1111,13 @@ public class TryZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf7InArgumentOrder() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
-        final Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
-        final Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
+        Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
         assertThat(Try.zip(failing1, failing2, failing3, failing4, failing5, failing6, failing7))
                 .isSameAs(failing1);
         assertThat(Try.zipWith(
@@ -1228,7 +1228,7 @@ public class TryZipTest {
 
     @Test
     public void shouldCaptureWhatTheCombinerOf7Throws() {
-        final RuntimeException boom = new IllegalStateException("boom");
+        RuntimeException boom = new IllegalStateException("boom");
         assertThat(Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -1245,7 +1245,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRethrowAFatalCombinerErrorOf7() {
-        final UnknownError fatal = new UnknownError("fatal");
+        UnknownError fatal = new UnknownError("fatal");
         assertThatThrownBy(() -> Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -1262,7 +1262,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRejectANullResultOfZipWith7() {
-        final Try<Object> actual = Try.zipWith(
+        Try<Object> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),
@@ -1469,8 +1469,8 @@ public class TryZipTest {
 
     @Test
     public void shouldZipWith8Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Try<String> actual = Try.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Try<String> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),
@@ -1489,7 +1489,7 @@ public class TryZipTest {
 
     @Test
     public void shouldFailWhenOneOf8Fails() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
         assertThat(Try.zip(
                         failing1,
                         Try.success(2),
@@ -1513,7 +1513,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
         assertThat(Try.zip(
                         Try.success(1),
                         failing2,
@@ -1537,7 +1537,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1561,7 +1561,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1585,7 +1585,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1609,7 +1609,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing5);
-        final Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
+        Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1633,7 +1633,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing6);
-        final Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
+        Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1657,7 +1657,7 @@ public class TryZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing7);
-        final Try<Integer> failing8 = Try.<Integer>failure(new IllegalStateException("e8"));
+        Try<Integer> failing8 = Try.<Integer>failure(new IllegalStateException("e8"));
         assertThat(Try.zip(
                         Try.success(1),
                         Try.success(2),
@@ -1685,14 +1685,14 @@ public class TryZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf8InArgumentOrder() {
-        final Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
-        final Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
-        final Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
-        final Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
-        final Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
-        final Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
-        final Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
-        final Try<Integer> failing8 = Try.<Integer>failure(new IllegalStateException("e8"));
+        Try<Integer> failing1 = Try.<Integer>failure(new IllegalStateException("e1"));
+        Try<Integer> failing2 = Try.<Integer>failure(new IllegalStateException("e2"));
+        Try<Integer> failing3 = Try.<Integer>failure(new IllegalStateException("e3"));
+        Try<Integer> failing4 = Try.<Integer>failure(new IllegalStateException("e4"));
+        Try<Integer> failing5 = Try.<Integer>failure(new IllegalStateException("e5"));
+        Try<Integer> failing6 = Try.<Integer>failure(new IllegalStateException("e6"));
+        Try<Integer> failing7 = Try.<Integer>failure(new IllegalStateException("e7"));
+        Try<Integer> failing8 = Try.<Integer>failure(new IllegalStateException("e8"));
         assertThat(Try.zip(failing1, failing2, failing3, failing4, failing5, failing6, failing7, failing8))
                 .isSameAs(failing1);
         assertThat(Try.zipWith(
@@ -1857,7 +1857,7 @@ public class TryZipTest {
 
     @Test
     public void shouldCaptureWhatTheCombinerOf8Throws() {
-        final RuntimeException boom = new IllegalStateException("boom");
+        RuntimeException boom = new IllegalStateException("boom");
         assertThat(Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -1875,7 +1875,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRethrowAFatalCombinerErrorOf8() {
-        final UnknownError fatal = new UnknownError("fatal");
+        UnknownError fatal = new UnknownError("fatal");
         assertThatThrownBy(() -> Try.zipWith(
                         Try.success(1),
                         Try.success(2),
@@ -1893,7 +1893,7 @@ public class TryZipTest {
 
     @Test
     public void shouldRejectANullResultOfZipWith8() {
-        final Try<Object> actual = Try.zipWith(
+        Try<Object> actual = Try.zipWith(
                 Try.success(1),
                 Try.success(2),
                 Try.success(3),

@@ -39,9 +39,9 @@ final class VectorSliceBuilder {
 
     /* the next slice of the source, of dimension n */
     void consider(int n, Object[] a) {
-        final int count = a.length * (1 << (BITS * (n - 1)));
-        final int lo0 = Math.max(lo - pos, 0);
-        final int hi0 = Math.min(hi - pos, count);
+        int count = a.length * (1 << (BITS * (n - 1)));
+        int lo0 = Math.max(lo - pos, 0);
+        int hi0 = Math.min(hi - pos, count);
         if (hi0 > lo0) {
             addSlice(n, a, lo0, hi0);
             len += (hi0 - lo0);
@@ -53,12 +53,12 @@ final class VectorSliceBuilder {
         if (n == 1) {
             add(1, copyOrUse(a, lo, hi));
         } else {
-            final int bitsN = BITS * (n - 1);
-            final int widthN = 1 << bitsN;
-            final int loN = lo >>> bitsN;
-            final int hiN = hi >>> bitsN;
-            final int loRest = lo & (widthN - 1);
-            final int hiRest = hi & (widthN - 1);
+            int bitsN = BITS * (n - 1);
+            int widthN = 1 << bitsN;
+            int loN = lo >>> bitsN;
+            int hiN = hi >>> bitsN;
+            int loRest = lo & (widthN - 1);
+            int hiRest = hi & (widthN - 1);
             if (loRest == 0) {
                 if (hiRest == 0) {
                     add(n, copyOrUse(a, loN, hiN));
@@ -89,7 +89,7 @@ final class VectorSliceBuilder {
     }
 
     private void add(int n, Object[] a) {
-        final int idx;
+        int idx;
         if (n <= maxDim) {
             idx = suffixIdx(n);
         } else {
@@ -100,7 +100,7 @@ final class VectorSliceBuilder {
     }
 
     private Object[] slice(int idx) {
-        final Object[] s = slices[idx];
+        Object[] s = slices[idx];
         if (s == null) {
             throw new IllegalStateException("VectorSliceBuilder: missing slice " + idx);
         }
@@ -112,15 +112,15 @@ final class VectorSliceBuilder {
             if (len == 0) {
                 return RadixVector.empty();
             }
-            final Object[] prefix1 = slices[prefixIdx(1)];
-            final Object[] suffix1 = slices[suffixIdx(1)];
-            final Object[] a;
+            Object[] prefix1 = slices[prefixIdx(1)];
+            Object[] suffix1 = slices[suffixIdx(1)];
+            Object[] a;
             if (prefix1 != null) {
                 a = (suffix1 != null) ? concatArrays(prefix1, suffix1) : prefix1;
             } else if (suffix1 != null) {
                 a = suffix1;
             } else {
-                final Object[] prefix2 = slices[prefixIdx(2)];
+                Object[] prefix2 = slices[prefixIdx(2)];
                 a = (Object[]) ((prefix2 != null) ? prefix2[0] : slice(suffixIdx(2))[0]);
             }
             return new RadixVector.Vector1<>(a);
@@ -129,8 +129,8 @@ final class VectorSliceBuilder {
         balanceSuffix(1);
         int resultDim = maxDim;
         if (resultDim < 6) {
-            final Object[] pre = slices[prefixIdx(maxDim)];
-            final Object[] suf = slices[suffixIdx(maxDim)];
+            Object[] pre = slices[prefixIdx(maxDim)];
+            Object[] suf = slices[suffixIdx(maxDim)];
             if (pre != null && suf != null) {
                 // the highest-dimensional data is two slices: concatenate them if they fit in the data array, otherwise
                 // add a dimension
@@ -143,67 +143,67 @@ final class VectorSliceBuilder {
             } else {
                 // a single highest-dimensional slice may hold WIDTH - 1 entries if it came from a prefix or a suffix,
                 // but the data holds at most WIDTH - 2: add a dimension then
-                final Object[] one = (pre != null) ? pre : slice(suffixIdx(maxDim));
+                Object[] one = (pre != null) ? pre : slice(suffixIdx(maxDim));
                 if (one.length > WIDTH - 2) {
                     resultDim += 1;
                 }
             }
         }
-        final Object[] prefix1 = slice(prefixIdx(1));
-        final Object[] suffix1 = slice(suffixIdx(1));
-        final int len1 = prefix1.length;
+        Object[] prefix1 = slice(prefixIdx(1));
+        Object[] suffix1 = slice(suffixIdx(1));
+        int len1 = prefix1.length;
         switch (resultDim) {
             case 2: {
-                final Object[] data2 = dataOr(2);
+                Object[] data2 = dataOr(2);
                 return new RadixVector.Vector2<>(prefix1, len1, data2, suffix1, len);
             }
             case 3: {
-                final Object[] prefix2 = prefixOr(2);
-                final Object[] data3 = dataOr(3);
-                final Object[] suffix2 = suffixOr(2);
-                final int len12 = len1 + (prefix2.length * WIDTH);
+                Object[] prefix2 = prefixOr(2);
+                Object[] data3 = dataOr(3);
+                Object[] suffix2 = suffixOr(2);
+                int len12 = len1 + (prefix2.length * WIDTH);
                 return new RadixVector.Vector3<>(prefix1, len1, prefix2, len12, data3, suffix2, suffix1, len);
             }
             case 4: {
-                final Object[] prefix2 = prefixOr(2);
-                final Object[] prefix3 = prefixOr(3);
-                final Object[] data4 = dataOr(4);
-                final Object[] suffix3 = suffixOr(3);
-                final Object[] suffix2 = suffixOr(2);
-                final int len12 = len1 + (prefix2.length * WIDTH);
-                final int len123 = len12 + (prefix3.length * WIDTH2);
+                Object[] prefix2 = prefixOr(2);
+                Object[] prefix3 = prefixOr(3);
+                Object[] data4 = dataOr(4);
+                Object[] suffix3 = suffixOr(3);
+                Object[] suffix2 = suffixOr(2);
+                int len12 = len1 + (prefix2.length * WIDTH);
+                int len123 = len12 + (prefix3.length * WIDTH2);
                 return new RadixVector.Vector4<>(
                         prefix1, len1, prefix2, len12, prefix3, len123, data4, suffix3, suffix2, suffix1, len);
             }
             case 5: {
-                final Object[] prefix2 = prefixOr(2);
-                final Object[] prefix3 = prefixOr(3);
-                final Object[] prefix4 = prefixOr(4);
-                final Object[] data5 = dataOr(5);
-                final Object[] suffix4 = suffixOr(4);
-                final Object[] suffix3 = suffixOr(3);
-                final Object[] suffix2 = suffixOr(2);
-                final int len12 = len1 + (prefix2.length * WIDTH);
-                final int len123 = len12 + (prefix3.length * WIDTH2);
-                final int len1234 = len123 + (prefix4.length * WIDTH3);
+                Object[] prefix2 = prefixOr(2);
+                Object[] prefix3 = prefixOr(3);
+                Object[] prefix4 = prefixOr(4);
+                Object[] data5 = dataOr(5);
+                Object[] suffix4 = suffixOr(4);
+                Object[] suffix3 = suffixOr(3);
+                Object[] suffix2 = suffixOr(2);
+                int len12 = len1 + (prefix2.length * WIDTH);
+                int len123 = len12 + (prefix3.length * WIDTH2);
+                int len1234 = len123 + (prefix4.length * WIDTH3);
                 return new RadixVector.Vector5<>(
                         prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data5, suffix4, suffix3,
                         suffix2, suffix1, len);
             }
             case 6: {
-                final Object[] prefix2 = prefixOr(2);
-                final Object[] prefix3 = prefixOr(3);
-                final Object[] prefix4 = prefixOr(4);
-                final Object[] prefix5 = prefixOr(5);
-                final Object[] data6 = dataOr(6);
-                final Object[] suffix5 = suffixOr(5);
-                final Object[] suffix4 = suffixOr(4);
-                final Object[] suffix3 = suffixOr(3);
-                final Object[] suffix2 = suffixOr(2);
-                final int len12 = len1 + (prefix2.length * WIDTH);
-                final int len123 = len12 + (prefix3.length * WIDTH2);
-                final int len1234 = len123 + (prefix4.length * WIDTH3);
-                final int len12345 = len1234 + (prefix5.length * WIDTH4);
+                Object[] prefix2 = prefixOr(2);
+                Object[] prefix3 = prefixOr(3);
+                Object[] prefix4 = prefixOr(4);
+                Object[] prefix5 = prefixOr(5);
+                Object[] data6 = dataOr(6);
+                Object[] suffix5 = suffixOr(5);
+                Object[] suffix4 = suffixOr(4);
+                Object[] suffix3 = suffixOr(3);
+                Object[] suffix2 = suffixOr(2);
+                int len12 = len1 + (prefix2.length * WIDTH);
+                int len123 = len12 + (prefix3.length * WIDTH2);
+                int len1234 = len123 + (prefix4.length * WIDTH3);
+                int len12345 = len1234 + (prefix5.length * WIDTH4);
                 return new RadixVector.Vector6<>(
                         prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data6,
                         suffix5, suffix4, suffix3, suffix2, suffix1, len);
@@ -214,21 +214,21 @@ final class VectorSliceBuilder {
     }
 
     private Object[] prefixOr(int n) {
-        final Object[] p = slices[prefixIdx(n)];
+        Object[] p = slices[prefixIdx(n)];
         return (p != null) ? p : EMPTY;
     }
 
     private Object[] suffixOr(int n) {
-        final Object[] s = slices[suffixIdx(n)];
+        Object[] s = slices[suffixIdx(n)];
         return (s != null) ? s : EMPTY;
     }
 
     private Object[] dataOr(int n) {
-        final Object[] p = slices[prefixIdx(n)];
+        Object[] p = slices[prefixIdx(n)];
         if (p != null) {
             return p;
         }
-        final Object[] s = slices[suffixIdx(n)];
+        Object[] s = slices[suffixIdx(n)];
         return (s != null) ? s : EMPTY;
     }
 
@@ -240,7 +240,7 @@ final class VectorSliceBuilder {
                 slices[suffixIdx(n)] = null;
             } else {
                 balancePrefix(n + 1);
-                final Object[] preN1 = slice(prefixIdx(n + 1));
+                Object[] preN1 = slice(prefixIdx(n + 1));
                 slices[prefixIdx(n)] = (Object[]) preN1[0];
                 if (preN1.length == 1) {
                     slices[prefixIdx(n + 1)] = null;
@@ -262,7 +262,7 @@ final class VectorSliceBuilder {
                 slices[prefixIdx(n)] = null;
             } else {
                 balanceSuffix(n + 1);
-                final Object[] sufN1 = slice(suffixIdx(n + 1));
+                Object[] sufN1 = slice(suffixIdx(n + 1));
                 slices[suffixIdx(n)] = (Object[]) sufN1[sufN1.length - 1];
                 if (sufN1.length == 1) {
                     slices[suffixIdx(n + 1)] = null;

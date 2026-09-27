@@ -23,7 +23,7 @@ public class Euler04Test {
         assertThat(largestPalindromeOfProductsFromFactorsInRange(100, 999)).isEqualTo(906609);
     }
 
-    private static int largestPalindromeOfProductsFromFactorsInRange(final int min, final int max) {
+    private static int largestPalindromeOfProductsFromFactorsInRange(int min, int max) {
         return List.rangeClosed(min, max)
                 .crossProduct()
                 .filter(t -> t._1() <= t._2())

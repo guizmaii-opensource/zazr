@@ -128,7 +128,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
             if (len1 == WIDTH) {
                 advance();
             }
-            final int count = Math.min(WIDTH - len1, to - i);
+            int count = Math.min(WIDTH - len1, to - i);
             System.arraycopy(elements, i, a1, len1, count);
             len1 += count;
             i += count;
@@ -207,7 +207,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
                 a1 = copyOrUse(v1.prefix1, 0, WIDTH);
             }
             case RadixVector.Vector2<?> v2 -> {
-                final Object[] d2 = v2.data2;
+                Object[] d2 = v2.data2;
                 a1 = copyOrUse(v2.suffix1, 0, WIDTH);
                 depth = 2;
                 offset = WIDTH - v2.len1;
@@ -218,8 +218,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
                 a2[d2.length + 1] = a1;
             }
             case RadixVector.Vector3<?> v3 -> {
-                final Object[] d3 = v3.data3;
-                final Object[] s2 = v3.suffix2;
+                Object[] d3 = v3.data3;
+                Object[] s2 = v3.suffix2;
                 a1 = copyOrUse(v3.suffix1, 0, WIDTH);
                 depth = 3;
                 offset = WIDTH2 - v3.len12;
@@ -232,9 +232,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
                 a2[s2.length] = a1;
             }
             case RadixVector.Vector4<?> v4 -> {
-                final Object[] d4 = v4.data4;
-                final Object[] s3 = v4.suffix3;
-                final Object[] s2 = v4.suffix2;
+                Object[] d4 = v4.data4;
+                Object[] s3 = v4.suffix3;
+                Object[] s2 = v4.suffix2;
                 a1 = copyOrUse(v4.suffix1, 0, WIDTH);
                 depth = 4;
                 offset = WIDTH3 - v4.len123;
@@ -249,10 +249,10 @@ public final class VectorBuilder<T extends @Nullable Object> {
                 a2[s2.length] = a1;
             }
             case RadixVector.Vector5<?> v5 -> {
-                final Object[] d5 = v5.data5;
-                final Object[] s4 = v5.suffix4;
-                final Object[] s3 = v5.suffix3;
-                final Object[] s2 = v5.suffix2;
+                Object[] d5 = v5.data5;
+                Object[] s4 = v5.suffix4;
+                Object[] s3 = v5.suffix3;
+                Object[] s2 = v5.suffix2;
                 a1 = copyOrUse(v5.suffix1, 0, WIDTH);
                 depth = 5;
                 offset = WIDTH4 - v5.len1234;
@@ -269,11 +269,11 @@ public final class VectorBuilder<T extends @Nullable Object> {
                 a2[s2.length] = a1;
             }
             case RadixVector.Vector6<?> v6 -> {
-                final Object[] d6 = v6.data6;
-                final Object[] s5 = v6.suffix5;
-                final Object[] s4 = v6.suffix4;
-                final Object[] s3 = v6.suffix3;
-                final Object[] s2 = v6.suffix2;
+                Object[] d6 = v6.data6;
+                Object[] s5 = v6.suffix5;
+                Object[] s4 = v6.suffix4;
+                Object[] s3 = v6.suffix3;
+                Object[] s2 = v6.suffix2;
                 a1 = copyOrUse(v6.suffix1, 0, WIDTH);
                 depth = 6;
                 offset = WIDTH5 - v6.len12345;
@@ -310,8 +310,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
         if (len1 != 0 || lenRest != 0) {
             throw new UnsupportedOperationException("A non-empty VectorBuilder cannot be aligned retrospectively");
         }
-        final int prefixLength;
-        final int maxPrefixLength;
+        int prefixLength;
+        int maxPrefixLength;
         switch (bigVector) {
             case RadixVector.Vector0<?> v0 -> {
                 prefixLength = 0;
@@ -346,8 +346,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
             // no alignment for a vector of at most 32 elements
             return this;
         }
-        final int overallPrefixLength = (int) (((long) before + prefixLength) % maxPrefixLength);
-        final int newOffset = (maxPrefixLength - overallPrefixLength) % maxPrefixLength;
+        int overallPrefixLength = (int) (((long) before + prefixLength) % maxPrefixLength);
+        int newOffset = (maxPrefixLength - overallPrefixLength) % maxPrefixLength;
         if ((long) newOffset + before + bigVector.length() > Integer.MAX_VALUE) {
             // the padding would not fit next to the elements: build without it, and still as an aligned builder, so
             // that the vectors added next are added by addVector, never by initFrom, whose padding would not fit either
@@ -376,7 +376,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
         Object @Nullable [] aParent = null; // a's parent, so that aParent[0] == a
         if (depth >= 6) {
             a = a6;
-            final int i = offset >>> BITS5;
+            int i = offset >>> BITS5;
             if (i > 0) {
                 System.arraycopy(a, i, a, 0, LASTWIDTH - i);
             }
@@ -391,7 +391,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
             if (a == null) {
                 a = a5;
             }
-            final int i = (offset >>> BITS4) & MASK;
+            int i = (offset >>> BITS4) & MASK;
             if (depth == 5) {
                 if (i > 0) {
                     System.arraycopy(a, i, a, 0, WIDTH - i);
@@ -414,7 +414,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
             if (a == null) {
                 a = a4;
             }
-            final int i = (offset >>> BITS3) & MASK;
+            int i = (offset >>> BITS3) & MASK;
             if (depth == 4) {
                 if (i > 0) {
                     System.arraycopy(a, i, a, 0, WIDTH - i);
@@ -437,7 +437,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
             if (a == null) {
                 a = a3;
             }
-            final int i = (offset >>> BITS2) & MASK;
+            int i = (offset >>> BITS2) & MASK;
             if (depth == 3) {
                 if (i > 0) {
                     System.arraycopy(a, i, a, 0, WIDTH - i);
@@ -460,7 +460,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
             if (a == null) {
                 a = a2;
             }
-            final int i = (offset >>> BITS) & MASK;
+            int i = (offset >>> BITS) & MASK;
             if (depth == 2) {
                 if (i > 0) {
                     System.arraycopy(a, i, a, 0, WIDTH - i);
@@ -483,7 +483,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
             if (a == null) {
                 a = a1;
             }
-            final int i = offset & MASK;
+            int i = offset & MASK;
             if (depth == 1) {
                 if (i > 0) {
                     System.arraycopy(a, i, a, 0, WIDTH - i);
@@ -502,20 +502,20 @@ public final class VectorBuilder<T extends @Nullable Object> {
     }
 
     private void shrinkOffsetIfTooLarge(int width) {
-        final int newOffset = offset % width;
+        int newOffset = offset % width;
         lenRest -= offset - newOffset;
         offset = newOffset;
     }
 
     /* appends a leaf of at most WIDTH elements, by at most two array copies */
     private void addArr1(Object[] data) {
-        final int dl = data.length;
+        int dl = data.length;
         if (dl > 0) {
             if (len1 == WIDTH) {
                 advance();
             }
-            final int copy1 = Math.min(WIDTH - len1, dl);
-            final int copy2 = dl - copy1;
+            int copy1 = Math.min(WIDTH - len1, dl);
+            int copy2 = dl - copy1;
             System.arraycopy(data, 0, a1, len1, copy1);
             len1 += copy1;
             if (copy2 > 0) {
@@ -535,13 +535,13 @@ public final class VectorBuilder<T extends @Nullable Object> {
         if (len1 == WIDTH) {
             advance();
         }
-        final int sl = slice.length;
+        int sl = slice.length;
         switch (dim) {
             case 2 -> {
                 // lenRest is always a multiple of WIDTH
-                final int copy1 = Math.min(((WIDTH2 - lenRest) >>> BITS) & MASK, sl);
-                final int copy2 = sl - copy1;
-                final int destPos = (lenRest >>> BITS) & MASK;
+                int copy1 = Math.min(((WIDTH2 - lenRest) >>> BITS) & MASK, sl);
+                int copy2 = sl - copy1;
+                int destPos = (lenRest >>> BITS) & MASK;
                 System.arraycopy(slice, 0, a2, destPos, copy1);
                 advanceN(WIDTH * copy1);
                 if (copy2 > 0) {
@@ -557,9 +557,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
                     }
                     return;
                 }
-                final int copy1 = Math.min(((WIDTH3 - lenRest) >>> BITS2) & MASK, sl);
-                final int copy2 = sl - copy1;
-                final int destPos = (lenRest >>> BITS2) & MASK;
+                int copy1 = Math.min(((WIDTH3 - lenRest) >>> BITS2) & MASK, sl);
+                int copy2 = sl - copy1;
+                int destPos = (lenRest >>> BITS2) & MASK;
                 System.arraycopy(slice, 0, a3, destPos, copy1);
                 advanceN(WIDTH2 * copy1);
                 if (copy2 > 0) {
@@ -574,9 +574,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
                     }
                     return;
                 }
-                final int copy1 = Math.min(((WIDTH4 - lenRest) >>> BITS3) & MASK, sl);
-                final int copy2 = sl - copy1;
-                final int destPos = (lenRest >>> BITS3) & MASK;
+                int copy1 = Math.min(((WIDTH4 - lenRest) >>> BITS3) & MASK, sl);
+                int copy2 = sl - copy1;
+                int destPos = (lenRest >>> BITS3) & MASK;
                 System.arraycopy(slice, 0, a4, destPos, copy1);
                 advanceN(WIDTH3 * copy1);
                 if (copy2 > 0) {
@@ -591,9 +591,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
                     }
                     return;
                 }
-                final int copy1 = Math.min(((WIDTH5 - lenRest) >>> BITS4) & MASK, sl);
-                final int copy2 = sl - copy1;
-                final int destPos = (lenRest >>> BITS4) & MASK;
+                int copy1 = Math.min(((WIDTH5 - lenRest) >>> BITS4) & MASK, sl);
+                int copy2 = sl - copy1;
+                int destPos = (lenRest >>> BITS4) & MASK;
                 System.arraycopy(slice, 0, a5, destPos, copy1);
                 advanceN(WIDTH4 * copy1);
                 if (copy2 > 0) {
@@ -610,7 +610,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
                     return;
                 }
                 // there is no second copy: there is no array above a6 to move to
-                final int destPos = lenRest >>> BITS5;
+                int destPos = lenRest >>> BITS5;
                 if (destPos + sl > LASTWIDTH) {
                     throw new IllegalArgumentException("a Vector cannot hold more than Integer.MAX_VALUE elements");
                 }
@@ -622,10 +622,10 @@ public final class VectorBuilder<T extends @Nullable Object> {
     }
 
     private void addVector(RadixVector<?> xs) {
-        final int sliceCount = xs.vectorSliceCount();
+        int sliceCount = xs.vectorSliceCount();
         for (int sliceIdx = 0; sliceIdx < sliceCount; sliceIdx++) {
-            final Object[] slice = xs.vectorSlice(sliceIdx);
-            final int n = vectorSliceDim(sliceCount, sliceIdx);
+            Object[] slice = xs.vectorSlice(sliceIdx);
+            int n = vectorSliceDim(sliceCount, sliceIdx);
             if (n == 1) {
                 addArr1(slice);
             } else if (len1 == WIDTH || len1 == 0) {
@@ -651,8 +651,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
 
     private void advance() {
         checkOpen();
-        final int idx = lenRest + WIDTH;
-        final int xor = idx ^ lenRest;
+        int idx = lenRest + WIDTH;
+        int xor = idx ^ lenRest;
         lenRest = idx;
         len1 = 0;
         advance1(idx, xor);
@@ -660,8 +660,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
 
     private void advanceN(int n) {
         if (n > 0) {
-            final int idx = lenRest + n;
-            final int xor = idx ^ lenRest;
+            int idx = lenRest + n;
+            int xor = idx ^ lenRest;
             lenRest = idx;
             len1 = 0;
             advance1(idx, xor);
@@ -747,7 +747,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
      */
     public RadixVector<T> result() {
         checkOpen();
-        final RadixVector<T> result = build();
+        RadixVector<T> result = build();
         close();
         return result;
     }
@@ -757,9 +757,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
         if (prefixIsRightAligned) {
             leftAlignPrefix();
         }
-        final int len = len1 + lenRest;
-        final int realLen = len - offset;
-        final RadixVector<T> result;
+        int len = len1 + lenRest;
+        int realLen = len - offset;
+        RadixVector<T> result;
         if (realLen == 0) {
             result = RadixVector.empty();
         } else if (len < 0) {
@@ -767,86 +767,86 @@ public final class VectorBuilder<T extends @Nullable Object> {
         } else if (len <= WIDTH) {
             result = new RadixVector.Vector1<>(copyIfDifferentSize(a1, realLen));
         } else if (len <= WIDTH2) {
-            final int i1 = (len - 1) & MASK;
-            final int i2 = (len - 1) >>> BITS;
-            final Object[] data = Arrays.copyOfRange(a2, 1, i2);
-            final Object[] prefix1 = at(a2, 0);
-            final Object[] suffix1 = copyIfDifferentSize(at(a2, i2), i1 + 1);
+            int i1 = (len - 1) & MASK;
+            int i2 = (len - 1) >>> BITS;
+            Object[] data = Arrays.copyOfRange(a2, 1, i2);
+            Object[] prefix1 = at(a2, 0);
+            Object[] suffix1 = copyIfDifferentSize(at(a2, i2), i1 + 1);
             result = new RadixVector.Vector2<>(prefix1, WIDTH - offset, data, suffix1, realLen);
         } else if (len <= WIDTH3) {
-            final int i1 = (len - 1) & MASK;
-            final int i2 = ((len - 1) >>> BITS) & MASK;
-            final int i3 = (len - 1) >>> BITS2;
-            final Object[] data = Arrays.copyOfRange(a3, 1, i3);
-            final Object[] prefix2 = copyTail(at(a3, 0));
-            final Object[] prefix1 = at(at(a3, 0), 0);
-            final Object[] suffix2 = Arrays.copyOf(at(a3, i3), i2);
-            final Object[] suffix1 = copyIfDifferentSize(at(at(a3, i3), i2), i1 + 1);
-            final int len1 = prefix1.length;
-            final int len12 = len1 + prefix2.length * WIDTH;
+            int i1 = (len - 1) & MASK;
+            int i2 = ((len - 1) >>> BITS) & MASK;
+            int i3 = (len - 1) >>> BITS2;
+            Object[] data = Arrays.copyOfRange(a3, 1, i3);
+            Object[] prefix2 = copyTail(at(a3, 0));
+            Object[] prefix1 = at(at(a3, 0), 0);
+            Object[] suffix2 = Arrays.copyOf(at(a3, i3), i2);
+            Object[] suffix1 = copyIfDifferentSize(at(at(a3, i3), i2), i1 + 1);
+            int len1 = prefix1.length;
+            int len12 = len1 + prefix2.length * WIDTH;
             result = new RadixVector.Vector3<>(prefix1, len1, prefix2, len12, data, suffix2, suffix1, realLen);
         } else if (len <= WIDTH4) {
-            final int i1 = (len - 1) & MASK;
-            final int i2 = ((len - 1) >>> BITS) & MASK;
-            final int i3 = ((len - 1) >>> BITS2) & MASK;
-            final int i4 = (len - 1) >>> BITS3;
-            final Object[] data = Arrays.copyOfRange(a4, 1, i4);
-            final Object[] prefix3 = copyTail(at(a4, 0));
-            final Object[] prefix2 = copyTail(at(at(a4, 0), 0));
-            final Object[] prefix1 = at(at(at(a4, 0), 0), 0);
-            final Object[] suffix3 = Arrays.copyOf(at(a4, i4), i3);
-            final Object[] suffix2 = Arrays.copyOf(at(at(a4, i4), i3), i2);
-            final Object[] suffix1 = copyIfDifferentSize(at(at(at(a4, i4), i3), i2), i1 + 1);
-            final int len1 = prefix1.length;
-            final int len12 = len1 + prefix2.length * WIDTH;
-            final int len123 = len12 + prefix3.length * WIDTH2;
+            int i1 = (len - 1) & MASK;
+            int i2 = ((len - 1) >>> BITS) & MASK;
+            int i3 = ((len - 1) >>> BITS2) & MASK;
+            int i4 = (len - 1) >>> BITS3;
+            Object[] data = Arrays.copyOfRange(a4, 1, i4);
+            Object[] prefix3 = copyTail(at(a4, 0));
+            Object[] prefix2 = copyTail(at(at(a4, 0), 0));
+            Object[] prefix1 = at(at(at(a4, 0), 0), 0);
+            Object[] suffix3 = Arrays.copyOf(at(a4, i4), i3);
+            Object[] suffix2 = Arrays.copyOf(at(at(a4, i4), i3), i2);
+            Object[] suffix1 = copyIfDifferentSize(at(at(at(a4, i4), i3), i2), i1 + 1);
+            int len1 = prefix1.length;
+            int len12 = len1 + prefix2.length * WIDTH;
+            int len123 = len12 + prefix3.length * WIDTH2;
             result = new RadixVector.Vector4<>(
                     prefix1, len1, prefix2, len12, prefix3, len123, data, suffix3, suffix2, suffix1, realLen);
         } else if (len <= WIDTH5) {
-            final int i1 = (len - 1) & MASK;
-            final int i2 = ((len - 1) >>> BITS) & MASK;
-            final int i3 = ((len - 1) >>> BITS2) & MASK;
-            final int i4 = ((len - 1) >>> BITS3) & MASK;
-            final int i5 = (len - 1) >>> BITS4;
-            final Object[] data = Arrays.copyOfRange(a5, 1, i5);
-            final Object[] prefix4 = copyTail(at(a5, 0));
-            final Object[] prefix3 = copyTail(at(at(a5, 0), 0));
-            final Object[] prefix2 = copyTail(at(at(at(a5, 0), 0), 0));
-            final Object[] prefix1 = at(at(at(at(a5, 0), 0), 0), 0);
-            final Object[] suffix4 = Arrays.copyOf(at(a5, i5), i4);
-            final Object[] suffix3 = Arrays.copyOf(at(at(a5, i5), i4), i3);
-            final Object[] suffix2 = Arrays.copyOf(at(at(at(a5, i5), i4), i3), i2);
-            final Object[] suffix1 = copyIfDifferentSize(at(at(at(at(a5, i5), i4), i3), i2), i1 + 1);
-            final int len1 = prefix1.length;
-            final int len12 = len1 + prefix2.length * WIDTH;
-            final int len123 = len12 + prefix3.length * WIDTH2;
-            final int len1234 = len123 + prefix4.length * WIDTH3;
+            int i1 = (len - 1) & MASK;
+            int i2 = ((len - 1) >>> BITS) & MASK;
+            int i3 = ((len - 1) >>> BITS2) & MASK;
+            int i4 = ((len - 1) >>> BITS3) & MASK;
+            int i5 = (len - 1) >>> BITS4;
+            Object[] data = Arrays.copyOfRange(a5, 1, i5);
+            Object[] prefix4 = copyTail(at(a5, 0));
+            Object[] prefix3 = copyTail(at(at(a5, 0), 0));
+            Object[] prefix2 = copyTail(at(at(at(a5, 0), 0), 0));
+            Object[] prefix1 = at(at(at(at(a5, 0), 0), 0), 0);
+            Object[] suffix4 = Arrays.copyOf(at(a5, i5), i4);
+            Object[] suffix3 = Arrays.copyOf(at(at(a5, i5), i4), i3);
+            Object[] suffix2 = Arrays.copyOf(at(at(at(a5, i5), i4), i3), i2);
+            Object[] suffix1 = copyIfDifferentSize(at(at(at(at(a5, i5), i4), i3), i2), i1 + 1);
+            int len1 = prefix1.length;
+            int len12 = len1 + prefix2.length * WIDTH;
+            int len123 = len12 + prefix3.length * WIDTH2;
+            int len1234 = len123 + prefix4.length * WIDTH3;
             result = new RadixVector.Vector5<>(
                     prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, data, suffix4, suffix3, suffix2,
                     suffix1, realLen);
         } else {
-            final int i1 = (len - 1) & MASK;
-            final int i2 = ((len - 1) >>> BITS) & MASK;
-            final int i3 = ((len - 1) >>> BITS2) & MASK;
-            final int i4 = ((len - 1) >>> BITS3) & MASK;
-            final int i5 = ((len - 1) >>> BITS4) & MASK;
-            final int i6 = (len - 1) >>> BITS5;
-            final Object[] data = Arrays.copyOfRange(a6, 1, i6);
-            final Object[] prefix5 = copyTail(at(a6, 0));
-            final Object[] prefix4 = copyTail(at(at(a6, 0), 0));
-            final Object[] prefix3 = copyTail(at(at(at(a6, 0), 0), 0));
-            final Object[] prefix2 = copyTail(at(at(at(at(a6, 0), 0), 0), 0));
-            final Object[] prefix1 = at(at(at(at(at(a6, 0), 0), 0), 0), 0);
-            final Object[] suffix5 = Arrays.copyOf(at(a6, i6), i5);
-            final Object[] suffix4 = Arrays.copyOf(at(at(a6, i6), i5), i4);
-            final Object[] suffix3 = Arrays.copyOf(at(at(at(a6, i6), i5), i4), i3);
-            final Object[] suffix2 = Arrays.copyOf(at(at(at(at(a6, i6), i5), i4), i3), i2);
-            final Object[] suffix1 = copyIfDifferentSize(at(at(at(at(at(a6, i6), i5), i4), i3), i2), i1 + 1);
-            final int len1 = prefix1.length;
-            final int len12 = len1 + prefix2.length * WIDTH;
-            final int len123 = len12 + prefix3.length * WIDTH2;
-            final int len1234 = len123 + prefix4.length * WIDTH3;
-            final int len12345 = len1234 + prefix5.length * WIDTH4;
+            int i1 = (len - 1) & MASK;
+            int i2 = ((len - 1) >>> BITS) & MASK;
+            int i3 = ((len - 1) >>> BITS2) & MASK;
+            int i4 = ((len - 1) >>> BITS3) & MASK;
+            int i5 = ((len - 1) >>> BITS4) & MASK;
+            int i6 = (len - 1) >>> BITS5;
+            Object[] data = Arrays.copyOfRange(a6, 1, i6);
+            Object[] prefix5 = copyTail(at(a6, 0));
+            Object[] prefix4 = copyTail(at(at(a6, 0), 0));
+            Object[] prefix3 = copyTail(at(at(at(a6, 0), 0), 0));
+            Object[] prefix2 = copyTail(at(at(at(at(a6, 0), 0), 0), 0));
+            Object[] prefix1 = at(at(at(at(at(a6, 0), 0), 0), 0), 0);
+            Object[] suffix5 = Arrays.copyOf(at(a6, i6), i5);
+            Object[] suffix4 = Arrays.copyOf(at(at(a6, i6), i5), i4);
+            Object[] suffix3 = Arrays.copyOf(at(at(at(a6, i6), i5), i4), i3);
+            Object[] suffix2 = Arrays.copyOf(at(at(at(at(a6, i6), i5), i4), i3), i2);
+            Object[] suffix1 = copyIfDifferentSize(at(at(at(at(at(a6, i6), i5), i4), i3), i2), i1 + 1);
+            int len1 = prefix1.length;
+            int len12 = len1 + prefix2.length * WIDTH;
+            int len123 = len12 + prefix3.length * WIDTH2;
+            int len1234 = len123 + prefix4.length * WIDTH3;
+            int len12345 = len1234 + prefix5.length * WIDTH4;
             result = new RadixVector.Vector6<>(
                     prefix1, len1, prefix2, len12, prefix3, len123, prefix4, len1234, prefix5, len12345, data, suffix5,
                     suffix4, suffix3, suffix2, suffix1, realLen);

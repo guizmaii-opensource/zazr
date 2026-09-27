@@ -51,11 +51,11 @@ public final class HashMapBuilder<K extends @Nullable Object, V extends @Nullabl
     }
 
     private void putAllOf(MapNode<K, V> node) {
-        final int payload = node.payloadArity();
+        int payload = node.payloadArity();
         for (int i = 0; i < payload; i++) {
             root = root.putInPlace(owner, node.getKey(i), node.getValue(i), node.getHash(i), 0);
         }
-        final int children = node.nodeArity();
+        int children = node.nodeArity();
         for (int i = 0; i < children; i++) {
             putAllOf(node.getNode(i));
         }
@@ -71,7 +71,7 @@ public final class HashMapBuilder<K extends @Nullable Object, V extends @Nullabl
     public BitmapIndexedMapNode<K, V> result() {
         checkOpen();
         done = true;
-        final BitmapIndexedMapNode<K, V> trie = root;
+        BitmapIndexedMapNode<K, V> trie = root;
         root = MapNode.empty();
         // the owned nodes were written through non-final fields: order those writes before the publication of the
         // trie, as the end of a constructor does for final fields (Scala's HashMapBuilder.result does the same)

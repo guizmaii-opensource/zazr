@@ -99,7 +99,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
             Tuple2<? extends K, ? extends V> head, Tuple2<? extends K, ? extends V>... tail) {
         Objects.requireNonNull(head, "NonEmptyMap: head is null");
         Objects.requireNonNull(tail, "NonEmptyMap: tail is null");
-        final HashMap.Builder<K, V> builder = HashMap.newBuilder();
+        HashMap.Builder<K, V> builder = HashMap.newBuilder();
         put(builder, head);
         for (Tuple2<? extends K, ? extends V> entry : tail) {
             put(builder, entry);
@@ -122,7 +122,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
             Tuple2<? extends K, ? extends V> head, Iterable<? extends Tuple2<? extends K, ? extends V>> tail) {
         Objects.requireNonNull(head, "NonEmptyMap: head is null");
         Objects.requireNonNull(tail, "NonEmptyMap: tail is null");
-        final HashMap.Builder<K, V> builder = HashMap.newBuilder();
+        HashMap.Builder<K, V> builder = HashMap.newBuilder();
         put(builder, head);
         return new NonEmptyMap<>(putAll(builder, tail).result());
     }
@@ -216,13 +216,13 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
                     String method) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final HashMap.Builder<K, V> builder = HashMap.newBuilder();
+        HashMap.Builder<K, V> builder = HashMap.newBuilder();
         for (T element : nonEmpty) {
-            final K key = keyMapper.apply(element);
+            K key = keyMapper.apply(element);
             if (key == null) {
                 throw new NullPointerException(method + ": keyMapper returned null");
             }
-            final V value = valueMapper.apply(element);
+            V value = valueMapper.apply(element);
             if (value == null) {
                 throw new NullPointerException(method + ": valueMapper returned null");
             }
@@ -239,9 +239,9 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
                     Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f,
                     String method) {
         Objects.requireNonNull(f, "f is null");
-        final HashMap.Builder<K, V> builder = HashMap.newBuilder();
+        HashMap.Builder<K, V> builder = HashMap.newBuilder();
         for (T element : nonEmpty) {
-            final Tuple2<? extends K, ? extends V> entry = f.apply(element);
+            Tuple2<? extends K, ? extends V> entry = f.apply(element);
             if (entry == null) {
                 throw new NullPointerException(method + ": f returned null");
             }
@@ -346,7 +346,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * @throws NullPointerException if {@code mappingFunction} is null or returns null
      */
     public Tuple2<V, NonEmptyMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        final Tuple2<V, HashMap<K, V>> result = map.computeIfAbsent(key, mappingFunction);
+        Tuple2<V, HashMap<K, V>> result = map.computeIfAbsent(key, mappingFunction);
         return Tuple.of(result._1(), wrap(result._2()));
     }
 
@@ -358,7 +358,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      */
     public Tuple2<Option<V>, NonEmptyMap<K, V>> computeIfPresent(
             K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        final Tuple2<Option<V>, HashMap<K, V>> result = map.computeIfPresent(key, remappingFunction);
+        Tuple2<Option<V>, HashMap<K, V>> result = map.computeIfPresent(key, remappingFunction);
         return Tuple.of(result._1(), wrap(result._2()));
     }
 
@@ -437,7 +437,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public <K2 extends @Nullable Object, V2 extends @Nullable Object> NonEmptyMap<K2, V2> flatMap(
             BiFunction<? super K, ? super V, ? extends NonEmptyMap<? extends K2, ? extends V2>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final HashMap.Builder<K2, V2> builder = HashMap.newBuilder();
+        HashMap.Builder<K2, V2> builder = HashMap.newBuilder();
         for (Tuple2<K, V> entry : map) {
             builder.putAll(Objects.requireNonNull(
                             mapper.apply(entry._1(), entry._2()), "NonEmptyMap.flatMap: mapper returned null")
@@ -528,7 +528,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * @return the keys, a non-empty set
      */
     public NonEmptySet<K> keySet() {
-        final Set<K> keys = map.keySet();
+        Set<K> keys = map.keySet();
         return NonEmptySet.unsafeFromSet(keys instanceof HashSet<K> hashSet ? hashSet : HashSet.ofAll(keys));
     }
 
@@ -551,7 +551,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      */
     public <C extends @Nullable Object> NonEmptyMap<C, NonEmptyMap<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
-        final HashMap.Builder<C, NonEmptyMap<K, V>> groups = HashMap.newBuilder();
+        HashMap.Builder<C, NonEmptyMap<K, V>> groups = HashMap.newBuilder();
         Objects.requireNonNull(classifier, "classifier is null");
         for (Tuple2<C, HashMap<K, V>> group : map.<C>groupBy(element ->
                 Objects.requireNonNull(classifier.apply(element), "NonEmptyMap.groupBy: classifier returned null"))) {

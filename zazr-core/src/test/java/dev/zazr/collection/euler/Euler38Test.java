@@ -64,7 +64,7 @@ public class Euler38Test {
 
     private static boolean isPandigitalMultipleRest(
             Vector<Character> pandigitalRest, int multiplicand, int multiplicator) {
-        final int length = pandigitalRest.size();
+        int length = pandigitalRest.size();
         if (length == 0) {
             return true;
         }

@@ -138,7 +138,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(head, "NonEmptySortedMap: head is null");
         Objects.requireNonNull(tail, "NonEmptySortedMap: tail is null");
-        final TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
+        TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
         put(builder, head);
         for (Tuple2<? extends K, ? extends V> entry : tail) {
             put(builder, entry);
@@ -181,7 +181,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(head, "NonEmptySortedMap: head is null");
         Objects.requireNonNull(tail, "NonEmptySortedMap: tail is null");
-        final TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
+        TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
         put(builder, head);
         return new NonEmptySortedMap<>(putAll(builder, tail).result());
     }
@@ -291,13 +291,13 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
         Objects.requireNonNull(keyComparator, "comparator is null");
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
+        TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
         for (T element : nonEmpty) {
-            final K key = keyMapper.apply(element);
+            K key = keyMapper.apply(element);
             if (key == null) {
                 throw new NullPointerException(method + ": keyMapper returned null");
             }
-            final V value = valueMapper.apply(element);
+            V value = valueMapper.apply(element);
             if (value == null) {
                 throw new NullPointerException(method + ": valueMapper returned null");
             }
@@ -316,9 +316,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
                     String method) {
         Objects.requireNonNull(keyComparator, "comparator is null");
         Objects.requireNonNull(f, "f is null");
-        final TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
+        TreeMap.Builder<K, V> builder = TreeMap.newBuilder(keyComparator);
         for (T element : nonEmpty) {
-            final Tuple2<? extends K, ? extends V> entry = f.apply(element);
+            Tuple2<? extends K, ? extends V> entry = f.apply(element);
             if (entry == null) {
                 throw new NullPointerException(method + ": f returned null");
             }
@@ -424,7 +424,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @throws NullPointerException if {@code mappingFunction} is null or returns null
      */
     public Tuple2<V, NonEmptySortedMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        final Tuple2<V, TreeMap<K, V>> result = map.computeIfAbsent(key, mappingFunction);
+        Tuple2<V, TreeMap<K, V>> result = map.computeIfAbsent(key, mappingFunction);
         return Tuple.of(result._1(), wrap(result._2()));
     }
 
@@ -436,7 +436,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     public Tuple2<Option<V>, NonEmptySortedMap<K, V>> computeIfPresent(
             K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        final Tuple2<Option<V>, TreeMap<K, V>> result = map.computeIfPresent(key, remappingFunction);
+        Tuple2<Option<V>, TreeMap<K, V>> result = map.computeIfPresent(key, remappingFunction);
         return Tuple.of(result._1(), wrap(result._2()));
     }
 
@@ -569,7 +569,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
             BiFunction<? super K, ? super V, ? extends NonEmptySortedMap<? extends K2, ? extends V2>> mapper) {
         Objects.requireNonNull(keyComparator, "keyComparator is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final TreeMap.Builder<K2, V2> builder = TreeMap.newBuilder(keyComparator);
+        TreeMap.Builder<K2, V2> builder = TreeMap.newBuilder(keyComparator);
         for (Tuple2<K, V> entry : map) {
             builder.putAll(Objects.requireNonNull(
                             mapper.apply(entry._1(), entry._2()), "NonEmptySortedMap.flatMap: mapper returned null")
@@ -660,7 +660,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * @return the keys, a non-empty set with this map's comparator
      */
     public NonEmptySortedSet<K> keySet() {
-        final SortedSet<K> keys = map.keySet();
+        SortedSet<K> keys = map.keySet();
         return NonEmptySortedSet.unsafeFromSortedSet(
                 keys instanceof TreeSet<K> treeSet ? treeSet : TreeSet.ofAll(map.comparator(), keys));
     }
@@ -684,7 +684,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     public <C extends @Nullable Object> NonEmptyMap<C, NonEmptySortedMap<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
-        final HashMap.Builder<C, NonEmptySortedMap<K, V>> groups = HashMap.newBuilder();
+        HashMap.Builder<C, NonEmptySortedMap<K, V>> groups = HashMap.newBuilder();
         Objects.requireNonNull(classifier, "classifier is null");
         for (Tuple2<C, TreeMap<K, V>> group : map.<C>groupBy(element -> Objects.requireNonNull(
                 classifier.apply(element), "NonEmptySortedMap.groupBy: classifier returned null"))) {

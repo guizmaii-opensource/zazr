@@ -18,7 +18,7 @@ public class Euler31Test {
 
     @Test
     public void shouldSolveProblem31() {
-        final List<Integer> coins = List.of(1, 2, 5, 10, 20, 50, 100, 200);
+        List<Integer> coins = List.of(1, 2, 5, 10, 20, 50, 100, 200);
         assertThat(coinSums(200, coins)).isEqualTo(73682);
     }
 

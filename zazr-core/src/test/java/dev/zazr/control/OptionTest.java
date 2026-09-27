@@ -27,8 +27,8 @@ public class OptionTest {
     class NarrowTests {
         @Test
         public void shouldNarrowOption() {
-            final Option<Integer> option = Option.some(42);
-            final Option<Number> narrow = Option.narrow(option);
+            Option<Integer> option = Option.some(42);
+            Option<Number> narrow = Option.narrow(option);
             assertThat(narrow.get()).isEqualTo(42);
         }
     }
@@ -42,7 +42,7 @@ public class OptionTest {
 
         @Test
         public void shouldMapNonNullToSome() {
-            final Option<?> option = Option.some(new Object());
+            Option<?> option = Option.some(new Object());
             assertThat(option.isDefined()).isTrue();
         }
 
@@ -112,9 +112,9 @@ public class OptionTest {
     class CollectAllTests {
         @Test
         public void shouldConvertListOfNonEmptyOptionsToOptionOfList() {
-            final java.util.List<Option<String>> options =
+            java.util.List<Option<String>> options =
                     Arrays.asList(Option.some("a"), Option.some("b"), Option.some("c"));
-            final Option<Vector<String>> reducedOption = Option.collectAll(options);
+            Option<Vector<String>> reducedOption = Option.collectAll(options);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
             assertThat(reducedOption.get().mkString()).isEqualTo("abc");
@@ -122,16 +122,15 @@ public class OptionTest {
 
         @Test
         public void shouldConvertListOfEmptyOptionsToOptionOfList() {
-            final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
-            final Option<Vector<String>> option = Option.collectAll(options);
+            java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
+            Option<Vector<String>> option = Option.collectAll(options);
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
         public void shouldConvertListOfMixedOptionsToOptionOfList() {
-            final java.util.List<Option<String>> options =
-                    Arrays.asList(Option.some("a"), Option.none(), Option.some("c"));
-            final Option<Vector<String>> option = Option.collectAll(options);
+            java.util.List<Option<String>> options = Arrays.asList(Option.some("a"), Option.none(), Option.some("c"));
+            Option<Vector<String>> option = Option.collectAll(options);
             assertThat(option instanceof Option.None).isTrue();
         }
     }
@@ -140,8 +139,8 @@ public class OptionTest {
     class ForEachIterableTests {
         @Test
         public void shouldForEachListOfNonEmptyOptionsToOptionOfList() {
-            final java.util.List<String> options = Arrays.asList("a", "b", "c");
-            final Option<Vector<String>> reducedOption = Option.forEach(options, Option::some);
+            java.util.List<String> options = Arrays.asList("a", "b", "c");
+            Option<Vector<String>> reducedOption = Option.forEach(options, Option::some);
             assertThat(reducedOption instanceof Option.Some).isTrue();
             assertThat(reducedOption.get().size()).isEqualTo(3);
             assertThat(reducedOption.get().mkString()).isEqualTo("abc");
@@ -149,15 +148,15 @@ public class OptionTest {
 
         @Test
         public void shouldForEachListOfEmptyOptionsToOptionOfList() {
-            final java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
-            final Option<Vector<String>> option = Option.forEach(options, Function.identity());
+            java.util.List<Option<String>> options = Arrays.asList(Option.none(), Option.none(), Option.none());
+            Option<Vector<String>> option = Option.forEach(options, Function.identity());
             assertThat(option instanceof Option.None).isTrue();
         }
 
         @Test
         public void shouldForEachListOfMixedOptionsToOptionOfList() {
-            final java.util.List<String> options = Arrays.asList("a", "b", "c");
-            final Option<Vector<String>> option =
+            java.util.List<String> options = Arrays.asList("a", "b", "c");
+            Option<Vector<String>> option =
                     Option.forEach(options, x -> x.equals("b") ? Option.none() : Option.some(x));
             assertThat(option instanceof Option.None).isTrue();
         }
@@ -180,25 +179,25 @@ public class OptionTest {
     class OrelseTests {
         @Test
         public void shouldReturnSelfOnOrElseIfValueIsPresent() {
-            final Option<Integer> opt = Option.some(42);
+            Option<Integer> opt = Option.some(42);
             assertThat(opt.orElse(Option.some(0))).isSameAs(opt);
         }
 
         @Test
         public void shouldReturnSelfOnOrElseSupplierIfValueIsPresent() {
-            final Option<Integer> opt = Option.some(42);
+            Option<Integer> opt = Option.some(42);
             assertThat(opt.orElse(() -> Option.some(0))).isSameAs(opt);
         }
 
         @Test
         public void shouldReturnAlternativeOnOrElseIfValueIsNotDefined() {
-            final Option<Integer> opt = Option.some(42);
+            Option<Integer> opt = Option.some(42);
             assertThat(Option.none().orElse(opt)).isSameAs(opt);
         }
 
         @Test
         public void shouldReturnAlternativeOnOrElseSupplierIfValueIsNotDefined() {
-            final Option<Integer> opt = Option.some(42);
+            Option<Integer> opt = Option.some(42);
             assertThat(Option.none().orElse(() -> opt)).isSameAs(opt);
         }
     }
@@ -244,7 +243,7 @@ public class OptionTest {
 
         @Test
         public void shouldThrowOnNullSupplier() {
-            final Supplier<Integer> supplier = null;
+            Supplier<Integer> supplier = null;
             assertThrows(
                     NullPointerException.class, () -> Option.<Integer>none().getOrElse(supplier));
         }
@@ -314,7 +313,7 @@ public class OptionTest {
         @Test
         public void shouldThrowNullPointerExceptionWhenNullTapNoneActionPassed() {
             try {
-                final Option<String> none = Option.none();
+                Option<String> none = Option.none();
                 none.tapNone(null);
                 Assertions.fail("No exception was thrown");
             } catch (NullPointerException exc) {
@@ -324,8 +323,8 @@ public class OptionTest {
 
         @Test
         public void shouldExecuteRunnableWhenOptionIsEmpty() {
-            final AtomicBoolean state = new AtomicBoolean();
-            final Option<?> option = Option.none().tapNone(() -> state.set(false));
+            AtomicBoolean state = new AtomicBoolean();
+            Option<?> option = Option.none().tapNone(() -> state.set(false));
             assertThat(state.get()).isFalse();
             assertThat(option).isSameAs(Option.none());
         }
@@ -333,7 +332,7 @@ public class OptionTest {
         @Test
         public void shouldNotRunTapNoneActionOnSome() {
             try {
-                final Option<String> none = Option.some("value");
+                Option<String> none = Option.some("value");
                 none.tapNone(() -> {
                     throw new RuntimeException("Exception from empty option!");
                 });
@@ -428,13 +427,13 @@ public class OptionTest {
 
         @Test
         public void shouldFlatMapToSome() {
-            final Option<Integer> option = Option.some(2);
+            Option<Integer> option = Option.some(2);
             assertThat(Option.some(1).flatMap(i -> option)).isEqualTo(Option.some(2));
         }
 
         @Test
         public void shouldFlatMapToNone() {
-            final Option<Integer> option = Option.none();
+            Option<Integer> option = Option.none();
             assertThat(Option.some(1).flatMap(i -> option)).isEqualTo(Option.none());
         }
     }
@@ -513,14 +512,14 @@ public class OptionTest {
     class ForEachConsumerTests {
         @Test
         public void shouldConsumePresentValueOnForEachWhenValueIsDefined() {
-            final int[] actual = new int[] {-1};
+            int[] actual = new int[] {-1};
             Option.some(1).forEach(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(1);
         }
 
         @Test
         public void shouldNotConsumeAnythingOnForEachWhenValueIsNotDefined() {
-            final int[] actual = new int[] {-1};
+            int[] actual = new int[] {-1};
             Option.<Integer>none().forEach(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(-1);
         }
@@ -572,7 +571,7 @@ public class OptionTest {
 
         @Test
         public void shouldMakeFailureOnNoneToTry() {
-            final Exception x = new Exception("test");
+            Exception x = new Exception("test");
             assertThat(Option.none().toTry(() -> x)).isEqualTo(Try.failure(x));
         }
 
@@ -663,13 +662,13 @@ public class OptionTest {
     class TooptionalTests {
         @Test
         public void shouldConvertNoneToOptional() {
-            final Option<Object> none = Option.none();
+            Option<Object> none = Option.none();
             assertThat(none.toOptional()).isEqualTo(Optional.empty());
         }
 
         @Test
         public void shouldConvertSomeToOptional() {
-            final Option<Integer> some = Option.some(1);
+            Option<Integer> some = Option.some(1);
             assertThat(some.toOptional()).isEqualTo(Optional.of(1));
         }
     }
@@ -696,23 +695,23 @@ public class OptionTest {
     class TapTests {
         @Test
         public void shouldConsumePresentValueOnTapWhenValueIsDefined() {
-            final int[] actual = new int[] {-1};
-            final Option<Integer> testee = Option.some(1).tap(i -> actual[0] = i);
+            int[] actual = new int[] {-1};
+            Option<Integer> testee = Option.some(1).tap(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(1);
             assertThat(testee).isEqualTo(Option.some(1));
         }
 
         @Test
         public void shouldNotConsumeAnythingOnTapWhenValueIsNotDefined() {
-            final int[] actual = new int[] {-1};
-            final Option<Integer> testee = Option.<Integer>none().tap(i -> actual[0] = i);
+            int[] actual = new int[] {-1};
+            Option<Integer> testee = Option.<Integer>none().tap(i -> actual[0] = i);
             assertThat(actual[0]).isEqualTo(-1);
             assertThat(testee).isEqualTo(Option.none());
         }
 
         @Test
         public void shouldReturnTheSameInstance() {
-            final Option<Integer> some = Option.some(1);
+            Option<Integer> some = Option.some(1);
             assertThat(some.tap(i -> {})).isSameAs(some);
             assertThat(Option.none().tap(i -> {})).isSameAs(Option.none());
         }
@@ -727,13 +726,13 @@ public class OptionTest {
     class EqualsTests {
         @Test
         public void shouldEqualNoneIfObjectIsSame() {
-            final Option<?> none = Option.none();
+            Option<?> none = Option.none();
             assertThat(none).isEqualTo(none);
         }
 
         @Test
         public void shouldEqualSomeIfObjectIsSame() {
-            final Option<?> some = Option.some(1);
+            Option<?> some = Option.some(1);
             assertThat(some).isEqualTo(some);
         }
 
@@ -749,13 +748,13 @@ public class OptionTest {
 
         @Test
         public void shouldNotEqualNoneIfObjectIsOfDifferentType() {
-            final Object none = Option.none();
+            Object none = Option.none();
             assertThat(none.equals(new Object())).isFalse();
         }
 
         @Test
         public void shouldNotEqualSomeIfObjectIsOfDifferentType() {
-            final Object some = Option.some(1);
+            Object some = Option.some(1);
             assertThat(some.equals(new Object())).isFalse();
         }
 
@@ -853,8 +852,8 @@ public class OptionTest {
 
         @Test
         public void shouldCollectWithASwitchInsideTheLambda() {
-            final Option<Object> shape = Option.some("circle");
-            final Option<Integer> actual = shape.collect(s -> switch (s) {
+            Option<Object> shape = Option.some("circle");
+            Option<Integer> actual = shape.collect(s -> switch (s) {
                 case String str -> Option.some(str.length());
                 default -> Option.none();
             });
@@ -891,7 +890,7 @@ public class OptionTest {
 
         @Test
         public void shouldCombineWithZipWith() {
-            final AtomicInteger calls = new AtomicInteger();
+            AtomicInteger calls = new AtomicInteger();
             assertThat(Option.some(1).zipWith(Option.some(2), (a, b) -> {
                         calls.incrementAndGet();
                         return a + b;
@@ -902,7 +901,7 @@ public class OptionTest {
 
         @Test
         public void shouldNotCallTheCombinerUnlessBothAreSome() {
-            final BiFunction<Integer, Integer, Integer> notCalled = (_, _) -> {
+            BiFunction<Integer, Integer, Integer> notCalled = (_, _) -> {
                 throw new AssertionError("must not be called");
             };
             assertThat(Option.some(1).zipWith(Option.none(), notCalled)).isEqualTo(Option.none());
@@ -920,7 +919,7 @@ public class OptionTest {
 
         @Test
         public void shouldKeepTheLeftValueWithZipLeft() {
-            final Option<Integer> some = Option.some(1);
+            Option<Integer> some = Option.some(1);
             assertThat(some.zipLeft(Option.some("a"))).isSameAs(some);
             assertThat(some.zipLeft(Option.none())).isEqualTo(Option.none());
             assertThat(Option.<Integer>none().zipLeft(Option.some("a"))).isEqualTo(Option.none());
@@ -929,7 +928,7 @@ public class OptionTest {
 
         @Test
         public void shouldKeepTheRightValueWithZipRight() {
-            final Option<String> some = Option.some("a");
+            Option<String> some = Option.some("a");
             assertThat(Option.some(1).zipRight(some)).isSameAs(some);
             assertThat(Option.some(1).zipRight(Option.none())).isEqualTo(Option.none());
             assertThat(Option.<Integer>none().zipRight(some)).isEqualTo(Option.none());
@@ -938,7 +937,7 @@ public class OptionTest {
 
         @Test
         public void shouldRejectNulls() {
-            final Option<Integer> some = Option.some(1);
+            Option<Integer> some = Option.some(1);
             assertThatThrownBy(() -> some.zip(null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("that is null");
@@ -964,7 +963,7 @@ public class OptionTest {
 
         @Test
         public void shouldFlattenEveryCombination() {
-            final Option<Integer> inner = Option.some(1);
+            Option<Integer> inner = Option.some(1);
             assertThat(Option.flatten(Option.some(inner))).isSameAs(inner);
             assertThat(Option.flatten(Option.some(Option.<Integer>none()))).isSameAs(Option.none());
             assertThat(Option.flatten(Option.<Option<Integer>>none())).isSameAs(Option.none());
@@ -972,13 +971,13 @@ public class OptionTest {
 
         @Test
         public void shouldRemoveOneLevelOnly() {
-            final Option<Option<Integer>> twice = Option.some(Option.some(1));
+            Option<Option<Integer>> twice = Option.some(Option.some(1));
             assertThat(Option.flatten(Option.some(twice))).isSameAs(twice);
         }
 
         @Test
         public void shouldWidenTheValueType() {
-            final Option<Number> number = Option.flatten(Option.some(Option.some(1)));
+            Option<Number> number = Option.flatten(Option.some(Option.some(1)));
             assertThat(number).isEqualTo(Option.some(1));
         }
 

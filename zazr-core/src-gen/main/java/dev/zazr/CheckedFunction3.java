@@ -105,7 +105,7 @@ public interface CheckedFunction3<
                     CheckedFunction3<? super T1, ? super T2, ? super T3, ? extends R> partialFunction) {
         return (t1, t2, t3) -> {
             try {
-                final R result = partialFunction.apply(t1, t2, t3);
+                R result = partialFunction.apply(t1, t2, t3);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {
@@ -231,9 +231,9 @@ public interface CheckedFunction3<
                 if (isFatal(throwable)) {
                     return sneakyThrow(throwable);
                 }
-                final Function3<? super T1, ? super T2, ? super T3, ? extends R> func = recover.apply(throwable);
+                Function3<? super T1, ? super T2, ? super T3, ? extends R> func = recover.apply(throwable);
                 if (func == null) {
-                    final NullPointerException nullResult =
+                    NullPointerException nullResult =
                             new NullPointerException("CheckedFunction3.recover: recover returned null");
                     nullResult.initCause(throwable);
                     throw nullResult;

@@ -74,10 +74,10 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * @return A dev.zazr.collection.HashSet Collector.
      */
     public static <T extends @Nullable Object> Collector<T, Builder<T>, HashSet<T>> collector() {
-        final Supplier<Builder<T>> supplier = HashSet::newBuilder;
-        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
-        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
-        final Function<Builder<T>, HashSet<T>> finisher = Builder::result;
+        Supplier<Builder<T>> supplier = HashSet::newBuilder;
+        BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        Function<Builder<T>, HashSet<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -174,7 +174,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         } else if (JavaConverters.underlying(elements) instanceof HashSet<?> underlying) {
             return (HashSet<T>) underlying;
         } else {
-            final HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
+            HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
             for (T element : elements) {
                 Objects.requireNonNull(element, "HashSet: element is null");
                 builder.add(element);
@@ -649,7 +649,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public HashSet<T> add(T element) {
         Objects.requireNonNull(element, "HashSet.add: element is null");
-        final BitmapIndexedSetNode<T> result = tree.updated(element, false);
+        BitmapIndexedSetNode<T> result = tree.updated(element, false);
         return result == tree ? this : new HashSet<>(result);
     }
 
@@ -665,14 +665,14 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         Objects.requireNonNull(elements, "elements is null");
         if (isEmpty() && elements instanceof HashSet) {
             @SuppressWarnings("unchecked")
-            final HashSet<T> set = (HashSet<T>) elements;
+            HashSet<T> set = (HashSet<T>) elements;
             return set;
         } else if (elements instanceof HashSet<?> set) {
             @SuppressWarnings("unchecked")
-            final HashSet<T> that = (HashSet<T>) set;
+            HashSet<T> that = (HashSet<T>) set;
             return concat(that);
         }
-        final BitmapIndexedSetNode<T> that = addAll(tree, elements);
+        BitmapIndexedSetNode<T> that = addAll(tree, elements);
         if (that.size() == tree.size()) {
             return this;
         } else {
@@ -732,7 +732,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
 
     // the elements for which the predicate answers `keep`, filtered node by node; this set when that is all of them
     private HashSet<T> filtered(Predicate<? super T> predicate, boolean keep) {
-        final BitmapIndexedSetNode<T> result = tree.filter(predicate, keep);
+        BitmapIndexedSetNode<T> result = tree.filter(predicate, keep);
         return (result == tree && result.size() != 0) ? this : wrap(result);
     }
 
@@ -742,7 +742,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (that.isEmpty()) {
             return this;
         }
-        final BitmapIndexedSetNode<T> result = that.tree.concat(tree, 0);
+        BitmapIndexedSetNode<T> result = that.tree.concat(tree, 0);
         return result.size() == tree.size() ? this : new HashSet<>(result);
     }
 
@@ -757,7 +757,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         Objects.requireNonNull(elements, "elements is null");
         if (elements instanceof HashSet<?> set) {
             @SuppressWarnings("unchecked")
-            final HashSet<T> that = (HashSet<T>) set;
+            HashSet<T> that = (HashSet<T>) set;
             return that.isEmpty() || (that.size() <= size() && that.tree.subsetOf(tree, 0));
         }
         return Set.super.containsAll(elements);
@@ -770,7 +770,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            final BitmapIndexedSetNode<U> that = foldLeft(
+            BitmapIndexedSetNode<U> that = foldLeft(
                     SetNode.empty(),
                     (tree, t) -> addAll(
                             tree, Objects.requireNonNull(mapper.apply(t), "HashSet.flatMap: mapper returned null")));
@@ -795,19 +795,19 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty() || elements.isEmpty()) {
             return empty();
         } else {
-            final int size = size();
+            int size = size();
             if (size <= elements.size()) {
                 return retainAll(elements);
             } else {
                 // the smaller side is walked, and the element of this set kept for each of its elements
-                final HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
+                HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
                 for (T element : elements) {
-                    final T kept = tree.find(element);
+                    T kept = tree.find(element);
                     if (kept != null) {
                         builder.add(kept);
                     }
                 }
-                final BitmapIndexedSetNode<T> result = builder.result();
+                BitmapIndexedSetNode<T> result = builder.result();
                 return (size == result.size()) ? this : wrap(result);
             }
         }
@@ -865,8 +865,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return empty();
         } else {
-            final BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(), (tree, t) -> {
-                final U u = mapper.apply(t);
+            BitmapIndexedSetNode<U> that = foldLeft(SetNode.empty(), (tree, t) -> {
+                U u = mapper.apply(t);
                 return put(tree, u);
             });
             return new HashSet<>(that);
@@ -881,10 +881,10 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
         BitmapIndexedSetNode<U> that = SetNode.empty();
         for (T t : this) {
-            final Option<? extends U> collected =
+            Option<? extends U> collected =
                     Objects.requireNonNull(mapper.apply(t), "HashSet.collect: mapper returned null");
             if (collected.isDefined()) {
-                final U u = collected.get();
+                U u = collected.get();
                 that = put(that, u);
             }
         }
@@ -956,7 +956,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public HashSet<T> remove(T element) {
-        final BitmapIndexedSetNode<T> newTree = tree.removed(element);
+        BitmapIndexedSetNode<T> newTree = tree.removed(element);
         return (newTree == tree) ? this : wrap(newTree);
     }
 
@@ -972,9 +972,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     public HashSet<T> removeAll(Iterable<? extends T> elements) {
         if (elements instanceof HashSet<?> set && !isEmpty()) {
             @SuppressWarnings("unchecked")
-            final HashSet<T> that = (HashSet<T>) set;
+            HashSet<T> that = (HashSet<T>) set;
             // node by node: each subtree of this set against the one at the same place in `that`
-            final BitmapIndexedSetNode<T> result = that.isEmpty() ? tree : tree.diff(that.tree, 0);
+            BitmapIndexedSetNode<T> result = that.isEmpty() ? tree : tree.diff(that.tree, 0);
             return result == tree ? this : wrap(result);
         }
         return Collections.removeAll(this, elements, kept -> filter(kept));
@@ -1037,7 +1037,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         } else if (elements instanceof HashSet<?> set) {
             return concat((HashSet<T>) set);
         } else {
-            final BitmapIndexedSetNode<T> that = addAll(tree, elements);
+            BitmapIndexedSetNode<T> that = addAll(tree, elements);
             if (that.size() == tree.size()) {
                 return this;
             } else {

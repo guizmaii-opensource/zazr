@@ -36,7 +36,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple0Instances() {
-            final Tuple0 t = tuple0();
+            Tuple0 t = tuple0();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -83,7 +83,7 @@ public class TupleTest {
 
         @Test
         public void shouldHashTuple1() {
-            final Tuple1<?> t = tuple1();
+            Tuple1<?> t = tuple1();
             assertThat(t.hashCode()).isEqualTo(tuple1().hashCode());
         }
 
@@ -95,7 +95,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple1Instances() {
-            final Tuple1<?> t = tuple1();
+            Tuple1<?> t = tuple1();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -117,8 +117,8 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple1() {
-            final Tuple1<Double> wideTuple = Tuple.of(1.0d);
-            final Tuple1<Number> narrowTuple = Tuple.narrow(wideTuple);
+            Tuple1<Double> wideTuple = Tuple.of(1.0d);
+            Tuple1<Number> narrowTuple = Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo(1.0d);
         }
     }
@@ -132,13 +132,13 @@ public class TupleTest {
 
         @Test
         public void shouldCreateTuple2FromEntry() {
-            final Tuple2<Integer, Integer> tuple2FromEntry = Tuple.fromEntry(new AbstractMap.SimpleEntry<>(1, 2));
+            Tuple2<Integer, Integer> tuple2FromEntry = Tuple.fromEntry(new AbstractMap.SimpleEntry<>(1, 2));
             assertThat(tuple2FromEntry.toString()).isEqualTo("(1, 2)");
         }
 
         @Test
         public void shouldHashTuple2() {
-            final Tuple2<?, ?> t = tuple2();
+            Tuple2<?, ?> t = tuple2();
             assertThat(t.hashCode()).isEqualTo(tuple2().hashCode());
         }
 
@@ -150,7 +150,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple2Instances() {
-            final Tuple2<?, ?> t = tuple2();
+            Tuple2<?, ?> t = tuple2();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -181,8 +181,8 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple2() {
-            final Tuple2<String, Double> wideTuple = Tuple.of("test", 1.0d);
-            final Tuple2<CharSequence, Number> narrowTuple = Tuple.narrow(wideTuple);
+            Tuple2<String, Double> wideTuple = Tuple.of("test", 1.0d);
+            Tuple2<CharSequence, Number> narrowTuple = Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo("test");
             assertThat(narrowTuple._2()).isEqualTo(1.0d);
         }
@@ -197,7 +197,7 @@ public class TupleTest {
 
         @Test
         public void shouldHashTuple3() {
-            final Tuple3<?, ?, ?> t = tuple3();
+            Tuple3<?, ?, ?> t = tuple3();
             assertThat(t.hashCode()).isEqualTo(tuple3().hashCode());
         }
 
@@ -209,7 +209,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple3Instances() {
-            final Tuple3<?, ?, ?> t = tuple3();
+            Tuple3<?, ?, ?> t = tuple3();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -231,8 +231,8 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple3() {
-            final Tuple3<String, Double, Float> wideTuple = Tuple.of("zero", 1.0D, 2.0F);
-            final Tuple3<CharSequence, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
+            Tuple3<String, Double, Float> wideTuple = Tuple.of("zero", 1.0D, 2.0F);
+            Tuple3<CharSequence, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo("zero");
             assertThat(narrowTuple._2()).isEqualTo(1.0D);
             assertThat(narrowTuple._3()).isEqualTo(2.0F);
@@ -248,7 +248,7 @@ public class TupleTest {
 
         @Test
         public void shouldHashTuple4() {
-            final Tuple4<?, ?, ?, ?> t = tuple4();
+            Tuple4<?, ?, ?, ?> t = tuple4();
             assertThat(t.hashCode()).isEqualTo(tuple4().hashCode());
         }
 
@@ -260,7 +260,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple4Instances() {
-            final Tuple4<?, ?, ?, ?> t = tuple4();
+            Tuple4<?, ?, ?, ?> t = tuple4();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -282,8 +282,8 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple4() {
-            final Tuple4<String, Double, Float, Integer> wideTuple = Tuple.of("zero", 1.0D, 2.0F, 3);
-            final Tuple4<CharSequence, Number, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
+            Tuple4<String, Double, Float, Integer> wideTuple = Tuple.of("zero", 1.0D, 2.0F, 3);
+            Tuple4<CharSequence, Number, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo("zero");
             assertThat(narrowTuple._2()).isEqualTo(1.0D);
             assertThat(narrowTuple._3()).isEqualTo(2.0F);
@@ -300,7 +300,7 @@ public class TupleTest {
 
         @Test
         public void shouldHashTuple5() {
-            final Tuple5<?, ?, ?, ?, ?> t = tuple5();
+            Tuple5<?, ?, ?, ?, ?> t = tuple5();
             assertThat(t.hashCode()).isEqualTo(tuple5().hashCode());
         }
 
@@ -312,7 +312,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple5Instances() {
-            final Tuple5<?, ?, ?, ?, ?> t = tuple5();
+            Tuple5<?, ?, ?, ?, ?> t = tuple5();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -334,8 +334,8 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple5() {
-            final Tuple5<String, Double, Float, Integer, Long> wideTuple = Tuple.of("zero", 1.0D, 2.0F, 3, 4L);
-            final Tuple5<CharSequence, Number, Number, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
+            Tuple5<String, Double, Float, Integer, Long> wideTuple = Tuple.of("zero", 1.0D, 2.0F, 3, 4L);
+            Tuple5<CharSequence, Number, Number, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo("zero");
             assertThat(narrowTuple._2()).isEqualTo(1.0D);
             assertThat(narrowTuple._3()).isEqualTo(2.0F);
@@ -353,7 +353,7 @@ public class TupleTest {
 
         @Test
         public void shouldHashTuple6() {
-            final Tuple6<?, ?, ?, ?, ?, ?> t = tuple6();
+            Tuple6<?, ?, ?, ?, ?, ?> t = tuple6();
             assertThat(t.hashCode()).isEqualTo(tuple6().hashCode());
         }
 
@@ -365,7 +365,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple6Instances() {
-            final Tuple6<?, ?, ?, ?, ?, ?> t = tuple6();
+            Tuple6<?, ?, ?, ?, ?, ?> t = tuple6();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -387,9 +387,9 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple6() {
-            final Tuple6<String, Double, Float, Integer, Long, Byte> wideTuple =
+            Tuple6<String, Double, Float, Integer, Long, Byte> wideTuple =
                     Tuple.of("zero", 1.0D, 2.0F, 3, 4L, (byte) 5);
-            final Tuple6<CharSequence, Number, Number, Number, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
+            Tuple6<CharSequence, Number, Number, Number, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo("zero");
             assertThat(narrowTuple._2()).isEqualTo(1.0D);
             assertThat(narrowTuple._3()).isEqualTo(2.0F);
@@ -408,7 +408,7 @@ public class TupleTest {
 
         @Test
         public void shouldHashTuple7() {
-            final Tuple7<?, ?, ?, ?, ?, ?, ?> t = tuple7();
+            Tuple7<?, ?, ?, ?, ?, ?, ?> t = tuple7();
             assertThat(t.hashCode()).isEqualTo(tuple7().hashCode());
         }
 
@@ -420,7 +420,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple7Instances() {
-            final Tuple7<?, ?, ?, ?, ?, ?, ?> t = tuple7();
+            Tuple7<?, ?, ?, ?, ?, ?, ?> t = tuple7();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -442,10 +442,9 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple7() {
-            final Tuple7<String, Double, Float, Integer, Long, Byte, Short> wideTuple =
+            Tuple7<String, Double, Float, Integer, Long, Byte, Short> wideTuple =
                     Tuple.of("zero", 1.0D, 2.0F, 3, 4L, (byte) 5, (short) 6);
-            final Tuple7<CharSequence, Number, Number, Number, Number, Number, Number> narrowTuple =
-                    Tuple.narrow(wideTuple);
+            Tuple7<CharSequence, Number, Number, Number, Number, Number, Number> narrowTuple = Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo("zero");
             assertThat(narrowTuple._2()).isEqualTo(1.0D);
             assertThat(narrowTuple._3()).isEqualTo(2.0F);
@@ -465,7 +464,7 @@ public class TupleTest {
 
         @Test
         public void shouldHashTuple8() {
-            final Tuple8<?, ?, ?, ?, ?, ?, ?, ?> t = tuple8();
+            Tuple8<?, ?, ?, ?, ?, ?, ?, ?> t = tuple8();
             assertThat(t.hashCode()).isEqualTo(tuple8().hashCode());
         }
 
@@ -477,7 +476,7 @@ public class TupleTest {
         @SuppressWarnings("EqualsWithItself")
         @Test
         public void shouldEqualSameTuple8Instances() {
-            final Tuple8<?, ?, ?, ?, ?, ?, ?, ?> t = tuple8();
+            Tuple8<?, ?, ?, ?, ?, ?, ?, ?> t = tuple8();
             assertThat(t.equals(t)).isTrue();
         }
 
@@ -499,9 +498,9 @@ public class TupleTest {
 
         @Test
         public void shouldNarrowTuple8() {
-            final Tuple8<String, Double, Float, Integer, Long, Byte, Short, BigDecimal> wideTuple =
+            Tuple8<String, Double, Float, Integer, Long, Byte, Short, BigDecimal> wideTuple =
                     Tuple.of("zero", 1.0D, 2.0F, 3, 4L, (byte) 5, (short) 6, new BigDecimal(7));
-            final Tuple8<CharSequence, Number, Number, Number, Number, Number, Number, Number> narrowTuple =
+            Tuple8<CharSequence, Number, Number, Number, Number, Number, Number, Number> narrowTuple =
                     Tuple.narrow(wideTuple);
             assertThat(narrowTuple._1()).isEqualTo("zero");
             assertThat(narrowTuple._2()).isEqualTo(1.0D);
@@ -582,8 +581,8 @@ public class TupleTest {
         @Test
         public void shouldDetectEqualityOnTupleOfTuples() {
 
-            final Tuple tupleA = Tuple.of(Tuple.of(1), Tuple.of(1));
-            final Tuple tupleB = Tuple.of(Tuple.of(1), Tuple.of(1));
+            Tuple tupleA = Tuple.of(Tuple.of(1), Tuple.of(1));
+            Tuple tupleB = Tuple.of(Tuple.of(1), Tuple.of(1));
 
             assertThat(tupleA.equals(tupleB)).isTrue();
         }
@@ -591,8 +590,8 @@ public class TupleTest {
         @Test
         public void shouldDetectUnequalityOnTupleOfTuples() {
 
-            final Tuple tupleA = Tuple.of(Tuple.of(1), Tuple.of(1));
-            final Tuple tupleB = Tuple.of(Tuple.of(1), Tuple.of(2));
+            Tuple tupleA = Tuple.of(Tuple.of(1), Tuple.of(1));
+            Tuple tupleB = Tuple.of(Tuple.of(1), Tuple.of(2));
 
             assertThat(tupleA.equals(tupleB)).isFalse();
         }

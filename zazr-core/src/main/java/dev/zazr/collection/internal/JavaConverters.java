@@ -169,7 +169,7 @@ public final class JavaConverters {
                 if (!(element instanceof Tuple2<?, ?> entry)) {
                     return false;
                 }
-                final Object value;
+                Object value;
                 try {
                     value = Maps.getOrAbsent((Map<Object, Object>) map, entry._1());
                 } catch (ClassCastException | NullPointerException e) {
@@ -283,7 +283,7 @@ public final class JavaConverters {
         @Override
         public T get(int index) {
             if (reversed) {
-                final int size = delegateSize();
+                int size = delegateSize();
                 if (index < 0 || index >= size) {
                     throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + size);
                 }
@@ -313,7 +313,7 @@ public final class JavaConverters {
         @Override
         public int indexOf(@Nullable Object element) {
             if (reversed) {
-                final int index = delegateLastIndexOf(delegate, (T) element);
+                int index = delegateLastIndexOf(delegate, (T) element);
                 return index < 0 ? -1 : delegateSize() - 1 - index;
             }
             return delegateIndexOf(delegate, (T) element);
@@ -324,7 +324,7 @@ public final class JavaConverters {
         @Override
         public int lastIndexOf(@Nullable Object element) {
             if (reversed) {
-                final int index = delegateIndexOf(delegate, (T) element);
+                int index = delegateIndexOf(delegate, (T) element);
                 return index < 0 ? -1 : delegateSize() - 1 - index;
             }
             return delegateLastIndexOf(delegate, (T) element);
@@ -378,7 +378,7 @@ public final class JavaConverters {
                 throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
             }
             if (reversed) {
-                final int size = delegateSize();
+                int size = delegateSize();
                 return view(delegateSubSequence(delegate, size - toIndex, size - fromIndex), true);
             }
             return view(delegateSubSequence(delegate, fromIndex, toIndex), false);
@@ -391,10 +391,10 @@ public final class JavaConverters {
 
         @Override
         public Object[] toArray() {
-            final Object[] array = delegate.toArray();
+            Object[] array = delegate.toArray();
             if (reversed) {
                 for (int i = 0, j = array.length - 1; i < j; i++, j--) {
-                    final Object tmp = array[i];
+                    Object tmp = array[i];
                     array[i] = array[j];
                     array[j] = tmp;
                 }
@@ -506,11 +506,11 @@ public final class JavaConverters {
                     }
                     return list.get(cursor++);
                 }
-                final java.util.Iterator<T> iterator = forward();
+                java.util.Iterator<T> iterator = forward();
                 if (!iterator.hasNext()) {
                     throw new NoSuchElementException();
                 }
-                final T element = iterator.next();
+                T element = iterator.next();
                 forwardPosition = ++cursor;
                 return element;
             }
@@ -525,7 +525,7 @@ public final class JavaConverters {
                 if (cursor <= 0) {
                     throw new NoSuchElementException();
                 }
-                final T element = list.get(cursor - 1);
+                T element = list.get(cursor - 1);
                 cursor--;
                 return element;
             }

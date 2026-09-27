@@ -62,37 +62,37 @@ public record Tuple7<
                     Comparator<? super T6> t6Comp,
                     Comparator<? super T7> t7Comp) {
         return (t1, t2) -> {
-            final int check1 = t1Comp.compare(t1._1(), t2._1());
+            int check1 = t1Comp.compare(t1._1(), t2._1());
             if (check1 != 0) {
                 return check1;
             }
 
-            final int check2 = t2Comp.compare(t1._2(), t2._2());
+            int check2 = t2Comp.compare(t1._2(), t2._2());
             if (check2 != 0) {
                 return check2;
             }
 
-            final int check3 = t3Comp.compare(t1._3(), t2._3());
+            int check3 = t3Comp.compare(t1._3(), t2._3());
             if (check3 != 0) {
                 return check3;
             }
 
-            final int check4 = t4Comp.compare(t1._4(), t2._4());
+            int check4 = t4Comp.compare(t1._4(), t2._4());
             if (check4 != 0) {
                 return check4;
             }
 
-            final int check5 = t5Comp.compare(t1._5(), t2._5());
+            int check5 = t5Comp.compare(t1._5(), t2._5());
             if (check5 != 0) {
                 return check5;
             }
 
-            final int check6 = t6Comp.compare(t1._6(), t2._6());
+            int check6 = t6Comp.compare(t1._6(), t2._6());
             if (check6 != 0) {
                 return check6;
             }
 
-            final int check7 = t7Comp.compare(t1._7(), t2._7());
+            int check7 = t7Comp.compare(t1._7(), t2._7());
             if (check7 != 0) {
                 return check7;
             }
@@ -112,40 +112,40 @@ public record Tuple7<
                     U6 extends Comparable<? super U6>,
                     U7 extends Comparable<? super U7>>
             int compareTo(Tuple7<?, ?, ?, ?, ?, ?, ?> o1, Tuple7<?, ?, ?, ?, ?, ?, ?> o2) {
-        final Tuple7<U1, U2, U3, U4, U5, U6, U7> t1 = (Tuple7<U1, U2, U3, U4, U5, U6, U7>) o1;
-        final Tuple7<U1, U2, U3, U4, U5, U6, U7> t2 = (Tuple7<U1, U2, U3, U4, U5, U6, U7>) o2;
+        Tuple7<U1, U2, U3, U4, U5, U6, U7> t1 = (Tuple7<U1, U2, U3, U4, U5, U6, U7>) o1;
+        Tuple7<U1, U2, U3, U4, U5, U6, U7> t2 = (Tuple7<U1, U2, U3, U4, U5, U6, U7>) o2;
 
-        final int check1 = t1._1().compareTo(t2._1());
+        int check1 = t1._1().compareTo(t2._1());
         if (check1 != 0) {
             return check1;
         }
 
-        final int check2 = t1._2().compareTo(t2._2());
+        int check2 = t1._2().compareTo(t2._2());
         if (check2 != 0) {
             return check2;
         }
 
-        final int check3 = t1._3().compareTo(t2._3());
+        int check3 = t1._3().compareTo(t2._3());
         if (check3 != 0) {
             return check3;
         }
 
-        final int check4 = t1._4().compareTo(t2._4());
+        int check4 = t1._4().compareTo(t2._4());
         if (check4 != 0) {
             return check4;
         }
 
-        final int check5 = t1._5().compareTo(t2._5());
+        int check5 = t1._5().compareTo(t2._5());
         if (check5 != 0) {
             return check5;
         }
 
-        final int check6 = t1._6().compareTo(t2._6());
+        int check6 = t1._6().compareTo(t2._6());
         if (check6 != 0) {
             return check6;
         }
 
-        final int check7 = t1._7().compareTo(t2._7());
+        int check7 = t1._7().compareTo(t2._7());
         if (check7 != 0) {
             return check7;
         }
@@ -328,7 +328,7 @@ public record Tuple7<
     public <U extends @Nullable Object> Tuple7<U, T2, T3, T4, T5, T6, T7> map1(
             Function<? super T1, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_1);
+        U u = mapper.apply(_1);
         return Tuple.of(u, _2, _3, _4, _5, _6, _7);
     }
 
@@ -342,7 +342,7 @@ public record Tuple7<
     public <U extends @Nullable Object> Tuple7<T1, U, T3, T4, T5, T6, T7> map2(
             Function<? super T2, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_2);
+        U u = mapper.apply(_2);
         return Tuple.of(_1, u, _3, _4, _5, _6, _7);
     }
 
@@ -356,7 +356,7 @@ public record Tuple7<
     public <U extends @Nullable Object> Tuple7<T1, T2, U, T4, T5, T6, T7> map3(
             Function<? super T3, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_3);
+        U u = mapper.apply(_3);
         return Tuple.of(_1, _2, u, _4, _5, _6, _7);
     }
 
@@ -370,7 +370,7 @@ public record Tuple7<
     public <U extends @Nullable Object> Tuple7<T1, T2, T3, U, T5, T6, T7> map4(
             Function<? super T4, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_4);
+        U u = mapper.apply(_4);
         return Tuple.of(_1, _2, _3, u, _5, _6, _7);
     }
 
@@ -384,7 +384,7 @@ public record Tuple7<
     public <U extends @Nullable Object> Tuple7<T1, T2, T3, T4, U, T6, T7> map5(
             Function<? super T5, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_5);
+        U u = mapper.apply(_5);
         return Tuple.of(_1, _2, _3, _4, u, _6, _7);
     }
 
@@ -398,7 +398,7 @@ public record Tuple7<
     public <U extends @Nullable Object> Tuple7<T1, T2, T3, T4, T5, U, T7> map6(
             Function<? super T6, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_6);
+        U u = mapper.apply(_6);
         return Tuple.of(_1, _2, _3, _4, _5, u, _7);
     }
 
@@ -412,7 +412,7 @@ public record Tuple7<
     public <U extends @Nullable Object> Tuple7<T1, T2, T3, T4, T5, T6, U> map7(
             Function<? super T7, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_7);
+        U u = mapper.apply(_7);
         return Tuple.of(_1, _2, _3, _4, _5, _6, u);
     }
 

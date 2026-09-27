@@ -73,7 +73,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     static <T extends @Nullable Object> Iterator<T> concat(Iterable<? extends Iterable<? extends T>> iterables) {
         Objects.requireNonNull(iterables, "iterables is null");
         // one pass over the outer iterable, which may be one-shot; nothing appended means the empty iterator
-        final ConcatIterator<T> res = new ConcatIterator<>();
+        ConcatIterator<T> res = new ConcatIterator<>();
         boolean appended = false;
         for (Iterable<? extends T> iterable : iterables) {
             res.append(iterable.iterator());
@@ -504,9 +504,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
      * @throws IllegalArgumentException if {@code step} is zero
      */
     static Iterator<Double> rangeBy(double from, double toExclusive, double step) {
-        final BigDecimal fromDecimal = asDecimal(from),
-                toDecimal = asDecimal(toExclusive),
-                stepDecimal = asDecimal(step);
+        BigDecimal fromDecimal = asDecimal(from), toDecimal = asDecimal(toExclusive), stepDecimal = asDecimal(step);
         return rangeBy(fromDecimal, toDecimal, stepDecimal).map(BigDecimal::doubleValue);
     }
 
@@ -550,7 +548,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                     @Override
                     public BigDecimal getNext() {
-                        final BigDecimal next = this.i;
+                        BigDecimal next = this.i;
                         this.i = next.add(step);
                         return next;
                     }
@@ -566,7 +564,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                     @Override
                     public BigDecimal getNext() {
-                        final BigDecimal next = this.i;
+                        BigDecimal next = this.i;
                         this.i = next.add(step);
                         return next;
                     }
@@ -621,7 +619,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             // no int lies strictly before the type boundary in the step direction
             return empty();
         }
-        final int toInclusive = toExclusive - (step > 0 ? 1 : -1);
+        int toInclusive = toExclusive - (step > 0 ? 1 : -1);
         return rangeClosedBy(from, toInclusive, step);
     }
 
@@ -671,7 +669,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             // no long lies strictly before the type boundary in the step direction
             return empty();
         }
-        final long toInclusive = toExclusive - (step > 0 ? 1 : -1);
+        long toInclusive = toExclusive - (step > 0 ? 1 : -1);
         return rangeClosedBy(from, toInclusive, step);
     }
 
@@ -743,7 +741,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             return of(from);
         }
 
-        final double toExclusive = (step > 0) ? Math.nextUp(toInclusive) : Math.nextDown(toInclusive);
+        double toExclusive = (step > 0) ? Math.nextUp(toInclusive) : Math.nextDown(toInclusive);
         return rangeBy(from, toExclusive, step);
     }
 
@@ -983,7 +981,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
             @Override
             public Integer getNext() {
-                final int result = next;
+                int result = next;
                 next += step;
                 return result;
             }
@@ -1037,7 +1035,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
             @Override
             public Long getNext() {
-                final long result = next;
+                long result = next;
                 next += step;
                 return result;
             }
@@ -1098,7 +1096,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                     throw new NullPointerException(nullResult);
                 }
                 if (nextOption == null) {
-                    final Option<? extends T> supplied = supplier.get();
+                    Option<? extends T> supplied = supplier.get();
                     if (supplied == null) {
                         failed = true;
                         throw new NullPointerException(nullResult);
@@ -1112,7 +1110,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             // hasNext() populates nextOption, and AbstractIterator only calls getNext() after it
             @SuppressWarnings("NullAway")
             public T getNext() {
-                final T next = nextOption.get();
+                T next = nextOption.get();
                 nextOption = null;
                 return next;
             }
@@ -1228,7 +1226,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<T>() {
 
                 boolean insertElement = false;
@@ -1263,8 +1261,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (isEmpty()) {
             return empty();
         } else {
-            final Iterator<T> it1 = this;
-            final java.util.Iterator<? extends U> it2 = that.iterator();
+            Iterator<T> it1 = this;
+            java.util.Iterator<? extends U> it2 = that.iterator();
             return new AbstractIterator<R>() {
                 @Override
                 public boolean hasNext() {
@@ -1284,11 +1282,11 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(thisElem, "Iterator.zipAll: element is null");
         Objects.requireNonNull(thatElem, "Iterator.zipAll: element is null");
-        final java.util.Iterator<? extends U> thatIt = that.iterator();
+        java.util.Iterator<? extends U> thatIt = that.iterator();
         if (isEmpty() && !thatIt.hasNext()) {
             return empty();
         } else {
-            final Iterator<T> thisIt = this;
+            Iterator<T> thisIt = this;
             return new AbstractIterator<Tuple2<T, U>>() {
                 @Override
                 public boolean hasNext() {
@@ -1297,8 +1295,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public Tuple2<T, U> getNext() {
-                    final T v1 = thisIt.hasNext() ? thisIt.next() : thisElem;
-                    final U v2 = thatIt.hasNext() ? thatIt.next() : thatElem;
+                    T v1 = thisIt.hasNext() ? thisIt.next() : thisElem;
+                    U v2 = thatIt.hasNext() ? thatIt.next() : thatElem;
                     return Tuple.of(v1, v2);
                 }
             };
@@ -1315,7 +1313,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (isEmpty()) {
             return empty();
         } else {
-            final Iterator<T> it1 = this;
+            Iterator<T> it1 = this;
             return new AbstractIterator<U>() {
                 private int index = 0;
 
@@ -1455,7 +1453,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             @Override
             public U getNext() {
                 Tuple2<? extends U, ? extends T> tuple = nextVal.get().get();
-                final U result = tuple._1();
+                U result = tuple._1();
                 nextVal = Lazy.of(() -> f.apply(tuple._2()));
                 return result;
             }
@@ -1549,7 +1547,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         } else if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<T>() {
 
                 long count = n;
@@ -1577,7 +1575,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         } else if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<T>() {
                 private dev.zazr.collection.Queue<T> queue = dev.zazr.collection.Queue.empty();
                 private int size = 0; // queue.size() walks the queue's lists, so the size is counted here
@@ -1593,7 +1591,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public T getNext() {
-                    final Tuple2<T, dev.zazr.collection.Queue<T>> t =
+                    Tuple2<T, dev.zazr.collection.Queue<T>> t =
                             queue.append(that.next()).dequeue();
                     queue = t._2();
                     return t._1();
@@ -1607,7 +1605,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final CachedIterator<T> that = new CachedIterator<>(this);
+            CachedIterator<T> that = new CachedIterator<>(this);
             while (that.hasNext() && predicate.test(that.touch())) {
                 that.next();
             }
@@ -1626,7 +1624,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<T>() {
 
                 // a flag and a field, not an Option: cheaper on this hot loop, and elements can never be null anyway
@@ -1636,7 +1634,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 @Override
                 public boolean hasNext() {
                     while (!nextDefined && that.hasNext()) {
-                        final T candidate = that.next();
+                        T candidate = that.next();
                         if (predicate.test(candidate)) {
                             next = candidate;
                             nextDefined = true;
@@ -1649,7 +1647,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 // hasNext() sets `next` whenever it sets `nextDefined`
                 @SuppressWarnings("NullAway")
                 public T getNext() {
-                    final T result = next;
+                    T result = next;
                     nextDefined = false;
                     next = null;
                     return result;
@@ -1671,7 +1669,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<U>() {
 
                 final Iterator<? extends T> inputs = that;
@@ -1714,7 +1712,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     default Option<T> find(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         while (hasNext()) {
-            final T t = next();
+            T t = next();
             if (predicate.test(t)) {
                 return Option.some(t);
             }
@@ -1723,7 +1721,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     }
 
     default String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
-        final StringBuilder builder = new StringBuilder(prefix);
+        StringBuilder builder = new StringBuilder(prefix);
         boolean first = true;
         while (hasNext()) {
             if (first) {
@@ -1774,7 +1772,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<U>() {
 
                 @Override
@@ -1796,7 +1794,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<U>() {
 
                 // a flag and a field, not an Option, as in filter(): the mapper's Option is unwrapped as soon as it is
@@ -1807,7 +1805,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 @Override
                 public boolean hasNext() {
                     while (!nextDefined && that.hasNext()) {
-                        final Option<? extends U> collected = Objects.requireNonNull(
+                        Option<? extends U> collected = Objects.requireNonNull(
                                 mapper.apply(that.next()), "Iterator.collect: mapper returned null");
                         if (collected.isDefined()) {
                             next = collected.get();
@@ -1821,7 +1819,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 // hasNext() sets `next` whenever it sets `nextDefined`
                 @SuppressWarnings("NullAway")
                 public U getNext() {
-                    final U result = next;
+                    U result = next;
                     nextDefined = false;
                     next = null;
                     return result;
@@ -1849,7 +1847,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (isEmpty()) {
             return of(zero);
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<U>() {
 
                 boolean isFirst = true;
@@ -1878,7 +1876,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final CachedIterator<T> source = new CachedIterator<>(this);
+            CachedIterator<T> source = new CachedIterator<>(this);
             return new AbstractIterator<Vector<T>>() {
                 private @Nullable Vector<T> next = null;
                 // the key of the element that ended the previous run, which starts the next one: classified once
@@ -1888,12 +1886,12 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 @Override
                 public boolean hasNext() {
                     if (next == null && source.hasNext()) {
-                        final Object key = pendingKeyDefined ? pendingKey : classifier.apply(source.touch());
+                        Object key = pendingKeyDefined ? pendingKey : classifier.apply(source.touch());
                         pendingKeyDefined = false;
-                        final java.util.List<T> acc = new ArrayList<>();
+                        java.util.List<T> acc = new ArrayList<>();
                         acc.add(source.next());
                         while (source.hasNext()) {
-                            final Object candidate = classifier.apply(source.touch());
+                            Object candidate = classifier.apply(source.touch());
                             if (!Objects.equals(key, candidate)) {
                                 pendingKey = candidate;
                                 pendingKeyDefined = true;
@@ -1910,7 +1908,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 // hasNext() fills the buffer, and AbstractIterator only calls getNext() after it
                 @SuppressWarnings("NullAway")
                 public Vector<T> getNext() {
-                    final Vector<T> result = next;
+                    Vector<T> result = next;
                     next = null;
                     return result;
                 }
@@ -1931,7 +1929,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return Tuple.of(empty(), empty());
         } else {
-            final Stream<T> that = Stream.ofAll(this);
+            Stream<T> that = Stream.ofAll(this);
             return Tuple.of(
                     Iterator.ofAll(that).takeWhile(predicate),
                     Iterator.ofAll(that).dropWhile(predicate));
@@ -1949,7 +1947,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (n <= 0 || !hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<T>() {
 
                 long count = n;
@@ -1972,7 +1970,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (n <= 0) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<T>() {
                 private dev.zazr.collection.Queue<T> queue = dev.zazr.collection.Queue.empty();
                 private int size = 0; // queue.size() walks the queue's lists, so the size is counted here
@@ -1992,7 +1990,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public T getNext() {
-                    final Tuple2<T, dev.zazr.collection.Queue<T>> t = queue.dequeue();
+                    Tuple2<T, dev.zazr.collection.Queue<T>> t = queue.dequeue();
                     queue = t._2();
                     return t._1();
                 }
@@ -2005,7 +2003,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
         if (!hasNext()) {
             return empty();
         } else {
-            final Iterator<T> that = this;
+            Iterator<T> that = this;
             return new AbstractIterator<T>() {
 
                 private @Nullable T next;

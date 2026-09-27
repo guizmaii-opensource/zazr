@@ -33,9 +33,9 @@ public class NonEmptyVectorTest {
 
     /* (size, vector) for both leaf representations */
     static Stream<Arguments> vectors() {
-        final ArrayList<Arguments> cases = new ArrayList<>();
+        ArrayList<Arguments> cases = new ArrayList<>();
         for (int n : SIZES) {
-            final Vector<Integer> primitive = Vector.range(0, n);
+            Vector<Integer> primitive = Vector.range(0, n);
             cases.add(Arguments.of(n, primitive));
             cases.add(Arguments.of(n, Vector.ofAll(new java.util.ArrayList<>(primitive.asJava()))));
         }
@@ -55,7 +55,7 @@ public class NonEmptyVectorTest {
 
     /* a one-shot iterable: a second iterator() throws, so an operation that reads its argument twice fails */
     static <A> Iterable<A> once(Vector<A> elements) {
-        final boolean[] read = {false};
+        boolean[] read = {false};
         return () -> {
             if (read[0]) {
                 throw new IllegalStateException("read twice");
@@ -73,7 +73,7 @@ public class NonEmptyVectorTest {
             assertThat(NonEmptyVector.of(1).toVector()).isEqualTo(Vector.of(1));
             assertThat(NonEmptyVector.of(1, 2).toVector()).isEqualTo(Vector.of(1, 2));
             for (int n : SIZES) {
-                final Integer[] tail = Vector.range(1, n).toArray(Integer[]::new);
+                Integer[] tail = Vector.range(1, n).toArray(Integer[]::new);
                 assertThat(NonEmptyVector.of(0, tail).toVector()).isEqualTo(Vector.range(0, n));
                 assertThat(NonEmptyVector.of(0, tail).size()).isEqualTo(n);
             }
@@ -82,7 +82,7 @@ public class NonEmptyVectorTest {
         @Test
         public void shouldBuildFromHeadAndIterableTail() {
             for (int n : SIZES) {
-                final Vector<Integer> expected = Vector.range(0, n);
+                Vector<Integer> expected = Vector.range(0, n);
                 assertThat(NonEmptyVector.fromIterable(0, Vector.range(1, n)).toVector())
                         .isEqualTo(expected);
                 assertThat(NonEmptyVector.fromIterable(
@@ -102,8 +102,8 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldTakeIterablesAsElementsNotAsTail() {
-            final NonEmptyVector<Integer> x = NonEmptyVector.of(1);
-            final NonEmptyVector<Integer> y = NonEmptyVector.of(2, 3);
+            NonEmptyVector<Integer> x = NonEmptyVector.of(1);
+            NonEmptyVector<Integer> y = NonEmptyVector.of(2, 3);
             assertThat(NonEmptyVector.of(x, y).size()).isEqualTo(2);
             assertThat(NonEmptyVector.of(x, y).toVector()).isEqualTo(Vector.of(x, y));
             assertThat(NonEmptyVector.of(java.util.List.of(1), java.util.List.of(2, 3))
@@ -121,7 +121,7 @@ public class NonEmptyVectorTest {
         @Test
         public void shouldWrapANonEmptyVectorWithoutCopying() {
             for (int n : SIZES) {
-                final Vector<Integer> vector = Vector.range(0, n);
+                Vector<Integer> vector = Vector.range(0, n);
                 assertThat(NonEmptyVector.fromVector(vector).get().toVector()).isSameAs(vector);
                 assertThat(NonEmptyVector.unsafeFromVector(vector).toVector()).isSameAs(vector);
                 assertThat(vector.toNonEmptyVector().get().toVector()).isSameAs(vector);
@@ -142,7 +142,7 @@ public class NonEmptyVectorTest {
         @Test
         public void shouldCopyANonEmptyIterable() {
             for (int n : SIZES) {
-                final Vector<Integer> expected = Vector.range(0, n);
+                Vector<Integer> expected = Vector.range(0, n);
                 assertThat(NonEmptyVector.fromIterable(new java.util.ArrayList<>(expected.asJava()))
                                 .get()
                                 .toVector())
@@ -205,7 +205,7 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldRejectNullsOnInsertionNamingTheType() {
-            final NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
+            NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.append(null))
                     .withMessage("NonEmptyVector.append: element is null");
@@ -244,7 +244,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldMap(int n, Vector<Integer> vector) {
-            final NonEmptyVector<String> actual = nev(vector).map(i -> "x" + i);
+            NonEmptyVector<String> actual = nev(vector).map(i -> "x" + i);
             assertThat(actual.toVector()).isEqualTo(vector.map(i -> "x" + i));
             assertThat(actual.size()).isEqualTo(n);
         }
@@ -252,7 +252,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFlatMapToNonEmptyVectors(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> actual = nev(vector).flatMap(i -> NonEmptyVector.of(i, -i));
+            NonEmptyVector<Integer> actual = nev(vector).flatMap(i -> NonEmptyVector.of(i, -i));
             assertThat(actual.toVector()).isEqualTo(vector.flatMap(i -> Vector.of(i, -i)));
             assertThat(actual.size()).isEqualTo(2 * n);
             // a mapper returning 33-element vectors crosses the leaf boundary inside the builder
@@ -263,7 +263,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldAppendAndPrepend(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.append(-1).toVector()).isEqualTo(vector.append(-1));
             assertThat(nev.append(-1).size()).isEqualTo(n + 1);
             assertThat(nev.prepend(-1).toVector()).isEqualTo(vector.prepend(-1));
@@ -273,13 +273,13 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldAppendAllAndPrependAllAVector(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int m : new int[] {0, 1, 32, 33}) {
-                final Vector<Integer> that = Vector.range(100, 100 + m);
-                final NonEmptyVector<Integer> appended = nev.appendAll(that);
+                Vector<Integer> that = Vector.range(100, 100 + m);
+                NonEmptyVector<Integer> appended = nev.appendAll(that);
                 assertThat(appended.toVector()).isEqualTo(vector.appendAll(that));
                 assertThat(appended.size()).isEqualTo(n + m);
-                final NonEmptyVector<Integer> prepended = nev.prependAll(that);
+                NonEmptyVector<Integer> prepended = nev.prependAll(that);
                 assertThat(prepended.toVector()).isEqualTo(vector.prependAll(that));
                 assertThat(prepended.size()).isEqualTo(n + m);
             }
@@ -290,9 +290,9 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldAppendAllPrependAllAndConcatANonEmptyVector(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int m : SIZES) {
-                final Vector<Integer> that = Vector.range(100, 100 + m);
+                Vector<Integer> that = Vector.range(100, 100 + m);
                 assertThat(nev.appendAll(nev(that)).toVector()).isEqualTo(vector.appendAll(that));
                 assertThat(nev.concat(nev(that)).toVector()).isEqualTo(vector.appendAll(that));
                 assertThat(nev.concat(nev(that)).size()).isEqualTo(n + m);
@@ -303,7 +303,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReverse(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> actual = nev(vector).reverse();
+            NonEmptyVector<Integer> actual = nev(vector).reverse();
             assertThat(actual.toVector()).isEqualTo(vector.reverse());
             assertThat(actual.head()).isEqualTo(n - 1);
         }
@@ -311,7 +311,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldDistinct(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
+            Vector<Integer> doubled = vector.appendAll(vector);
             assertThat(nev(doubled).distinct().toVector()).isEqualTo(doubled.distinct());
             assertThat(nev(doubled).distinct().size()).isEqualTo(n);
             assertThat(nev(doubled).distinctBy(i -> i % 5).toVector()).isEqualTo(doubled.distinctBy(i -> i % 5));
@@ -325,7 +325,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSort(int n, Vector<Integer> vector) {
-            final Vector<Integer> shuffled = vector.reverse();
+            Vector<Integer> shuffled = vector.reverse();
             assertThat(nev(shuffled).sorted().toVector()).isEqualTo(vector);
             assertThat(nev(vector).sorted(Comparator.reverseOrder()).toVector()).isEqualTo(shuffled);
             assertThat(nev(shuffled).sortBy(i -> i % 7).toVector()).isEqualTo(shuffled.sortBy(i -> i % 7));
@@ -339,13 +339,13 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldZip(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int m : SIZES) {
-                final Vector<String> that = Vector.range(0, m).map(String::valueOf);
-                final NonEmptyVector<Tuple2<Integer, String>> zipped = nev.zip(nev(that));
+                Vector<String> that = Vector.range(0, m).map(String::valueOf);
+                NonEmptyVector<Tuple2<Integer, String>> zipped = nev.zip(nev(that));
                 assertThat(zipped.toVector()).isEqualTo(vector.zip(that));
                 assertThat(zipped.size()).isEqualTo(Math.min(n, m));
-                final NonEmptyVector<String> zippedWith = nev.zipWith(nev(that), (i, s) -> i + s);
+                NonEmptyVector<String> zippedWith = nev.zipWith(nev(that), (i, s) -> i + s);
                 assertThat(zippedWith.toVector()).isEqualTo(vector.zipWith(that, (i, s) -> i + s));
             }
             assertThat(nev.zipWithIndex().toVector()).isEqualTo(vector.zipWithIndex());
@@ -357,7 +357,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldScanLeftWithOneMoreElement(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> actual = nev(vector).scanLeft(0, Integer::sum);
+            NonEmptyVector<Integer> actual = nev(vector).scanLeft(0, Integer::sum);
             assertThat(actual.toVector()).isEqualTo(vector.scanLeft(0, Integer::sum));
             assertThat(actual.size()).isEqualTo(n + 1);
             assertThat(actual.head()).isEqualTo(0);
@@ -367,7 +367,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldUpdate(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int index : new int[] {0, n - 1}) {
                 assertThat(nev.update(index, -1).toVector()).isEqualTo(vector.update(index, -1));
                 assertThat(nev.update(index, i -> i - 100).toVector()).isEqualTo(vector.update(index, i -> i - 100));
@@ -380,8 +380,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldTapEveryElementAndReturnItself(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final ArrayList<Integer> seen = new ArrayList<>();
+            NonEmptyVector<Integer> nev = nev(vector);
+            ArrayList<Integer> seen = new ArrayList<>();
             assertThat(nev.tap(seen::add)).isSameAs(nev);
             assertThat(seen).isEqualTo(new java.util.ArrayList<>(vector.asJava()));
             assertThatNullPointerException().isThrownBy(() -> nev.tap(null));
@@ -390,9 +390,9 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldGroupIntoNonEmptyGroups(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int size : new int[] {1, 2, 5, 32, 33, 100}) {
-                final Vector<NonEmptyVector<Integer>> groups = nev.grouped(size);
+                Vector<NonEmptyVector<Integer>> groups = nev.grouped(size);
                 assertThat(groups.map(NonEmptyVector::toVector)).isEqualTo(Vector.ofAll(vector.grouped(size)));
                 assertThat(groups.size()).isEqualTo((n + size - 1) / size);
                 assertThat(groups.forAll(group -> group.size() >= 1 && group.size() <= size))
@@ -401,7 +401,7 @@ public class NonEmptyVectorTest {
             }
             assertThatThrownBy(() -> nev.grouped(0)).isInstanceOf(IllegalArgumentException.class);
             // a size beyond the source is one group, and allocates only what the source holds
-            final Vector<NonEmptyVector<Integer>> one = nev.grouped(Integer.MAX_VALUE);
+            Vector<NonEmptyVector<Integer>> one = nev.grouped(Integer.MAX_VALUE);
             assertThat(one.size()).isEqualTo(1);
             assertThat(one.get(0).toVector()).isEqualTo(vector);
         }
@@ -409,9 +409,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldGroupByIntoNonEmptyGroups(int n, Vector<Integer> vector) {
-            final NonEmptyMap<Integer, NonEmptyVector<Integer>> groups =
-                    nev(vector).groupBy(i -> i % 5);
-            final Map<Integer, Vector<Integer>> expected = vector.groupBy(i -> i % 5);
+            NonEmptyMap<Integer, NonEmptyVector<Integer>> groups = nev(vector).groupBy(i -> i % 5);
+            Map<Integer, Vector<Integer>> expected = vector.groupBy(i -> i % 5);
             assertThat(groups.size()).isEqualTo(Math.min(n, 5));
             assertThat(groups.mapValues(NonEmptyVector::toVector).toMap()).isEqualTo(HashMap.ofEntries(expected));
             assertThat(groups.values().map(NonEmptyVector::size).foldLeft(0, Integer::sum))
@@ -428,7 +427,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReplaceEveryElementWithAValue(int n, Vector<Integer> vector) {
-            final NonEmptyVector<String> actual = nonEmpty(nev(vector).as("x"));
+            NonEmptyVector<String> actual = nonEmpty(nev(vector).as("x"));
             assertThat(actual.toVector()).isEqualTo(vector.as("x"));
             assertThat(actual.size()).isEqualTo(n);
         }
@@ -436,10 +435,10 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldAppendAllAndPrependAllAnyIterable(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int m : new int[] {0, 1, 32, 33}) {
-                final Vector<Integer> that = Vector.range(100, 100 + m);
-                final java.util.List<Integer> list = new java.util.ArrayList<>(that.asJava());
+                Vector<Integer> that = Vector.range(100, 100 + m);
+                java.util.List<Integer> list = new java.util.ArrayList<>(that.asJava());
                 assertThat(nonEmpty(nev.appendAll(list)).toVector()).isEqualTo(vector.appendAll(that));
                 assertThat(nonEmpty(nev.prependAll(list)).toVector()).isEqualTo(vector.prependAll(that));
                 assertThat(nev.appendAll(once(that)).toVector()).isEqualTo(vector.appendAll(that));
@@ -451,12 +450,12 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldInsert(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int index : new int[] {0, n / 2, n}) {
                 assertThat(nonEmpty(nev.insert(index, -1)).toVector()).isEqualTo(vector.insert(index, -1));
                 assertThat(nev.insert(index, -1).size()).isEqualTo(n + 1);
                 for (int m : new int[] {0, 1, 32, 33}) {
-                    final Vector<Integer> that = Vector.range(100, 100 + m);
+                    Vector<Integer> that = Vector.range(100, 100 + m);
                     assertThat(nonEmpty(nev.insertAll(index, that)).toVector())
                             .isEqualTo(vector.insertAll(index, that));
                     assertThat(nev.insertAll(index, once(that)).toVector()).isEqualTo(vector.insertAll(index, that));
@@ -471,7 +470,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldIntersperse(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> actual = nonEmpty(nev(vector).intersperse(-1));
+            NonEmptyVector<Integer> actual = nonEmpty(nev(vector).intersperse(-1));
             assertThat(actual.toVector()).isEqualTo(vector.intersperse(-1));
             assertThat(actual.size()).isEqualTo(2 * n - 1);
         }
@@ -479,7 +478,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldPad(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int length : new int[] {Integer.MIN_VALUE, 0, 1, n - 1, n, n + 1, n + 33}) {
                 assertThat(nonEmpty(nev.padTo(length, -1)).toVector()).isEqualTo(vector.padTo(length, -1));
                 assertThat(nonEmpty(nev.leftPadTo(length, -1)).toVector()).isEqualTo(vector.leftPadTo(length, -1));
@@ -490,7 +489,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldRotate(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int k : new int[] {Integer.MIN_VALUE, -n - 1, -1, 0, 1, 2, 32, 33, n, n + 1, Integer.MAX_VALUE}) {
                 assertThat(nonEmpty(nev.rotateLeft(k)).toVector()).isEqualTo(vector.rotateLeft(k));
                 assertThat(nonEmpty(nev.rotateRight(k)).toVector()).isEqualTo(vector.rotateRight(k));
@@ -501,7 +500,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldShuffle(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> shuffled = nonEmpty(nev(vector).shuffle());
+            NonEmptyVector<Integer> shuffled = nonEmpty(nev(vector).shuffle());
             assertThat(shuffled.size()).isEqualTo(n);
             assertThat(shuffled.sorted().toVector()).isEqualTo(vector);
         }
@@ -509,8 +508,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReplace(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
-            final NonEmptyVector<Integer> nev = nev(doubled);
+            Vector<Integer> doubled = vector.appendAll(vector);
+            NonEmptyVector<Integer> nev = nev(doubled);
             for (int current : new int[] {0, n - 1, n}) {
                 assertThat(nonEmpty(nev.replace(current, -1)).toVector()).isEqualTo(doubled.replace(current, -1));
                 assertThat(nonEmpty(nev.replaceAll(current, -1)).toVector()).isEqualTo(doubled.replaceAll(current, -1));
@@ -522,11 +521,11 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldScanAndScanRightWithOneMoreElement(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final NonEmptyVector<Integer> scanned = nonEmpty(nev.scan(0, Integer::sum));
+            NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> scanned = nonEmpty(nev.scan(0, Integer::sum));
             assertThat(scanned.toVector()).isEqualTo(vector.scan(0, Integer::sum));
             assertThat(scanned.size()).isEqualTo(n + 1);
-            final NonEmptyVector<String> scannedRight = nonEmpty(nev.scanRight("", (i, s) -> s + i));
+            NonEmptyVector<String> scannedRight = nonEmpty(nev.scanRight("", (i, s) -> s + i));
             assertThat(scannedRight.toVector()).isEqualTo(vector.scanRight("", (i, s) -> s + i));
             assertThat(scannedRight.size()).isEqualTo(n + 1);
             assertThat(scannedRight.last()).isEqualTo("");
@@ -535,10 +534,10 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldZipAllUpToTheLongerSize(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int m : new int[] {0, 1, 32, 33, n, n + 33}) {
-                final Vector<String> that = Vector.range(0, m).map(String::valueOf);
-                final NonEmptyVector<Tuple2<Integer, String>> zipped = nonEmpty(nev.zipAll(that, -1, "-"));
+                Vector<String> that = Vector.range(0, m).map(String::valueOf);
+                NonEmptyVector<Tuple2<Integer, String>> zipped = nonEmpty(nev.zipAll(that, -1, "-"));
                 assertThat(zipped.toVector()).isEqualTo(vector.zipAll(that, -1, "-"));
                 assertThat(zipped.size()).isEqualTo(Math.max(n, m));
                 assertThat(nev.zipAll(once(that), -1, "-").toVector()).isEqualTo(vector.zipAll(that, -1, "-"));
@@ -548,11 +547,11 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldDistinctKeepingTheLast(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
-            final NonEmptyVector<Integer> byKey = nonEmpty(nev(doubled).distinctByKeepLast(i -> i % 5));
+            Vector<Integer> doubled = vector.appendAll(vector);
+            NonEmptyVector<Integer> byKey = nonEmpty(nev(doubled).distinctByKeepLast(i -> i % 5));
             assertThat(byKey.toVector()).isEqualTo(doubled.distinctByKeepLast(i -> i % 5));
             assertThat(byKey.size()).isEqualTo(Math.min(n, 5));
-            final Comparator<Integer> mod5 = Comparator.comparingInt(i -> i % 5);
+            Comparator<Integer> mod5 = Comparator.comparingInt(i -> i % 5);
             assertThat(nonEmpty(nev(doubled).distinctByKeepLast(mod5)).toVector())
                     .isEqualTo(doubled.distinctByKeepLast(mod5));
         }
@@ -560,15 +559,14 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldUnzipIntoNonEmptyVectors(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final Tuple2<NonEmptyVector<Integer>, NonEmptyVector<String>> unzipped =
-                    nev.unzip(i -> Tuple.of(i, "s" + i));
-            final Tuple2<Vector<Integer>, Vector<String>> expected = vector.unzip(i -> Tuple.of(i, "s" + i));
+            NonEmptyVector<Integer> nev = nev(vector);
+            Tuple2<NonEmptyVector<Integer>, NonEmptyVector<String>> unzipped = nev.unzip(i -> Tuple.of(i, "s" + i));
+            Tuple2<Vector<Integer>, Vector<String>> expected = vector.unzip(i -> Tuple.of(i, "s" + i));
             assertThat(nonEmpty(unzipped._1()).toVector()).isEqualTo(expected._1());
             assertThat(nonEmpty(unzipped._2()).toVector()).isEqualTo(expected._2());
-            final dev.zazr.Tuple3<NonEmptyVector<Integer>, NonEmptyVector<String>, NonEmptyVector<Long>> unzipped3 =
+            dev.zazr.Tuple3<NonEmptyVector<Integer>, NonEmptyVector<String>, NonEmptyVector<Long>> unzipped3 =
                     nev.unzip3(i -> Tuple.of(i, "s" + i, (long) i));
-            final dev.zazr.Tuple3<Vector<Integer>, Vector<String>, Vector<Long>> expected3 =
+            dev.zazr.Tuple3<Vector<Integer>, Vector<String>, Vector<Long>> expected3 =
                     vector.unzip3(i -> Tuple.of(i, "s" + i, (long) i));
             assertThat(nonEmpty(unzipped3._1()).toVector()).isEqualTo(expected3._1());
             assertThat(nonEmpty(unzipped3._2()).toVector()).isEqualTo(expected3._2());
@@ -579,14 +577,14 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSlideIntoNonEmptyWindows(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int size : new int[] {1, 2, 5, 32, 33, 100, Integer.MAX_VALUE}) {
-                final Vector<NonEmptyVector<Integer>> windows = nev.sliding(size);
+                Vector<NonEmptyVector<Integer>> windows = nev.sliding(size);
                 assertThat(windows.map(NonEmptyVector::toVector)).isEqualTo(vector.sliding(size));
                 assertThat(windows.isEmpty()).isFalse();
                 windows.forEach(NonEmptyVectorTest::nonEmpty);
                 for (int step : new int[] {1, 2, 33, Integer.MAX_VALUE}) {
-                    final Vector<NonEmptyVector<Integer>> stepped = nev.sliding(size, step);
+                    Vector<NonEmptyVector<Integer>> stepped = nev.sliding(size, step);
                     assertThat(stepped.map(NonEmptyVector::toVector)).isEqualTo(vector.sliding(size, step));
                     assertThat(stepped.isEmpty()).isFalse();
                     stepped.forEach(NonEmptyVectorTest::nonEmpty);
@@ -595,7 +593,7 @@ public class NonEmptyVectorTest {
             assertThatThrownBy(() -> nev.sliding(0)).isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> nev.sliding(1, 0)).isInstanceOf(IllegalArgumentException.class);
             for (int width : new int[] {1, 3, 32, 33, Integer.MAX_VALUE}) {
-                final Vector<NonEmptyVector<Integer>> runs = nev.slideBy(i -> i / width);
+                Vector<NonEmptyVector<Integer>> runs = nev.slideBy(i -> i / width);
                 assertThat(runs.map(NonEmptyVector::toVector)).isEqualTo(vector.slideBy(i -> i / width));
                 assertThat(runs.isEmpty()).isFalse();
                 runs.forEach(NonEmptyVectorTest::nonEmpty);
@@ -606,24 +604,24 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @ValueSource(ints = {1, 2, 3, 6})
         public void shouldPermuteCombineAndCrossIntoNonEmptyVectors(int n) {
-            final Vector<Integer> vector = Vector.range(0, n);
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final NonEmptyVector<NonEmptyVector<Integer>> permutations = nonEmpty(nev.permutations());
+            Vector<Integer> vector = Vector.range(0, n);
+            NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<NonEmptyVector<Integer>> permutations = nonEmpty(nev.permutations());
             assertThat(permutations.toVector().map(NonEmptyVector::toVector)).isEqualTo(vector.permutations());
             permutations.forEach(NonEmptyVectorTest::nonEmpty);
             assertThat(permutations.size()).isEqualTo(Vector.rangeClosed(1, n).fold(1, (a, b) -> a * b));
             // equal elements are permuted once
             assertThat(nev(vector.map(i -> 0)).permutations().size()).isEqualTo(1);
-            final NonEmptyVector<Vector<Integer>> combinations = nonEmpty(nev.combinations());
+            NonEmptyVector<Vector<Integer>> combinations = nonEmpty(nev.combinations());
             assertThat(combinations.toVector()).isEqualTo(vector.combinations());
             assertThat(combinations.size()).isEqualTo(1 << n);
             assertThat(combinations.head()).isEqualTo(Vector.empty());
             assertThat(combinations.last()).isEqualTo(vector);
-            final NonEmptyVector<Tuple2<Integer, Integer>> square = nonEmpty(nev.crossProduct());
+            NonEmptyVector<Tuple2<Integer, Integer>> square = nonEmpty(nev.crossProduct());
             assertThat(square.toVector()).isEqualTo(vector.crossProduct());
             assertThat(square.size()).isEqualTo(n * n);
-            final Vector<String> that = Vector.of("a", "b", "c");
-            final NonEmptyVector<Tuple2<Integer, String>> product = nonEmpty(nev.crossProduct(nev(that)));
+            Vector<String> that = Vector.of("a", "b", "c");
+            NonEmptyVector<Tuple2<Integer, String>> product = nonEmpty(nev.crossProduct(nev(that)));
             assertThat(product.toVector()).isEqualTo(vector.crossProduct(that));
             assertThat(product.size()).isEqualTo(n * 3);
         }
@@ -632,29 +630,29 @@ public class NonEmptyVectorTest {
         @ValueSource(ints = {1, 2, 3, 6, 31, 32, 33})
         public void shouldTransposeIntoNonEmptyColumns(int n) {
             // one row of n elements: n columns of one element
-            final NonEmptyVector<NonEmptyVector<Integer>> row = NonEmptyVector.single(nev(Vector.range(0, n)));
-            final NonEmptyVector<NonEmptyVector<Integer>> columns = nonEmpty(NonEmptyVector.transpose(row));
+            NonEmptyVector<NonEmptyVector<Integer>> row = NonEmptyVector.single(nev(Vector.range(0, n)));
+            NonEmptyVector<NonEmptyVector<Integer>> columns = nonEmpty(NonEmptyVector.transpose(row));
             assertThat(columns.toVector().map(NonEmptyVector::toVector))
                     .isEqualTo(Vector.range(0, n).map(Vector::of));
             columns.forEach(NonEmptyVectorTest::nonEmpty);
             // one column of n rows: one row of n elements
-            final NonEmptyVector<NonEmptyVector<Integer>> column =
+            NonEmptyVector<NonEmptyVector<Integer>> column =
                     nev(Vector.range(0, n).map(NonEmptyVector::single));
             assertThat(NonEmptyVector.transpose(column)).isEqualTo(NonEmptyVector.single(nev(Vector.range(0, n))));
             // n rows of 3: 3 rows of n, as Vector.transpose gives
-            final NonEmptyVector<NonEmptyVector<Integer>> matrix =
+            NonEmptyVector<NonEmptyVector<Integer>> matrix =
                     nev(Vector.range(0, n).map(i -> nev(Vector.range(3 * i, 3 * i + 3))));
-            final NonEmptyVector<NonEmptyVector<Integer>> transposed = nonEmpty(NonEmptyVector.transpose(matrix));
+            NonEmptyVector<NonEmptyVector<Integer>> transposed = nonEmpty(NonEmptyVector.transpose(matrix));
             assertThat(transposed.toVector().map(NonEmptyVector::toVector))
                     .isEqualTo(Vector.transpose(matrix.toVector().map(NonEmptyVector::toVector)));
             assertThat(transposed.size()).isEqualTo(3);
             transposed.forEach(r -> assertThat(nonEmpty(r).size()).isEqualTo(n));
             assertThat(NonEmptyVector.transpose(transposed)).isEqualTo(matrix);
             if (n > 1) {
-                final NonEmptyVector<NonEmptyVector<Integer>> ragged = matrix.update(0, NonEmptyVector.single(0));
+                NonEmptyVector<NonEmptyVector<Integer>> ragged = matrix.update(0, NonEmptyVector.single(0));
                 assertThatIllegalArgumentException().isThrownBy(() -> NonEmptyVector.transpose(ragged));
             }
-            final NonEmptyVector<NonEmptyVector<Number>> covariant =
+            NonEmptyVector<NonEmptyVector<Number>> covariant =
                     NonEmptyVector.transpose(NonEmptyVector.single(NonEmptyVector.of(1, 2)));
             assertThat(covariant.size()).isEqualTo(2);
         }
@@ -672,12 +670,12 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFilterRejectAndCollect(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.filter(i -> i % 2 == 0)).isEqualTo(vector.filter(i -> i % 2 == 0));
             assertThat(nev.filter(i -> false)).isEqualTo(Vector.empty());
             assertThat(nev.reject(i -> i % 2 == 0)).isEqualTo(vector.reject(i -> i % 2 == 0));
             assertThat(nev.reject(i -> true)).isEqualTo(Vector.empty());
-            final Function<Integer, Option<String>> mapper = i -> i % 3 == 0 ? Option.some("x" + i) : Option.none();
+            Function<Integer, Option<String>> mapper = i -> i % 3 == 0 ? Option.some("x" + i) : Option.none();
             assertThat(nev.collect(mapper)).isEqualTo(vector.collect(mapper));
             assertThat(nev.collect(i -> Option.<Integer>none())).isEqualTo(Vector.empty());
         }
@@ -685,7 +683,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFlatMapAllToIterables(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.flatMapAll(i -> java.util.List.of(i, i)))
                     .isEqualTo(vector.flatMap(i -> java.util.List.of(i, i)));
             assertThat(nev.flatMapAll(i -> Vector.<Integer>empty())).isEqualTo(Vector.empty());
@@ -696,7 +694,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldTailAndInit(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.tail()).isEqualTo(vector.tail());
             assertThat(nev.tail().size()).isEqualTo(n - 1);
             assertThat(nev.init()).isEqualTo(vector.init());
@@ -706,7 +704,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldDropAndTake(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int k : new int[] {-1, 0, 1, n - 1, n, n + 1}) {
                 assertThat(nev.drop(k)).isEqualTo(vector.drop(k));
                 assertThat(nev.dropRight(k)).isEqualTo(vector.dropRight(k));
@@ -715,7 +713,7 @@ public class NonEmptyVectorTest {
             }
             assertThat(nev.drop(n)).isEqualTo(Vector.empty());
             assertThat(nev.take(0)).isEqualTo(Vector.empty());
-            final int half = n / 2;
+            int half = n / 2;
             assertThat(nev.dropWhile(i -> i < half)).isEqualTo(vector.dropWhile(i -> i < half));
             assertThat(nev.dropUntil(i -> i >= half)).isEqualTo(vector.dropUntil(i -> i >= half));
             assertThat(nev.dropRightWhile(i -> i >= half)).isEqualTo(vector.dropRightWhile(i -> i >= half));
@@ -731,7 +729,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSlice(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int from : new int[] {-1, 0, 1, n}) {
                 for (int to : new int[] {0, 1, n - 1, n, n + 1}) {
                     assertThat(nev.slice(from, to)).isEqualTo(vector.slice(from, to));
@@ -743,7 +741,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldRemove(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int index : new int[] {0, n - 1}) {
                 assertThat(nev.removeAt(index)).isEqualTo(vector.removeAt(index));
                 assertThat(nev.removeAt(index).size()).isEqualTo(n - 1);
@@ -762,10 +760,9 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldPartitionMap(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final Function<Integer, Either<String, Integer>> f =
-                    i -> i % 2 == 0 ? Either.left("e" + i) : Either.right(i);
-            final Tuple2<Vector<String>, Vector<Integer>> actual = nev.partitionMap(f);
+            NonEmptyVector<Integer> nev = nev(vector);
+            Function<Integer, Either<String, Integer>> f = i -> i % 2 == 0 ? Either.left("e" + i) : Either.right(i);
+            Tuple2<Vector<String>, Vector<Integer>> actual = nev.partitionMap(f);
             assertThat(actual).isEqualTo(vector.partitionMap(f));
             assertThat(actual._1()).isEqualTo(vector.filter(i -> i % 2 == 0).map(i -> "e" + i));
             assertThat(actual._2()).isEqualTo(vector.filter(i -> i % 2 != 0));
@@ -773,7 +770,7 @@ public class NonEmptyVectorTest {
                     .isEqualTo(Tuple.of(vector, Vector.empty()));
             assertThat(nev.partitionMap(i -> Either.<Integer, Integer>right(i)))
                     .isEqualTo(Tuple.of(Vector.empty(), vector));
-            final int last = n - 1;
+            int last = n - 1;
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)))
                     .withMessage("NonEmptyVector.partitionMap: f returned null");
@@ -785,10 +782,10 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFindDuplicates(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.duplicates()).isEqualTo(Vector.empty());
             assertThat(nev.duplicatesBy(i -> i % 5)).isEqualTo(vector.duplicatesBy(i -> i % 5));
-            final Vector<Integer> doubled = vector.appendAll(vector);
+            Vector<Integer> doubled = vector.appendAll(vector);
             assertThat(nev(doubled).duplicates()).isEqualTo(vector);
             assertThat(nev(doubled).duplicatesBy(i -> i % 5)).isEqualTo(doubled.duplicatesBy(i -> i % 5));
             assertThat(nev(doubled).duplicatesBy(i -> i % 5)).isEqualTo(Vector.range(0, Math.min(n, 5)));
@@ -801,13 +798,13 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSplitAt(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int k : new int[] {Integer.MIN_VALUE, -1, 0, 1, 32, 33, n - 1, n, n + 1}) {
                 assertThat(nev.splitAt(k)).isEqualTo(vector.splitAt(k));
             }
             assertThat(nev.splitAt(0)).isEqualTo(Tuple.of(Vector.empty(), vector));
             assertThat(nev.splitAt(n)).isEqualTo(Tuple.of(vector, Vector.empty()));
-            final int half = n / 2;
+            int half = n / 2;
             assertThat(nev.splitAt(i -> i >= half)).isEqualTo(vector.splitAt(i -> i >= half));
             assertThat(nev.splitAt(i -> true)).isEqualTo(Tuple.of(Vector.empty(), vector));
             assertThat(nev.splitAt(i -> false)).isEqualTo(Tuple.of(vector, Vector.empty()));
@@ -819,10 +816,10 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSplitAtInclusiveWithANonEmptyFirstPart(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int at : new int[] {0, 1, 31, 32, n - 1, n}) {
-                final Tuple2<NonEmptyVector<Integer>, Vector<Integer>> split = nev.splitAtInclusive(i -> i == at);
-                final Tuple2<Vector<Integer>, Vector<Integer>> expected = vector.splitAtInclusive(i -> i == at);
+                Tuple2<NonEmptyVector<Integer>, Vector<Integer>> split = nev.splitAtInclusive(i -> i == at);
+                Tuple2<Vector<Integer>, Vector<Integer>> expected = vector.splitAtInclusive(i -> i == at);
                 assertThat(nonEmpty(split._1()).toVector()).isEqualTo(expected._1());
                 assertThat(split._2()).isEqualTo(expected._2());
             }
@@ -834,7 +831,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldPartition(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.partition(i -> i % 2 == 0)).isEqualTo(vector.partition(i -> i % 2 == 0));
             assertThat(nev.partition(i -> true)).isEqualTo(Tuple.of(vector, Vector.empty()));
             assertThat(nev.partition(i -> false)).isEqualTo(Tuple.of(Vector.empty(), vector));
@@ -843,18 +840,18 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldRemoveFirstAndLastAndRetainAll(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
-            final NonEmptyVector<Integer> nev = nev(doubled);
+            Vector<Integer> doubled = vector.appendAll(vector);
+            NonEmptyVector<Integer> nev = nev(doubled);
             for (int element : new int[] {0, n - 1, n}) {
                 assertThat(nev.removeFirst(i -> i == element)).isEqualTo(doubled.removeFirst(i -> i == element));
                 assertThat(nev.removeLast(i -> i == element)).isEqualTo(doubled.removeLast(i -> i == element));
             }
-            final Predicate<Object> any = o -> true;
+            Predicate<Object> any = o -> true;
             assertThat(nev.removeFirst(any)).isEqualTo(doubled.tail());
             assertThat(nev.removeLast(any)).isEqualTo(doubled.init());
             assertThat(NonEmptyVector.single(1).removeFirst(i -> true)).isEqualTo(Vector.empty());
             assertThat(NonEmptyVector.single(1).removeLast(i -> true)).isEqualTo(Vector.empty());
-            final Vector<Integer> kept = Vector.of(0, n - 1, n + 5);
+            Vector<Integer> kept = Vector.of(0, n - 1, n + 5);
             assertThat(nev.retainAll(kept)).isEqualTo(doubled.retainAll(kept));
             assertThat(nev.retainAll(Vector.empty())).isEqualTo(Vector.empty());
             assertThat(nev.retainAll(vector)).isEqualTo(doubled);
@@ -863,11 +860,11 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldPatch(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int from : new int[] {-1, 0, 1, n - 1, n, n + 1}) {
                 for (int replaced : new int[] {-1, 0, 1, 33, n}) {
                     for (int m : new int[] {0, 1, 33}) {
-                        final Vector<Integer> that = Vector.range(100, 100 + m);
+                        Vector<Integer> that = Vector.range(100, 100 + m);
                         assertThat(nev.patch(from, that, replaced)).isEqualTo(vector.patch(from, that, replaced));
                         assertThat(nev.patch(from, once(that), replaced)).isEqualTo(vector.patch(from, that, replaced));
                     }
@@ -879,7 +876,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSubSequence(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int from : new int[] {0, 1, n - 1, n}) {
                 if (from <= n) {
                     assertThat(nev.subSequence(from)).isEqualTo(vector.subSequence(from));
@@ -900,10 +897,10 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldZipAndCrossAnyIterable(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int m : new int[] {0, 1, 32, 33}) {
-                final Vector<String> that = Vector.range(0, m).map(String::valueOf);
-                final java.util.List<String> list = new java.util.ArrayList<>(that.asJava());
+                Vector<String> that = Vector.range(0, m).map(String::valueOf);
+                java.util.List<String> list = new java.util.ArrayList<>(that.asJava());
                 assertThat(nev.zip(list)).isEqualTo(vector.zip(that));
                 assertThat(nev.zip(once(that))).isEqualTo(vector.zip(that));
                 assertThat(nev.zipWith(list, (i, s) -> i + s)).isEqualTo(vector.zipWith(that, (i, s) -> i + s));
@@ -922,8 +919,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @ValueSource(ints = {1, 2, 3, 6})
         public void shouldCombineAndRaiseToAPower(int n) {
-            final Vector<Integer> vector = Vector.range(0, n);
-            final NonEmptyVector<Integer> nev = nev(vector);
+            Vector<Integer> vector = Vector.range(0, n);
+            NonEmptyVector<Integer> nev = nev(vector);
             for (int k : new int[] {-1, 0, 1, n / 2, n, n + 1}) {
                 assertThat(nev.combinations(k)).isEqualTo(vector.combinations(k));
             }
@@ -944,7 +941,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReturnHeadLastSizeAndGet(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.head()).isEqualTo(vector.head()).isEqualTo(0);
             assertThat(nev.last()).isEqualTo(vector.last()).isEqualTo(n - 1);
             assertThat(nev.size()).isEqualTo(vector.size()).isEqualTo(n);
@@ -958,7 +955,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReturnMaxAndMin(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector.reverse());
+            NonEmptyVector<Integer> nev = nev(vector.reverse());
             assertThat(nev.max(Comparator.naturalOrder()))
                     .isEqualTo(vector.max().get())
                     .isEqualTo(n - 1);
@@ -974,7 +971,7 @@ public class NonEmptyVectorTest {
                     .isEqualTo(vector.minBy(i -> -i).get())
                     .isEqualTo(n - 1);
             // ties: the first element wins, as on Vector
-            final Comparator<Integer> mod2 = Comparator.comparingInt(i -> i % 2);
+            Comparator<Integer> mod2 = Comparator.comparingInt(i -> i % 2);
             assertThat(nev.max(mod2)).isEqualTo(nev.toVector().maxBy(mod2).get());
             assertThat(nev.min(mod2)).isEqualTo(nev.toVector().minBy(mod2).get());
             assertThat(nev.maxBy(i -> i % 2))
@@ -986,15 +983,15 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReduce(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.reduce(Integer::sum)).isEqualTo(vector.reduce(Integer::sum));
             assertThat(nev.reduceLeft((a, b) -> a - b)).isEqualTo(vector.reduceLeft((a, b) -> a - b));
             assertThat(nev.reduceRight((a, b) -> a - b)).isEqualTo(vector.reduceRight((a, b) -> a - b));
-            final String concatenated = nev.reduceMap(String::valueOf, String::concat);
+            String concatenated = nev.reduceMap(String::valueOf, String::concat);
             assertThat(concatenated).isEqualTo(vector.mkString());
             assertThat(nev.reduceMap(i -> i * 2, Integer::sum)).isEqualTo(n * (n - 1));
             assertThat(NonEmptyVector.single(5).reduce((a, b) -> a * b)).isEqualTo(5);
-            final String single = NonEmptyVector.single(5).reduceMap(i -> "v" + i, (a, b) -> {
+            String single = NonEmptyVector.single(5).reduceMap(i -> "v" + i, (a, b) -> {
                 throw new AssertionError();
             });
             assertThat(single).isEqualTo("v5");
@@ -1003,7 +1000,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldMkString(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.mkString()).isEqualTo(vector.mkString());
             assertThat(nev.mkString(", ")).isEqualTo(vector.mkString(", "));
             assertThat(nev.mkString("[", "|", "]")).isEqualTo(vector.mkString("[", "|", "]"));
@@ -1012,7 +1009,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFold(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.foldLeft("", (s, i) -> s + i)).isEqualTo(vector.foldLeft("", (s, i) -> s + i));
             assertThat(nev.foldRight("", (i, s) -> s + i)).isEqualTo(vector.foldRight("", (i, s) -> s + i));
         }
@@ -1020,7 +1017,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSearch(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.contains(n - 1)).isTrue();
             assertThat(nev.contains(n)).isFalse();
             assertThat(nev.exists(i -> i == n - 1)).isTrue();
@@ -1035,10 +1032,10 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldIterateStreamAndConvert(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev).containsExactlyElementsOf(vector);
             assertThat(nev.iterator().hasNext()).isTrue();
-            final java.util.Spliterator<Integer> spliterator = nev.spliterator();
+            java.util.Spliterator<Integer> spliterator = nev.spliterator();
             assertThat(spliterator.hasCharacteristics(java.util.Spliterator.SIZED
                             | java.util.Spliterator.SUBSIZED
                             | java.util.Spliterator.ORDERED
@@ -1065,8 +1062,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFindIndices(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
-            final NonEmptyVector<Integer> nev = nev(doubled);
+            Vector<Integer> doubled = vector.appendAll(vector);
+            NonEmptyVector<Integer> nev = nev(doubled);
             for (int element : new int[] {0, n / 2, n - 1, n}) {
                 assertThat(nev.lastIndexOf(element)).isEqualTo(doubled.lastIndexOf(element));
                 assertThat(nev.indexWhere(i -> i == element)).isEqualTo(doubled.indexWhere(i -> i == element));
@@ -1091,8 +1088,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFindSlices(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
-            final NonEmptyVector<Integer> nev = nev(doubled);
+            Vector<Integer> doubled = vector.appendAll(vector);
+            NonEmptyVector<Integer> nev = nev(doubled);
             for (Vector<Integer> slice : java.util.List.of(
                     Vector.<Integer>empty(),
                     Vector.of(0),
@@ -1124,8 +1121,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldSearchSortedElements(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final NonEmptyVector<Integer> descending = nev(vector.reverse());
+            NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> descending = nev(vector.reverse());
             for (int element : new int[] {-1, 0, 1, n / 2, n - 1, n}) {
                 assertThat(nev.search(element)).isEqualTo(vector.search(element));
                 assertThat(descending.search(element, Comparator.reverseOrder()))
@@ -1138,8 +1135,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldMeasureSegmentsAndTestMembership(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final int half = n / 2;
+            NonEmptyVector<Integer> nev = nev(vector);
+            int half = n / 2;
             for (int from : new int[] {Integer.MIN_VALUE, -1, 0, 1, half, n - 1, n, n + 1}) {
                 assertThat(nev.segmentLength(i -> i < half, from)).isEqualTo(vector.segmentLength(i -> i < half, from));
             }
@@ -1158,7 +1155,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldAggregateTotally(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector.reverse());
+            NonEmptyVector<Integer> nev = nev(vector.reverse());
             assertThat(nev.max()).isEqualTo(vector.max().get()).isEqualTo(n - 1);
             assertThat(nev.min()).isEqualTo(vector.min().get()).isEqualTo(0);
             assertThat(nev.maxBy(Comparator.<Integer>reverseOrder()))
@@ -1167,28 +1164,28 @@ public class NonEmptyVectorTest {
             assertThat(nev.minBy(Comparator.<Integer>reverseOrder()))
                     .isEqualTo(vector.minBy(Comparator.<Integer>reverseOrder()).get())
                     .isEqualTo(n - 1);
-            final Comparator<Integer> mod2 = Comparator.comparingInt(i -> i % 2);
+            Comparator<Integer> mod2 = Comparator.comparingInt(i -> i % 2);
             assertThat(nev.maxBy(mod2)).isEqualTo(nev.toVector().maxBy(mod2).get());
             assertThat(nev.minBy(mod2)).isEqualTo(nev.toVector().minBy(mod2).get());
             assertThat(nev.fold(0, Integer::sum)).isEqualTo(vector.fold(0, Integer::sum));
             assertThat(nev.sum()).isEqualTo(vector.sum()).isEqualTo((long) n * (n - 1) / 2);
-            final NonEmptyVector<Integer> small = nev(vector.map(i -> i % 3 + 1));
+            NonEmptyVector<Integer> small = nev(vector.map(i -> i % 3 + 1));
             assertThat(small.product()).isEqualTo(small.toVector().product());
-            final double average = nev.average();
+            double average = nev.average();
             assertThat(average).isEqualTo(vector.average().get()).isEqualTo((n - 1) / 2.0);
-            final NonEmptyVector<Double> doubles = nev(vector.map(i -> i / 3.0));
+            NonEmptyVector<Double> doubles = nev(vector.map(i -> i / 3.0));
             assertThat(doubles.average()).isEqualTo(doubles.toVector().average().get());
             assertThat(doubles.sum()).isEqualTo(doubles.toVector().sum());
         }
 
         @Test
         public void shouldTakeTheMinimumAndMaximumOfFloatingPointNumbersAsVectorDoes() {
-            final NonEmptyVector<Double> doubles = NonEmptyVector.of(2.0, Double.NaN, -1.0, 0.0, -0.0);
+            NonEmptyVector<Double> doubles = NonEmptyVector.of(2.0, Double.NaN, -1.0, 0.0, -0.0);
             assertThat(doubles.min()).isEqualTo(doubles.toVector().min().get()).isNaN();
             assertThat(doubles.max()).isEqualTo(doubles.toVector().max().get());
-            final NonEmptyVector<Double> zeros = NonEmptyVector.of(0.0, -0.0);
+            NonEmptyVector<Double> zeros = NonEmptyVector.of(0.0, -0.0);
             assertThat(zeros.min()).isEqualTo(zeros.toVector().min().get()).isEqualTo(-0.0);
-            final NonEmptyVector<Float> floats = NonEmptyVector.of(2f, Float.NaN, -1f);
+            NonEmptyVector<Float> floats = NonEmptyVector.of(2f, Float.NaN, -1f);
             assertThat(floats.min()).isEqualTo(floats.toVector().min().get()).isNaN();
             assertThat(NonEmptyVector.of(3f, 1f, 2f).min()).isEqualTo(1f);
             assertThat(NonEmptyVector.of("b", "a", "c").min()).isEqualTo("a");
@@ -1203,7 +1200,7 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldAggregateValuesThatOverflowAsVectorDoes() {
-            final java.util.List<Vector<? extends Number>> inputs = java.util.List.of(
+            java.util.List<Vector<? extends Number>> inputs = java.util.List.of(
                     Vector.of(Integer.MAX_VALUE, Integer.MAX_VALUE),
                     Vector.of(Integer.MIN_VALUE, -1),
                     Vector.of(Long.MAX_VALUE, Long.MAX_VALUE),
@@ -1218,7 +1215,7 @@ public class NonEmptyVectorTest {
                             new java.math.BigInteger("9223372036854775807"),
                             new java.math.BigInteger("9223372036854775807")));
             for (Vector<? extends Number> input : inputs) {
-                final NonEmptyVector<? extends Number> nev = nev(input);
+                NonEmptyVector<? extends Number> nev = nev(input);
                 assertThat(nev.sum()).as("sum of " + input).isEqualTo(input.sum());
                 assertThat(nev.product()).as("product of " + input).isEqualTo(input.product());
                 assertThat(nev.average())
@@ -1236,8 +1233,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReadAnIterableArgumentOnceInEveryQuery(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
-            final NonEmptyVector<Integer> nev = nev(doubled);
+            Vector<Integer> doubled = vector.appendAll(vector);
+            NonEmptyVector<Integer> nev = nev(doubled);
             for (Vector<Integer> that :
                     java.util.List.of(Vector.<Integer>empty(), Vector.of(0), vector, Vector.of(n))) {
                 assertThat(nev.retainAll(once(that))).isEqualTo(doubled.retainAll(that));
@@ -1262,7 +1259,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldReturnTheSingleElementOnlyWhenThereIsOne(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             if (n == 1) {
                 assertThat(nev.single()).isEqualTo(0);
             } else {
@@ -1273,7 +1270,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldArrangeByAUniqueKey(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.arrangeBy(i -> "k" + i)).isEqualTo(vector.arrangeBy(i -> "k" + i));
             assertThat(nev.arrangeBy(i -> "k" + i).get().size()).isEqualTo(n);
             assertThat(nev.arrangeBy(i -> i % 2)).isEqualTo(vector.arrangeBy(i -> i % 2));
@@ -1283,22 +1280,22 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldVisitWithIndicesAndCollect(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final ArrayList<String> seen = new ArrayList<>();
+            NonEmptyVector<Integer> nev = nev(vector);
+            ArrayList<String> seen = new ArrayList<>();
             nev.forEachWithIndex((element, index) -> seen.add(element + "@" + index));
             assertThat(seen)
                     .isEqualTo(new ArrayList<>(vector.map(i -> i + "@" + i).asJava()));
             assertThat(nev.collect(java.util.stream.Collectors.toList()))
                     .isEqualTo(vector.collect(java.util.stream.Collectors.toList()));
-            final ArrayList<Integer> collected = nev.collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+            ArrayList<Integer> collected = nev.collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
             assertThat(collected).isEqualTo(new ArrayList<>(vector.asJava()));
         }
 
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldConvertLikeVector(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector.reverse());
-            final NonEmptyVector<Integer> nev = nev(doubled);
+            Vector<Integer> doubled = vector.appendAll(vector.reverse());
+            NonEmptyVector<Integer> nev = nev(doubled);
             assertThat(nev.toQueue()).isEqualTo(doubled.toQueue());
             assertThat(nev.toStream()).isEqualTo(doubled.toStream());
             assertThat((Object) nev.toLinkedSet()).isEqualTo(doubled.toLinkedSet());
@@ -1317,7 +1314,7 @@ public class NonEmptyVectorTest {
                     .isEqualTo(doubled.toSortedMap(i -> i % 7, i -> i).toVector());
             assertThat(nev.toSortedMap(i -> Tuple.of(i % 7, i)).toVector())
                     .isEqualTo(doubled.toSortedMap(i -> Tuple.of(i % 7, i)).toVector());
-            final Comparator<Integer> reverse = Comparator.reverseOrder();
+            Comparator<Integer> reverse = Comparator.reverseOrder();
             assertThat(nev.toSortedMap(reverse, i -> i % 7, i -> i).toVector())
                     .isEqualTo(doubled.toSortedMap(reverse, i -> i % 7, i -> i).toVector());
             assertThat(nev.toSortedMap(reverse, i -> Tuple.of(i % 7, i)).toVector())
@@ -1333,7 +1330,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFind(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             assertThat(nev.find(i -> i % 2 == 0))
                     .isEqualTo(vector.find(i -> i % 2 == 0))
                     .isEqualTo(Option.some(0));
@@ -1347,7 +1344,7 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldNarrowTailAndInit(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> nev = nev(vector);
             if (n == 1) {
                 assertThat(nev.tailNonEmpty()).isEqualTo(Option.none());
                 assertThat(nev.initNonEmpty()).isEqualTo(Option.none());
@@ -1366,8 +1363,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldFindIndicesAsOptions(int n, Vector<Integer> vector) {
-            final Vector<Integer> doubled = vector.appendAll(vector);
-            final NonEmptyVector<Integer> nev = nev(doubled);
+            Vector<Integer> doubled = vector.appendAll(vector);
+            NonEmptyVector<Integer> nev = nev(doubled);
             for (int element : new int[] {0, n - 1, n}) {
                 assertThat(nev.indexWhereOption(i -> i == element))
                         .isEqualTo(doubled.indexWhereOption(i -> i == element));
@@ -1408,7 +1405,7 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldRejectNullElementArguments() {
-            final NonEmptyVector<Integer> nev = NonEmptyVector.single(1);
+            NonEmptyVector<Integer> nev = NonEmptyVector.single(1);
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.as(null))
                     .withMessage("NonEmptyVector.as: value is null");
@@ -1448,8 +1445,8 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldRejectNullElementsOfIterableArguments() {
-            final NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
-            final java.util.List<Integer> withNull = Arrays.asList(3, null);
+            NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
+            java.util.List<Integer> withNull = Arrays.asList(3, null);
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.appendAll(withNull))
                     .withMessage("NonEmptyVector: element is null");
@@ -1505,7 +1502,7 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldRejectNullResultsOfFunctions() {
-            final NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
+            NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.scan(0, (a, b) -> null))
                     .withMessage("NonEmptyVector.scan: operation returned null");
@@ -1573,7 +1570,7 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldRejectNullFunctions() {
-            final NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
+            NonEmptyVector<Integer> nev = NonEmptyVector.of(1, 2);
             assertThatNullPointerException().isThrownBy(() -> nev.scan(0, null));
             assertThatNullPointerException().isThrownBy(() -> nev.scanRight(0, null));
             assertThatNullPointerException().isThrownBy(() -> nev.unzip(null));
@@ -1609,7 +1606,7 @@ public class NonEmptyVectorTest {
 
         /* signature -> calls of that overload, with arguments chosen to shrink the result as far as they can */
         static java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<Object>>> calls() {
-            final java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<Object>>> calls =
+            java.util.Map<String, Function<NonEmptyVector<Integer>, java.util.List<Object>>> calls =
                     new java.util.HashMap<>();
             // constructors and narrowings
             calls.put(
@@ -1781,7 +1778,7 @@ public class NonEmptyVectorTest {
                 "toNonEmptyVector");
 
         static java.util.Set<String> publicInstanceMethodNames(Class<?> type) {
-            final java.util.Set<String> names = new java.util.TreeSet<>();
+            java.util.Set<String> names = new java.util.TreeSet<>();
             for (java.lang.reflect.Method method : type.getMethods()) {
                 if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())
                         && !method.isSynthetic()
@@ -1795,7 +1792,7 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldHaveEveryVectorMethodButTheDeliberateAbsences() {
-            final java.util.Set<String> missing = new java.util.TreeSet<>(publicInstanceMethodNames(Vector.class));
+            java.util.Set<String> missing = new java.util.TreeSet<>(publicInstanceMethodNames(Vector.class));
             missing.removeAll(publicInstanceMethodNames(NonEmptyVector.class));
             assertThat(missing).containsExactlyInAnyOrderElementsOf(DELIBERATELY_ABSENT);
         }
@@ -1819,9 +1816,9 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @ValueSource(ints = {1, 2, 31, 32, 33, 1023, 1024, 1025})
         public void shouldFlattenNestedNonEmptyVectors(int n) {
-            final NonEmptyVector<NonEmptyVector<Integer>> nested =
+            NonEmptyVector<NonEmptyVector<Integer>> nested =
                     nev(Vector.range(0, n)).map(i -> nev(Vector.range(i, i + n)));
-            final NonEmptyVector<Integer> flat = NonEmptyVector.flatten(nested);
+            NonEmptyVector<Integer> flat = NonEmptyVector.flatten(nested);
             assertThat(flat.toVector())
                     .isEqualTo(Vector.flatten(nested.toVector().map(NonEmptyVector::toVector)));
             assertThat(flat.size()).isEqualTo(n * n);
@@ -1832,9 +1829,9 @@ public class NonEmptyVectorTest {
 
         @Test
         public void shouldFlattenCovariantly() {
-            final NonEmptyVector<NonEmptyVector<Integer>> nested =
+            NonEmptyVector<NonEmptyVector<Integer>> nested =
                     NonEmptyVector.of(NonEmptyVector.of(1), NonEmptyVector.of(2, 3));
-            final NonEmptyVector<Number> flat = NonEmptyVector.flatten(nested);
+            NonEmptyVector<Number> flat = NonEmptyVector.flatten(nested);
             assertThat(flat.toVector()).isEqualTo(Vector.<Number>of(1, 2, 3));
         }
     }
@@ -1845,8 +1842,8 @@ public class NonEmptyVectorTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyVectorTest#vectors")
         public void shouldBeEqualToAnotherNonEmptyVectorWithTheSameElements(int n, Vector<Integer> vector) {
-            final NonEmptyVector<Integer> nev = nev(vector);
-            final NonEmptyVector<Integer> copy = NonEmptyVector.fromIterable(new java.util.ArrayList<>(vector.asJava()))
+            NonEmptyVector<Integer> nev = nev(vector);
+            NonEmptyVector<Integer> copy = NonEmptyVector.fromIterable(new java.util.ArrayList<>(vector.asJava()))
                     .get();
             assertThat(nev).isEqualTo(nev);
             assertThat(nev).isEqualTo(copy);

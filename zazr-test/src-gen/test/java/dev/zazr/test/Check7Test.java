@@ -24,8 +24,8 @@ class Check7Test {
 
     @Test
     void passesTheValuesInOrder() {
-        final ArrayList<Object> seen = new ArrayList<>();
-        final CheckResult result = Check.evaluate(
+        ArrayList<Object> seen = new ArrayList<>();
+        CheckResult result = Check.evaluate(
                 CONFIG,
                 Gen.constant(1),
                 Gen.constant(2),
@@ -81,7 +81,7 @@ class Check7Test {
 
     @Test
     void checkAllRunsEveryCombinationOnce() {
-        final ArrayList<Object> seen = new ArrayList<>();
+        ArrayList<Object> seen = new ArrayList<>();
         assertThat(Check.evaluateAll(
                         TWO,
                         TWO,
@@ -340,7 +340,7 @@ class Check7Test {
 
     @Test
     void checkReturnsWhenEveryValuePasses() {
-        final ArrayList<Object> seen = new ArrayList<>();
+        ArrayList<Object> seen = new ArrayList<>();
         Check.check(
                 CONFIG,
                 Gen.constant(1),

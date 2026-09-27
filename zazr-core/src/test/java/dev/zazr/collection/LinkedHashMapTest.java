@@ -43,9 +43,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             @Override
             public IterableAssert<T> isEqualTo(Object obj) {
                 @SuppressWarnings("unchecked")
-                final Iterable<T> expected = (Iterable<T>) obj;
-                final java.util.Map<T, Integer> actualMap = countMap(actual);
-                final java.util.Map<T, Integer> expectedMap = countMap(expected);
+                Iterable<T> expected = (Iterable<T>) obj;
+                java.util.Map<T, Integer> actualMap = countMap(actual);
+                java.util.Map<T, Integer> expectedMap = countMap(expected);
                 LinkedHashMapTest.super.assertThat(actualMap.size()).isEqualTo(expectedMap.size());
                 actualMap.forEach(
                         (k, v) -> LinkedHashMapTest.super.assertThat(v).isEqualTo(expectedMap.get(k)));
@@ -53,7 +53,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             }
 
             private java.util.Map<T, Integer> countMap(Iterable<? extends T> it) {
-                final java.util.HashMap<T, Integer> cnt = new java.util.HashMap<>();
+                java.util.HashMap<T, Integer> cnt = new java.util.HashMap<>();
                 it.forEach(i -> cnt.merge(i, 1, (v1, v2) -> v1 + v2));
                 return cnt;
             }
@@ -62,7 +62,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Override
     protected <T> Collector<T, ArrayList<T>, IntMap<T>> collector() {
-        final Collector<Tuple2<Integer, T>, ?, ? extends Map<Integer, T>> mapCollector = mapCollector();
+        Collector<Tuple2<Integer, T>, ?, ? extends Map<Integer, T>> mapCollector = mapCollector();
         return new Collector<T, ArrayList<T>, IntMap<T>>() {
             @Override
             public Supplier<ArrayList<T>> supplier() {
@@ -207,7 +207,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     }
     // the type name a map built by mapOf(...) prints; empty() is an IntMap wrapper, whose name differs
     private String mapPrefix() {
-        final String empty = emptyMap().toString();
+        String empty = emptyMap().toString();
         return empty.substring(0, empty.length() - "()".length());
     }
 
@@ -215,9 +215,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNarrowMap() {
-        final Map<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
-        final Map<Number, Number> number2numberMap = Map.narrow(int2doubleMap);
-        final int actual = number2numberMap
+        Map<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
+        Map<Number, Number> number2numberMap = Map.narrow(int2doubleMap);
+        int actual = number2numberMap
                 .put(new BigDecimal("2"), new BigDecimal("2.0"))
                 .values()
                 .sum()
@@ -254,7 +254,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @SafeVarargs
     protected final <K, V> java.util.Map<K, V> asJavaMap(java.util.Map.Entry<K, V>... entries) {
-        final java.util.Map<K, V> results = javaEmptyMap();
+        java.util.Map<K, V> results = javaEmptyMap();
         for (java.util.Map.Entry<K, V> entry : entries) {
             results.put(entry.getKey(), entry.getValue());
         }
@@ -263,8 +263,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStream() {
-        final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
-        final Map<String, Integer> map = mapOf(javaStream, String::valueOf, Function.identity());
+        java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
+        Map<String, Integer> map = mapOf(javaStream, String::valueOf, Function.identity());
         assertThat(map)
                 .isEqualTo(
                         this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
@@ -279,8 +279,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromJavaStreamEntries() {
-        final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
-        final Map<String, Integer> map = mapOf(javaStream, i -> Tuple.of(String.valueOf(i), i));
+        java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
+        Map<String, Integer> map = mapOf(javaStream, i -> Tuple.of(String.valueOf(i), i));
         assertThat(map)
                 .isEqualTo(
                         this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3));
@@ -298,8 +298,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldConstructFromUtilEntries() {
-        final Map<Integer, String> actual = mapOfEntries(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"));
-        final Map<Integer, String> expected =
+        Map<Integer, String> actual = mapOfEntries(asJavaEntry(1, "1"), asJavaEntry(2, "2"), asJavaEntry(3, "3"));
+        Map<Integer, String> expected =
                 this.<Integer, String>emptyMap().put(1, "1").put(2, "2").put(3, "3");
         assertThat(actual).isEqualTo(expected);
     }
@@ -317,8 +317,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldConstructFromEntriesVararg() {
-        final Map<String, Integer> actual = mapOfTuples(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3));
-        final Map<String, Integer> expected =
+        Map<String, Integer> actual = mapOfTuples(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3));
+        Map<String, Integer> expected =
                 this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
@@ -335,9 +335,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromEntriesIterable() {
-        final Map<String, Integer> actual =
-                mapOfTuples(asList(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3)));
-        final Map<String, Integer> expected =
+        Map<String, Integer> actual = mapOfTuples(asList(Map.entry("1", 1), Map.entry("2", 2), Map.entry("3", 3)));
+        Map<String, Integer> expected =
                 this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
@@ -353,24 +352,24 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConstructFromPairs() {
-        final Map<String, Integer> actual = mapOf("1", 1, "2", 2, "3", 3);
-        final Map<String, Integer> expected =
+        Map<String, Integer> actual = mapOf("1", 1, "2", 2, "3", 3);
+        Map<String, Integer> expected =
                 this.<String, Integer>emptyMap().put("1", 1).put("2", 2).put("3", 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructFromPairsWithDuplicatedKeys() {
-        final Map<Integer, String> actual = mapOf(1, "1", 1, "2", 2, "3");
-        final Map<Integer, String> expected =
+        Map<Integer, String> actual = mapOf(1, "1", 1, "2", 2, "3");
+        Map<Integer, String> expected =
                 this.<Integer, String>emptyMap().put(1, "2").put(2, "3");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConstructWithTabulate() {
-        final Map<String, Integer> actual = mapTabulate(4, i -> Tuple.of(i.toString(), i));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap()
+        Map<String, Integer> actual = mapTabulate(4, i -> Tuple.of(i.toString(), i));
+        Map<String, Integer> expected = this.<String, Integer>emptyMap()
                 .put("0", 0)
                 .put("1", 1)
                 .put("2", 2)
@@ -388,8 +387,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     @Test
     public void shouldConstructWithFill() {
         AtomicInteger i = new AtomicInteger();
-        final Map<String, Integer> actual = mapFill(4, () -> Tuple.of(String.valueOf(i.get()), i.getAndIncrement()));
-        final Map<String, Integer> expected = this.<String, Integer>emptyMap()
+        Map<String, Integer> actual = mapFill(4, () -> Tuple.of(String.valueOf(i.get()), i.getAndIncrement()));
+        Map<String, Integer> expected = this.<String, Integer>emptyMap()
                 .put("0", 0)
                 .put("1", 1)
                 .put("2", 2)
@@ -459,15 +458,13 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRecognizeNotContainedKeyValuePair() {
-            final dev.zazr.collection.TreeMap<String, Integer> testee =
-                    dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
+            dev.zazr.collection.TreeMap<String, Integer> testee = dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 0))).isFalse();
         }
 
         @Test
         public void shouldRecognizeContainedKeyValuePair() {
-            final dev.zazr.collection.TreeMap<String, Integer> testee =
-                    dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
+            dev.zazr.collection.TreeMap<String, Integer> testee = dev.zazr.collection.TreeMap.of(Tuple.of("one", 1));
             assertThat(testee.contains(Tuple.of("one", 1))).isTrue();
         }
     }
@@ -477,11 +474,11 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         @Test
         public void shouldFlatMapUsingBiFunction() {
-            final Map<Integer, Integer> testee = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33));
-            final Map<String, String> actual = testee.flatMap((k, v) -> dev.zazr.collection.List.of(
+            Map<Integer, Integer> testee = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33));
+            Map<String, String> actual = testee.flatMap((k, v) -> dev.zazr.collection.List.of(
                     Tuple.of(String.valueOf(k), String.valueOf(v)),
                     Tuple.of(String.valueOf(k * 10), String.valueOf(v * 10))));
-            final Map<String, String> expected = mapOfTuples(
+            Map<String, String> expected = mapOfTuples(
                     Tuple.of("1", "11"),
                     Tuple.of("10", "110"),
                     Tuple.of("2", "22"),
@@ -497,8 +494,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnKeySet() {
-            final dev.zazr.collection.Set<Integer> actual = mapOfTuples(
-                            Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
+            dev.zazr.collection.Set<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
                     .keySet();
             assertThat(actual).isEqualTo(dev.zazr.collection.HashSet.of(1, 2, 3));
         }
@@ -513,8 +509,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapBothNonEmpty() {
-        final Stream<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
-        final Stream<Tuple2<Integer, String>> actual = emptyInt()
+        Stream<Tuple2<Integer, String>> expected = Stream.of(Tuple.of(2, "1!"), Tuple.of(3, "2!"));
+        Stream<Tuple2<Integer, String>> actual = emptyInt()
                 .put(1, "1")
                 .put(2, "2")
                 .mapBoth(i -> i + 1, s -> s + "!")
@@ -535,20 +531,20 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnModifiedKeysMap() {
-        final Map<String, String> actual = emptyIntString()
+        Map<String, String> actual = emptyIntString()
                 .put(1, "1")
                 .put(2, "2")
                 .mapKeys(k -> k * 12)
                 .mapKeys(Integer::toHexString)
                 .mapKeys(String::toUpperCase);
-        final Map<String, String> expected =
+        Map<String, String> expected =
                 this.<String, String>emptyMap().put("C", "1").put("18", "2");
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldReturnModifiedKeysMapWithNonUniqueMapper() {
-        final Map<Integer, String> actual = emptyIntString()
+        Map<Integer, String> actual = emptyIntString()
                 .put(1, "1")
                 .put(2, "2")
                 .put(3, "3")
@@ -564,7 +560,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     public static String md5(String src) {
         try {
-            final MessageDigest md = MessageDigest.getInstance("MD5");
+            MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(src.getBytes(StandardCharsets.UTF_8));
             return toHexString(md.digest());
         } catch (Exception e) {
@@ -584,7 +580,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             throw new IllegalArgumentException("byte array must not be null");
         }
 
-        final StringBuilder hex = new StringBuilder(bytes.length * 2);
+        StringBuilder hex = new StringBuilder(bytes.length * 2);
         for (byte aByte : bytes) {
             hex.append(Character.forDigit((aByte & 0XF0) >> 4, 16));
             hex.append(Character.forDigit((aByte & 0X0F), 16));
@@ -594,7 +590,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnModifiedKeysMapWithNonUniqueMapperAndMergedValues() {
-        final Map<Integer, String> actual = emptyIntString()
+        Map<Integer, String> actual = emptyIntString()
                 .put(1, "1")
                 .put(2, "2")
                 .put(3, "3")
@@ -607,7 +603,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
                                 .append(v2)
                                 .sorted()
                                 .mkString("#"));
-        final Map<Integer, String> expected = emptyIntString().put(32, "1#2#3");
+        Map<Integer, String> expected = emptyIntString().put(32, "1#2#3");
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -621,9 +617,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMerge() {
-        final Map<Integer, Integer> m1 = emptyIntInt().put(1, 1).put(2, 2);
-        final Map<Integer, Integer> m2 = emptyIntInt().put(1, 1).put(4, 4);
-        final Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
+        Map<Integer, Integer> m1 = emptyIntInt().put(1, 1).put(2, 2);
+        Map<Integer, Integer> m2 = emptyIntInt().put(1, 1).put(4, 4);
+        Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
         assertThat(m1.merge(m2)).isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(4, 4));
         assertThat(m1.merge(m3))
                 .isEqualTo(emptyIntInt().put(1, 1).put(2, 2).put(3, 3).put(4, 4));
@@ -631,13 +627,13 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameMapWhenMergeNonEmptyWithEmpty() {
-        final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+        Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
         assertThat(map.merge(emptyMap())).isSameAs(map);
     }
 
     @Test
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmpty() {
-        final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+        Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
         if (map instanceof SortedMap) {
             assertThat(this.<Integer, String>emptyMap().merge(map)).isEqualTo(map);
         } else {
@@ -649,9 +645,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMergeCollisions() {
-        final Map<Integer, Integer> m1 = emptyIntInt().put(1, 1).put(2, 2);
-        final Map<Integer, Integer> m2 = emptyIntInt().put(1, 2).put(4, 4);
-        final Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
+        Map<Integer, Integer> m1 = emptyIntInt().put(1, 1).put(2, 2);
+        Map<Integer, Integer> m2 = emptyIntInt().put(1, 2).put(4, 4);
+        Map<Integer, Integer> m3 = emptyIntInt().put(3, 3).put(4, 4);
         assertThat(emptyIntInt().merge(m2, Math::max)).isEqualTo(m2);
         assertThat(m2.merge(emptyIntInt(), Math::max)).isEqualTo(m2);
         assertThat(m1.merge(m2, Math::max))
@@ -662,13 +658,13 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameMapWhenMergeNonEmptyWithEmptyUsingCollisionResolution() {
-        final Map<Integer, Integer> map = mapOf(1, 1, 2, 2, 3, 3);
+        Map<Integer, Integer> map = mapOf(1, 1, 2, 2, 3, 3);
         assertThat(map.merge(emptyMap(), Math::max)).isSameAs(map);
     }
 
     @Test
     public void shouldReturnSameMapWhenMergeEmptyWithNonEmptyUsingCollisionResolution() {
-        final Map<Integer, Integer> map = mapOf(1, 1, 2, 2, 3, 3);
+        Map<Integer, Integer> map = mapOf(1, 1, 2, 2, 3, 3);
         if (map instanceof SortedMap) {
             assertThat(this.<Integer, Integer>emptyMap().merge(map, Math::max)).isEqualTo(map);
         } else {
@@ -680,8 +676,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class Equality2Tests {
         @Test
         public void shouldIgnoreOrderOfEntriesWhenComparingForEquality() {
-            final Map<?, ?> map1 = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
-            final Map<?, ?> map2 =
+            Map<?, ?> map1 = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
+            Map<?, ?> map2 =
                     emptyInt().put(3, 'c').put(2, 'b').put(1, 'a').remove(2).put(2, 'b');
             assertThat(map1).isEqualTo(map2);
         }
@@ -697,22 +693,22 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPutExistingKeyAndNonEqualValue() {
-            final Map<IntMod2, String> map = mapOf(new IntMod2(1), "a");
+            Map<IntMod2, String> map = mapOf(new IntMod2(1), "a");
 
             // we need to compare Strings because equals (intentionally) does not work for IntMod2
-            final String actual = map.put(new IntMod2(3), "b").toString();
-            final String expected = mapPrefix() + "((3, b))";
+            String actual = map.put(new IntMod2(3), "b").toString();
+            String expected = mapPrefix() + "((3, b))";
 
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldPutExistingKeyAndEqualValue() {
-            final Map<IntMod2, String> map = mapOf(new IntMod2(1), "a");
+            Map<IntMod2, String> map = mapOf(new IntMod2(1), "a");
 
             // we need to compare Strings because equals (intentionally) does not work for IntMod2
-            final String actual = map.put(new IntMod2(3), "a").toString();
-            final String expected = mapPrefix() + "((3, a))";
+            String actual = map.put(new IntMod2(3), "a").toString();
+            String expected = mapPrefix() + "((3, a))";
 
             assertThat(actual).isEqualTo(expected);
         }
@@ -722,7 +718,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class RemoveTests {
         @Test
         public void shouldRemoveKey() {
-            final Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
+            Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
             assertThat(src.remove(2)).isEqualTo(emptyInt().put(1, 'a').put(3, 'c'));
             assertThat(src.remove(33)).isSameAs(src);
         }
@@ -732,7 +728,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class RemoveallTests {
         @Test
         public void shouldRemoveAllKeys() {
-            final Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
+            Map<Integer, Object> src = emptyInt().put(1, 'a').put(2, 'b').put(3, 'c');
             assertThat(src.removeAll(dev.zazr.collection.List.of(1, 3)))
                     .isEqualTo(emptyInt().put(2, 'b'));
             assertThat(src.removeAll(dev.zazr.collection.List.of(33))).isSameAs(src);
@@ -741,13 +737,13 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameMapWhenNonEmptyRemoveAllEmpty() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
             assertThat(map.removeAll(dev.zazr.collection.List.empty())).isSameAs(map);
         }
 
         @Test
         public void shouldReturnSameMapWhenEmptyRemoveAllNonEmpty() {
-            final Map<Integer, String> empty = emptyMap();
+            Map<Integer, String> empty = emptyMap();
             assertThat(empty.removeAll(dev.zazr.collection.List.of(1, 2, 3))).isSameAs(empty);
         }
     }
@@ -756,8 +752,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class ForeachTests {
         @Test
         public void forEachByKeyValue() {
-            final Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-            final int[] result = {0};
+            Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
+            int[] result = {0};
             map.forEach((k, v) -> {
                 result[0] += k + v;
             });
@@ -766,8 +762,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void forEachByTuple() {
-            final Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
-            final int[] result = {0};
+            Map<Integer, Integer> map = mapOf(1, 2).put(3, 4);
+            int[] result = {0};
             map.forEach(t -> {
                 result[0] += t._1() + t._2();
             });
@@ -779,43 +775,43 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void putWithWasntPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2).put(2, 3, (x, y) -> x + y);
+        Map<Integer, Integer> map = mapOf(1, 2).put(2, 3, (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 2).put(2, 3));
     }
 
     @Test
     public void putWithWasPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2).put(1, 3, (x, y) -> x + y);
+        Map<Integer, Integer> map = mapOf(1, 2).put(1, 3, (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 5));
     }
 
     @Test
     public void putWithTupleWasntPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(2, 3), (x, y) -> x + y);
+        Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(2, 3), (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 2).put(2, 3));
     }
 
     @Test
     public void putWithTupleWasPresent() {
-        final Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(1, 3), (x, y) -> x + y);
+        Map<Integer, Integer> map = mapOf(1, 2).put(Tuple.of(1, 3), (x, y) -> x + y);
         assertThat(map).isEqualTo(emptyIntInt().put(1, 5));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void shouldTabulateTheSeq() {
-        final Function<Number, Tuple2<Long, Float>> f = i -> new Tuple2<>(i.longValue(), i.floatValue());
-        final Map<Long, Float> map = mapTabulate(3, f);
+        Function<Number, Tuple2<Long, Float>> f = i -> new Tuple2<>(i.longValue(), i.floatValue());
+        Map<Long, Float> map = mapTabulate(3, f);
         assertThat(map).isEqualTo(mapOfTuples(new Tuple2<>(0l, 0f), new Tuple2<>(1l, 1f), new Tuple2<>(2l, 2f)));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void shouldTabulateTheSeqCallingTheFunctionInTheRightOrder() {
-        final LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
-        final Function<Integer, Tuple2<Long, Float>> f =
+        LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
+        Function<Integer, Tuple2<Long, Float>> f =
                 i -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
-        final Map<Long, Float> map = mapTabulate(3, f);
+        Map<Long, Float> map = mapTabulate(3, f);
         assertThat(map).isEqualTo(mapOfTuples(new Tuple2<>(0l, 0f), new Tuple2<>(1l, 1f), new Tuple2<>(2l, 2f)));
     }
 
@@ -834,10 +830,10 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     @SuppressWarnings("unchecked")
     @Test
     public void shouldFillTheSeqCallingTheSupplierInTheRightOrder() {
-        final LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
-        final Supplier<Tuple2<Long, Float>> s =
+        LinkedList<Integer> ints = new LinkedList<>(asList(0, 0, 1, 1, 2, 2));
+        Supplier<Tuple2<Long, Float>> s =
                 () -> new Tuple2<>(ints.remove().longValue(), ints.remove().floatValue());
-        final Map<Long, Float> actual = mapFill(3, s);
+        Map<Long, Float> actual = mapFill(3, s);
         assertThat(actual).isEqualTo(mapOfTuples(new Tuple2<>(0l, 0f), new Tuple2<>(1l, 1f), new Tuple2<>(2l, 2f)));
     }
 
@@ -881,9 +877,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class FilterTests {
         @Test
         public void shouldBiFilterWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst =
+            Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
+            Pattern isDigits = Pattern.compile("^\\d+$");
+            Map<Integer, String> dst =
                     src.filter((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
             assertThat(dst)
                     .isEqualTo(emptyIntString()
@@ -898,8 +894,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeyFilterWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Map<Integer, String> dst = src.filterKeys(k -> k % 2 == 0);
+            Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
+            Map<Integer, String> dst = src.filterKeys(k -> k % 2 == 0);
             assertThat(dst)
                     .isEqualTo(emptyIntString()
                             .put(0, "0")
@@ -916,10 +912,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldValueFilterWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(10, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst =
-                    src.filterValues(v -> isDigits.matcher(v).matches());
+            Map<Integer, String> src = mapTabulate(10, n -> Tuple.of(n, Integer.toHexString(n)));
+            Pattern isDigits = Pattern.compile("^\\d+$");
+            Map<Integer, String> dst = src.filterValues(v -> isDigits.matcher(v).matches());
             assertThat(dst)
                     .isEqualTo(emptyIntString()
                             .put(0, "0")
@@ -939,9 +934,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class RejectTests {
         @Test
         public void shouldBiRejectWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst =
+            Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
+            Pattern isDigits = Pattern.compile("^\\d+$");
+            Map<Integer, String> dst =
                     src.reject((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
             assertThat(dst)
                     .isEqualTo(emptyIntString()
@@ -962,8 +957,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeyRejectWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Map<Integer, String> dst = src.rejectKeys(k -> k % 2 == 0);
+            Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
+            Map<Integer, String> dst = src.rejectKeys(k -> k % 2 == 0);
             assertThat(dst)
                     .isEqualTo(emptyIntString()
                             .put(1, "1")
@@ -980,10 +975,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldValueRejectWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(15, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst =
-                    src.rejectValues(v -> isDigits.matcher(v).matches());
+            Map<Integer, String> src = mapTabulate(15, n -> Tuple.of(n, Integer.toHexString(n)));
+            Pattern isDigits = Pattern.compile("^\\d+$");
+            Map<Integer, String> dst = src.rejectValues(v -> isDigits.matcher(v).matches());
             assertThat(dst)
                     .isEqualTo(emptyIntString()
                             .put(10, "a")
@@ -999,9 +993,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @SuppressWarnings("deprecation")
         @Test
         public void shouldBiRemoveWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst =
+            Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
+            Pattern isDigits = Pattern.compile("^\\d+$");
+            Map<Integer, String> dst =
                     src.removeAll((k, v) -> k % 2 == 0 && isDigits.matcher(v).matches());
             assertThat(dst)
                     .isEqualTo(emptyIntString()
@@ -1023,8 +1017,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @SuppressWarnings("deprecation")
         @Test
         public void shouldKeyRemoveWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Map<Integer, String> dst = src.removeKeys(k -> k % 2 == 0);
+            Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
+            Map<Integer, String> dst = src.removeKeys(k -> k % 2 == 0);
             assertThat(dst)
                     .isEqualTo(emptyIntString()
                             .put(1, "1")
@@ -1042,10 +1036,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @SuppressWarnings("deprecation")
         @Test
         public void shouldValueRemoveWork() throws Exception {
-            final Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
-            final Pattern isDigits = Pattern.compile("^\\d+$");
-            final Map<Integer, String> dst =
-                    src.removeValues(v -> isDigits.matcher(v).matches());
+            Map<Integer, String> src = mapTabulate(20, n -> Tuple.of(n, Integer.toHexString(n)));
+            Pattern isDigits = Pattern.compile("^\\d+$");
+            Map<Integer, String> dst = src.removeValues(v -> isDigits.matcher(v).matches());
             assertThat(dst)
                     .isEqualTo(emptyIntString()
                             .put(10, "a")
@@ -1061,7 +1054,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class ComputeifabsentTests {
         @Test
         public void shouldComputeIfAbsent() {
-            final Map<Integer, String> map = emptyIntString().put(1, "v");
+            Map<Integer, String> map = emptyIntString().put(1, "v");
             assertThat(map.computeIfAbsent(1, k -> "b")).isEqualTo(Tuple.of("v", map));
             assertThat(map.computeIfAbsent(2, k -> "n"))
                     .isEqualTo(Tuple.of("n", emptyIntString().put(1, "v").put(2, "n")));
@@ -1072,7 +1065,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class ComputeIfPresentTests {
         @Test
         public void shouldComputeIfPresent() {
-            final Map<Integer, String> map = emptyIntString().put(1, "v");
+            Map<Integer, String> map = emptyIntString().put(1, "v");
             assertThat(map.computeIfPresent(1, (k, v) -> "b"))
                     .isEqualTo(Tuple.of(Option.some("b"), emptyIntString().put(1, "b")));
             assertThat(map.computeIfPresent(2, (k, v) -> "n")).isEqualTo(Tuple.of(Option.none(), map));
@@ -1081,7 +1074,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldRejectComputeIfPresentWithNullResult() {
             // Some(null) does not exist (design 3.9), so a remapping to null cannot be reported
-            final Map<Integer, String> map = emptyIntString().put(1, "v");
+            Map<Integer, String> map = emptyIntString().put(1, "v");
             assertThatThrownBy(() -> map.computeIfPresent(1, (k, v) -> null)).isInstanceOf(NullPointerException.class);
         }
     }
@@ -1100,53 +1093,53 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameInstanceIfReplacingCurrentValueWithNonExistingKey() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replaceValue(3, "?");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replaceValue(3, "?");
             assertThat(actual).isSameAs(map);
         }
 
         @Test
         public void shouldReplaceCurrentValueForExistingKey() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replaceValue(2, "c");
-            final Map<Integer, String> expected = mapOf(1, "a", 2, "c");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replaceValue(2, "c");
+            Map<Integer, String> expected = mapOf(1, "a", 2, "c");
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldReplaceCurrentValueForExistingKeyAndEqualOldValue() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replace(2, "b", "c");
-            final Map<Integer, String> expected = mapOf(1, "a", 2, "c");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replace(2, "b", "c");
+            Map<Integer, String> expected = mapOf(1, "a", 2, "c");
             assertThat(actual).isEqualTo(expected);
         }
 
         @Test
         public void shouldReturnSameInstanceForExistingKeyAndNonEqualOldValue() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replace(2, "d", "c");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replace(2, "d", "c");
             assertThat(actual).isSameAs(map);
         }
 
         @Test
         public void shouldReturnSameInstanceIfReplacingCurrentValueWithOldValueWithNonExistingKey() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replace(3, "?", "!");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replace(3, "?", "!");
             assertThat(actual).isSameAs(map);
         }
 
         @Test
         public void shouldNotReplaceTupleWhenValueDoesNotMatch() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replace(Tuple.of(2, "x"), Tuple.of(2, "c"));
+            Map<Integer, String> map = mapOf(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replace(Tuple.of(2, "x"), Tuple.of(2, "c"));
             assertThat(actual).isSameAs(map);
         }
 
         @Test
         public void shouldReplaceAllValuesWithFunctionResult() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replaceAll((integer, s) -> s + integer);
-            final Map<Integer, String> expected = mapOf(1, "a1", 2, "b2");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replaceAll((integer, s) -> s + integer);
+            Map<Integer, String> expected = mapOf(1, "a1", 2, "b2");
             assertThat(actual).isEqualTo(expected);
         }
 
@@ -1160,7 +1153,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class GetorelseTests {
         @Test
         public void shouldReturnDefaultValue() {
-            final Map<String, String> map = mapOf("1", "a").put("2", "b");
+            Map<String, String> map = mapOf("1", "a").put("2", "b");
             assertThat(map.getOrElse("3", "3")).isEqualTo("3");
         }
     }
@@ -1169,13 +1162,12 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class PartitionTests {
         @Test
         public void shouldPartitionInOneIteration() {
-            final AtomicInteger count = new AtomicInteger(0);
-            final Map<String, Integer> map = mapOf("1", 1, "2", 2, "3", 3);
-            final Tuple2<? extends Map<String, Integer>, ? extends Map<String, Integer>> results =
-                    map.partition(entry -> {
-                        count.incrementAndGet();
-                        return true;
-                    });
+            AtomicInteger count = new AtomicInteger(0);
+            Map<String, Integer> map = mapOf("1", 1, "2", 2, "3", 3);
+            Tuple2<? extends Map<String, Integer>, ? extends Map<String, Integer>> results = map.partition(entry -> {
+                count.incrementAndGet();
+                return true;
+            });
             assertThat(results._1()).isEqualTo(mapOf("1", 1, "2", 2, "3", 3));
             assertThat(results._2()).isEmpty();
             assertThat(count.get()).isEqualTo(3);
@@ -1245,7 +1237,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectReplaceWithNullValue() {
-            final Map<String, String> map = mapOf("k", "v");
+            Map<String, String> map = mapOf("k", "v");
             assertThatNullPointerException()
                     .isThrownBy(() -> map.replace(Tuple.of("k", "v"), Tuple.<String, String>of("k", null)));
             assertThatNullPointerException().isThrownBy(() -> map.replaceAll((k, v) -> null));
@@ -1253,7 +1245,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectMapKeysWithMergeResultingInNull() {
-            final Map<String, String> map = mapOf("a", "1", "b", "2");
+            Map<String, String> map = mapOf("a", "1", "b", "2");
             assertThatNullPointerException().isThrownBy(() -> map.mapKeys(k -> "x", (v1, v2) -> null));
         }
     }
@@ -1274,21 +1266,21 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void containsTreatsAbsentKeyAsAbsent() {
-            final Map<String, String> map = mapOf("k", "v");
+            Map<String, String> map = mapOf("k", "v");
             assertThat(map.contains(Tuple.of("missing", "v"))).isFalse();
         }
 
         @Test
         public void computeIfAbsentOnAbsentKeyComputes() {
-            final Tuple2<String, ? extends Map<String, String>> result =
+            Tuple2<String, ? extends Map<String, String>> result =
                     LinkedHashMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> "computed");
             assertThat(result._1()).isEqualTo("computed");
         }
 
         @Test
         public void computeIfPresentOnAbsentKeyIsNoop() {
-            final Map<String, String> map = mapOf("k", "v");
-            final Tuple2<Option<String>, ? extends Map<String, String>> result =
+            Map<String, String> map = mapOf("k", "v");
+            Tuple2<Option<String>, ? extends Map<String, String>> result =
                     map.computeIfPresent("missing", (k, v) -> "x");
             assertThat(result._1()).isEqualTo(Option.none());
             assertThat(result._2()).isSameAs(map);
@@ -1296,21 +1288,21 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void mergeOnAbsentKeyTakesTheOtherMapsValue() {
-            final Map<String, String> map = mapOf("a", "1");
-            final Map<String, String> merged = map.merge(mapOf("b", "2"), (a, b) -> a);
+            Map<String, String> map = mapOf("a", "1");
+            Map<String, String> merged = map.merge(mapOf("b", "2"), (a, b) -> a);
             assertThat(merged).isEqualTo(mapOf("a", "1", "b", "2"));
         }
 
         @Test
         public void putWithMergeOnAbsentKeyPutsWithoutMerging() {
-            final Map<String, String> map =
+            Map<String, String> map =
                     LinkedHashMapTest.this.<String, String>emptyMap().put("k", "v", (a, b) -> "merged");
             assertThat(map).isEqualTo(mapOf("k", "v"));
         }
 
         @Test
         public void mapKeysCollapsingOntoAbsentTargetTakesTheMappedValue() {
-            final Map<String, String> map = mapOf("a", "1");
+            Map<String, String> map = mapOf("a", "1");
             assertThat(map.mapKeys(k -> "x", (v1, v2) -> "merged")).isEqualTo(mapOf("x", "1"));
         }
     }
@@ -1319,8 +1311,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCollectEntriesIntoAMapOfTheSameKind() {
-        final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-        final Map<String, Integer> actual =
+        Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+        Map<String, Integer> actual =
                 map.collect((k, v) -> k % 2 == 1 ? Option.some(Tuple.of(v, k * 10)) : Option.none());
         assertThat(actual)
                 .isEqualTo(this.<String, Integer>emptyMap().put("a", 10).put("c", 30));
@@ -1334,7 +1326,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCollectNothingFromAnEmptyMap() {
-        final AtomicInteger calls = new AtomicInteger();
+        AtomicInteger calls = new AtomicInteger();
         assertThat(this.<Integer, String>emptyMap().collect((k, v) -> {
                     calls.incrementAndGet();
                     return Option.some(Tuple.of(k, v));
@@ -1345,22 +1337,22 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldKeepTheLastEntryOnKeyCollisionWhenCollecting() {
-        final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-        final Map<Integer, String> actual = map.collect((k, v) -> Option.some(Tuple.of(0, v)));
+        Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+        Map<Integer, String> actual = map.collect((k, v) -> Option.some(Tuple.of(0, v)));
         assertThat(actual.size()).isEqualTo(1);
         assertThat(actual.get(0)).isEqualTo(Option.some(map.toList().last()._2()));
     }
 
     @Test
     public void shouldRejectNullOptionFromCollectBiFunction() {
-        final Map<Integer, String> map = mapOf(1, "a");
-        final NullPointerException e = assertThrows(NullPointerException.class, () -> map.collect((k, v) -> null));
+        Map<Integer, String> map = mapOf(1, "a");
+        NullPointerException e = assertThrows(NullPointerException.class, () -> map.collect((k, v) -> null));
         assertThat(e.getMessage()).isEqualTo(map.getClass().getSimpleName() + ".collect: mapper returned null");
     }
 
     @Test
     public void shouldThrowOnCollectWithNullBiFunction() {
-        final java.util.function.BiFunction<Integer, String, Option<Tuple2<Integer, String>>> mapper = null;
+        java.util.function.BiFunction<Integer, String, Option<Tuple2<Integer, String>>> mapper = null;
         assertThrows(NullPointerException.class, () -> mapOf(1, "a").collect(mapper));
     }
     // -- the one-pass and entry-wise operations, on the map itself (its elements are the entries)
@@ -1415,7 +1407,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
-        final Map<Integer, Integer> empty = emptyMap();
+        Map<Integer, Integer> empty = emptyMap();
         if (emptyMapShouldBeSingleton()) {
             assertThat(empty.filter(v -> true)).isSameAs(empty);
         } else {
@@ -1441,7 +1433,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameInstanceWhenRejectingEmptyTraversable() {
-        final Map<Integer, Integer> empty = emptyMap();
+        Map<Integer, Integer> empty = emptyMap();
         if (emptyMapShouldBeSingleton()) {
             assertThat(empty.reject(v -> true)).isSameAs(empty);
         } else {
@@ -1485,8 +1477,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNonNilGroupByIdentity() {
-        final Map<?, ?> actual = entries('a', 'b', 'c').groupBy(Tuple2::_2);
-        final Map<?, ?> expected = LinkedHashMap.empty()
+        Map<?, ?> actual = entries('a', 'b', 'c').groupBy(Tuple2::_2);
+        Map<?, ?> expected = LinkedHashMap.empty()
                 .put('a', mapOf(0, 'a'))
                 .put('b', mapOf(1, 'b'))
                 .put('c', mapOf(2, 'c'));
@@ -1495,8 +1487,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNonNilGroupByEqual() {
-        final Map<?, ?> actual = entries('a', 'b', 'c').groupBy(c -> 1);
-        final Map<?, ?> expected = LinkedHashMap.empty().put(1, entries('a', 'b', 'c'));
+        Map<?, ?> actual = entries('a', 'b', 'c').groupBy(c -> 1);
+        Map<?, ?> expected = LinkedHashMap.empty().put(1, entries('a', 'b', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1509,9 +1501,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNonNilArrangeByIdentity() {
-        final Option<Map<Character, Tuple2<Integer, Character>>> actual =
+        Option<Map<Character, Tuple2<Integer, Character>>> actual =
                 entries('a', 'b', 'c').arrangeBy(Tuple2::_2);
-        final Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty()
+        Option<Map<?, ?>> expected = Option.some(LinkedHashMap.empty()
                 .put('a', entry(0, 'a'))
                 .put('b', entry(1, 'b'))
                 .put('c', entry(2, 'c')));
@@ -1520,9 +1512,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNonNilArrangeByEqual() {
-        final Option<Map<Integer, Tuple2<Integer, Character>>> actual =
+        Option<Map<Integer, Tuple2<Integer, Character>>> actual =
                 entries('a', 'b', 'c').arrangeBy(c -> 1);
-        final Option<Map<?, ?>> expected = Option.none();
+        Option<Map<?, ?>> expected = Option.none();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1712,7 +1704,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCallMaxFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(entries(1, 2, 3).maxBy(t -> {
                     cnt[0]++;
                     return t._2();
@@ -1886,7 +1878,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCallMinFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(entries(1, 2, 3).minBy(t -> {
                     cnt[0]++;
                     return t._2();
@@ -1899,7 +1891,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCaclEmptyOrElseSameOther() {
-        final Map<Integer, Integer> other = mapOf(42, 42);
+        Map<Integer, Integer> other = mapOf(42, 42);
         assertThat(this.<Integer, Integer>emptyMap().orElse(other)).isEqualTo(other);
     }
 
@@ -1911,14 +1903,14 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCaclNonemptyOrElseOther() {
-        final Map<Integer, Integer> src = mapOf(42, 42);
+        Map<Integer, Integer> src = mapOf(42, 42);
         assertThat(src.orElse(List.of(entry(1, 1)))).isSameAs(src);
     }
 
     @Test
     public void shouldCaclEmptyOrElseSameSupplier() {
-        final Map<Integer, Integer> other = mapOf(42, 42);
-        final Supplier<Iterable<Tuple2<Integer, Integer>>> supplier = () -> other;
+        Map<Integer, Integer> other = mapOf(42, 42);
+        Supplier<Iterable<Tuple2<Integer, Integer>>> supplier = () -> other;
         assertThat(this.<Integer, Integer>emptyMap().orElse(supplier)).isEqualTo(other);
     }
 
@@ -1930,7 +1922,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCaclNonemptyOrElseSupplier() {
-        final Map<Integer, Integer> src = mapOf(42, 42);
+        Map<Integer, Integer> src = mapOf(42, 42);
         assertThat(src.orElse(() -> List.of(entry(1, 1)))).isSameAs(src);
     }
 
@@ -2025,9 +2017,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     @Test
     @SuppressWarnings("unchecked")
     public void shouldReplaceFirstOccurrenceOfNonNilUsingCurrNewWhenMultipleOccurrencesExist() {
-        final Map<Integer, Integer> testee = entries(0, 1, 2, 1);
-        final Map<Integer, Integer> actual = testee.replace(entry(1, 1), entry(1, 3));
-        final Map<Integer, Integer> expected = mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2), entry(3, 1));
+        Map<Integer, Integer> testee = entries(0, 1, 2, 1);
+        Map<Integer, Integer> actual = testee.replace(entry(1, 1), entry(1, 3));
+        Map<Integer, Integer> expected = mapOfTuples(entry(0, 0), entry(1, 3), entry(2, 2), entry(3, 1));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2068,31 +2060,31 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRetainAllElementsFromNil() {
-        final Map<Integer, Integer> empty = emptyMap();
-        final Map<Integer, Integer> actual = empty.retainAll(entries(1, 2, 3));
+        Map<Integer, Integer> empty = emptyMap();
+        Map<Integer, Integer> actual = empty.retainAll(entries(1, 2, 3));
         assertThat(actual).isEqualTo(empty);
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void shouldRetainAllExistingElementsFromNonNil() {
-        final Map<Integer, Integer> src = entries(1, 2, 3, 2, 1, 3);
-        final Map<Integer, Integer> expected = mapOfTuples(entry(0, 1), entry(1, 2), entry(3, 2), entry(4, 1));
-        final Map<Integer, Integer> actual = src.retainAll(List.of(entry(0, 1), entry(1, 2), entry(3, 2), entry(4, 1)));
+        Map<Integer, Integer> src = entries(1, 2, 3, 2, 1, 3);
+        Map<Integer, Integer> expected = mapOfTuples(entry(0, 1), entry(1, 2), entry(3, 2), entry(4, 1));
+        Map<Integer, Integer> actual = src.retainAll(List.of(entry(0, 1), entry(1, 2), entry(3, 2), entry(4, 1)));
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldRetainAllElementsFromNonNil() {
-        final Map<Integer, Integer> src = entries(1, 2, 1, 2, 2);
-        final Map<Integer, Integer> actual = src.retainAll(entries(1, 2, 1, 2, 2));
+        Map<Integer, Integer> src = entries(1, 2, 1, 2, 2);
+        Map<Integer, Integer> actual = src.retainAll(entries(1, 2, 1, 2, 2));
         assertThat(actual).isEqualTo(src);
     }
 
     @Test
     public void shouldNotRetainAllNonExistingElementsFromNonNil() {
-        final Map<Integer, Integer> src = entries(1, 2, 3);
-        final Map<Integer, Integer> actual = src.retainAll(List.of(entry(0, 4), entry(9, 5)));
+        Map<Integer, Integer> src = entries(1, 2, 3);
+        Map<Integer, Integer> actual = src.retainAll(List.of(entry(0, 4), entry(9, 5)));
         assertThat(actual).isEqualTo(emptyMap());
     }
 
@@ -2144,23 +2136,23 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldTapSingleValuePerformingAnAction() {
-        final int[] effect = {0};
-        final Map<Integer, Integer> actual = entries(1).tap(t -> effect[0] = t._2());
+        int[] effect = {0};
+        Map<Integer, Integer> actual = entries(1).tap(t -> effect[0] = t._2());
         assertThat(actual).isEqualTo(entries(1));
         assertThat(effect[0]).isEqualTo(1);
     }
 
     @Test
     public void shouldTapEveryElement() {
-        final int[] sum = {0};
-        final Map<Integer, Integer> actual = entries(1, 2, 3).tap(t -> sum[0] += t._2());
+        int[] sum = {0};
+        Map<Integer, Integer> actual = entries(1, 2, 3).tap(t -> sum[0] += t._2());
         assertThat(actual).isEqualTo(entries(1, 2, 3));
         assertThat(sum[0]).isEqualTo(6);
     }
 
     @Test
     public void shouldReturnThisOnTapOfEagerCollection() {
-        final Map<Integer, Integer> testee = entries(1, 2, 3);
+        Map<Integer, Integer> testee = entries(1, 2, 3);
         assertThat(testee.tap(t -> {})).isSameAs(testee);
     }
 
@@ -2184,14 +2176,14 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldCollectWithACollector() {
-        final java.util.List<Tuple2<Integer, Integer>> actual =
+        java.util.List<Tuple2<Integer, Integer>> actual =
                 entries(1, 2, 3).collect(java.util.stream.Collectors.toList());
         assertThat(actual).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
     }
 
     @Test
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Tuple2<Integer, Integer>> actual =
+        ArrayList<Tuple2<Integer, Integer>> actual =
                 entries(1, 2, 3).collect(ArrayList<Tuple2<Integer, Integer>>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2), entry(2, 3));
     }
@@ -2200,13 +2192,13 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertNilToJavaArray() {
-        final Object[] actual = emptyMap().toArray();
+        Object[] actual = emptyMap().toArray();
         assertThat(actual).isEqualTo(new Object[] {});
     }
 
     @Test
     public void shouldConvertNonNilToJavaArray() {
-        final Object[] array = entries(1, 2).toArray();
+        Object[] array = entries(1, 2).toArray();
         assertThat(array).containsExactlyInAnyOrder(entry(0, 1), entry(1, 2));
     }
 
@@ -2251,14 +2243,14 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertToSortedMapWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(entries(9, 5, 1).toSortedMap(comparator, t -> Tuple.of(t._2(), t._2())))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @Test
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(entries(9, 5, 1).toSortedMap(comparator, Tuple2::_2, Tuple2::_2))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
@@ -2271,8 +2263,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertToLinkedSet() {
-        final Map<Integer, Integer> value = entries(3, 7, 1, 15, 0);
-        final Set<Tuple2<Integer, Integer>> set = value.toLinkedSet();
+        Map<Integer, Integer> value = entries(3, 7, 1, 15, 0);
+        Set<Tuple2<Integer, Integer>> set = value.toLinkedSet();
         assertThat(set).isEqualTo(value.toList().foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
         Assertions.assertThat(new java.util.ArrayList<>(set.asJava()))
                 .isEqualTo(new java.util.ArrayList<>(value.asJava()));
@@ -2287,7 +2279,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertToSortedSet() {
-        final Comparator<Tuple2<Integer, Integer>> comparator = Comparator.comparingInt(t -> Integer.bitCount(t._2()));
+        Comparator<Tuple2<Integer, Integer>> comparator = Comparator.comparingInt(t -> Integer.bitCount(t._2()));
         assertThat(entries(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
                 .isEqualTo(TreeSet.of(
                         comparator.reversed(), entry(0, 3), entry(1, 7), entry(2, 1), entry(3, 15), entry(4, 0)));
@@ -2306,14 +2298,14 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldReturnValuesVector() {
-            final Vector<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
+            Vector<Integer> actual = mapOfTuples(Tuple.of(1, 11), Tuple.of(2, 22), Tuple.of(3, 33))
                     .values();
             assertThat(actual).isEqualTo(Vector.of(11, 22, 33));
         }
 
         @Test
         public void shouldReturnValuesInTheIterationOrderOfTheMap() {
-            final Map<Integer, String> map = mapOf(3, "c", 1, "a", 2, "b");
+            Map<Integer, String> map = mapOf(3, "c", 1, "a", 2, "b");
             Assertions.assertThat(new java.util.ArrayList<>(map.values().asJava()))
                     .isEqualTo(new java.util.ArrayList<>(
                             map.toList().map(Tuple2::_2).asJava()));
@@ -2334,8 +2326,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class AsJavaTests {
         @Test
         public void shouldViewTheEntriesAsAJavaCollection() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-            final java.util.Collection<Tuple2<Integer, String>> view = map.asJava();
+            Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+            java.util.Collection<Tuple2<Integer, String>> view = map.asJava();
             assertThat(view.size()).isEqualTo(3);
             assertThat(view.contains(entry(2, "b"))).isTrue();
             assertThat(view.contains(entry(2, "x"))).isFalse();
@@ -2428,7 +2420,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldKeepOrder() {
-        final List<Character> actual = LinkedHashMap.<Integer, Character>empty()
+        List<Character> actual = LinkedHashMap.<Integer, Character>empty()
                 .put(3, 'a')
                 .put(2, 'b')
                 .put(1, 'c')
@@ -2438,7 +2430,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldKeepValuesOrder() {
-        final List<Character> actual = LinkedHashMap.<Integer, Character>empty()
+        List<Character> actual = LinkedHashMap.<Integer, Character>empty()
                 .put(3, 'a')
                 .put(2, 'b')
                 .put(1, 'c')
@@ -2451,9 +2443,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class StaticNarrowTests {
         @Test
         public void shouldNarrowLinkedHashMap() {
-            final LinkedHashMap<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
-            final LinkedHashMap<Number, Number> number2numberMap = LinkedHashMap.narrow(int2doubleMap);
-            final int actual = number2numberMap
+            LinkedHashMap<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
+            LinkedHashMap<Number, Number> number2numberMap = LinkedHashMap.narrow(int2doubleMap);
+            int actual = number2numberMap
                     .put(new BigDecimal("2"), new BigDecimal("2.0"))
                     .values()
                     .sum()
@@ -2466,7 +2458,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class StaticOfallIterableTests {
         @Test
         public void shouldWrapMap() {
-            final java.util.Map<Integer, Integer> source = new java.util.HashMap<>();
+            java.util.Map<Integer, Integer> source = new java.util.HashMap<>();
             source.put(1, 2);
             source.put(3, 4);
             assertThat(LinkedHashMap.ofAll(source))
@@ -2484,7 +2476,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             Assertions.assertThatNullPointerException()
                     .isThrownBy(() -> LinkedHashMap.ofEntries((java.util.Map.Entry<Integer, String>) null))
                     .withMessage("LinkedHashMap.ofEntries: entry is null");
-            final java.util.List<Tuple2<Integer, String>> withNullEntry = new java.util.ArrayList<>();
+            java.util.List<Tuple2<Integer, String>> withNullEntry = new java.util.ArrayList<>();
             withNullEntry.add(Tuple.of(1, "a"));
             withNullEntry.add(null);
             Assertions.assertThatNullPointerException()
@@ -2497,7 +2489,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class LinkedHashMapKeysetTests {
         @Test
         public void shouldKeepKeySetOrder() {
-            final Set<Integer> keySet = LinkedHashMap.of(4, "d", 1, "a", 2, "b").keySet();
+            Set<Integer> keySet = LinkedHashMap.of(4, "d", 1, "a", 2, "b").keySet();
             assertThat(keySet.mkString()).isEqualTo("412");
         }
     }
@@ -2529,14 +2521,14 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void replaceAbsentElement() {
-            final LinkedHashSet<String> keys = keys(map);
+            LinkedHashSet<String> keys = keys(map);
             Assertions.assertThat(keys.replace("x", "z")).isSameAs(keys);
             assertSameOrder(keys.replace("x", "z"), sameKeys(map).replace("x", "z"), List.of("a", "b", "c", "d"));
         }
 
         @Test
         public void replaceByItself() {
-            final LinkedHashSet<String> keys = keys(map);
+            LinkedHashSet<String> keys = keys(map);
             Assertions.assertThat(keys.replace("b", "b")).isSameAs(keys);
         }
 
@@ -2554,7 +2546,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void replaceAfterRemovingTheHeadFromTheMap() {
-            final LinkedHashMap<String, Integer> removed = map.remove("a");
+            LinkedHashMap<String, Integer> removed = map.remove("a");
             assertSameOrder(
                     keys(removed).replace("b", "z"), sameKeys(removed).replace("b", "z"), List.of("z", "c", "d"));
             assertSameOrder(keys(removed).replace("d", "b"), sameKeys(removed).replace("d", "b"), List.of("c", "b"));
@@ -2562,7 +2554,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void replaceAfterRemovingAMiddleKeyFromTheMap() {
-            final LinkedHashMap<String, Integer> removed = map.remove("b");
+            LinkedHashMap<String, Integer> removed = map.remove("b");
             assertSameOrder(
                     keys(removed).replace("c", "z"), sameKeys(removed).replace("c", "z"), List.of("a", "z", "d"));
             assertSameOrder(keys(removed).replace("d", "a"), sameKeys(removed).replace("d", "a"), List.of("c", "a"));
@@ -2612,7 +2604,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void replaceByNullOnlyFailsWhenTheElementIsPresent() {
-            final LinkedHashSet<String> keys = keys(map);
+            LinkedHashSet<String> keys = keys(map);
             Assertions.assertThat(keys.replace("x", null)).isSameAs(keys);
             assertThatNullPointerException().isThrownBy(() -> keys.replace("b", null));
             assertThatNullPointerException().isThrownBy(() -> sameKeys(map).replace("b", null));
@@ -2627,9 +2619,9 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void everyOtherOperationMatchesALinkedHashSetOfTheSameKeys() {
-            final LinkedHashSet<String> keys = keys(map);
-            final LinkedHashSet<String> same = sameKeys(map);
-            final Set<String> other = LinkedHashSet.of("c", "x", "a");
+            LinkedHashSet<String> keys = keys(map);
+            LinkedHashSet<String> same = sameKeys(map);
+            Set<String> other = LinkedHashSet.of("c", "x", "a");
             assertSameOrder(keys.add("b"), same.add("b"), List.of("a", "b", "c", "d"));
             assertSameOrder(keys.add("e"), same.add("e"), List.of("a", "b", "c", "d", "e"));
             assertSameOrder(
@@ -2693,12 +2685,12 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class MapTests {
         @Test
         public void shouldReturnModifiedKeysMapWithNonUniqueMapperAndPredictableOrder() {
-            final Map<Integer, String> actual = LinkedHashMap.of(3, "3")
+            Map<Integer, String> actual = LinkedHashMap.of(3, "3")
                     .put(1, "1")
                     .put(2, "2")
                     .mapKeys(Integer::toHexString)
                     .mapKeys(String::length);
-            final Map<Integer, String> expected = LinkedHashMap.of(1, "2");
+            Map<Integer, String> expected = LinkedHashMap.of(1, "2");
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -2707,31 +2699,30 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class LinkedHashMapPutTests {
         @Test
         public void shouldKeepOrderWhenPuttingAnExistingKeyAndNonExistingValue() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-            final Map<Integer, String> actual = map.put(1, "d");
-            final Map<Integer, String> expected = mapOf(1, "d", 2, "b", 3, "c");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+            Map<Integer, String> actual = map.put(1, "d");
+            Map<Integer, String> expected = mapOf(1, "d", 2, "b", 3, "c");
             assertThat(actual.toList()).isEqualTo(expected.toList());
         }
 
         @Test
         public void shouldKeepOrderWhenPuttingAnExistingKeyAndExistingValue() {
-            final Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
-            final Map<Integer, String> actual = map.put(1, "a");
-            final Map<Integer, String> expected = mapOf(1, "a", 2, "b", 3, "c");
+            Map<Integer, String> map = mapOf(1, "a", 2, "b", 3, "c");
+            Map<Integer, String> actual = map.put(1, "a");
+            Map<Integer, String> expected = mapOf(1, "a", 2, "b", 3, "c");
             assertThat(actual.toList()).isEqualTo(expected.toList());
         }
 
         @Test
         public void shouldReuseOrderStructureWhenOverwritingAnExistingKey() throws Exception {
-            final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
-            final LinkedHashMap<Integer, String> actual = map.put(2, "B");
+            LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
+            LinkedHashMap<Integer, String> actual = map.put(2, "B");
             assertThat(orderStructureOf(actual)).isSameAs(orderStructureOf(map));
         }
 
         @Test
         public void shouldSurfaceTheReplacedKeyInstanceAfterOverwrite() {
-            final Map<IntMod2, String> map =
-                    LinkedHashMap.of(new IntMod2(1), "a").put(new IntMod2(3), "b");
+            Map<IntMod2, String> map = LinkedHashMap.of(new IntMod2(1), "a").put(new IntMod2(3), "b");
             assertThat(map.toString()).isEqualTo("LinkedHashMap((3, b))");
             assertThat(map.keySet().iterator().next().toString()).isEqualTo("3");
         }
@@ -2747,49 +2738,49 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class ReplaceTests {
         @Test
         public void shouldReturnSameInstanceIfReplacingNonExistingPairUsingNonExistingKey() {
-            final Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replace(Tuple.of(0, "?"), Tuple.of(0, "!"));
+            Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replace(Tuple.of(0, "?"), Tuple.of(0, "!"));
             assertThat(actual).isSameAs(map);
         }
 
         @Test
         public void shouldReturnSameInstanceIfReplacingNonExistingPairUsingExistingKey() {
-            final Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b");
-            final Map<Integer, String> actual = map.replace(Tuple.of(2, "?"), Tuple.of(2, "!"));
+            Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b");
+            Map<Integer, String> actual = map.replace(Tuple.of(2, "?"), Tuple.of(2, "!"));
             assertThat(actual).isSameAs(map);
         }
 
         @Test
         public void shouldPreserveOrderWhenReplacingExistingPairWithSameKeyAndDifferentValue() {
-            final Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
-            final Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(2, "B"));
-            final Map<Integer, String> expected = LinkedHashMap.of(1, "a", 2, "B", 3, "c");
+            Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
+            Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(2, "B"));
+            Map<Integer, String> expected = LinkedHashMap.of(1, "a", 2, "B", 3, "c");
             assertThat(actual).isEqualTo(expected);
             Assertions.assertThat(List.ofAll(actual)).isEqualTo(List.ofAll(expected));
         }
 
         @Test
         public void shouldPreserveOrderWhenReplacingExistingPairWithDifferentKeyValue() {
-            final Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
-            final Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(4, "B"));
-            final Map<Integer, String> expected = LinkedHashMap.of(1, "a", 4, "B", 3, "c");
+            Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
+            Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(4, "B"));
+            Map<Integer, String> expected = LinkedHashMap.of(1, "a", 4, "B", 3, "c");
             assertThat(actual).isEqualTo(expected);
             Assertions.assertThat(List.ofAll(actual)).isEqualTo(List.ofAll(expected));
         }
 
         @Test
         public void shouldPreserveOrderWhenReplacingExistingPairAndRemoveOtherIfKeyAlreadyExists() {
-            final Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c", 4, "d", 5, "e");
-            final Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(4, "B"));
-            final Map<Integer, String> expected = LinkedHashMap.of(1, "a", 4, "B", 3, "c", 5, "e");
+            Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c", 4, "d", 5, "e");
+            Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(4, "B"));
+            Map<Integer, String> expected = LinkedHashMap.of(1, "a", 4, "B", 3, "c", 5, "e");
             assertThat(actual).isEqualTo(expected);
             Assertions.assertThat(List.ofAll(actual)).isEqualTo(List.ofAll(expected));
         }
 
         @Test
         public void shouldReturnSameInstanceWhenReplacingExistingPairWithIdentity() {
-            final Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
-            final Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(2, "b"));
+            Map<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c");
+            Map<Integer, String> actual = map.replace(Tuple.of(2, "b"), Tuple.of(2, "b"));
             assertThat(actual).isSameAs(map);
         }
     }
@@ -2813,8 +2804,8 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
     class RetainAllTests {
         @Test
         public void shouldPreserveInsertionOrderWhenRetainingAll() {
-            final LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c", 4, "d");
-            final LinkedHashMap<Integer, String> actual =
+            LinkedHashMap<Integer, String> map = LinkedHashMap.of(1, "a", 2, "b", 3, "c", 4, "d");
+            LinkedHashMap<Integer, String> actual =
                     map.retainAll(List.of(Tuple.of(4, "d"), Tuple.of(2, "b"), Tuple.of(9, "z")));
             assertThat(actual.toList()).isEqualTo(List.of(Tuple.of(2, "b"), Tuple.of(4, "d")));
         }
@@ -2829,7 +2820,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         private static final int[] WINDOW_STEPS = {1, 2, 3, 70, 71, Integer.MAX_VALUE};
 
         private java.util.List<LinkedHashMap<Integer, String>> receivers() {
-            final LinkedHashMap<Integer, String> five = mk(5, 3, 9, 1, 7);
+            LinkedHashMap<Integer, String> five = mk(5, 3, 9, 1, 7);
             LinkedHashMap<Integer, String> everyThirdRemoved = mk(Vector.range(0, 70));
             for (int i = 0; i < 70; i += 3) {
                 everyThirdRemoved = everyThirdRemoved.remove(i);
@@ -2839,7 +2830,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             for (int i = 10; i < 45; i++) {
                 atThreshold = atThreshold.remove(i);
             }
-            final java.util.List<Integer> shuffled =
+            java.util.List<Integer> shuffled =
                     new java.util.ArrayList<>(Vector.range(0, 70).asJava());
             java.util.Collections.shuffle(shuffled, new java.util.Random(72));
             return java.util.List.of(
@@ -2889,7 +2880,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
                     expected.append(Tuple.of(1000, "new")),
                     actual.put(1000, "new").toVector());
             for (int i = 0; i < expected.size(); i++) {
-                final Tuple2<Integer, String> entry = expected.get(i);
+                Tuple2<Integer, String> entry = expected.get(i);
                 assertEquals(
                         expected.update(i, Tuple.of(entry._1(), "changed")),
                         actual.put(entry._1(), "changed").toVector());
@@ -2900,14 +2891,14 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldTakeAndDropLikeTheSequenceOfTheElements() {
             for (LinkedHashMap<Integer, String> receiver : receivers()) {
-                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
-                final int size = receiver.size();
+                Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                int size = receiver.size();
                 for (int n : counts(size)) {
-                    final int m = clamp(n, size);
-                    final LinkedHashMap<Integer, String> take = receiver.take(n);
-                    final LinkedHashMap<Integer, String> takeRight = receiver.takeRight(n);
-                    final LinkedHashMap<Integer, String> drop = receiver.drop(n);
-                    final LinkedHashMap<Integer, String> dropRight = receiver.dropRight(n);
+                    int m = clamp(n, size);
+                    LinkedHashMap<Integer, String> take = receiver.take(n);
+                    LinkedHashMap<Integer, String> takeRight = receiver.takeRight(n);
+                    LinkedHashMap<Integer, String> drop = receiver.drop(n);
+                    LinkedHashMap<Integer, String> dropRight = receiver.dropRight(n);
                     assertValid(receiver, take, elements.take(m));
                     assertValid(receiver, takeRight, elements.takeRight(m));
                     assertValid(receiver, drop, elements.drop(m));
@@ -2928,7 +2919,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldReturnTheFirstAndTheLastElement() {
             for (LinkedHashMap<Integer, String> receiver : receivers()) {
-                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                Vector<Tuple2<Integer, String>> elements = receiver.toVector();
                 if (elements.isEmpty()) {
                     assertEquals(
                             "head of empty LinkedHashMap",
@@ -2956,7 +2947,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldDropTheFirstOrTheLastElementWithTailAndInit() {
             for (LinkedHashMap<Integer, String> receiver : receivers()) {
-                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                Vector<Tuple2<Integer, String>> elements = receiver.toVector();
                 if (elements.isEmpty()) {
                     assertEquals(
                             "tail of empty LinkedHashMap",
@@ -2969,12 +2960,12 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
                     assertEquals(Option.none(), receiver.tailOption());
                     assertEquals(Option.none(), receiver.initOption());
                 } else {
-                    final LinkedHashMap<Integer, String> tail = receiver.tail();
-                    final LinkedHashMap<Integer, String> init = receiver.init();
+                    LinkedHashMap<Integer, String> tail = receiver.tail();
+                    LinkedHashMap<Integer, String> init = receiver.init();
                     assertValid(receiver, tail, elements.tail());
                     assertValid(receiver, init, elements.init());
-                    final Option<LinkedHashMap<Integer, String>> tailOption = receiver.tailOption();
-                    final Option<LinkedHashMap<Integer, String>> initOption = receiver.initOption();
+                    Option<LinkedHashMap<Integer, String>> tailOption = receiver.tailOption();
+                    Option<LinkedHashMap<Integer, String>> initOption = receiver.initOption();
                     assertValid(receiver, tailOption.get(), elements.tail());
                     assertValid(receiver, initOption.get(), elements.init());
                 }
@@ -2983,22 +2974,22 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldTakeAndDropWhileOrUntilAPredicateHolds() {
-            final java.util.List<java.util.function.Predicate<Tuple2<Integer, String>>> predicates = java.util.List.of(
+            java.util.List<java.util.function.Predicate<Tuple2<Integer, String>>> predicates = java.util.List.of(
                     e -> true, e -> false, e -> e._1() < 5, e -> e._1() >= 5, e -> e._1() % 2 == 1, e -> e._1() != 40);
             for (LinkedHashMap<Integer, String> receiver : receivers()) {
-                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                Vector<Tuple2<Integer, String>> elements = receiver.toVector();
                 for (java.util.function.Predicate<Tuple2<Integer, String>> predicate : predicates) {
-                    final LinkedHashMap<Integer, String> takeWhile = receiver.takeWhile(predicate);
-                    final LinkedHashMap<Integer, String> takeUntil = receiver.takeUntil(predicate);
-                    final LinkedHashMap<Integer, String> dropWhile = receiver.dropWhile(predicate);
-                    final LinkedHashMap<Integer, String> dropUntil = receiver.dropUntil(predicate);
+                    LinkedHashMap<Integer, String> takeWhile = receiver.takeWhile(predicate);
+                    LinkedHashMap<Integer, String> takeUntil = receiver.takeUntil(predicate);
+                    LinkedHashMap<Integer, String> dropWhile = receiver.dropWhile(predicate);
+                    LinkedHashMap<Integer, String> dropUntil = receiver.dropUntil(predicate);
                     assertValid(receiver, takeWhile, elements.takeWhile(predicate));
                     assertValid(receiver, takeUntil, elements.takeUntil(predicate));
                     assertValid(receiver, dropWhile, elements.dropWhile(predicate));
                     assertValid(receiver, dropUntil, elements.dropUntil(predicate));
                 }
                 // the walk stops at the first element that ends the prefix
-                final int[] calls = {0};
+                int[] calls = {0};
                 receiver.takeWhile(e -> {
                     calls[0]++;
                     return false;
@@ -3014,7 +3005,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldZipWithThePosition() {
             for (LinkedHashMap<Integer, String> receiver : receivers()) {
-                final Vector<Tuple2<Tuple2<Integer, String>, Integer>> zipped = receiver.zipWithIndex();
+                Vector<Tuple2<Tuple2<Integer, String>, Integer>> zipped = receiver.zipWithIndex();
                 assertEquals(receiver.toVector().zipWithIndex(), zipped);
                 for (int i = 0; i < zipped.size(); i++) {
                     assertEquals(i, zipped.get(i)._2());
@@ -3025,20 +3016,20 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldGroupAndSlideLikeTheSequenceOfTheElements() {
             for (LinkedHashMap<Integer, String> receiver : receivers()) {
-                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                Vector<Tuple2<Integer, String>> elements = receiver.toVector();
                 for (int size : WINDOW_SIZES) {
                     for (int step : WINDOW_STEPS) {
-                        final Vector<LinkedHashMap<Integer, String>> windows = receiver.sliding(size, step);
-                        final Vector<Vector<Tuple2<Integer, String>>> expected = elements.sliding(size, step);
+                        Vector<LinkedHashMap<Integer, String>> windows = receiver.sliding(size, step);
+                        Vector<Vector<Tuple2<Integer, String>>> expected = elements.sliding(size, step);
                         assertEquals(expected.size(), windows.size());
                         for (int i = 0; i < windows.size(); i++) {
                             assertValid(receiver, windows.get(i), expected.get(i));
                         }
                     }
-                    final Vector<LinkedHashMap<Integer, String>> groups = receiver.grouped(size);
+                    Vector<LinkedHashMap<Integer, String>> groups = receiver.grouped(size);
                     assertEquals(elements.grouped(size), groups.map(LinkedHashMap::toVector));
                     groups.forEach(group -> assertValid(receiver, group, group.toVector()));
-                    final Vector<LinkedHashMap<Integer, String>> windows = receiver.sliding(size);
+                    Vector<LinkedHashMap<Integer, String>> windows = receiver.sliding(size);
                     assertEquals(elements.sliding(size), windows.map(LinkedHashMap::toVector));
                     windows.forEach(window -> assertValid(receiver, window, window.toVector()));
                 }
@@ -3100,14 +3091,14 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldSlideByCallingTheClassifierOncePerElement() {
             for (LinkedHashMap<Integer, String> receiver : receivers()) {
-                final Vector<Tuple2<Integer, String>> elements = receiver.toVector();
-                final java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
-                final Vector<LinkedHashMap<Integer, String>> runs = receiver.slideBy(e -> {
+                Vector<Tuple2<Integer, String>> elements = receiver.toVector();
+                java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
+                Vector<LinkedHashMap<Integer, String>> runs = receiver.slideBy(e -> {
                     seen.add(e);
                     return e._1() / 3;
                 });
                 assertEquals(new java.util.ArrayList<>(elements.asJava()), seen);
-                final Vector<Vector<Tuple2<Integer, String>>> expected = elements.slideBy(e -> e._1() / 3);
+                Vector<Vector<Tuple2<Integer, String>>> expected = elements.slideBy(e -> e._1() / 3);
                 assertEquals(expected.size(), runs.size());
                 for (int i = 0; i < runs.size(); i++) {
                     assertValid(receiver, runs.get(i), expected.get(i));
@@ -3181,7 +3172,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
                             .getDeclaredMethod("zipWithIndex")
                             .getGenericReturnType()
                             .getTypeName());
-            final java.util.Set<String> declared = new java.util.HashSet<>();
+            java.util.Set<String> declared = new java.util.HashSet<>();
             for (java.lang.reflect.Method method : LinkedHashMap.class.getDeclaredMethods()) {
                 declared.add(method.getName());
             }
@@ -3190,8 +3181,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeepTheInsertionOrderAfterAPutOfAnExistingKey() {
-            final LinkedHashMap<Integer, String> map =
-                    mk(3, 1, 2).put(3, "three").put(1, "one");
+            LinkedHashMap<Integer, String> map = mk(3, 1, 2).put(3, "three").put(1, "one");
             assertEquals(Tuple.of(3, "three"), map.head());
             assertEquals(Tuple.of(2, "v2"), map.last());
             assertEquals(Vector.of(3, 1), keys(map.take(2)));
@@ -3210,11 +3200,11 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         @Test
         public void shouldCoverEveryRepresentationOfTheInsertionOrder() throws Exception {
             // offset > 0, markers of removed keys in the middle, and as many markers as keys (one more rebuilds)
-            final java.util.List<LinkedHashMap<Integer, String>> receivers = receivers();
-            final java.util.Set<String> shapes = new java.util.HashSet<>();
+            java.util.List<LinkedHashMap<Integer, String>> receivers = receivers();
+            java.util.Set<String> shapes = new java.util.HashSet<>();
             for (LinkedHashMap<Integer, String> receiver : receivers) {
-                final int offset = representation(receiver, "offset");
-                final int tombstones = representation(receiver, "tombstones");
+                int offset = representation(receiver, "offset");
+                int tombstones = representation(receiver, "tombstones");
                 if (offset > 0) {
                     shapes.add(tombstones > 0 ? "offset and markers" : "offset");
                 }
@@ -3230,7 +3220,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         }
 
         private int representation(LinkedHashMap<Integer, String> receiver, String field) throws Exception {
-            final java.lang.reflect.Field declared = LinkedHashMap.class.getDeclaredField(field);
+            java.lang.reflect.Field declared = LinkedHashMap.class.getDeclaredField(field);
             declared.setAccessible(true);
             return (int) declared.get(receiver);
         }

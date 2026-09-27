@@ -22,9 +22,9 @@ class CheckTest {
 
     @Test
     void aSeedReplaysAFailure() {
-        final Gen<Integer> ints = Gen.integers(0, 1_000);
-        final CheckResult first = Check.evaluate(config(9), ints, ints, (a, b) -> a + b < 1_500);
-        final CheckResult second = Check.evaluate(config(9), ints, ints, (a, b) -> a + b < 1_500);
+        Gen<Integer> ints = Gen.integers(0, 1_000);
+        CheckResult first = Check.evaluate(config(9), ints, ints, (a, b) -> a + b < 1_500);
+        CheckResult second = Check.evaluate(config(9), ints, ints, (a, b) -> a + b < 1_500);
         assertThat(first.isFalsified()).isTrue();
         assertThat(second).isEqualTo(first);
         assertThat(((CheckResult.Falsified) first).seed()).isEqualTo(9L);
@@ -32,8 +32,8 @@ class CheckTest {
 
     @Test
     void theSeedOfTheDefaultConfigurationIsReported() {
-        final CheckResult result = Check.evaluate(Gen.integers(), i -> false);
-        final long seed = ((CheckResult.Falsified) result).seed();
+        CheckResult result = Check.evaluate(Gen.integers(), i -> false);
+        long seed = ((CheckResult.Falsified) result).seed();
         assertThat(Check.evaluate(CheckConfig.defaults().withSeed(seed), Gen.integers(), i -> false))
                 .isEqualTo(result);
     }
@@ -42,7 +42,7 @@ class CheckTest {
 
     @Test
     void checkRunsTheConfiguredNumberOfSamples() {
-        final AtomicInteger calls = new AtomicInteger();
+        AtomicInteger calls = new AtomicInteger();
         assertThat(Check.evaluate(config(1).withSamples(37), Gen.integers(), i -> calls.incrementAndGet() > 0))
                 .isEqualTo(new CheckResult.Satisfied(37));
         assertThat(calls).hasValue(37);
@@ -64,15 +64,15 @@ class CheckTest {
 
     @Test
     void zeroSamplesRunNothing() {
-        final AtomicInteger generated = new AtomicInteger();
-        final Gen<Integer> gen = Gen.fromRandom(random -> generated.incrementAndGet());
+        AtomicInteger generated = new AtomicInteger();
+        Gen<Integer> gen = Gen.fromRandom(random -> generated.incrementAndGet());
         assertThat(Check.evaluate(config(1).withSamples(0), gen, i -> false)).isEqualTo(new CheckResult.Satisfied(0));
         assertThat(generated).hasValue(0);
     }
 
     @Test
     void checkRepeatsTheValuesOfAFiniteGenerator() {
-        final ArrayList<Integer> seen = new ArrayList<>();
+        ArrayList<Integer> seen = new ArrayList<>();
         Check.check(config(1).withSamples(7), Gen.fromIterable(java.util.List.of(1, 2, 3)), seen::add);
         assertThat(seen).containsExactly(1, 2, 3, 1, 2, 3, 1);
         seen.clear();
@@ -82,7 +82,7 @@ class CheckTest {
 
     @Test
     void checkAllRunsEachValueOfAFiniteGeneratorOnce() {
-        final ArrayList<Integer> seen = new ArrayList<>();
+        ArrayList<Integer> seen = new ArrayList<>();
         assertThat(Check.evaluateAll(Gen.fromIterable(java.util.List.of(1, 2, 3)), seen::add))
                 .isEqualTo(new CheckResult.Satisfied(3));
         assertThat(seen).containsExactly(1, 2, 3);
@@ -96,8 +96,8 @@ class CheckTest {
 
     @Test
     void checkAllRunsEveryCombinationOfFiniteGenerators() {
-        final ArrayList<String> seen = new ArrayList<>();
-        final CheckResult result = Check.evaluateAll(
+        ArrayList<String> seen = new ArrayList<>();
+        CheckResult result = Check.evaluateAll(
                 Gen.fromIterable(java.util.List.of(1, 2)),
                 Gen.fromIterable(java.util.List.of("a", "b", "c")),
                 (i, s) -> seen.add(i + s));
@@ -117,7 +117,7 @@ class CheckTest {
 
     @Test
     void checkAllRunsAtTheConfiguredSize() {
-        final ArrayList<Integer> seen = new ArrayList<>();
+        ArrayList<Integer> seen = new ArrayList<>();
         Check.checkAll(config(1).withSize(42), Gen.size(), seen::add);
         assertThat(seen).containsExactly(42);
     }
@@ -126,16 +126,15 @@ class CheckTest {
 
     @Test
     void theSizeGrowsOverARun() {
-        final ArrayList<Integer> seen = new ArrayList<>();
+        ArrayList<Integer> seen = new ArrayList<>();
         Check.check(config(1).withSamples(5), Gen.size(), seen::add);
         assertThat(seen).containsExactly(0, 25, 50, 75, 100);
     }
 
     @Test
     void theSizeOfAPassDependsOnTheSamplesBeforeIt() {
-        final ArrayList<String> seen = new ArrayList<>();
-        final Gen<String> pairs =
-                Gen.size().flatMap(size -> Gen.fromIterable(java.util.List.of(size + "a", size + "b")));
+        ArrayList<String> seen = new ArrayList<>();
+        Gen<String> pairs = Gen.size().flatMap(size -> Gen.fromIterable(java.util.List.of(size + "a", size + "b")));
         Check.check(config(1).withSamples(5).withSize(4), pairs, seen::add);
         // the second pass starts after two samples: 4 * 2 / 4 = 2; the third after four: 4
         assertThat(seen).containsExactly("0a", "0b", "2a", "2b", "4a");
@@ -143,11 +142,11 @@ class CheckTest {
 
     @Test
     void smallCounterexamplesComeFirst() {
-        final Gen<Integer> upToSize = Gen.sized(size -> Gen.integers(0, size));
+        Gen<Integer> upToSize = Gen.sized(size -> Gen.integers(0, size));
         for (long seed = 0; seed < 20; seed++) {
-            final CheckResult.Falsified falsified =
+            CheckResult.Falsified falsified =
                     (CheckResult.Falsified) Check.evaluate(config(seed), upToSize, n -> n < 30);
-            final int counterexample = (Integer) ((dev.zazr.Tuple1<?>) falsified.counterexample())._1();
+            int counterexample = (Integer) ((dev.zazr.Tuple1<?>) falsified.counterexample())._1();
             // the counterexample cannot exceed the size of its sample, which grows by half a unit per sample
             assertThat(counterexample).isBetween(30, Runner.size(config(seed), falsified.sampleNumber() - 1));
             assertThat(falsified.sampleNumber()).isGreaterThanOrEqualTo(60);
@@ -158,8 +157,8 @@ class CheckTest {
 
     @Test
     void falseFalsifiesTheSampleAndStopsTheCheck() {
-        final AtomicInteger calls = new AtomicInteger();
-        final CheckResult result = Check.evaluate(config(3), Gen.fromIterable(java.util.List.of(1, 2, 3, 4)), i -> {
+        AtomicInteger calls = new AtomicInteger();
+        CheckResult result = Check.evaluate(config(3), Gen.fromIterable(java.util.List.of(1, 2, 3, 4)), i -> {
             calls.incrementAndGet();
             return i < 3;
         });
@@ -169,12 +168,12 @@ class CheckTest {
 
     @Test
     void anAssertionErrorFalsifiesTheSampleWithItsMessage() {
-        final CheckResult result = Check.evaluate(config(3), Gen.constant(7), i -> {
+        CheckResult result = Check.evaluate(config(3), Gen.constant(7), i -> {
             throw new AssertionError("expected 8 but was " + i);
         });
         assertThat(result)
                 .isEqualTo(new CheckResult.Falsified(1, 3L, Tuple.of(7), Option.some("expected 8 but was 7")));
-        final CheckResult silent = Check.evaluate(config(3), Gen.constant(7), i -> {
+        CheckResult silent = Check.evaluate(config(3), Gen.constant(7), i -> {
             throw new AssertionError();
         });
         assertThat(silent).isEqualTo(new CheckResult.Falsified(1, 3L, Tuple.of(7), Option.none()));
@@ -182,7 +181,7 @@ class CheckTest {
 
     @Test
     void anAssertionErrorSubclassFalsifiesTheSample() {
-        final CheckResult result = Check.evaluate(config(3), Gen.constant(7), i -> {
+        CheckResult result = Check.evaluate(config(3), Gen.constant(7), i -> {
             throw new org.opentest4j.AssertionFailedError("not equal");
         });
         assertThat(result.isFalsified()).isTrue();
@@ -191,8 +190,8 @@ class CheckTest {
 
     @Test
     void anExceptionOfTheCheckMakesItErroneous() {
-        final IllegalStateException boom = new IllegalStateException("boom");
-        final CheckResult result = Check.evaluate(config(3), Gen.fromIterable(java.util.List.of(1, 2)), i -> {
+        IllegalStateException boom = new IllegalStateException("boom");
+        CheckResult result = Check.evaluate(config(3), Gen.fromIterable(java.util.List.of(1, 2)), i -> {
             if (i == 2) {
                 throw boom;
             }
@@ -204,7 +203,7 @@ class CheckTest {
 
     @Test
     void aCheckedExceptionOfTheCheckMakesItErroneous() {
-        final CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> {
+        CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> {
             throw new java.io.IOException("io");
         });
         assertThat(result.isErroneous()).isTrue();
@@ -214,7 +213,7 @@ class CheckTest {
     @Test
     void anInterruptMakesTheCheckErroneousAndStaysVisible() {
         try {
-            final CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> {
+            CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> {
                 throw new InterruptedException("stop");
             });
             assertThat(result.isErroneous()).isTrue();
@@ -226,7 +225,7 @@ class CheckTest {
 
     @Test
     void aNullResultMakesTheCheckErroneous() {
-        final CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> null);
+        CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> null);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get())
                 .isInstanceOf(NullPointerException.class)
@@ -236,7 +235,7 @@ class CheckTest {
 
     @Test
     void aStackOverflowMakesTheCheckErroneous() {
-        final CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> {
+        CheckResult result = Check.evaluate(config(3), Gen.constant(1), i -> {
             throw new StackOverflowError();
         });
         assertThat(result.isErroneous()).isTrue();
@@ -260,14 +259,13 @@ class CheckTest {
 
     @Test
     void aGeneratorThatThrowsMakesTheCheckErroneousWithoutSample() {
-        final IllegalArgumentException boom = new IllegalArgumentException("gen");
-        final Gen<Integer> failsOnThird = Gen.fromIterable(java.util.List.of(1, 2, 3))
-                .map(i -> {
-                    if (i == 3) {
-                        throw boom;
-                    }
-                    return i;
-                });
+        IllegalArgumentException boom = new IllegalArgumentException("gen");
+        Gen<Integer> failsOnThird = Gen.fromIterable(java.util.List.of(1, 2, 3)).map(i -> {
+            if (i == 3) {
+                throw boom;
+            }
+            return i;
+        });
         assertThat(Check.evaluate(config(4), failsOnThird, i -> true))
                 .isEqualTo(new CheckResult.Erroneous(3, 4L, boom, Option.none()));
         assertThat(Check.evaluateAll(config(4), failsOnThird, i -> true))
@@ -276,7 +274,7 @@ class CheckTest {
 
     @Test
     void anEmptyGeneratorMakesACheckErroneous() {
-        final CheckResult result = Check.evaluate(config(4), Gen.<Integer>empty(), i -> true);
+        CheckResult result = Check.evaluate(config(4), Gen.<Integer>empty(), i -> true);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get())
                 .isInstanceOf(IllegalStateException.class)
@@ -287,7 +285,7 @@ class CheckTest {
 
     @Test
     void aFilterBeyondItsBudgetMakesTheCheckErroneous() {
-        final CheckResult result =
+        CheckResult result =
                 Check.evaluate(config(4), Gen.integers(), Gen.integers().filter(i -> false), (a, b) -> true);
         assertThat(result.isErroneous()).isTrue();
         assertThat(result.error().get())
@@ -299,9 +297,9 @@ class CheckTest {
     @Test
     void theDiscardBudgetCountsEmptyPassesInARow() {
         // half of the passes are empty
-        final Gen<Integer> sometimes = Gen.oneOf(Gen.empty(), Gen.constant(1));
+        Gen<Integer> sometimes = Gen.oneOf(Gen.empty(), Gen.constant(1));
         assertThat(Check.evaluate(config(1), sometimes, i -> true)).isEqualTo(new CheckResult.Satisfied(200));
-        final CheckResult result = Check.evaluate(config(1).withMaxDiscards(0), sometimes, i -> true);
+        CheckResult result = Check.evaluate(config(1).withMaxDiscards(0), sometimes, i -> true);
         assertThat(result.error().get())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage(
@@ -318,7 +316,7 @@ class CheckTest {
 
     @Test
     void checkAllReportsAFilterThatGaveAPassUp() {
-        final CheckResult result = Check.evaluateAll(
+        CheckResult result = Check.evaluateAll(
                 config(1),
                 Gen.fromIterable(java.util.List.of(1, 2)),
                 Gen.integers().filter(i -> false),
@@ -338,18 +336,18 @@ class CheckTest {
 
     @Test
     void aDiscardBudgetOfTheLargestIntStillEnds() {
-        final CheckConfig largest = config(1).withMaxDiscards(Integer.MAX_VALUE);
+        CheckConfig largest = config(1).withMaxDiscards(Integer.MAX_VALUE);
         assertThat(Check.evaluate(largest, Gen.integers().filter(i -> i % 2 == 0), i -> i % 2 == 0))
                 .isEqualTo(new CheckResult.Satisfied(200));
     }
 
     @Test
     void nestedFiltersThatNeverPassEndWithinTheBudget() {
-        final java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
-        final Gen<Integer> nested = Gen.fromIterable(java.util.List.of(1, 2))
+        java.util.concurrent.atomic.AtomicLong calls = new java.util.concurrent.atomic.AtomicLong();
+        Gen<Integer> nested = Gen.fromIterable(java.util.List.of(1, 2))
                 .flatMap(i -> i == 1 ? Gen.integers().filter(x -> calls.incrementAndGet() < 0) : Gen.integers())
                 .filter(x -> calls.incrementAndGet() < 0);
-        final CheckResult result = Check.evaluate(config(1), nested, x -> true);
+        CheckResult result = Check.evaluate(config(1), nested, x -> true);
         assertThat(result.isErroneous()).isTrue();
         assertThat(calls.get()).isLessThanOrEqualTo(1001L);
     }
@@ -357,7 +355,7 @@ class CheckTest {
     @Test
     void filtersThatOnlyLargeValuesPassWorkWithTheDefaultConfiguration() {
         for (long seed = 0; seed < 5; seed++) {
-            final CheckConfig config = CheckConfig.defaults().withSeed(seed);
+            CheckConfig config = CheckConfig.defaults().withSeed(seed);
             Check.check(config, Gen.sized(n -> Gen.integers(0, n)).filter(x -> x > 90), x -> x > 90);
             Check.check(config, Gen.sized(n -> Gen.integers(0, n)).filter(x -> x >= 100), x -> x == 100);
             Check.check(config, Gen.alphaNumericStrings().filter(s -> s.length() > 3), s -> s.length() > 3);

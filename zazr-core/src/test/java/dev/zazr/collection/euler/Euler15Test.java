@@ -25,7 +25,7 @@ public class Euler15Test {
     }
 
     private static long solve(int n) {
-        final BigInteger f = factorial(n);
+        BigInteger f = factorial(n);
         return factorial(2 * n).divide(f).divide(f).longValue();
     }
 }

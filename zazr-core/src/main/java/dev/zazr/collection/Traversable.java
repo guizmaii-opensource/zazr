@@ -237,7 +237,7 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      * @return the concatenation
      */
     default String mkString(CharSequence prefix, CharSequence delimiter, CharSequence suffix) {
-        final StringBuilder builder = new StringBuilder(prefix);
+        StringBuilder builder = new StringBuilder(prefix);
         boolean first = true;
         for (T t : this) {
             if (first) {
@@ -309,7 +309,7 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      * @return a new array of the elements
      */
     default Object[] toArray() {
-        final Object[] array = new Object[size()];
+        Object[] array = new Object[size()];
         int i = 0;
         for (T t : this) {
             array[i++] = t;
@@ -327,7 +327,7 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
      */
     default T[] toArray(IntFunction<T[]> arrayFactory) {
         Objects.requireNonNull(arrayFactory, "arrayFactory is null");
-        final T[] array = arrayFactory.apply(size());
+        T[] array = arrayFactory.apply(size());
         int i = 0;
         for (T t : this) {
             array[i++] = t;

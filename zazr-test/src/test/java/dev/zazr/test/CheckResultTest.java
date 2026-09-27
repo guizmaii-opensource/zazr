@@ -58,7 +58,7 @@ class CheckResultTest {
         assertThat(FALSIFIED.error()).isEqualTo(Option.none());
         assertThat(FALSIFIED.message()).isEqualTo(Option.some("left = 1, right = 2"));
         assertThat(FALSIFIED_WITHOUT_MESSAGE.message()).isEqualTo(Option.none());
-        final CheckResult.Falsified falsified = (CheckResult.Falsified) FALSIFIED;
+        CheckResult.Falsified falsified = (CheckResult.Falsified) FALSIFIED;
         assertThat(falsified.sampleNumber()).isEqualTo(3);
         assertThat(falsified.seed()).isEqualTo(42L);
     }
@@ -69,7 +69,7 @@ class CheckResultTest {
         assertThat(ERRONEOUS_IN_GENERATOR.sample()).isEqualTo(Option.none());
         assertThat(ERRONEOUS.error()).isEqualTo(Option.some(CAUSE));
         assertThat(ERRONEOUS.message()).isEqualTo(Option.none());
-        final CheckResult.Erroneous erroneous = (CheckResult.Erroneous) ERRONEOUS;
+        CheckResult.Erroneous erroneous = (CheckResult.Erroneous) ERRONEOUS;
         assertThat(erroneous.sampleNumber()).isEqualTo(5);
         assertThat(erroneous.seed()).isEqualTo(-7L);
     }
@@ -160,7 +160,7 @@ class CheckResultTest {
 
     @Test
     void erroneousComparesCausesByClassAndMessageAlongTheChain() {
-        final CheckResult same =
+        CheckResult same =
                 new CheckResult.Erroneous(5, -7L, new IllegalStateException("boom"), Option.some(Tuple.of(9)));
         assertThat(ERRONEOUS).isEqualTo(same).hasSameHashCodeAs(same);
         assertThat(ERRONEOUS).isEqualTo(ERRONEOUS);
@@ -178,11 +178,11 @@ class CheckResultTest {
         assertThat(ERRONEOUS).isNotEqualTo(ERRONEOUS_IN_GENERATOR);
         assertThat(ERRONEOUS).isNotEqualTo(FALSIFIED);
         assertThat(ERRONEOUS.equals(null)).isFalse();
-        final CheckResult chained = new CheckResult.Erroneous(
+        CheckResult chained = new CheckResult.Erroneous(
                 1, 1L, new RuntimeException("a", new IllegalStateException("b")), Option.none());
-        final CheckResult sameChain = new CheckResult.Erroneous(
+        CheckResult sameChain = new CheckResult.Erroneous(
                 1, 1L, new RuntimeException("a", new IllegalStateException("b")), Option.none());
-        final CheckResult otherChain = new CheckResult.Erroneous(
+        CheckResult otherChain = new CheckResult.Erroneous(
                 1, 1L, new RuntimeException("a", new IllegalStateException("c")), Option.none());
         assertThat(chained).isEqualTo(sameChain).hasSameHashCodeAs(sameChain).isNotEqualTo(otherChain);
     }

@@ -25,7 +25,7 @@ public class Euler35Test {
     }
 
     private static int circularPrimes(int n) {
-        final Predicate<Integer> memoizedIsPrime = Memoize.of(Euler35Test::isPrime)::apply;
+        Predicate<Integer> memoizedIsPrime = Memoize.of(Euler35Test::isPrime)::apply;
         return Stream.rangeClosed(2, n)
                 .filter(memoizedIsPrime)
                 .map(Euler35Test::rotations)
@@ -42,7 +42,7 @@ public class Euler35Test {
     }
 
     private static List<Integer> rotations(int n) {
-        final Vector<Character> seq = Vector.ofAll(String.valueOf(n).toCharArray());
+        Vector<Character> seq = Vector.ofAll(String.valueOf(n).toCharArray());
         return Stream.range(0, seq.size())
                 .map(i -> seq.drop(i).appendAll(seq.take(i)))
                 .map(s -> Integer.valueOf(s.mkString()))

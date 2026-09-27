@@ -9,7 +9,7 @@ public final class RadixVectorShapes {
 
     /** The number of levels: 0 for the empty vector, N for a {@code VectorN}. */
     public static int depth(RadixVector<?> v) {
-        final int sliceCount = v.vectorSliceCount();
+        int sliceCount = v.vectorSliceCount();
         return (sliceCount == 0) ? 0 : (sliceCount + 1) / 2;
     }
 
@@ -18,7 +18,7 @@ public final class RadixVectorShapes {
         Object[] a = sliceAt(v, index);
         int i = index - sliceStart(v, index);
         for (int dim = sliceDim(v, index); dim > 1; dim--) {
-            final int width = 1 << (VectorStatics.BITS * (dim - 1));
+            int width = 1 << (VectorStatics.BITS * (dim - 1));
             a = (Object[]) a[i / width];
             i %= width;
         }
@@ -27,8 +27,8 @@ public final class RadixVectorShapes {
 
     /** The position of the element at {@code index} in its leaf. */
     public static int indexInLeaf(RadixVector<?> v, int index) {
-        final int dim = sliceDim(v, index);
-        final int local = index - sliceStart(v, index);
+        int dim = sliceDim(v, index);
+        int local = index - sliceStart(v, index);
         return (dim == 1) ? local : local & VectorStatics.MASK;
     }
 
@@ -48,7 +48,7 @@ public final class RadixVectorShapes {
     }
 
     private static int sliceStart(RadixVector<?> v, int index) {
-        final int s = sliceIndex(v, index);
+        int s = sliceIndex(v, index);
         return (s == 0) ? 0 : v.vectorSlicePrefixLength(s - 1);
     }
 

@@ -38,12 +38,12 @@ public final class Maps {
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>>
             Tuple2<V, M> computeIfAbsent(M map, K key, Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction, "mappingFunction is null");
-        final V value = getOrAbsent(map, key);
+        V value = getOrAbsent(map, key);
         if (value != ABSENT) {
             return Tuple.of(value, map);
         } else {
-            final V newValue = mappingFunction.apply(key);
-            final M newMap = (M) map.put(key, newValue);
+            V newValue = mappingFunction.apply(key);
+            M newMap = (M) map.put(key, newValue);
             return Tuple.of(newValue, newMap);
         }
     }
@@ -53,10 +53,10 @@ public final class Maps {
             Tuple2<Option<V>, M> computeIfPresent(
                     M map, K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction, "remappingFunction is null");
-        final V value = getOrAbsent(map, key);
+        V value = getOrAbsent(map, key);
         if (value != ABSENT) {
-            final V newValue = remappingFunction.apply(key, value);
-            final M newMap = (M) map.put(key, newValue);
+            V newValue = remappingFunction.apply(key, value);
+            M newMap = (M) map.put(key, newValue);
             return Tuple.of(Option.some(newValue), newMap);
         } else {
             return Tuple.of(Option.none(), map);
@@ -126,10 +126,10 @@ public final class Maps {
             return map;
         } else {
             return that.foldLeft(map, (result, entry) -> {
-                final K key = entry._1();
-                final U value = entry._2();
-                final V current = getOrAbsent(result, key);
-                final V newValue = current != ABSENT ? collisionResolution.apply(current, value) : value;
+                K key = entry._1();
+                U value = entry._2();
+                V current = getOrAbsent(result, key);
+                V newValue = current != ABSENT ? collisionResolution.apply(current, value) : value;
                 return (M) result.put(key, newValue);
             });
         }
@@ -172,8 +172,8 @@ public final class Maps {
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<M, M> partition(
             M map, OfEntries<K, V, M> ofEntries, Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final java.util.List<Tuple2<K, V>> left = new java.util.ArrayList<>();
-        final java.util.List<Tuple2<K, V>> right = new java.util.ArrayList<>();
+        java.util.List<Tuple2<K, V>> left = new java.util.ArrayList<>();
+        java.util.List<Tuple2<K, V>> right = new java.util.ArrayList<>();
         for (Tuple2<K, V> entry : map) {
             (predicate.test(entry) ? left : right).add(entry);
         }
@@ -191,7 +191,7 @@ public final class Maps {
     public static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(
             M map, K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
-        final V currentValue = getOrAbsent(map, key);
+        V currentValue = getOrAbsent(map, key);
         if (currentValue == ABSENT) {
             return (M) map.put(key, value);
         } else {
@@ -209,7 +209,7 @@ public final class Maps {
     public static <K extends @Nullable Object, V extends @Nullable Object, U extends V, M extends Map<K, V>> M put(
             M map, Tuple2<? extends K, U> entry, BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(merge, "the merge function is null");
-        final V currentValue = getOrAbsent(map, entry._1());
+        V currentValue = getOrAbsent(map, entry._1());
         if (currentValue == ABSENT) {
             return put(map, entry);
         } else {

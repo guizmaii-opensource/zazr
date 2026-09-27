@@ -16,13 +16,13 @@ public class CheckedConsumerTest {
 
     @Test
     public void shouldCreateCheckedConsumerUsingLambda() {
-        final CheckedConsumer<Object> consumer = CheckedConsumer.of(obj -> {});
+        CheckedConsumer<Object> consumer = CheckedConsumer.of(obj -> {});
         assertThat(consumer).isNotNull();
     }
 
     @Test
     public void shouldCreateCheckedConsumerUsingMethodReference() {
-        final CheckedConsumer<Object> consumer = CheckedConsumer.of(CheckedConsumerTest::accept);
+        CheckedConsumer<Object> consumer = CheckedConsumer.of(CheckedConsumerTest::accept);
         assertThat(consumer).isNotNull();
     }
 
@@ -32,7 +32,7 @@ public class CheckedConsumerTest {
     class AcceptTests {
         @Test
         public void shouldApplyNonThrowingCheckedConsumer() {
-            final CheckedConsumer<?> f = t -> {};
+            CheckedConsumer<?> f = t -> {};
             try {
                 f.accept(null);
             } catch (Throwable x) {
@@ -42,7 +42,7 @@ public class CheckedConsumerTest {
 
         @Test
         public void shouldApplyThrowingCheckedConsumer() {
-            final CheckedConsumer<?> f = t -> {
+            CheckedConsumer<?> f = t -> {
                 throw new Error();
             };
             try {
@@ -58,14 +58,14 @@ public class CheckedConsumerTest {
     class AndthenTests {
         @Test
         public void shouldThrowWhenComposingCheckedConsumerUsingAndThenWithNullParameter() {
-            final CheckedConsumer<?> f = t -> {};
+            CheckedConsumer<?> f = t -> {};
             assertThatThrownBy(() -> f.andThen(null)).isInstanceOf(NullPointerException.class);
         }
 
         @Test
         public void shouldComposeCheckedConsumerUsingAndThenWhenFirstOneSucceeds() {
-            final AtomicBoolean result = new AtomicBoolean(false);
-            final CheckedConsumer<?> f = t -> {};
+            AtomicBoolean result = new AtomicBoolean(false);
+            CheckedConsumer<?> f = t -> {};
             try {
                 f.andThen(ignored -> result.set(true)).accept(null);
                 assertThat(result.get()).isTrue();
@@ -76,8 +76,8 @@ public class CheckedConsumerTest {
 
         @Test
         public void shouldComposeCheckedConsumerUsingAndThenWhenFirstOneFails() {
-            final AtomicBoolean result = new AtomicBoolean(false);
-            final CheckedConsumer<?> f = t -> {
+            AtomicBoolean result = new AtomicBoolean(false);
+            CheckedConsumer<?> f = t -> {
                 throw new Error();
             };
             try {
@@ -93,7 +93,7 @@ public class CheckedConsumerTest {
     class UncheckedTests {
         @Test
         public void shouldApplyAnUncheckedFunctionThatDoesNotThrow() {
-            final Consumer<Object> consumer = CheckedConsumer.of(obj -> {}).unchecked();
+            Consumer<Object> consumer = CheckedConsumer.of(obj -> {}).unchecked();
             try {
                 consumer.accept(null);
             } catch (Throwable x) {
@@ -103,7 +103,7 @@ public class CheckedConsumerTest {
 
         @Test
         public void shouldApplyAnUncheckedFunctionThatThrows() {
-            final Consumer<Object> consumer = CheckedConsumer.of(obj -> {
+            Consumer<Object> consumer = CheckedConsumer.of(obj -> {
                         throw new Error();
                     })
                     .unchecked();

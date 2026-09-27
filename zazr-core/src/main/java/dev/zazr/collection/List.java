@@ -140,10 +140,10 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return A dev.zazr.collection.List Collector.
      */
     static <T extends @Nullable Object> Collector<T, Builder<T>, List<T>> collector() {
-        final Supplier<Builder<T>> supplier = List::newBuilder;
-        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
-        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
-        final Function<Builder<T>, List<T>> finisher = Builder::result;
+        Supplier<Builder<T>> supplier = List::newBuilder;
+        BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        Function<Builder<T>, List<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -249,21 +249,21 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             return (List<T>) underlying;
         } else if (elements instanceof java.util.List) {
             List<T> result = Nil.instance();
-            final java.util.List<T> list = (java.util.List<T>) elements;
-            final ListIterator<T> iterator = list.listIterator(list.size());
+            java.util.List<T> list = (java.util.List<T>) elements;
+            ListIterator<T> iterator = list.listIterator(list.size());
             while (iterator.hasPrevious()) {
                 result = result.prepend(iterator.previous());
             }
             return result;
         } else if (elements instanceof NavigableSet) {
             List<T> result = Nil.instance();
-            final java.util.Iterator<T> iterator = ((NavigableSet<T>) elements).descendingIterator();
+            java.util.Iterator<T> iterator = ((NavigableSet<T>) elements).descendingIterator();
             while (iterator.hasNext()) {
                 result = result.prepend(iterator.next());
             }
             return result;
         } else {
-            final Builder<T> builder =
+            Builder<T> builder =
                     new Builder<>(elements instanceof java.util.Collection<?> collection ? collection.size() : 0);
             for (T element : elements) {
                 builder.addChecked(element);
@@ -281,8 +281,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     static <T extends @Nullable Object> List<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
-        final java.util.Iterator<? extends T> iterator = javaStream.iterator();
-        final Builder<T> builder = new Builder<>(0);
+        java.util.Iterator<? extends T> iterator = javaStream.iterator();
+        Builder<T> builder = new Builder<>(0);
         while (iterator.hasNext()) {
             builder.addChecked(iterator.next());
         }
@@ -304,7 +304,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     static <T extends @Nullable Object> List<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        final Builder<T> builder = new Builder<>(0);
+        Builder<T> builder = new Builder<>(0);
         for (Iterable<? extends T> inner : nested) {
             for (T element : inner) {
                 builder.addChecked(element);
@@ -1003,7 +1003,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default List<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
+        java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
         return filter(seen::add);
     }
 
@@ -1022,7 +1022,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default <U extends @Nullable Object> List<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        final java.util.Set<U> seen = new java.util.HashSet<>();
+        java.util.Set<U> seen = new java.util.HashSet<>();
         return filter(t -> seen.add(keyExtractor.apply(t)));
     }
 
@@ -1124,7 +1124,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (n <= 0) {
             return this;
         }
-        final int length = size();
+        int length = size();
         if (n >= length) {
             return empty();
         }
@@ -1188,10 +1188,10 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key
         // computed once
-        final java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
-        final java.util.HashSet<U> duplicated = new java.util.HashSet<>();
+        java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
+        java.util.HashSet<U> duplicated = new java.util.HashSet<>();
         for (T element : this) {
-            final U key = keyExtractor.apply(element);
+            U key = keyExtractor.apply(element);
             if (first.putIfAbsent(key, element) != null) {
                 duplicated.add(key);
             }
@@ -1199,7 +1199,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (duplicated.isEmpty()) {
             return empty();
         }
-        final java.util.List<T> result = new ArrayList<>(duplicated.size());
+        java.util.List<T> result = new ArrayList<>(duplicated.size());
         for (java.util.Map.Entry<U, T> entry : first.entrySet()) {
             if (duplicated.contains(entry.getKey())) {
                 result.add(entry.getValue());
@@ -1220,8 +1220,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default boolean endsWith(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
-        final List<? extends T> suffix = List.ofAll(that);
-        final int skipped = size() - suffix.size();
+        List<? extends T> suffix = List.ofAll(that);
+        int skipped = size() - suffix.size();
         if (skipped < 0) {
             return false;
         }
@@ -1248,7 +1248,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (isEmpty()) {
             return this;
         } else {
-            final List<T> filtered = foldLeft(empty(), (xs, x) -> predicate.test(x) ? xs.prepend(x) : xs);
+            List<T> filtered = foldLeft(empty(), (xs, x) -> predicate.test(x) ? xs.prepend(x) : xs);
             if (filtered.isEmpty()) {
                 return empty();
             } else if (filtered.size() == size()) {
@@ -1791,7 +1791,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         Objects.requireNonNull(mapper, "mapper is null");
         List<U> list = empty();
         for (T t : this) {
-            final Option<? extends U> collected =
+            Option<? extends U> collected =
                     Objects.requireNonNull(mapper.apply(t), "List.collect: mapper returned null");
             if (collected.isDefined()) {
                 list = list.prepend(collected.get());
@@ -1823,7 +1823,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return a new List, or this List if it is already at least {@code length} long
      */
     default List<T> padTo(int length, T element) {
-        final int actualLength = size();
+        int actualLength = size();
         if (length <= actualLength) {
             return this;
         } else {
@@ -1870,7 +1870,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         from = Math.max(from, 0);
         replaced = Math.max(replaced, 0);
         // the end of the replaced range, saturated: from + replaced can overflow an int
-        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+        int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
         return take(from).appendAll(that).appendAll(drop(end));
     }
 
@@ -1966,13 +1966,13 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (isEmpty()) {
             return Nil.instance();
         } else {
-            final List<T> tail = tail();
+            List<T> tail = tail();
             if (tail.isEmpty()) {
                 return of(this);
             } else {
-                final List<List<T>> zero = Nil.instance();
+                List<List<T>> zero = Nil.instance();
                 return distinct().foldLeft(zero, (xs, x) -> {
-                    final Function<List<T>, List<T>> prepend = l -> l.prepend(x);
+                    Function<List<T>, List<T>> prepend = l -> l.prepend(x);
                     return xs.appendAll(remove(x).permutations().map(prepend));
                 });
             }
@@ -2182,7 +2182,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default List<T> removeLast(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final List<T> removedAndReversed = reverse().removeFirst(predicate);
+        List<T> removedAndReversed = reverse().removeFirst(predicate);
         return removedAndReversed.size() == size() ? this : removedAndReversed.reverse();
     }
 
@@ -2296,7 +2296,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T> result = Nil.instance();
         boolean changed = false;
         for (List<T> list = this; !list.isEmpty(); list = list.tail()) {
-            final T head = list.head();
+            T head = list.head();
             if (Objects.equals(head, currentElement)) {
                 result = result.prepend(newElement);
                 changed = true;
@@ -2345,7 +2345,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2363,7 +2363,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (n == 0 || isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2430,7 +2430,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     @SuppressWarnings("unchecked")
     default int search(T element) {
-        final ToIntFunction<T> comparison = ((Comparable<T>) element)::compareTo;
+        ToIntFunction<T> comparison = ((Comparable<T>) element)::compareTo;
         return ListModule.Search.linearSearch(this, comparison);
     }
 
@@ -2449,7 +2449,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default int search(T element, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final ToIntFunction<T> comparison = current -> comparator.compare(element, current);
+        ToIntFunction<T> comparison = current -> comparator.compare(element, current);
         return ListModule.Search.linearSearch(this, comparison);
     }
 
@@ -2496,7 +2496,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return a new List, empty if the range is empty
      */
     default List<T> slice(int beginIndex, int endIndex) {
-        final int lowerBound = Math.max(beginIndex, 0);
+        int lowerBound = Math.max(beginIndex, 0);
         if (lowerBound >= endIndex) {
             return empty();
         } else {
@@ -2577,7 +2577,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default Tuple2<List<T>, List<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final Tuple2<Iterator<T>, Iterator<T>> itt = Iterator.ofAll(this).span(predicate);
+        Tuple2<Iterator<T>, Iterator<T>> itt = Iterator.ofAll(this).span(predicate);
         return Tuple.of(ofAll(itt._1()), ofAll(itt._2()));
     }
 
@@ -2617,7 +2617,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (isEmpty()) {
             return Tuple.of(empty(), empty());
         } else {
-            final Tuple2<List<T>, List<T>> t = SplitAt.splitByPredicateReversed(this, predicate);
+            Tuple2<List<T>, List<T>> t = SplitAt.splitByPredicateReversed(this, predicate);
             if (t._2().isEmpty()) {
                 return Tuple.of(this, empty());
             } else {
@@ -2639,7 +2639,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (isEmpty()) {
             return Tuple.of(empty(), empty());
         } else {
-            final Tuple2<List<T>, List<T>> t = SplitAt.splitByPredicateReversed(this, predicate);
+            Tuple2<List<T>, List<T>> t = SplitAt.splitByPredicateReversed(this, predicate);
             if (t._2().isEmpty() || t._2().tail().isEmpty()) {
                 return Tuple.of(this, empty());
             } else {
@@ -2678,8 +2678,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (offset < 0) {
             return false;
         }
-        final Iterator<T> i = Iterator.ofAll(this).drop(offset);
-        final java.util.Iterator<? extends T> j = that.iterator();
+        Iterator<T> i = Iterator.ofAll(this).drop(offset);
+        java.util.Iterator<? extends T> j = that.iterator();
         while (i.hasNext() && j.hasNext()) {
             if (!Objects.equals(i.next(), j.next())) {
                 return false;
@@ -2891,7 +2891,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T1> xs = Nil.instance();
         List<T2> ys = Nil.instance();
         for (T element : this) {
-            final Tuple2<? extends T1, ? extends T2> t =
+            Tuple2<? extends T1, ? extends T2> t =
                     Objects.requireNonNull(unzipper.apply(element), "List.unzip: unzipper returned null");
             xs = xs.prepend(t._1());
             ys = ys.prepend(t._2());
@@ -2907,7 +2907,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         List<T2> ys = Nil.instance();
         List<T3> zs = Nil.instance();
         for (T element : this) {
-            final Tuple3<? extends T1, ? extends T2, ? extends T3> t =
+            Tuple3<? extends T1, ? extends T2, ? extends T3> t =
                     Objects.requireNonNull(unzipper.apply(element), "List.unzip3: unzipper returned null");
             xs = xs.prepend(t._1());
             ys = ys.prepend(t._2());
@@ -3201,7 +3201,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
 
         // the kept List is followed by something: its elements join the buffer
         private void flushTail() {
-            final List<T> list = tail;
+            List<T> list = tail;
             tail = Nil.instance();
             if (tailLength >= 0) {
                 reserve(tailLength);
@@ -3212,7 +3212,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         }
 
         private void reserve(int more) {
-            final int needed = size + more;
+            int needed = size + more;
             if (needed > buffer.length && needed > 0) {
                 buffer = Arrays.copyOf(buffer, Math.max(needed, 16));
             }
@@ -3360,7 +3360,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     @Override
     default java.util.Iterator<T> iterator() {
-        final List<T> that = this;
+        List<T> that = this;
         return new AbstractIterator<T>() {
             List<T> list = that;
 
@@ -3371,7 +3371,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
 
             @Override
             public T getNext() {
-                final T result = list.head();
+                T result = list.head();
                 list = list.tail();
                 return result;
             }
@@ -3492,7 +3492,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default <U extends @Nullable Object> List<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
         Objects.requireNonNull(that, "that is null");
-        final List<U> other = List.ofAll(that);
+        List<U> other = List.ofAll(that);
         return flatMap(a -> other.map(b -> Tuple.of(a, b)));
     }
 
@@ -3870,7 +3870,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(
             Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
         return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "List.toMap: f returned null");
     }
 
@@ -3904,7 +3904,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
             Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
         return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "List.toLinkedMap: f returned null");
     }
 
@@ -3975,7 +3975,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
             Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll =
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll =
                 t -> TreeMap.ofEntries(comparator, t);
         return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "List.toSortedMap: f returned null");
     }

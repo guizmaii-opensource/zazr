@@ -36,7 +36,7 @@ public class Euler21Test {
     }
 
     private static int sumOfAmicablePairs(int n) {
-        final Function<Integer, Integer> mSumOfDivisors = Memoize.of(Euler21Test::sumOfDivisors);
+        Function<Integer, Integer> mSumOfDivisors = Memoize.of(Euler21Test::sumOfDivisors);
         return Stream.range(1, n)
                 .filter(x ->
                         mSumOfDivisors.apply(mSumOfDivisors.apply(x)).intValue() == x && mSumOfDivisors.apply(x) > x)

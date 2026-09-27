@@ -29,7 +29,7 @@ public final class IntMap<T> implements Traversable<T> {
 
     @Override
     public boolean equals(Object o) {
-        final Object that = (o instanceof IntMap) ? ((IntMap<?>) o).original : o;
+        Object that = (o instanceof IntMap) ? ((IntMap<?>) o).original : o;
         return Collections.equals(original, that);
     }
 

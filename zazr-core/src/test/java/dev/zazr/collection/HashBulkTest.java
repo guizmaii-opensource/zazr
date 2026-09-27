@@ -51,7 +51,7 @@ public class HashBulkTest {
     }
 
     private static java.util.Map<Integer, Integer> tags(Iterable<Key> keys) {
-        final java.util.Map<Integer, Integer> result = new java.util.HashMap<>();
+        java.util.Map<Integer, Integer> result = new java.util.HashMap<>();
         keys.forEach(k -> result.put(k.id, k.tag));
         return result;
     }
@@ -60,9 +60,9 @@ public class HashBulkTest {
 
     @Test
     public void shouldUnionTwoHashSetsKeepingTheElementsOfTheReceiver() {
-        final HashSet<Key> left = set(0, 300, 1);
-        final HashSet<Key> right = set(200, 500, 2);
-        final HashSet<Key> union = left.union(right);
+        HashSet<Key> left = set(0, 300, 1);
+        HashSet<Key> right = set(200, 500, 2);
+        HashSet<Key> union = left.union(right);
         assertThat(union.size()).isEqualTo(500);
         tags(union).forEach((id, tag) -> assertThat(tag).isEqualTo(id < 300 ? 1 : 2));
         assertThat(left.addAll(right)).isEqualTo(union);
@@ -75,17 +75,17 @@ public class HashBulkTest {
         assertThat(left.union(HashSet.empty())).isSameAs(left);
         assertThat(HashSet.<Key>empty().union(right)).isSameAs(right);
         // the argument holds everything: its elements, but the receiver's where they are equal
-        final HashSet<Key> small = set(0, 10, 4);
-        final HashSet<Key> all = small.union(right.addAll(set(0, 10, 5)));
+        HashSet<Key> small = set(0, 10, 4);
+        HashSet<Key> all = small.union(right.addAll(set(0, 10, 5)));
         assertThat(all).hasSize(310);
         tags(all).forEach((id, tag) -> assertThat(tag).isEqualTo(id < 10 ? 4 : 2));
     }
 
     @Test
     public void shouldRemoveAHashSetKeepingTheElementsOfTheReceiver() {
-        final HashSet<Key> left = set(0, 300, 1);
-        final HashSet<Key> right = set(200, 500, 2);
-        final HashSet<Key> diff = left.diff(right);
+        HashSet<Key> left = set(0, 300, 1);
+        HashSet<Key> right = set(200, 500, 2);
+        HashSet<Key> diff = left.diff(right);
         assertThat(diff.size()).isEqualTo(200);
         tags(diff).forEach((id, tag) -> assertThat(tag).isEqualTo(1));
         assertThat(left.removeAll(right)).isEqualTo(diff);
@@ -98,7 +98,7 @@ public class HashBulkTest {
 
     @Test
     public void shouldFilterAHashSetReturningTheReceiverWhenNothingIsDropped() {
-        final HashSet<Key> set = set(0, 300, 1);
+        HashSet<Key> set = set(0, 300, 1);
         assertThat(set.filter(k -> true)).isSameAs(set);
         assertThat(set.reject(k -> false)).isSameAs(set);
         assertThat(set.filter(k -> false)).isSameAs(HashSet.empty());
@@ -114,7 +114,7 @@ public class HashBulkTest {
 
     @Test
     public void shouldTellWhetherAHashSetContainsAllOfAnother() {
-        final HashSet<Key> set = set(0, 300, 1);
+        HashSet<Key> set = set(0, 300, 1);
         assertThat(set.containsAll(set(0, 300, 2))).isTrue();
         assertThat(set.containsAll(set(100, 200, 2))).isTrue();
         assertThat(set.containsAll(set(250, 350, 2))).isFalse();
@@ -128,9 +128,9 @@ public class HashBulkTest {
 
     @Test
     public void shouldCompareAndHashHashSetsAsAnySet() {
-        final Random random = new Random(1);
+        Random random = new Random(1);
         for (int round = 0; round < 50; round++) {
-            final java.util.List<Integer> ids = new ArrayList<>();
+            java.util.List<Integer> ids = new ArrayList<>();
             for (int i = 0; i < random.nextInt(400); i++) {
                 ids.add(random.nextInt(1000));
             }
@@ -138,7 +138,7 @@ public class HashBulkTest {
             for (Integer id : ids) {
                 a = a.add(new Key(id, 1));
             }
-            final java.util.List<Integer> shuffled = new ArrayList<>(ids);
+            java.util.List<Integer> shuffled = new ArrayList<>(ids);
             java.util.Collections.shuffle(shuffled, random);
             HashSet<Key> b = HashSet.empty();
             for (Integer id : shuffled) {
@@ -150,7 +150,7 @@ public class HashBulkTest {
             assertThat(a.equals(LinkedHashSet.ofAll(a))).isTrue();
             assertThat(a.asJava().hashCode() + 1).isEqualTo(a.hashCode());
             if (!ids.isEmpty()) {
-                final HashSet<Key> c = b.remove(new Key(ids.get(0), 0)).add(new Key(5000, 0));
+                HashSet<Key> c = b.remove(new Key(ids.get(0), 0)).add(new Key(5000, 0));
                 assertThat(a.equals(c)).isFalse();
             }
         }
@@ -162,9 +162,9 @@ public class HashBulkTest {
 
     @Test
     public void shouldMergeAHashMapKeepingTheEntriesOfTheReceiver() {
-        final HashMap<Key, Integer> left = map(0, 300, 1);
-        final HashMap<Key, Integer> right = map(200, 500, 2);
-        final HashMap<Key, Integer> merged = left.merge(right);
+        HashMap<Key, Integer> left = map(0, 300, 1);
+        HashMap<Key, Integer> right = map(200, 500, 2);
+        HashMap<Key, Integer> merged = left.merge(right);
         assertThat(merged.size()).isEqualTo(500);
         merged.forEach((k, v) -> {
             assertThat(k.tag).isEqualTo(k.id < 300 ? 1 : 2);
@@ -181,7 +181,7 @@ public class HashBulkTest {
 
     @Test
     public void shouldFilterAHashMapInEveryWay() {
-        final HashMap<Key, Integer> map = map(0, 300, 1).put(new Key(7, 9), 9);
+        HashMap<Key, Integer> map = map(0, 300, 1).put(new Key(7, 9), 9);
         assertThat(map.filter((k, v) -> true)).isSameAs(map);
         assertThat(map.filter((k, v) -> false)).isSameAs(HashMap.empty());
         assertThat(map.filter((k, v) -> v == 9)).hasSize(1);
@@ -205,8 +205,8 @@ public class HashBulkTest {
 
     @Test
     public void shouldMapTheValuesKeepingTheKeys() {
-        final HashMap<Key, Integer> map = map(0, 300, 1);
-        final HashMap<Key, String> mapped = map.mapValues(v -> "v" + v);
+        HashMap<Key, Integer> map = map(0, 300, 1);
+        HashMap<Key, String> mapped = map.mapValues(v -> "v" + v);
         assertThat(mapped.size()).isEqualTo(300);
         mapped.forEach((k, v) -> assertThat(v).isEqualTo("v1"));
         assertThat(map.mapValues(v -> v)).isSameAs(map);
@@ -224,7 +224,7 @@ public class HashBulkTest {
 
     @Test
     public void shouldCompareHashMapsAsAnyMap() {
-        final HashMap<Key, Integer> a = map(0, 300, 1);
+        HashMap<Key, Integer> a = map(0, 300, 1);
         HashMap<Key, Integer> b = HashMap.empty();
         for (int i = 299; i >= 0; i--) {
             b = b.put(new Key(i, 2), 1);

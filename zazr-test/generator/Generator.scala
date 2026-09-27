@@ -290,8 +290,8 @@ def generateTestClasses(): Unit = {
 
               @$test
               void passesTheValuesInOrder() {
-                  final $arrayList<Object> seen = new $arrayList<>();
-                  final CheckResult result = Check.evaluate(CONFIG, $constants, ($params) -> seen.add($tupleOfParams));
+                  $arrayList<Object> seen = new $arrayList<>();
+                  CheckResult result = Check.evaluate(CONFIG, $constants, ($params) -> seen.add($tupleOfParams));
                   $assertThat(result).isEqualTo(new CheckResult.Satisfied(20));
                   $assertThat(seen).hasSize(20).containsOnly($tuple.of($ones));
               }
@@ -309,7 +309,7 @@ def generateTestClasses(): Unit = {
 
               @$test
               void checkAllRunsEveryCombinationOnce() {
-                  final $arrayList<Object> seen = new $arrayList<>();
+                  $arrayList<Object> seen = new $arrayList<>();
                   $assertThat(Check.evaluateAll($twos, ($params) -> seen.add($tupleOfParams))).isEqualTo(new CheckResult.Satisfied($combinations));
                   $assertThat(seen).hasSize($combinations).doesNotHaveDuplicates();
                   seen.clear();
@@ -350,7 +350,7 @@ def generateTestClasses(): Unit = {
 
               @$test
               void checkReturnsWhenEveryValuePasses() {
-                  final $arrayList<Object> seen = new $arrayList<>();
+                  $arrayList<Object> seen = new $arrayList<>();
                   Check.check(CONFIG, $constants, ($params) -> seen.add($tupleOfParams));
                   $assertThat(seen).hasSize(20);
                   Check.check($constants, ($params) -> true);

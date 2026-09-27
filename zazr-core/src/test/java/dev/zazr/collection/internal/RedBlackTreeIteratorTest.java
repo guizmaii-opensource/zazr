@@ -18,8 +18,8 @@ public class RedBlackTreeIteratorTest {
     private static final Comparator<Integer> NATURAL = Comparators.naturalComparator();
 
     private static java.util.List<Integer> iterated(RedBlackTree<Integer> tree) {
-        final java.util.List<Integer> result = new ArrayList<>();
-        final java.util.Iterator<Integer> iterator = tree.iterator();
+        java.util.List<Integer> result = new ArrayList<>();
+        java.util.Iterator<Integer> iterator = tree.iterator();
         while (iterator.hasNext()) {
             result.add(iterator.next());
         }
@@ -38,7 +38,7 @@ public class RedBlackTreeIteratorTest {
     @Test
     public void shouldIterateInOrderTreesBuiltByInsertion() {
         for (int size : SIZES) {
-            final java.util.List<Integer> shuffled = new ArrayList<>(range(size));
+            java.util.List<Integer> shuffled = new ArrayList<>(range(size));
             java.util.Collections.shuffle(shuffled, new Random(size));
             RedBlackTree<Integer> tree = RedBlackTree.empty(NATURAL);
             for (Integer value : shuffled) {
@@ -51,8 +51,8 @@ public class RedBlackTreeIteratorTest {
     @Test
     public void shouldIterateInOrderTreesBuiltFromOrderedValues() {
         for (int size : SIZES) {
-            final Object[] sorted = range(size).toArray();
-            final RedBlackTree<Integer> tree =
+            Object[] sorted = range(size).toArray();
+            RedBlackTree<Integer> tree =
                     RedBlackTreeModule.Node.fromOrdered(new RedBlackTreeModule.Empty<>(NATURAL), sorted, size);
             assertThat(iterated(tree)).as("size %d", size).containsExactlyElementsOf(range(size));
         }
@@ -65,11 +65,11 @@ public class RedBlackTreeIteratorTest {
             for (int i = 0; i < size; i++) {
                 tree = tree.insert(i);
             }
-            final RedBlackTree<Integer> full = tree;
+            RedBlackTree<Integer> full = tree;
             for (int i = 0; i < size; i += 3) {
                 tree = tree.delete(i);
             }
-            final java.util.List<Integer> expected =
+            java.util.List<Integer> expected =
                     range(size).stream().filter(i -> i % 3 != 0).toList();
             assertThat(iterated(tree)).as("size %d", size).containsExactlyElementsOf(expected);
             // the tree the deletions started from is unchanged
@@ -86,7 +86,7 @@ public class RedBlackTreeIteratorTest {
                 tree = tree.insert(i);
             }
             if (!tree.isEmpty()) {
-                final int blackHeight = ((RedBlackTreeModule.Node<Integer>) tree).blackHeight;
+                int blackHeight = ((RedBlackTreeModule.Node<Integer>) tree).blackHeight;
                 assertThat(height(tree)).as("size %d", size).isLessThanOrEqualTo(Math.max(4, 2 * blackHeight + 2));
             }
         }
@@ -96,8 +96,8 @@ public class RedBlackTreeIteratorTest {
     public void shouldGrowTheStackWhenTheBlackHeightUnderstatesTheHeight() {
         // a left-leaning chain whose nodes all claim a black height of 1: higher than the first stack the iterator
         // allocates, so the stack has to grow while the leftmost path is pushed
-        final RedBlackTreeModule.Empty<Integer> empty = new RedBlackTreeModule.Empty<>(NATURAL);
-        final int length = 100;
+        RedBlackTreeModule.Empty<Integer> empty = new RedBlackTreeModule.Empty<>(NATURAL);
+        int length = 100;
         RedBlackTree<Integer> chain = empty;
         for (int i = length - 1; i >= 0; i--) {
             chain = new RedBlackTreeModule.Node<>(Color.BLACK, 1, empty, i, chain, empty);
@@ -112,7 +112,7 @@ public class RedBlackTreeIteratorTest {
 
     @Test
     public void shouldThrowWhenIteratedPastTheEnd() {
-        final java.util.Iterator<Integer> iterator = RedBlackTree.of(NATURAL, 1).iterator();
+        java.util.Iterator<Integer> iterator = RedBlackTree.of(NATURAL, 1).iterator();
         assertThat(iterator.next()).isEqualTo(1);
         assertThat(iterator.hasNext()).isFalse();
         assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);

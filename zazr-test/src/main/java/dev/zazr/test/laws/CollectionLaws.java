@@ -51,7 +51,7 @@ public final class CollectionLaws {
         return Law.of(
                 "toListRoundTrip",
                 (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
-                    final List<T> list = subject.toList().apply(fa);
+                    List<T> list = subject.toList().apply(fa);
                     return Results.equal(elements(list), elements(fa))
                             && Results.equal(subject.ofAll().apply(list), fa);
                 }));
@@ -70,9 +70,9 @@ public final class CollectionLaws {
         return Law.of(
                 "equalsAgreesWithElements",
                 (subject, config) -> Check.evaluate(config, subject.values(), subject.values(), (a, b) -> {
-                    final ArrayList<T> reversed = elements(a);
+                    ArrayList<T> reversed = elements(a);
                     Collections.reverse(reversed);
-                    final ArrayList<T> dropped = elements(a);
+                    ArrayList<T> dropped = elements(a);
                     if (!dropped.isEmpty()) {
                         dropped.removeFirst();
                     }
@@ -96,8 +96,8 @@ public final class CollectionLaws {
         return Law.of(
                 "iterationOrder",
                 (subject, config) -> Check.evaluate(config, subject.values(), subject.values(), (a, b) -> {
-                    final ArrayList<T> input = elements(a);
-                    final ArrayList<T> second = elements(b);
+                    ArrayList<T> input = elements(a);
+                    ArrayList<T> second = elements(b);
                     Collections.reverse(second);
                     input.addAll(second);
                     return subject.order()
@@ -118,7 +118,7 @@ public final class CollectionLaws {
         return Law.of(
                 "sequenceEqualsAcrossTypes",
                 (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
-                    final ArrayList<T> xs = elements(fa);
+                    ArrayList<T> xs = elements(fa);
                     return allEqual(fa, Vector.ofAll(xs), List.ofAll(xs), Queue.ofAll(xs), Stream.ofAll(xs))
                             && noneEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs));
                 }));
@@ -136,7 +136,7 @@ public final class CollectionLaws {
         return Law.of(
                 "setEqualsAcrossTypes",
                 (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
-                    final ArrayList<T> xs = elements(fa);
+                    ArrayList<T> xs = elements(fa);
                     return allEqual(fa, HashSet.ofAll(xs), LinkedHashSet.ofAll(xs))
                             && (!comparable(xs) || allEqual(fa, treeSet(xs)))
                             && noneEqual(fa, Vector.ofAll(xs), List.ofAll(xs));
@@ -155,7 +155,7 @@ public final class CollectionLaws {
         return Law.of(
                 "mapEqualsAcrossTypes",
                 (subject, config) -> Check.evaluate(config, subject.values(), fa -> {
-                    final ArrayList<T> entries = elements(fa);
+                    ArrayList<T> entries = elements(fa);
                     return allEqual(fa, HashMap.ofEntries(entries), LinkedHashMap.ofEntries(entries))
                             && (!comparable(entries.stream().map(Tuple2::_1).toList())
                                     || allEqual(fa, treeMap(entries)))
@@ -211,13 +211,13 @@ public final class CollectionLaws {
     // -- helpers
 
     static <T> ArrayList<T> elements(Iterable<T> iterable) {
-        final ArrayList<T> elements = new ArrayList<>();
+        ArrayList<T> elements = new ArrayList<>();
         iterable.forEach(elements::add);
         return elements;
     }
 
     private static <T, F extends Iterable<T>> boolean agrees(CollectionSubject<T, F> subject, F a, F b) {
-        final boolean expected = subject.ordered()
+        boolean expected = subject.ordered()
                 ? elements(a).equals(elements(b))
                 : new java.util.HashSet<>(elements(a)).equals(new java.util.HashSet<>(elements(b)));
         return Results.check(a.equals(b) == expected, () -> a + (expected ? " differs from " : " equals ") + b)
@@ -247,7 +247,7 @@ public final class CollectionLaws {
         if (xs.isEmpty()) {
             return true;
         }
-        final Class<?> type = xs.getFirst().getClass();
+        Class<?> type = xs.getFirst().getClass();
         return Comparable.class.isAssignableFrom(type) && xs.stream().allMatch(x -> x.getClass() == type);
     }
 

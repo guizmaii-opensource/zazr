@@ -26,7 +26,7 @@ public interface ListModule {
             List<List<T>> reversed = List.empty();
             int remaining = length;
             for (List<T> rest = elements; remaining >= k; rest = rest.tail(), remaining--) {
-                final T head = rest.head();
+                T head = rest.head();
                 for (List<List<T>> tails = combine(rest.tail(), remaining - 1, k - 1);
                         !tails.isEmpty();
                         tails = tails.tail()) {
@@ -67,20 +67,20 @@ public interface ListModule {
                 return -1;
             }
             // the slice is read once, whatever its shape; its emptiness is answered by the copy
-            final List<T> _slice = toList(slice);
+            List<T> _slice = toList(slice);
             if (source.isEmpty()) {
                 return _slice.isEmpty() ? 0 : -1;
             } else if (_slice.isEmpty()) {
-                final int len = source.size();
+                int len = source.size();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
             // lengths once, then counted down: List.size() walks the list
-            final int sliceLength = _slice.size();
+            int sliceLength = _slice.size();
             int remaining = source.size();
             while (remaining >= sliceLength) {
-                final int found = findNextSlice(source, _slice, remaining, sliceLength);
+                int found = findNextSlice(source, _slice, remaining, sliceLength);
                 if (found < 0) {
                     return result;
                 }
@@ -97,7 +97,7 @@ public interface ListModule {
 
         private static <T extends @Nullable Object> int findFirstSlice(List<T> source, List<T> slice, int from) {
             int index = 0;
-            final int sliceLength = slice.size();
+            int sliceLength = slice.size();
             // length once, then counted down: List.size() walks the list
             int remaining = source.size();
             while (remaining >= sliceLength) {
@@ -141,7 +141,7 @@ public interface ListModule {
         static <T extends @Nullable Object> int linearSearch(List<T> list, ToIntFunction<T> comparison) {
             int idx = 0;
             for (T current : list) {
-                final int cmp = comparison.applyAsInt(current);
+                int cmp = comparison.applyAsInt(current);
                 if (cmp == 0) {
                     return idx;
                 } else if (cmp < 0) {

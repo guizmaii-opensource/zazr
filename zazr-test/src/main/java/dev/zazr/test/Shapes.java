@@ -67,7 +67,7 @@ final class Shapes {
     }
 
     static <T> ArrayList<T> draw(Gen<T> gen, int count, Sampling sampling, int size) {
-        final ArrayList<T> elements = new ArrayList<>(count);
+        ArrayList<T> elements = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             elements.add(gen.draw(sampling, size));
         }
@@ -81,7 +81,7 @@ final class Shapes {
     }
 
     static <T> ArrayList<T> concat(java.util.List<T> first, java.util.List<T> second) {
-        final ArrayList<T> all = new ArrayList<>(first.size() + second.size());
+        ArrayList<T> all = new ArrayList<>(first.size() + second.size());
         all.addAll(first);
         all.addAll(second);
         return all;
@@ -91,7 +91,7 @@ final class Shapes {
 
     static <T> Gen<Vector<T>> vector(Gen<T> gen, Length length) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, length.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, length.draw(sampling, size), sampling, size);
             return sink.accept(vector(sampling.draw().nextInt(VECTOR_LAYOUTS), xs, gen, sampling, size));
         });
     }
@@ -101,7 +101,7 @@ final class Shapes {
         return switch (layout) {
             case 0 -> Vector.ofAll(xs);
             case 1 -> {
-                final Vector.Builder<T> builder = Vector.newBuilder();
+                Vector.Builder<T> builder = Vector.newBuilder();
                 xs.forEach(builder::add);
                 yield builder.result();
             }
@@ -120,12 +120,12 @@ final class Shapes {
                 yield vector;
             }
             case 4 -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield Vector.ofAll(concat(prefix, xs)).drop(prefix.size());
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
-                final ArrayList<T> suffix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> suffix = extra(gen, sampling, size);
                 yield Vector.ofAll(concat(concat(prefix, xs), suffix))
                         .drop(prefix.size())
                         .dropRight(suffix.size());
@@ -135,7 +135,7 @@ final class Shapes {
 
     static <T> Gen<List<T>> list(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(list(sampling.draw().nextInt(LIST_LAYOUTS), xs, gen, sampling, size));
         });
     }
@@ -152,7 +152,7 @@ final class Shapes {
                 yield list;
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield List.ofAll(concat(prefix, xs)).drop(prefix.size());
             }
         };
@@ -160,7 +160,7 @@ final class Shapes {
 
     static <T> Gen<Queue<T>> queue(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(queue(sampling.draw().nextInt(QUEUE_LAYOUTS), xs, gen, sampling, size));
         });
     }
@@ -178,12 +178,11 @@ final class Shapes {
                 yield queue;
             }
             case 2 -> {
-                final int split =
-                        xs.size() < 2 ? xs.size() : 1 + sampling.draw().nextInt(xs.size() - 1);
+                int split = xs.size() < 2 ? xs.size() : 1 + sampling.draw().nextInt(xs.size() - 1);
                 yield Queue.ofAll(xs.subList(0, split)).enqueueAll(new ArrayList<>(xs.subList(split, xs.size())));
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield Queue.ofAll(prefix).enqueueAll(xs).drop(prefix.size());
             }
         };
@@ -191,7 +190,7 @@ final class Shapes {
 
     static <T> Gen<Stream<T>> stream(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(stream(sampling.draw().nextInt(STREAM_LAYOUTS), xs, gen, sampling, size));
         });
     }
@@ -204,8 +203,8 @@ final class Shapes {
             case 0 -> Stream.ofAll(xs);
             case 1 -> lazyStream(xs, 0);
             case 2 -> {
-                final Stream<T> stream = lazyStream(xs, 0);
-                final int evaluated = sampling.draw().nextInt(xs.size() + 1);
+                Stream<T> stream = lazyStream(xs, 0);
+                int evaluated = sampling.draw().nextInt(xs.size() + 1);
                 Stream<T> cursor = stream;
                 for (int i = 0; i < evaluated && !cursor.isEmpty(); i++) {
                     cursor = cursor.tail();
@@ -213,11 +212,11 @@ final class Shapes {
                 yield stream;
             }
             case 3 -> {
-                final int split = sampling.draw().nextInt(xs.size() + 1);
+                int split = sampling.draw().nextInt(xs.size() + 1);
                 yield Stream.ofAll(xs.subList(0, split)).appendAll(lazyStream(xs, split));
             }
             default -> {
-                final ArrayList<T> prefix = extra(gen, sampling, size);
+                ArrayList<T> prefix = extra(gen, sampling, size);
                 yield lazyStream(concat(prefix, xs), 0).drop(prefix.size());
             }
         };
@@ -229,9 +228,9 @@ final class Shapes {
 
     static <T> Gen<NonEmptyVector<T>> nonEmptyVector(Gen<T> gen) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final T head = gen.draw(sampling, size);
-            final ArrayList<T> xs = draw(gen, Length.BELOW_SIZE.draw(sampling, size), sampling, size);
-            final Vector<T> tail = vector(sampling.draw().nextInt(VECTOR_LAYOUTS), xs, gen, sampling, size);
+            T head = gen.draw(sampling, size);
+            ArrayList<T> xs = draw(gen, Length.BELOW_SIZE.draw(sampling, size), sampling, size);
+            Vector<T> tail = vector(sampling.draw().nextInt(VECTOR_LAYOUTS), xs, gen, sampling, size);
             return sink.accept(nonEmptyVector(sampling.draw().nextInt(NON_EMPTY_VECTOR_LAYOUTS), head, tail));
         });
     }
@@ -280,7 +279,7 @@ final class Shapes {
 
     static <T, S> Gen<S> set(Gen<T> gen, SetOps<T, S> ops) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<T> xs = draw(gen, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(set(sampling.draw().nextInt(SET_LAYOUTS), xs, gen, ops, sampling, size));
         });
     }
@@ -297,8 +296,8 @@ final class Shapes {
                 yield set;
             }
             case 2 -> {
-                final S base = ops.ofAll().apply(xs);
-                final ArrayList<T> extra = extra(gen, sampling, size);
+                S base = ops.ofAll().apply(xs);
+                ArrayList<T> extra = extra(gen, sampling, size);
                 S set = base;
                 for (T x : extra) {
                     set = ops.add().apply(set, x);
@@ -312,7 +311,7 @@ final class Shapes {
             }
             default -> {
                 S set = ops.ofAll().apply(xs);
-                final int removed = sampling.draw().nextInt(xs.size() + 1);
+                int removed = sampling.draw().nextInt(xs.size() + 1);
                 for (int i = 0; i < removed; i++) {
                     set = ops.remove().apply(set, xs.get(i));
                 }
@@ -355,17 +354,16 @@ final class Shapes {
 
     static <K, V, M> Gen<M> map(Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops) {
         return Gen.fromPass((sampling, size, sink) -> {
-            final ArrayList<Tuple2<K, V>> xs =
-                    entries(keys, values, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
+            ArrayList<Tuple2<K, V>> xs = entries(keys, values, Length.UP_TO_SIZE.draw(sampling, size), sampling, size);
             return sink.accept(map(sampling.draw().nextInt(MAP_LAYOUTS), xs, keys, values, ops, sampling, size));
         });
     }
 
     /// Each entry is a key then a value, each the first value of one pass of its generator.
     static <K, V> ArrayList<Tuple2<K, V>> entries(Gen<K> keys, Gen<V> values, int count, Sampling sampling, int size) {
-        final ArrayList<Tuple2<K, V>> entries = new ArrayList<>(count);
+        ArrayList<Tuple2<K, V>> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            final K key = keys.draw(sampling, size);
+            K key = keys.draw(sampling, size);
             entries.add(Tuple.of(key, values.draw(sampling, size)));
         }
         return entries;
@@ -383,18 +381,18 @@ final class Shapes {
             int size) {
         return switch (layout) {
             case 0 -> {
-                final java.util.LinkedHashMap<K, V> javaMap = new java.util.LinkedHashMap<>();
+                java.util.LinkedHashMap<K, V> javaMap = new java.util.LinkedHashMap<>();
                 xs.forEach(entry -> javaMap.put(entry._1(), entry._2()));
                 yield ops.ofAll().apply(javaMap);
             }
             case 1 -> putAll(ops.empty().get(), xs, ops);
             case 2 -> {
-                final M base = putAll(ops.empty().get(), xs, ops);
-                final ArrayList<Tuple2<K, V>> drawn = size <= 0
+                M base = putAll(ops.empty().get(), xs, ops);
+                ArrayList<Tuple2<K, V>> drawn = size <= 0
                         ? new ArrayList<>()
                         : entries(keys, values, 1 + sampling.draw().nextInt(MAX_EXTRA), sampling, size);
                 // only the keys the map does not hold: putting a held key would replace its value
-                final ArrayList<Tuple2<K, V>> extra = new ArrayList<>(drawn.size());
+                ArrayList<Tuple2<K, V>> extra = new ArrayList<>(drawn.size());
                 for (Tuple2<K, V> entry : drawn) {
                     if (!ops.containsKey().test(base, entry._1())) {
                         extra.add(entry);

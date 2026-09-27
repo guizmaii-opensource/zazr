@@ -57,8 +57,8 @@ public class LengthComplexityTest {
     @Test
     public void shouldGetQueueElementsWithoutMeasuringTheFront() {
         assertTimeoutPreemptively(BOUND, () -> {
-            final Queue<Integer> front = Queue.ofAll(List.range(0, N));
-            final Queue<Integer> rear = Queue.<Integer>empty().enqueueAll(List.range(0, N));
+            Queue<Integer> front = Queue.ofAll(List.range(0, N));
+            Queue<Integer> rear = Queue.<Integer>empty().enqueueAll(List.range(0, N));
             for (int i = 0; i < 1_000; i++) {
                 assertThat(front.get(i)).isEqualTo(i);
                 assertThat(rear.get(i)).isEqualTo(i);
@@ -76,7 +76,7 @@ public class LengthComplexityTest {
     @Test
     public void shouldWalkOnlyThePrefixOfAList() {
         // 1,000 rounds of ten prefix operations on a List of 1,000,000: 84 s when each walks the whole List, 2 ms fixed
-        final List<Integer> list = List.range(0, MILLION);
+        List<Integer> list = List.range(0, MILLION);
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
             for (int i = 0; i < 1_000; i++) {
                 assertThat(list.take(1).head()).isEqualTo(0);
@@ -96,9 +96,9 @@ public class LengthComplexityTest {
     @Test
     public void shouldFindTheLastSliceAndTheCombinationsOfAListInLinearTime() {
         // two lastIndexOfSlice and one combinations(1) on 150,000 elements: 99 s when quadratic, 22 ms fixed
-        final int size = 150_000;
-        final List<Integer> ones = List.fill(size, 1);
-        final List<Integer> range = List.range(0, size);
+        int size = 150_000;
+        List<Integer> ones = List.fill(size, 1);
+        List<Integer> range = List.range(0, size);
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
             assertThat(ones.lastIndexOfSlice(List.of(1))).isEqualTo(size - 1);
             assertThat(ones.lastIndexOfSlice(List.of(1), size / 2)).isEqualTo(size / 2);
@@ -110,8 +110,8 @@ public class LengthComplexityTest {
     public void shouldWalkOnlyTheFrontOfAQueue() {
         // 100 rounds of six prefix reads on a Queue of 2,000,000 (half in the rear): 81 s when each copies the Queue
         // first, 11 ms fixed
-        final Queue<Integer> queue = Queue.ofAll(List.range(0, MILLION)).enqueueAll(List.range(MILLION, 2 * MILLION));
-        final List<Integer> one = List.of(0);
+        Queue<Integer> queue = Queue.ofAll(List.range(0, MILLION)).enqueueAll(List.range(MILLION, 2 * MILLION));
+        List<Integer> one = List.of(0);
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
             for (int i = 0; i < 100; i++) {
                 assertThat(queue.startsWith(one)).isTrue();
@@ -128,7 +128,7 @@ public class LengthComplexityTest {
     public void shouldTakeChainedInitsOfAQueueFromTheRear() {
         // 6,000 chained init() on a Queue of 1,000,000 with an empty rear: 80 s when each copies the front, 16 ms
         // fixed (one split, then O(1) each)
-        final Queue<Integer> start = Queue.ofAll(List.range(0, MILLION));
+        Queue<Integer> start = Queue.ofAll(List.range(0, MILLION));
         assertTimeoutPreemptively(WIDE_BOUND, () -> {
             Queue<Integer> queue = start;
             for (int i = 0; i < 6_000; i++) {
@@ -143,7 +143,7 @@ public class LengthComplexityTest {
     public void shouldCountTheSizeOfAJavaListViewOnce() {
         // 2,500 size() calls on each of five views of 1,000,000 elements: 80 s when every call counts the sequence,
         // 59 ms fixed (one count per view)
-        final java.util.List<java.util.List<Integer>> views = java.util.List.of(
+        java.util.List<java.util.List<Integer>> views = java.util.List.of(
                 List.range(0, MILLION).asJava(),
                 Queue.ofAll(List.range(0, MILLION)).asJava(),
                 Queue.<Integer>empty().enqueueAll(List.range(0, MILLION)).asJava(),

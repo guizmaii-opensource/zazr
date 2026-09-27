@@ -46,7 +46,7 @@ public abstract class ChampIterator<T extends @Nullable Object, N extends ChampN
             cursors = nodeCursorsAndLengths = new int[ChampNode.MAX_DEPTH * 2];
         }
         currentStackLevel++;
-        final int cursorIndex = currentStackLevel * 2;
+        int cursorIndex = currentStackLevel * 2;
         stack[currentStackLevel] = node;
         cursors[cursorIndex] = 0;
         cursors[cursorIndex + 1] = node.nodeArity();
@@ -56,11 +56,11 @@ public abstract class ChampIterator<T extends @Nullable Object, N extends ChampN
     @SuppressWarnings({"unchecked", "NullAway"})
     private boolean searchNextValueNode() {
         while (currentStackLevel >= 0) {
-            final int cursorIndex = currentStackLevel * 2;
-            final int nodeCursor = nodeCursorsAndLengths[cursorIndex];
+            int cursorIndex = currentStackLevel * 2;
+            int nodeCursor = nodeCursorsAndLengths[cursorIndex];
             if (nodeCursor < nodeCursorsAndLengths[cursorIndex + 1]) {
                 nodeCursorsAndLengths[cursorIndex] = nodeCursor + 1;
-                final N nextNode = ((N) nodes[currentStackLevel]).getNode(nodeCursor);
+                N nextNode = ((N) nodes[currentStackLevel]).getNode(nodeCursor);
                 if (nextNode.hasNodes()) {
                     pushNode(nextNode);
                 }

@@ -26,7 +26,7 @@ public interface StreamModule {
                 return -1;
             }
             // the slice is read once, whatever its shape, and all of it now: a null element throws as Vector's does
-            final Stream<T> _slice = toStream(slice);
+            Stream<T> _slice = toStream(slice);
             _slice.size();
             if (_slice.isEmpty()) {
                 // the last position at or before end: the length when this Stream is shorter; no cell past end - 1 is
@@ -44,7 +44,7 @@ public interface StreamModule {
             // first end + m elements are forced, and the walk stops once the rest is shorter than the slice
             int result = -1;
             for (int index = 0; !source.isEmpty(); index++) {
-                final int match = matchAt(source, _slice);
+                int match = matchAt(source, _slice);
                 if (match > 0) {
                     result = index;
                 } else if (match < 0) {
@@ -101,7 +101,7 @@ public interface StreamModule {
         static <T extends @Nullable Object> int linearSearch(Stream<T> stream, ToIntFunction<T> comparison) {
             int idx = 0;
             for (T current : stream) {
-                final int cmp = comparison.applyAsInt(current);
+                int cmp = comparison.applyAsInt(current);
                 if (cmp == 0) {
                     return idx;
                 } else if (cmp < 0) {
@@ -126,11 +126,11 @@ public interface StreamModule {
 
         private Cons<T> appendAll(Cons<T> stream, Function<? super Stream<T>, ? extends Stream<T>> mapper) {
             return (Cons<T>) Stream.cons(stream.head(), () -> {
-                final Stream<T> tail = stream.tail();
+                Stream<T> tail = stream.tail();
                 if (!tail.isEmpty()) {
                     return appendAll((Cons<T>) tail, mapper);
                 }
-                final Stream<T> mapped = failed ? null : mapper.apply(self);
+                Stream<T> mapped = failed ? null : mapper.apply(self);
                 if (mapped == null) {
                     failed = true;
                     throw new NullPointerException("Stream.appendSelf: mapper returned null");
@@ -164,7 +164,7 @@ public interface StreamModule {
         // one
         static <T extends @Nullable Object> Stream<Stream<T>> apply(Stream<T> source, int size, int step) {
             return Stream.cons(source.take(size), () -> {
-                final Stream<T> next = source.drop(step);
+                Stream<T> next = source.drop(step);
                 return next.isEmpty() || source.drop(size).isEmpty() ? Stream.empty() : apply(next, size, step);
             });
         }
@@ -208,7 +208,7 @@ public interface StreamModule {
 
         @Override
         public T getNext() {
-            final Stream<T> stream = current.get();
+            Stream<T> stream = current.get();
             // DEV-NOTE: we make the stream even more lazy because the next head must not be evaluated on hasNext()
             current = stream::tail;
             return stream.head();
@@ -247,7 +247,7 @@ public interface StreamModule {
             }
             boolean currentHasNext;
             while (!(currentHasNext = current.hasNext()) && inputs.hasNext()) {
-                final Iterable<? extends U> mapped = mapper.apply(inputs.next());
+                Iterable<? extends U> mapped = mapper.apply(inputs.next());
                 if (mapped == null) {
                     failed = true;
                     throw new NullPointerException(nullResult);

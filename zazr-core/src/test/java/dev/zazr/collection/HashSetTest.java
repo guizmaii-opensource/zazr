@@ -41,9 +41,9 @@ public class HashSetTest extends AbstractTraversableTest {
             @Override
             public IterableAssert<T> isEqualTo(Object obj) {
                 @SuppressWarnings("unchecked")
-                final Iterable<T> expected = (Iterable<T>) obj;
-                final java.util.Map<T, Integer> actualMap = countMap(actual);
-                final java.util.Map<T, Integer> expectedMap = countMap(expected);
+                Iterable<T> expected = (Iterable<T>) obj;
+                java.util.Map<T, Integer> actualMap = countMap(actual);
+                java.util.Map<T, Integer> expectedMap = countMap(expected);
                 HashSetTest.super.assertThat(actualMap.size()).isEqualTo(expectedMap.size());
                 actualMap
                         .keySet()
@@ -53,7 +53,7 @@ public class HashSetTest extends AbstractTraversableTest {
             }
 
             private java.util.Map<T, Integer> countMap(Iterable<? extends T> it) {
-                final java.util.HashMap<T, Integer> cnt = new java.util.HashMap<>();
+                java.util.HashMap<T, Integer> cnt = new java.util.HashMap<>();
                 it.forEach(i -> cnt.merge(i, 1, Integer::sum));
                 return cnt;
             }
@@ -179,9 +179,9 @@ public class HashSetTest extends AbstractTraversableTest {
     class StaticNarrowTests {
         @Test
         public void shouldNarrowHashSet() {
-            final HashSet<Double> doubles = of(1.0d);
-            final HashSet<Number> numbers = HashSet.narrow(doubles);
-            final int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
+            HashSet<Double> doubles = of(1.0d);
+            HashSet<Number> numbers = HashSet.narrow(doubles);
+            int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
             assertThat(actual).isEqualTo(3);
         }
     }
@@ -190,15 +190,15 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @Override
     public void shouldMkStringWithDelimiterNonNil() {
-        final String actual = of('a', 'b', 'c').mkString(",");
-        final List<String> expected = List.of('a', 'b', 'c').permutations().map(l -> l.mkString(","));
+        String actual = of('a', 'b', 'c').mkString(",");
+        List<String> expected = List.of('a', 'b', 'c').permutations().map(l -> l.mkString(","));
         assertThat(actual).isIn(expected);
     }
 
     @Override
     public void shouldMkStringWithDelimiterAndPrefixAndSuffixNonNil() {
-        final String actual = of('a', 'b', 'c').mkString("[", ",", "]");
-        final List<String> expected = List.of('a', 'b', 'c').permutations().map(l -> l.mkString("[", ",", "]"));
+        String actual = of('a', 'b', 'c').mkString("[", ",", "]");
+        List<String> expected = List.of('a', 'b', 'c').permutations().map(l -> l.mkString("[", ",", "]"));
         assertThat(actual).isIn(expected);
     }
 
@@ -272,7 +272,7 @@ public class HashSetTest extends AbstractTraversableTest {
     class TosetTests {
         @Test
         public void shouldReturnSelfOnConvertToSet() {
-            final HashSet<Integer> value = of(1, 2, 3);
+            HashSet<Integer> value = of(1, 2, 3);
             assertThat(value.toSet()).isSameAs(value);
         }
     }
@@ -405,7 +405,7 @@ public class HashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).filter(ignore -> true)).isEqualTo(of(1, 2, 3));
         } else {
-            final Set<Integer> t = of(1, 2, 3);
+            Set<Integer> t = of(1, 2, 3);
             assertThat(t.filter(ignore -> true)).isSameAs(t);
         }
     }
@@ -423,7 +423,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
-        final Set<?> empty = empty();
+        Set<?> empty = empty();
         assertThat(empty.filter(v -> true)).isSameAs(empty);
     }
 
@@ -437,7 +437,7 @@ public class HashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).reject(ignore -> false)).isEqualTo(of(1, 2, 3));
         } else {
-            final Set<Integer> t = of(1, 2, 3);
+            Set<Integer> t = of(1, 2, 3);
             assertThat(t.reject(ignore -> false)).isSameAs(t);
         }
     }
@@ -455,7 +455,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenRejectingEmptyTraversable() {
-        final Set<?> empty = empty();
+        Set<?> empty = empty();
         assertThat(empty.reject(v -> true)).isSameAs(empty);
     }
 
@@ -479,8 +479,8 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectNothingFromEmpty() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Set<Integer> actual = this.<Integer>empty().collect(i -> {
+        AtomicInteger calls = new AtomicInteger();
+        Set<Integer> actual = this.<Integer>empty().collect(i -> {
             calls.incrementAndGet();
             return Option.some(i);
         });
@@ -506,7 +506,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithASwitchInsideTheLambda() {
-        final Set<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+        Set<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
             case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
             default -> Option.none();
         });
@@ -515,7 +515,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallTheCollectMapperOncePerElement() {
-        final AtomicInteger calls = new AtomicInteger();
+        AtomicInteger calls = new AtomicInteger();
         of(1, 2, 3)
                 .collect(i -> {
                     calls.incrementAndGet();
@@ -528,7 +528,7 @@ public class HashSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldRejectNullOptionFromCollectMapper() {
         // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, HashSet...)
-        final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
+        String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage(type + ".collect: mapper returned null");
@@ -536,7 +536,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowOnCollectWithNullMapper() {
-        final Function<Integer, Option<Integer>> mapper = null;
+        Function<Integer, Option<Integer>> mapper = null;
         assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
     }
 
@@ -571,16 +571,16 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilGroupByIdentity() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected =
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
+        Map<?, ?> expected =
                 LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilGroupByEqual() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
-        final Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
+        Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -593,16 +593,16 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
-        final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected =
+        Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
+        Option<Map<?, ?>> expected =
                 Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilArrangeByEqual() {
-        final Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
-        final Option<Map<?, ?>> expected = Option.none();
+        Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
+        Option<Map<?, ?>> expected = Option.none();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -756,7 +756,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMaxFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).maxBy(i -> {
                     cnt[0]++;
                     return i;
@@ -915,7 +915,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMinFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).minBy(i -> {
                     cnt[0]++;
                     return i;
@@ -928,7 +928,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameOther() {
-        final Iterable<Integer> other = of(42);
+        Iterable<Integer> other = of(42);
         assertThat(empty().orElse(other)).isSameAs(other);
     }
 
@@ -939,14 +939,14 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseOther() {
-        final Set<Integer> src = of(42);
+        Set<Integer> src = of(42);
         assertThat(src.orElse(List.of(1))).isSameAs(src);
     }
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameSupplier() {
-        final Iterable<Integer> other = of(42);
-        final Supplier<Iterable<Integer>> supplier = () -> other;
+        Iterable<Integer> other = of(42);
+        Supplier<Iterable<Integer>> supplier = () -> other;
         assertThat(empty().orElse(supplier)).isSameAs(other);
     }
 
@@ -957,7 +957,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseSupplier() {
-        final Set<Integer> src = of(42);
+        Set<Integer> src = of(42);
         assertThat(src.orElse(() -> List.of(1))).isSameAs(src);
     }
 
@@ -1096,7 +1096,7 @@ public class HashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2).replace(33, 3)).isEqualTo(of(0, 1, 2));
         } else {
-            final Set<Integer> src = of(0, 1, 2);
+            Set<Integer> src = of(0, 1, 2);
             assertThat(src.replace(33, 3)).isSameAs(src);
         }
     }
@@ -1117,7 +1117,7 @@ public class HashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2, 1).replaceAll(33, 3)).isEqualTo(of(0, 1, 2, 1));
         } else {
-            final Set<Integer> src = of(0, 1, 2, 1);
+            Set<Integer> src = of(0, 1, 2, 1);
             assertThat(src.replaceAll(33, 3)).isSameAs(src);
         }
     }
@@ -1131,8 +1131,8 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllElementsFromNil() {
-        final Set<Object> empty = empty();
-        final Set<Object> actual = empty.retainAll(of(1, 2, 3));
+        Set<Object> empty = empty();
+        Set<Object> actual = empty.retainAll(of(1, 2, 3));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty);
         } else {
@@ -1142,17 +1142,17 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllExistingElementsFromNonNil() {
-        final Set<Integer> src = of(1, 2, 3, 2, 1, 3);
-        final Set<Integer> expected = of(1, 2, 2, 1);
-        final Set<Integer> actual = src.retainAll(of(1, 2));
+        Set<Integer> src = of(1, 2, 3, 2, 1, 3);
+        Set<Integer> expected = of(1, 2, 2, 1);
+        Set<Integer> actual = src.retainAll(of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldRetainAllElementsFromNonNil() {
-        final Set<Integer> src = of(1, 2, 1, 2, 2);
-        final Set<Integer> expected = of(1, 2, 1, 2, 2);
-        final Set<Integer> actual = src.retainAll(of(1, 2));
+        Set<Integer> src = of(1, 2, 1, 2, 2);
+        Set<Integer> expected = of(1, 2, 1, 2, 2);
+        Set<Integer> actual = src.retainAll(of(1, 2));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -1162,9 +1162,9 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNotRetainAllNonExistingElementsFromNonNil() {
-        final Set<Integer> src = of(1, 2, 3);
-        final Set<Object> expected = empty();
-        final Set<Integer> actual = src.retainAll(of(4, 5));
+        Set<Integer> src = of(1, 2, 3);
+        Set<Object> expected = empty();
+        Set<Integer> actual = src.retainAll(of(4, 5));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -1250,23 +1250,23 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTapSingleValuePerformingAnAction() {
-        final int[] effect = {0};
-        final Set<Integer> actual = of(1).tap(i -> effect[0] = i);
+        int[] effect = {0};
+        Set<Integer> actual = of(1).tap(i -> effect[0] = i);
         assertThat(actual).isEqualTo(of(1));
         assertThat(effect[0]).isEqualTo(1);
     }
 
     @TestTemplate
     public void shouldTapEveryElement() {
-        final int[] sum = {0};
-        final Set<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
+        int[] sum = {0};
+        Set<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
         assertThat(actual).isEqualTo(of(1, 2, 3)); // consumes every element in the lazy case
         assertThat(sum[0]).isEqualTo(6);
     }
 
     @TestTemplate
     public void shouldReturnThisOnTapOfEagerCollection() {
-        final Set<Integer> testee = of(1, 2, 3);
+        Set<Integer> testee = of(1, 2, 3);
         if (hasDefiniteSize()) {
             assertThat(testee.tap(i -> {})).isSameAs(testee);
         }
@@ -1291,14 +1291,13 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithACollector() {
-        final java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
     @TestTemplate
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Integer> actual =
-                of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -1375,14 +1374,14 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedMapWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i)))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity()))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
@@ -1395,9 +1394,9 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedSet() {
-        final Set<Integer> value = of(3, 7, 1, 15, 0);
-        final Set<Integer> set = value.toLinkedSet();
-        final List<Integer> itemsInOrder = value.toList();
+        Set<Integer> value = of(3, 7, 1, 15, 0);
+        Set<Integer> set = value.toLinkedSet();
+        List<Integer> itemsInOrder = value.toList();
         assertThat(set).isEqualTo(itemsInOrder.foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
         assertThat(empty().toLinkedSet()).isSameAs(LinkedHashSet.empty());
     }
@@ -1415,7 +1414,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedSet() {
-        final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
+        Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
         assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
                 .isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
     }
@@ -2036,9 +2035,9 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNarrowSet() {
-        final Set<Double> doubles = of(1.0d);
-        final Set<Number> numbers = Set.narrow(doubles);
-        final int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
+        Set<Double> doubles = of(1.0d);
+        Set<Number> numbers = Set.narrow(doubles);
+        int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
         assertThat(actual).isEqualTo(3);
     }
 
@@ -2054,7 +2053,7 @@ public class HashSetTest extends AbstractTraversableTest {
     class AddTests {
         @Test
         public void shouldNotAddAnExistingElementTwice() {
-            final Set<IntMod2> set = of(new IntMod2(2));
+            Set<IntMod2> set = of(new IntMod2(2));
             assertThat(set.add(new IntMod2(4))).isSameAs(set);
         }
     }
@@ -2068,13 +2067,13 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenAddAllEmptyToNonEmpty() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             assertThat(set.addAll(empty())).isSameAs(set);
         }
 
         @Test
         public void shouldReturnSameSetWhenAddAllNonEmptyToEmpty() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             if (set instanceof SortedSet) {
                 assertThat(empty().addAll(set)).isEqualTo(set);
             } else {
@@ -2084,7 +2083,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenAddAllContainedElements() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             assertThat(set.addAll(of(1, 2, 3))).isSameAs(set);
         }
     }
@@ -2100,13 +2099,13 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenEmptyDiffNonEmpty() {
-            final Set<Integer> empty = empty();
+            Set<Integer> empty = empty();
             assertThat(empty.diff(of(1, 2))).isSameAs(empty);
         }
 
         @Test
         public void shouldReturnSameSetWhenNonEmptyDiffEmpty() {
-            final Set<Integer> set = of(1, 2);
+            Set<Integer> set = of(1, 2);
             assertThat(set.diff(empty())).isSameAs(set);
         }
     }
@@ -2143,14 +2142,14 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenEmptyIntersectNonEmpty() {
-            final Set<Integer> empty = empty();
+            Set<Integer> empty = empty();
             assertThat(empty.intersect(of(1, 2))).isSameAs(empty);
         }
 
         @Test
         public void shouldReturnSameSetWhenNonEmptyIntersectEmpty() {
-            final Set<Integer> set = of(1, 2);
-            final Set<Integer> empty = empty();
+            Set<Integer> set = of(1, 2);
+            Set<Integer> empty = empty();
             if (set instanceof SortedSet) {
                 assertThat(set.intersect(empty)).isEqualTo(empty);
             } else {
@@ -2181,8 +2180,8 @@ public class HashSetTest extends AbstractTraversableTest {
     class PartitionTests {
         @Test
         public void shouldPartitionInOneIteration() {
-            final AtomicInteger count = new AtomicInteger(0);
-            final Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3)
+            AtomicInteger count = new AtomicInteger(0);
+            Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3)
                     .partition(i -> {
                         count.incrementAndGet();
                         return true;
@@ -2203,13 +2202,13 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenNonEmptyRemoveAllEmpty() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             assertThat(set.removeAll(empty())).isSameAs(set);
         }
 
         @Test
         public void shouldReturnSameSetWhenEmptyRemoveAllNonEmpty() {
-            final Set<Integer> empty = empty();
+            Set<Integer> empty = empty();
             assertThat(empty.removeAll(of(1, 2, 3))).isSameAs(empty);
         }
     }
@@ -2225,7 +2224,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameSetWhenEmptyUnionNonEmpty() {
-        final Set<Integer> set = of(1, 2);
+        Set<Integer> set = of(1, 2);
         if (set instanceof SortedSet) {
             assertThat(empty().union(set)).isEqualTo(set);
         } else {
@@ -2235,7 +2234,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameSetWhenNonEmptyUnionEmpty() {
-        final Set<Integer> set = of(1, 2);
+        Set<Integer> set = of(1, 2);
         assertThat(set.union(empty())).isSameAs(set);
     }
 
@@ -2303,14 +2302,14 @@ public class HashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertNilToJavaArray() {
-        final Integer[] actual = HashSetTest.this.<Integer>empty().toArray(Integer[]::new);
-        final Integer[] expected = new Integer[] {};
+        Integer[] actual = HashSetTest.this.<Integer>empty().toArray(Integer[]::new);
+        Integer[] expected = new Integer[] {};
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConvertNonNilToJavaArray() {
-        final Integer[] array = of(1, 2).toArray(Integer[]::new);
+        Integer[] array = of(1, 2).toArray(Integer[]::new);
         assertThat(array).containsExactlyInAnyOrder(1, 2);
     }
 
@@ -2356,9 +2355,9 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCombineEveryElementExactlyOnceWhenReducing() {
-            final Set<Integer> set = of(1, 2, 3, 4, 5);
-            final java.util.List<Integer> seen = new ArrayList<>();
-            final int sum = set.reduce((a, b) -> {
+            Set<Integer> set = of(1, 2, 3, 4, 5);
+            java.util.List<Integer> seen = new ArrayList<>();
+            int sum = set.reduce((a, b) -> {
                 if (seen.isEmpty()) {
                     seen.add(a);
                 }
@@ -2387,8 +2386,8 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldViewTheDistinctElementsAsAJavaCollection() {
-            final Set<Integer> set = of(1, 2, 3, 2);
-            final java.util.Collection<Integer> view = set.asJava();
+            Set<Integer> set = of(1, 2, 3, 2);
+            java.util.Collection<Integer> view = set.asJava();
             assertThat(view.size()).isEqualTo(3);
             assertThat(new java.util.HashSet<>(view)).isEqualTo(java.util.Set.of(1, 2, 3));
             assertThat(HashSet.ofAll(view)).isEqualTo(HashSet.of(1, 2, 3));
@@ -2400,7 +2399,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldIterateTheJavaViewInTheSetsOrder() {
-            final Set<Integer> set = of(3, 1, 2);
+            Set<Integer> set = of(3, 1, 2);
             assertThat(List.ofAll(set.asJava())).isEqualTo(set.toList());
         }
     }
@@ -2412,7 +2411,7 @@ public class HashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldDeclareNoPositionalMemberOnTheHashTypeNorItsInterface() {
             for (Class<?> type : java.util.List.<Class<?>>of(HashSet.class, Set.class)) {
-                final java.util.Set<String> names = new java.util.HashSet<>();
+                java.util.Set<String> names = new java.util.HashSet<>();
                 for (java.lang.reflect.Method method : type.getMethods()) {
                     names.add(method.getName());
                 }
@@ -2439,10 +2438,10 @@ public class HashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final HashSet<Integer> source = HashSet.range(0, n);
-                final Tuple2<HashSet<String>, HashSet<Integer>> actual =
+                HashSet<Integer> source = HashSet.range(0, n);
+                Tuple2<HashSet<String>, HashSet<Integer>> actual =
                         source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
-                final Tuple2<HashSet<Integer>, HashSet<Integer>> expected = source.partition(i -> i % 3 == 0);
+                Tuple2<HashSet<Integer>, HashSet<Integer>> expected = source.partition(i -> i % 3 == 0);
                 assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
                 assertThat(actual._2()).isEqualTo(expected._2());
                 assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
@@ -2455,7 +2454,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeepEqualValuesOnceOnEachSide() {
-            final Tuple2<HashSet<Integer>, HashSet<Integer>> actual =
+            Tuple2<HashSet<Integer>, HashSet<Integer>> actual =
                     HashSet.range(0, 33).partitionMap(i -> i % 2 == 0 ? Either.left(i % 5) : Either.right(i % 3));
             assertThat(actual).isEqualTo(Tuple.of(HashSet.of(0, 1, 2, 3, 4), HashSet.of(0, 1, 2)));
             assertThat(actual._1().size()).isEqualTo(5);
@@ -2465,8 +2464,8 @@ public class HashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldCallTheFunctionOncePerElementInIterationOrder() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final HashSet<Integer> source = HashSet.range(0, n);
-                final java.util.List<Integer> seen = new ArrayList<>();
+                HashSet<Integer> source = HashSet.range(0, n);
+                java.util.List<Integer> seen = new ArrayList<>();
                 source.partitionMap(i -> {
                     seen.add(i);
                     return i % 2 == 0 ? Either.left(i) : Either.right(i);
@@ -2477,7 +2476,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnTheEmptyHashSetForAnEmptySide() {
-            final Tuple2<HashSet<Integer>, HashSet<Integer>> none =
+            Tuple2<HashSet<Integer>, HashSet<Integer>> none =
                     HashSet.<Integer>empty().partitionMap(Either::left);
             assertSame(HashSet.empty(), none._1());
             assertSame(HashSet.empty(), none._2());
@@ -2499,7 +2498,7 @@ public class HashSetTest extends AbstractTraversableTest {
                     .isThrownBy(() -> HashSet.of(1).partitionMap(null))
                     .withMessage("f is null");
             for (int n : new int[] {1, 32, 33}) {
-                final int last = n - 1;
+                int last = n - 1;
                 assertThatNullPointerException()
                         .isThrownBy(() -> HashSet.range(0, n)
                                 .partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)))
@@ -2514,7 +2513,7 @@ public class HashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldFlattenAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final HashSet<Integer> inner = HashSet.range(0, n);
+                HashSet<Integer> inner = HashSet.range(0, n);
                 assertThat(HashSet.flatten(List.of(inner))).isEqualTo(inner);
                 assertThat(HashSet.flatten(List.of(inner, inner))).isEqualTo(inner);
                 assertThat(HashSet.flatten(List.of(HashSet.range(0, n / 2), HashSet.range(n / 2, n))))
@@ -2541,7 +2540,7 @@ public class HashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldWidenTheElementType() {
-            final HashSet<Number> numbers = HashSet.flatten(List.of(HashSet.of(1), HashSet.of(2.0)));
+            HashSet<Number> numbers = HashSet.flatten(List.of(HashSet.of(1), HashSet.of(2.0)));
             assertThat(numbers).isEqualTo(HashSet.<Number>of(1, 2.0));
         }
 

@@ -125,10 +125,10 @@ public final class Gen<A> {
      * @throws IllegalStateException when the discard budget of the run is exceeded
      */
     A draw(Sampling sampling, int size) {
-        final Holder<A> holder = new Holder<>();
-        final int gaveUp = sampling.filtersGaveUp;
+        Holder<A> holder = new Holder<>();
+        int gaveUp = sampling.filtersGaveUp;
         for (long attempts = 0; ; attempts++) {
-            final int before = sampling.filtersGaveUp;
+            int before = sampling.filtersGaveUp;
             pass.run(sampling, sampling.grow(size, attempts), value -> {
                 holder.value = value;
                 holder.found = true;
@@ -182,15 +182,15 @@ public final class Gen<A> {
      */
     public static <A> Gen<A> fromIterable(Iterable<? extends A> values) {
         Objects.requireNonNull(values, "values is null");
-        final ArrayList<A> copy = new ArrayList<>();
+        ArrayList<A> copy = new ArrayList<>();
         for (A value : values) {
             copy.add(value);
         }
-        final Object[] array = copy.toArray();
+        Object[] array = copy.toArray();
         return new Gen<>((sampling, size, sink) -> {
             for (Object value : array) {
                 @SuppressWarnings("unchecked")
-                final A a = (A) value;
+                A a = (A) value;
                 if (!sink.accept(a)) {
                     return false;
                 }
@@ -213,10 +213,10 @@ public final class Gen<A> {
         if (values.length == 0) {
             return empty();
         }
-        final Object[] copy = Arrays.copyOf(values, values.length, Object[].class);
+        Object[] copy = Arrays.copyOf(values, values.length, Object[].class);
         return fromRandom(random -> {
             @SuppressWarnings("unchecked")
-            final A a = (A) copy[random.nextInt(copy.length)];
+            A a = (A) copy[random.nextInt(copy.length)];
             return a;
         });
     }
@@ -261,7 +261,7 @@ public final class Gen<A> {
     @SafeVarargs
     public static <A> Gen<A> oneOf(Gen<? extends A>... gens) {
         Objects.requireNonNull(gens, "gens is null");
-        final Gen<?>[] copy = Arrays.copyOf(gens, gens.length, Gen[].class);
+        Gen<?>[] copy = Arrays.copyOf(gens, gens.length, Gen[].class);
         for (Gen<?> gen : copy) {
             Objects.requireNonNull(gen, "gens contains null");
         }
@@ -270,7 +270,7 @@ public final class Gen<A> {
         }
         return new Gen<>((sampling, size, sink) -> {
             @SuppressWarnings("unchecked")
-            final Gen<? extends A> gen = (Gen<? extends A>) copy[sampling.draw().nextInt(copy.length)];
+            Gen<? extends A> gen = (Gen<? extends A>) copy[sampling.draw().nextInt(copy.length)];
             return gen.run(sampling, size, sink);
         });
     }
@@ -292,14 +292,13 @@ public final class Gen<A> {
         if (gens.length == 0) {
             return empty();
         }
-        final Gen<?>[] choices = new Gen<?>[gens.length];
-        final double[] cumulative = new double[gens.length];
+        Gen<?>[] choices = new Gen<?>[gens.length];
+        double[] cumulative = new double[gens.length];
         double total = 0;
         for (int i = 0; i < gens.length; i++) {
-            final Tuple2<? extends Gen<? extends A>, Double> entry =
-                    Objects.requireNonNull(gens[i], "gens contains null");
+            Tuple2<? extends Gen<? extends A>, Double> entry = Objects.requireNonNull(gens[i], "gens contains null");
             choices[i] = Objects.requireNonNull(entry._1(), "gens contains a null generator");
-            final double weight = Objects.requireNonNull(entry._2(), "gens contains a null weight");
+            double weight = Objects.requireNonNull(entry._2(), "gens contains a null weight");
             if (!(weight >= 0) || Double.isInfinite(weight)) {
                 throw new IllegalArgumentException("weight " + weight + " is not a finite number >= 0");
             }
@@ -309,14 +308,14 @@ public final class Gen<A> {
         if (!(total > 0) || Double.isInfinite(total)) {
             throw new IllegalArgumentException("the weights add up to " + total);
         }
-        final double sum = total;
+        double sum = total;
         int positive = cumulative.length - 1;
         while (cumulative[positive] == (positive == 0 ? 0 : cumulative[positive - 1])) {
             positive--;
         }
-        final int lastPositive = positive;
+        int lastPositive = positive;
         return new Gen<>((sampling, size, sink) -> {
-            final double point = sampling.draw().nextDouble() * sum;
+            double point = sampling.draw().nextDouble() * sum;
             // the first generator whose share ends after the point: a share of weight 0 ends where the previous one
             // does, so it is never the first; the bound covers a point rounded up to the sum
             int i = 0;
@@ -324,7 +323,7 @@ public final class Gen<A> {
                 i++;
             }
             @SuppressWarnings("unchecked")
-            final Gen<? extends A> gen = (Gen<? extends A>) choices[i];
+            Gen<? extends A> gen = (Gen<? extends A>) choices[i];
             return gen.run(sampling, size, sink);
         });
     }
@@ -364,12 +363,12 @@ public final class Gen<A> {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(n, "n");
         return new Gen<>((sampling, size, sink) -> {
-            final ArrayList<A> elements = new ArrayList<>(n);
+            ArrayList<A> elements = new ArrayList<>(n);
             S state = initial;
             for (int i = 0; i < n; i++) {
-                final Gen<? extends Tuple2<? extends S, ? extends A>> step =
+                Gen<? extends Tuple2<? extends S, ? extends A>> step =
                         Objects.requireNonNull(f.apply(state), "unfoldGen: f returned null");
-                final Tuple2<? extends S, ? extends A> next =
+                Tuple2<? extends S, ? extends A> next =
                         Objects.requireNonNull(step.draw(sampling, size), "unfoldGen: f generated null");
                 state = next._1();
                 elements.add(next._2());
@@ -389,7 +388,7 @@ public final class Gen<A> {
      */
     public static <A> Gen<List<A>> collectAll(Iterable<? extends Gen<? extends A>> gens) {
         Objects.requireNonNull(gens, "gens is null");
-        final ArrayList<Gen<? extends A>> copy = new ArrayList<>();
+        ArrayList<Gen<? extends A>> copy = new ArrayList<>();
         for (Gen<? extends A> gen : gens) {
             copy.add(Objects.requireNonNull(gen, "gens contains null"));
         }
@@ -464,9 +463,9 @@ public final class Gen<A> {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(min, "min");
         return new Gen<>((sampling, size, sink) -> {
-            final double exponential = -Math.log(1 - sampling.draw().nextDouble());
-            final long drawn = Math.round(exponential * size / 25.0);
-            final int chosen = (int) Math.max(min, Math.min(drawn, size));
+            double exponential = -Math.log(1 - sampling.draw().nextDouble());
+            long drawn = Math.round(exponential * size / 25.0);
+            int chosen = (int) Math.max(min, Math.min(drawn, size));
             return Objects.requireNonNull(f.apply(chosen), "small: f returned null")
                     .run(sampling, size, sink);
         });
@@ -499,7 +498,7 @@ public final class Gen<A> {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(min, "min");
         return new Gen<>((sampling, size, sink) -> {
-            final int chosen = (int) sampling.draw().nextLong(min, Math.max(min, size) + 1L);
+            int chosen = (int) sampling.draw().nextLong(min, Math.max(min, size) + 1L);
             return Objects.requireNonNull(f.apply(chosen), "large: f returned null")
                     .run(sampling, size, sink);
         });
@@ -570,15 +569,15 @@ public final class Gen<A> {
     public Gen<A> filter(Predicate<? super A> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return new Gen<>((sampling, size, sink) -> {
-            final FilterState state = new FilterState();
-            final long giveUp = sampling.filterGiveUp();
+            FilterState state = new FilterState();
+            long giveUp = sampling.filterGiveUp();
             long rejectedInARow = 0;
             while (true) {
                 state.produced = false;
                 state.accepted = false;
                 state.rejected = 0;
-                final int draws = sampling.draws;
-                final boolean more = pass.run(sampling, size, a -> {
+                int draws = sampling.draws;
+                boolean more = pass.run(sampling, size, a -> {
                     state.produced = true;
                     if (predicate.test(a)) {
                         state.accepted = true;
@@ -1207,7 +1206,7 @@ public final class Gen<A> {
         } else if (min == max) {
             return constant(min);
         }
-        final int[] edges = java.util.stream.LongStream.of(min, min + 1L, -1, 0, 1, max - 1L, max)
+        int[] edges = java.util.stream.LongStream.of(min, min + 1L, -1, 0, 1, max - 1L, max)
                 .filter(edge -> edge >= min && edge <= max)
                 .distinct()
                 .sorted()
@@ -1241,7 +1240,7 @@ public final class Gen<A> {
         } else if (min == max) {
             return constant(min);
         }
-        final long[] edges = java.util.stream.LongStream.of(min, min + 1, -1, 0, 1, max - 1, max)
+        long[] edges = java.util.stream.LongStream.of(min, min + 1, -1, 0, 1, max - 1, max)
                 .filter(edge -> edge >= min && edge <= max)
                 .distinct()
                 .sorted()
@@ -1286,7 +1285,7 @@ public final class Gen<A> {
         } else if (Double.compare(min, max) == 0) {
             return constant(min);
         }
-        final double[] edges = java.util.stream.DoubleStream.of(
+        double[] edges = java.util.stream.DoubleStream.of(
                         min,
                         Math.nextUp(min),
                         -1.0,
@@ -1307,7 +1306,7 @@ public final class Gen<A> {
             if (random.nextBoolean()) {
                 return edges[random.nextInt(edges.length)];
             }
-            final double fraction = random.nextDouble();
+            double fraction = random.nextDouble();
             return Math.max(min, Math.min(max, fraction * max + (1.0 - fraction) * min));
         });
     }
@@ -1431,7 +1430,7 @@ public final class Gen<A> {
         Objects.requireNonNull(chars, "chars is null");
         requireNonNegative(n, "n");
         return new Gen<>((sampling, size, sink) -> {
-            final char[] string = new char[n];
+            char[] string = new char[n];
             for (int i = 0; i < n; i++) {
                 string[i] = Objects.requireNonNull(chars.draw(sampling, size), "stringsN: chars generated null");
             }
@@ -1478,7 +1477,7 @@ public final class Gen<A> {
                 longs(min.toEpochSecond(ZoneOffset.UTC), max.toEpochSecond(ZoneOffset.UTC)),
                 integers(0, 999_999_999),
                 (second, nano) -> {
-                    final LocalDateTime dateTime = LocalDateTime.ofEpochSecond(second, nano, ZoneOffset.UTC);
+                    LocalDateTime dateTime = LocalDateTime.ofEpochSecond(second, nano, ZoneOffset.UTC);
                     return dateTime.isBefore(min) ? min : dateTime.isAfter(max) ? max : dateTime;
                 });
     }
@@ -1623,7 +1622,7 @@ public final class Gen<A> {
     public static <A> Gen<Lazy<A>> lazy(Gen<A> gen) {
         Objects.requireNonNull(gen, "gen is null");
         return new Gen<>((sampling, size, sink) -> gen.run(sampling, size, a -> {
-            final Lazy<A> lazy = Lazy.of(() -> a);
+            Lazy<A> lazy = Lazy.of(() -> a);
             if (sampling.draw().nextBoolean()) {
                 lazy.get();
             }
@@ -1988,7 +1987,7 @@ public final class Gen<A> {
      */
     public List<A> runCollect(CheckConfig config) {
         Objects.requireNonNull(config, "config is null");
-        final ArrayList<A> values = new ArrayList<>();
+        ArrayList<A> values = new ArrayList<>();
         Runner.onePass(config, this, value -> {
             values.add(value);
             return true;
@@ -2022,7 +2021,7 @@ public final class Gen<A> {
     public List<A> runCollectN(int n, CheckConfig config) {
         Objects.requireNonNull(config, "config is null");
         requireNonNegative(n, "n");
-        final ArrayList<A> values = new ArrayList<>(n);
+        ArrayList<A> values = new ArrayList<>(n);
         Runner.passes(config.withSamples(n), this, value -> {
             values.add(value);
             return values.size() < n;

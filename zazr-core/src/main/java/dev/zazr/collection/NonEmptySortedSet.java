@@ -92,7 +92,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(head, "NonEmptySortedSet: head is null");
         Objects.requireNonNull(tail, "NonEmptySortedSet: tail is null");
-        final TreeSet.Builder<A> builder = TreeSet.newBuilder(comparator);
+        TreeSet.Builder<A> builder = TreeSet.newBuilder(comparator);
         builder.add(head);
         for (A element : tail) {
             builder.add(Objects.requireNonNull(element, "NonEmptySortedSet: element is null"));
@@ -131,7 +131,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(head, "NonEmptySortedSet: head is null");
         Objects.requireNonNull(tail, "NonEmptySortedSet: tail is null");
-        final TreeSet.Builder<A> builder = TreeSet.newBuilder(comparator);
+        TreeSet.Builder<A> builder = TreeSet.newBuilder(comparator);
         builder.add(head);
         return new NonEmptySortedSet<>(addAll(builder, tail).result());
     }
@@ -360,7 +360,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
             Comparator<? super B> comparator, Function<? super A, ? extends NonEmptySortedSet<? extends B>> mapper) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final TreeSet.Builder<B> builder = TreeSet.newBuilder(comparator);
+        TreeSet.Builder<B> builder = TreeSet.newBuilder(comparator);
         for (A element : set) {
             builder.addAll(
                     Objects.requireNonNull(mapper.apply(element), "NonEmptySortedSet.flatMap: mapper returned null")
@@ -429,7 +429,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      */
     public <K extends @Nullable Object> NonEmptyMap<K, NonEmptySortedSet<A>> groupBy(
             Function<? super A, ? extends K> classifier) {
-        final HashMap.Builder<K, NonEmptySortedSet<A>> groups = HashMap.newBuilder();
+        HashMap.Builder<K, NonEmptySortedSet<A>> groups = HashMap.newBuilder();
         Objects.requireNonNull(classifier, "classifier is null");
         for (Tuple2<K, TreeSet<A>> group : set.<K>groupBy(element -> Objects.requireNonNull(
                 classifier.apply(element), "NonEmptySortedSet.groupBy: classifier returned null"))) {

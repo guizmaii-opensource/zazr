@@ -24,9 +24,9 @@ public class LazyTest {
     class StaticNarrowTests {
         @Test
         public void shouldNarrow() {
-            final String expected = "Zero args";
-            final Lazy<String> wideFunction = Lazy.of(() -> expected);
-            final Lazy<CharSequence> actual = Lazy.narrow(wideFunction);
+            String expected = "Zero args";
+            Lazy<String> wideFunction = Lazy.of(() -> expected);
+            Lazy<CharSequence> actual = Lazy.narrow(wideFunction);
             assertThat(actual.get()).isEqualTo(expected);
         }
     }
@@ -40,18 +40,18 @@ public class LazyTest {
 
         @Test
         public void shouldMemoizeValues() {
-            final Lazy<Double> testee = Lazy.of(Math::random);
-            final double expected = testee.get();
+            Lazy<Double> testee = Lazy.of(Math::random);
+            double expected = testee.get();
             for (int i = 0; i < 10; i++) {
-                final double actual = testee.get();
+                double actual = testee.get();
                 assertThat(actual).isEqualTo(expected);
             }
         }
 
         @Test
         public void shouldNotEvaluateOnCreation() {
-            final AtomicInteger evaluations = new AtomicInteger();
-            final Lazy<Integer> lazy = Lazy.of(evaluations::incrementAndGet);
+            AtomicInteger evaluations = new AtomicInteger();
+            Lazy<Integer> lazy = Lazy.of(evaluations::incrementAndGet);
             assertThat(evaluations.get()).isEqualTo(0);
             assertThat(lazy.get()).isEqualTo(1);
             assertThat(lazy.get()).isEqualTo(1);
@@ -60,8 +60,8 @@ public class LazyTest {
 
         @Test
         public void shouldRetryAfterAFailedEvaluation() {
-            final AtomicInteger evaluations = new AtomicInteger();
-            final Lazy<Integer> lazy = Lazy.of(() -> {
+            AtomicInteger evaluations = new AtomicInteger();
+            Lazy<Integer> lazy = Lazy.of(() -> {
                 if (evaluations.incrementAndGet() == 1) {
                     throw new IllegalStateException("first attempt fails");
                 }
@@ -83,7 +83,7 @@ public class LazyTest {
 
         @Test
         public void shouldHoldNull() {
-            final Lazy<Object> lazy = Lazy.of(() -> null);
+            Lazy<Object> lazy = Lazy.of(() -> null);
             assertThat(lazy.get()).isNull();
             assertThat(lazy.isEvaluated()).isTrue();
         }
@@ -93,15 +93,15 @@ public class LazyTest {
     class TapTests {
         @Test
         public void shouldTap() {
-            final Lazy<Integer> lazy = Lazy.of(() -> 1);
-            final Lazy<Integer> tapped = lazy.tap(v -> assertThat(v).isEqualTo(1));
+            Lazy<Integer> lazy = Lazy.of(() -> 1);
+            Lazy<Integer> tapped = lazy.tap(v -> assertThat(v).isEqualTo(1));
             assertThat(tapped).isSameAs(lazy);
         }
 
         @Test
         public void shouldEvaluateOnTap() {
-            final Lazy<Integer> lazy = Lazy.of(() -> 1);
-            final int[] effect = {0};
+            Lazy<Integer> lazy = Lazy.of(() -> 1);
+            int[] effect = {0};
             lazy.tap(i -> effect[0] = i);
             assertThat(effect[0]).isEqualTo(1);
             assertThat(lazy.isEvaluated()).isTrue();
@@ -117,29 +117,29 @@ public class LazyTest {
     class CollectAllTests {
         @Test
         public void shouldCollectAllEmpty() {
-            final List<Lazy<Integer>> testee = List.empty();
-            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
+            List<Lazy<Integer>> testee = List.empty();
+            Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.get()).isEqualTo(Vector.empty());
         }
 
         @Test
         public void shouldCollectAllNonEmptyLazy() {
-            final List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
-            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
+            List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
+            Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.get()).isEqualTo(Vector.of(1, 2, 3));
         }
 
         @Test
         public void shouldNotEvaluateEmptyCollectAll() {
-            final List<Lazy<Integer>> testee = List.empty();
-            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
+            List<Lazy<Integer>> testee = List.empty();
+            Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.isEvaluated()).isFalse();
         }
 
         @Test
         public void shouldNotEvaluateNonEmptyCollectAll() {
-            final List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
-            final Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
+            List<Lazy<Integer>> testee = List.of(1, 2, 3).map(i -> Lazy.of(() -> i));
+            Lazy<Vector<Integer>> sequence = Lazy.collectAll(testee);
             assertThat(sequence.isEvaluated()).isFalse();
         }
 
@@ -153,15 +153,15 @@ public class LazyTest {
     class MapTests {
         @Test
         public void shouldMapOverLazyValue() {
-            final Lazy<Integer> testee = Lazy.of(() -> 42);
-            final Lazy<Integer> expected = Lazy.of(() -> 21);
+            Lazy<Integer> testee = Lazy.of(() -> 42);
+            Lazy<Integer> expected = Lazy.of(() -> 21);
             assertThat(testee.map(i -> i / 2)).isEqualTo(expected);
         }
 
         @Test
         public void shouldNotEvaluateOnMap() {
-            final Lazy<Integer> testee = Lazy.of(() -> 42);
-            final Lazy<Integer> mapped = testee.map(i -> i / 2);
+            Lazy<Integer> testee = Lazy.of(() -> 42);
+            Lazy<Integer> mapped = testee.map(i -> i / 2);
             assertThat(testee.isEvaluated()).isFalse();
             assertThat(mapped.isEvaluated()).isFalse();
             assertThat(mapped.get()).isEqualTo(21);
@@ -183,15 +183,15 @@ public class LazyTest {
     class FlatMapTests {
         @Test
         public void shouldFlatMapOverLazyValue() {
-            final Lazy<Integer> testee = Lazy.of(() -> 42);
+            Lazy<Integer> testee = Lazy.of(() -> 42);
             assertThat(testee.flatMap(i -> Lazy.of(() -> i / 2)).get()).isEqualTo(21);
         }
 
         @Test
         public void shouldNotEvaluateOnFlatMap() {
-            final Lazy<Integer> testee = Lazy.of(() -> 42);
-            final Lazy<Integer> inner = Lazy.of(() -> 21);
-            final Lazy<Integer> result = testee.flatMap(i -> inner);
+            Lazy<Integer> testee = Lazy.of(() -> 42);
+            Lazy<Integer> inner = Lazy.of(() -> 21);
+            Lazy<Integer> result = testee.flatMap(i -> inner);
             assertThat(testee.isEvaluated()).isFalse();
             assertThat(inner.isEvaluated()).isFalse();
             assertThat(result.isEvaluated()).isFalse();
@@ -207,7 +207,7 @@ public class LazyTest {
 
         @Test
         public void shouldRejectANullLazyReturnedByTheMapperOnEvaluation() {
-            final Lazy<Integer> result = Lazy.of(() -> 1).flatMap(i -> null);
+            Lazy<Integer> result = Lazy.of(() -> 1).flatMap(i -> null);
             assertThatThrownBy(result::get)
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("Lazy.flatMap: mapper returned null");
@@ -219,8 +219,8 @@ public class LazyTest {
     class ToSupplierTests {
         @Test
         public void shouldSupplyTheValue() {
-            final Lazy<Integer> lazy = Lazy.of(() -> 1);
-            final Supplier<Integer> supplier = lazy.toSupplier();
+            Lazy<Integer> lazy = Lazy.of(() -> 1);
+            Supplier<Integer> supplier = lazy.toSupplier();
             assertThat(lazy.isEvaluated()).isFalse();
             assertThat(supplier.get()).isEqualTo(1);
             assertThat(lazy.isEvaluated()).isTrue();
@@ -228,9 +228,9 @@ public class LazyTest {
 
         @Test
         public void shouldShareMemoizationWithTheLazy() {
-            final AtomicInteger evaluations = new AtomicInteger();
-            final Lazy<Integer> lazy = Lazy.of(evaluations::incrementAndGet);
-            final Supplier<Integer> supplier = lazy.toSupplier();
+            AtomicInteger evaluations = new AtomicInteger();
+            Lazy<Integer> lazy = Lazy.of(evaluations::incrementAndGet);
+            Supplier<Integer> supplier = lazy.toSupplier();
             assertThat(supplier.get()).isEqualTo(1);
             assertThat(supplier.get()).isEqualTo(1);
             assertThat(lazy.get()).isEqualTo(1);
@@ -242,7 +242,7 @@ public class LazyTest {
     class IsevaluatedTests {
         @Test
         public void shouldBeAwareOfEvaluated() {
-            final Lazy<Void> lazy = Lazy.of(() -> null);
+            Lazy<Void> lazy = Lazy.of(() -> null);
             assertThat(lazy.isEvaluated()).isFalse();
             assertThat(lazy.isEvaluated()).isFalse(); // remains not evaluated
             lazy.get();
@@ -254,16 +254,16 @@ public class LazyTest {
     class ConcurrencyTests {
         @Test
         public void shouldRunTheComputationOnceWhenManyThreadsGetAtTheSameTime() throws Exception {
-            final int threads = 32;
+            int threads = 32;
             for (int round = 0; round < 20; round++) {
-                final AtomicInteger calls = new AtomicInteger();
-                final Lazy<Object> lazy = Lazy.of(() -> {
+                AtomicInteger calls = new AtomicInteger();
+                Lazy<Object> lazy = Lazy.of(() -> {
                     calls.incrementAndGet();
                     Try.run(() -> Thread.sleep(2));
                     return new Object();
                 });
-                final java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
-                final java.util.List<CompletableFuture<Object>> results = new ArrayList<>();
+                java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+                java.util.List<CompletableFuture<Object>> results = new ArrayList<>();
                 try (var executor = java.util.concurrent.Executors.newFixedThreadPool(threads)) {
                     for (int t = 0; t < threads; t++) {
                         results.add(CompletableFuture.supplyAsync(
@@ -274,7 +274,7 @@ public class LazyTest {
                                 executor));
                     }
                     start.countDown();
-                    final Object first = results.get(0).get();
+                    Object first = results.get(0).get();
                     for (CompletableFuture<Object> result : results) {
                         assertThat(result.get()).isSameAs(first);
                     }
@@ -285,9 +285,9 @@ public class LazyTest {
 
         @Test
         public void shouldSupportMultithreading() {
-            final AtomicBoolean isEvaluated = new AtomicBoolean();
-            final AtomicBoolean lock = new AtomicBoolean();
-            final Lazy<Integer> lazy = Lazy.of(() -> {
+            AtomicBoolean isEvaluated = new AtomicBoolean();
+            AtomicBoolean lock = new AtomicBoolean();
+            Lazy<Integer> lazy = Lazy.of(() -> {
                 while (lock.get()) {
                     Try.run(() -> Thread.sleep(300));
                 }
@@ -312,11 +312,11 @@ public class LazyTest {
         @SuppressWarnings({"StatementWithEmptyBody", "rawtypes"})
         public void shouldBeConsistentFromMultipleThreads() throws Exception {
             for (int i = 0; i < 100; i++) {
-                final AtomicBoolean canProceed = new AtomicBoolean(false);
-                final Vector<CompletableFuture<Void>> futures = Vector.range(0, 10)
+                AtomicBoolean canProceed = new AtomicBoolean(false);
+                Vector<CompletableFuture<Void>> futures = Vector.range(0, 10)
                         .map(j -> {
-                            final AtomicBoolean isEvaluated = new AtomicBoolean(false);
-                            final Integer expected = ((j % 2) == 1) ? null : j;
+                            AtomicBoolean isEvaluated = new AtomicBoolean(false);
+                            Integer expected = ((j % 2) == 1) ? null : j;
                             Lazy<Integer> lazy = Lazy.of(() -> {
                                 assertThat(isEvaluated.getAndSet(true)).isFalse();
                                 return expected;
@@ -331,7 +331,7 @@ public class LazyTest {
                                     assertThat(t._1().get()).isEqualTo(t._2());
                                 })));
 
-                final CompletableFuture all = CompletableFuture.allOf(
+                CompletableFuture all = CompletableFuture.allOf(
                         new java.util.ArrayList<>(futures.asJava()).toArray(new CompletableFuture<?>[0]));
                 canProceed.set(true);
                 all.join();
@@ -347,7 +347,7 @@ public class LazyTest {
             assertThat(Lazy.of(() -> 1).equals("")).isFalse();
             assertThat(Lazy.of(() -> 1).equals(Lazy.of(() -> 1))).isTrue();
             assertThat(Lazy.of(() -> 1).equals(Lazy.of(() -> 2))).isFalse();
-            final Lazy<Integer> same = Lazy.of(() -> 1);
+            Lazy<Integer> same = Lazy.of(() -> 1);
             assertThat(same.equals(same)).isTrue();
         }
 
@@ -357,7 +357,7 @@ public class LazyTest {
             assertThat(Lazy.of(() -> new Integer[] {1}).equals("")).isFalse();
             assertThat(Lazy.of(() -> new Integer[] {1}).equals(Lazy.of(() -> new Integer[] {1})))
                     .isFalse();
-            final Lazy<Integer[]> same = Lazy.of(() -> new Integer[] {1});
+            Lazy<Integer[]> same = Lazy.of(() -> new Integer[] {1});
             assertThat(same.equals(same)).isTrue();
         }
 
@@ -386,13 +386,13 @@ public class LazyTest {
     class TostringTests {
         @Test
         public void shouldConvertNonEvaluatedValueToString() {
-            final Lazy<Integer> lazy = Lazy.of(() -> 1);
+            Lazy<Integer> lazy = Lazy.of(() -> 1);
             assertThat(lazy.toString()).isEqualTo("Lazy(?)");
         }
 
         @Test
         public void shouldConvertEvaluatedValueToString() {
-            final Lazy<Integer> lazy = Lazy.of(() -> 1);
+            Lazy<Integer> lazy = Lazy.of(() -> 1);
             lazy.get();
             assertThat(lazy.toString()).isEqualTo("Lazy(1)");
         }
@@ -412,12 +412,12 @@ public class LazyTest {
 
         @Test
         public void shouldNotEvaluateBeforeTheZipIs() {
-            final Lazy<Integer> a = tracked(1);
-            final Lazy<Integer> b = tracked(2);
-            final Lazy<Tuple2<Integer, Integer>> zipped = a.zip(b);
-            final Lazy<Integer> combined = a.zipWith(b, Integer::sum);
-            final Lazy<Integer> left = a.zipLeft(b);
-            final Lazy<Integer> right = a.zipRight(b);
+            Lazy<Integer> a = tracked(1);
+            Lazy<Integer> b = tracked(2);
+            Lazy<Tuple2<Integer, Integer>> zipped = a.zip(b);
+            Lazy<Integer> combined = a.zipWith(b, Integer::sum);
+            Lazy<Integer> left = a.zipLeft(b);
+            Lazy<Integer> right = a.zipRight(b);
             assertThat(zipped.isEvaluated()).isFalse();
             assertThat(combined.isEvaluated()).isFalse();
             assertThat(left.isEvaluated()).isFalse();
@@ -429,9 +429,9 @@ public class LazyTest {
 
         @Test
         public void shouldEvaluateTheZipInOrderAndCacheIt() {
-            final Lazy<Integer> a = tracked(1);
-            final Lazy<Integer> b = tracked(2);
-            final Lazy<Tuple2<Integer, Integer>> zipped = a.zip(b);
+            Lazy<Integer> a = tracked(1);
+            Lazy<Integer> b = tracked(2);
+            Lazy<Tuple2<Integer, Integer>> zipped = a.zip(b);
             assertThat(zipped.get()).isEqualTo(Tuple.of(1, 2));
             assertThat(order).containsExactly(1, 2);
             assertThat(zipped.isEvaluated()).isTrue();
@@ -443,8 +443,8 @@ public class LazyTest {
 
         @Test
         public void shouldCombineWithZipWithOnceInOrder() {
-            final AtomicInteger calls = new AtomicInteger();
-            final Lazy<String> combined = tracked(1).zipWith(tracked(2), (x, y) -> {
+            AtomicInteger calls = new AtomicInteger();
+            Lazy<String> combined = tracked(1).zipWith(tracked(2), (x, y) -> {
                 calls.incrementAndGet();
                 return "" + x + y;
             });
@@ -457,7 +457,7 @@ public class LazyTest {
 
         @Test
         public void shouldHoldNullFromZipWith() {
-            final Lazy<Object> combined = Lazy.of(() -> 1).zipWith(Lazy.of(() -> 2), (_, _) -> null);
+            Lazy<Object> combined = Lazy.of(() -> 1).zipWith(Lazy.of(() -> 2), (_, _) -> null);
             assertThat(combined.get()).isNull();
             assertThat(combined.isEvaluated()).isTrue();
         }
@@ -470,8 +470,8 @@ public class LazyTest {
 
         @Test
         public void shouldKeepTheLeftValueWithZipLeft() {
-            final Lazy<Integer> b = tracked(2);
-            final Lazy<Integer> left = tracked(1).zipLeft(b);
+            Lazy<Integer> b = tracked(2);
+            Lazy<Integer> left = tracked(1).zipLeft(b);
             assertThat(left.get()).isEqualTo(1);
             assertThat(order).containsExactly(1, 2);
             assertThat(b.isEvaluated()).isTrue();
@@ -481,8 +481,8 @@ public class LazyTest {
 
         @Test
         public void shouldKeepTheRightValueWithZipRight() {
-            final Lazy<Integer> a = tracked(1);
-            final Lazy<Integer> right = a.zipRight(tracked(2));
+            Lazy<Integer> a = tracked(1);
+            Lazy<Integer> right = a.zipRight(tracked(2));
             assertThat(right.get()).isEqualTo(2);
             assertThat(order).containsExactly(1, 2);
             assertThat(a.isEvaluated()).isTrue();
@@ -492,7 +492,7 @@ public class LazyTest {
 
         @Test
         public void shouldRejectNulls() {
-            final Lazy<Integer> lazy = Lazy.of(() -> 1);
+            Lazy<Integer> lazy = Lazy.of(() -> 1);
             assertThatThrownBy(() -> lazy.zip(null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("that is null");
@@ -518,13 +518,13 @@ public class LazyTest {
 
         @Test
         public void shouldEvaluateNothingUntilGet() {
-            final AtomicInteger outer = new AtomicInteger();
-            final AtomicInteger inner = new AtomicInteger();
-            final Lazy<Lazy<Integer>> nested = Lazy.of(() -> {
+            AtomicInteger outer = new AtomicInteger();
+            AtomicInteger inner = new AtomicInteger();
+            Lazy<Lazy<Integer>> nested = Lazy.of(() -> {
                 outer.incrementAndGet();
                 return Lazy.of(() -> inner.incrementAndGet() + 41);
             });
-            final Lazy<Integer> flat = Lazy.flatten(nested);
+            Lazy<Integer> flat = Lazy.flatten(nested);
             assertThat(flat.isEvaluated()).isFalse();
             assertThat(outer.get()).isZero();
             assertThat(inner.get()).isZero();
@@ -537,11 +537,11 @@ public class LazyTest {
 
         @Test
         public void shouldShareAnAlreadyEvaluatedLevel() {
-            final Lazy<Integer> inner = Lazy.of(() -> 1);
+            Lazy<Integer> inner = Lazy.of(() -> 1);
             assertThat(inner.get()).isEqualTo(1);
-            final Lazy<Lazy<Integer>> nested = Lazy.of(() -> inner);
+            Lazy<Lazy<Integer>> nested = Lazy.of(() -> inner);
             assertThat(nested.get()).isSameAs(inner);
-            final Lazy<Number> flat = Lazy.flatten(nested);
+            Lazy<Number> flat = Lazy.flatten(nested);
             assertThat(flat.isEvaluated()).isFalse();
             assertThat(flat.get()).isEqualTo(1);
         }
@@ -549,8 +549,8 @@ public class LazyTest {
         @Test
         public void shouldRemoveOneLevelOnly() {
             // Lazy(Lazy(Lazy(1))) flattens to Lazy(Lazy(1)): its value is the Lazy that twice holds
-            final Lazy<Integer> once = Lazy.of(() -> 1);
-            final Lazy<Lazy<Integer>> twice = Lazy.of(() -> once);
+            Lazy<Integer> once = Lazy.of(() -> 1);
+            Lazy<Lazy<Integer>> twice = Lazy.of(() -> once);
             assertThat(Lazy.flatten(Lazy.of(() -> twice)).get()).isSameAs(once);
         }
 
@@ -559,7 +559,7 @@ public class LazyTest {
             assertThatThrownBy(() -> Lazy.flatten(null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("nested is null");
-            final Lazy<Integer> flat = Lazy.flatten(Lazy.<Lazy<Integer>>of(() -> null));
+            Lazy<Integer> flat = Lazy.flatten(Lazy.<Lazy<Integer>>of(() -> null));
             assertThatThrownBy(flat::get)
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("Lazy.flatten: the outer Lazy holds null");
@@ -568,8 +568,8 @@ public class LazyTest {
 
         @Test
         public void shouldEvaluateAgainAfterAThrowingLevel() {
-            final AtomicInteger attempts = new AtomicInteger();
-            final Lazy<Integer> flat = Lazy.flatten(Lazy.of(() -> Lazy.of(() -> {
+            AtomicInteger attempts = new AtomicInteger();
+            Lazy<Integer> flat = Lazy.flatten(Lazy.of(() -> Lazy.of(() -> {
                 if (attempts.incrementAndGet() == 1) {
                     throw new IllegalStateException("first");
                 }

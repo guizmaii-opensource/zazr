@@ -132,7 +132,7 @@ public abstract class AbstractTraversableTest {
 
     /** The simple names of every interface above {@code type}, so that a test can state the whole supertype chain. */
     protected static java.util.Set<String> supertypeNames(Class<?> type) {
-        final java.util.Set<String> names = new java.util.HashSet<>();
+        java.util.Set<String> names = new java.util.HashSet<>();
         for (Class<?> current = type; current != null; current = current.getSuperclass()) {
             for (Class<?> each : current.getInterfaces()) {
                 names.add(each.getSimpleName());
@@ -148,7 +148,7 @@ public abstract class AbstractTraversableTest {
      * different names overrides it.
      */
     protected String stringPrefix() {
-        final String empty = empty().toString();
+        String empty = empty().toString();
         return empty.substring(0, empty.length() - "()".length());
     }
 
@@ -203,8 +203,8 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDeclareExactlyTheTraversableMembers() {
-        final java.util.Set<String> instanceMembers = new java.util.HashSet<>();
-        final java.util.Set<String> staticMembers = new java.util.HashSet<>();
+        java.util.Set<String> instanceMembers = new java.util.HashSet<>();
+        java.util.Set<String> staticMembers = new java.util.HashSet<>();
         for (java.lang.reflect.Method method : Traversable.class.getDeclaredMethods()) {
             if (!method.isSynthetic()) {
                 (java.lang.reflect.Modifier.isStatic(method.getModifiers()) ? staticMembers : instanceMembers)
@@ -220,7 +220,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCreateNil() {
-        final Traversable<?> actual = empty();
+        Traversable<?> actual = empty();
         assertThat(actual.size()).isEqualTo(0);
     }
 
@@ -228,9 +228,9 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNarrowTraversable() {
-        final Traversable<Double> doubles = of(1.0d);
-        final Traversable<Number> numbers = Traversable.narrow(doubles);
-        final boolean actual = numbers.contains(new BigDecimal("2.0"));
+        Traversable<Double> doubles = of(1.0d);
+        Traversable<Number> numbers = Traversable.narrow(doubles);
+        boolean actual = numbers.contains(new BigDecimal("2.0"));
         assertThat(actual).isFalse();
     }
 
@@ -238,7 +238,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCreateSeqOfSeqUsingCons() {
-        final List<List<Object>> actual = of(List.empty()).toList();
+        List<List<Object>> actual = of(List.empty()).toList();
         assertThat(actual).isEqualTo(List.of(List.empty()));
     }
 
@@ -246,7 +246,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCreateInstanceOfElements() {
-        final List<Integer> actual = of(1, 2).toList();
+        List<Integer> actual = of(1, 2).toList();
         assertThat(actual).isEqualTo(List.of(1, 2));
     }
 
@@ -254,8 +254,8 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCreateListOfIterable() {
-        final java.util.List<Integer> arrayList = asList(1, 2);
-        final List<Integer> actual = ofAll(arrayList).toList();
+        java.util.List<Integer> arrayList = asList(1, 2);
+        List<Integer> actual = ofAll(arrayList).toList();
         assertThat(actual).isEqualTo(List.of(1, 2));
     }
 
@@ -263,13 +263,13 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCreateStreamFromEmptyJavaUtilStream() {
-        final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.empty();
+        java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.empty();
         assertThat(ofJavaStream(javaStream)).isEqualTo(empty());
     }
 
     @TestTemplate
     public void shouldCreateStreamFromNonEmptyJavaUtilStream() {
-        final java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
+        java.util.stream.Stream<Integer> javaStream = java.util.stream.Stream.of(1, 2, 3);
         assertThat(ofJavaStream(javaStream)).isEqualTo(of(1, 2, 3));
     }
 
@@ -277,57 +277,57 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveBooleanArray() {
-        final Traversable<Boolean> actual = ofAll(true, false);
-        final Traversable<Boolean> expected = of(true, false);
+        Traversable<Boolean> actual = ofAll(true, false);
+        Traversable<Boolean> expected = of(true, false);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveByteArray() {
-        final Traversable<Byte> actual = ofAll((byte) 1, (byte) 2, (byte) 3);
-        final Traversable<Byte> expected = of((byte) 1, (byte) 2, (byte) 3);
+        Traversable<Byte> actual = ofAll((byte) 1, (byte) 2, (byte) 3);
+        Traversable<Byte> expected = of((byte) 1, (byte) 2, (byte) 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveCharArray() {
-        final Traversable<Character> actual = ofAll('a', 'b', 'c');
-        final Traversable<Character> expected = of('a', 'b', 'c');
+        Traversable<Character> actual = ofAll('a', 'b', 'c');
+        Traversable<Character> expected = of('a', 'b', 'c');
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveDoubleArray() {
-        final Traversable<Double> actual = ofAll(1d, 2d, 3d);
-        final Traversable<Double> expected = of(1d, 2d, 3d);
+        Traversable<Double> actual = ofAll(1d, 2d, 3d);
+        Traversable<Double> expected = of(1d, 2d, 3d);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveFloatArray() {
-        final Traversable<Float> actual = ofAll(1f, 2f, 3f);
-        final Traversable<Float> expected = of(1f, 2f, 3f);
+        Traversable<Float> actual = ofAll(1f, 2f, 3f);
+        Traversable<Float> expected = of(1f, 2f, 3f);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveIntArray() {
-        final Traversable<Integer> actual = ofAll(1, 2, 3);
-        final Traversable<Integer> expected = of(1, 2, 3);
+        Traversable<Integer> actual = ofAll(1, 2, 3);
+        Traversable<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveLongArray() {
-        final Traversable<Long> actual = ofAll(1L, 2L, 3L);
-        final Traversable<Long> expected = of(1L, 2L, 3L);
+        Traversable<Long> actual = ofAll(1L, 2L, 3L);
+        Traversable<Long> expected = of(1L, 2L, 3L);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldCreateListOfPrimitiveShortArray() {
-        final Traversable<Short> actual = ofAll((short) 1, (short) 2, (short) 3);
-        final Traversable<Short> expected = of((short) 1, (short) 2, (short) 3);
+        Traversable<Short> actual = ofAll((short) 1, (short) 2, (short) 3);
+        Traversable<Short> expected = of((short) 1, (short) 2, (short) 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -335,19 +335,19 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRecognizeNilContainsNoElement() {
-        final boolean actual = empty().contains(null);
+        boolean actual = empty().contains(null);
         assertThat(actual).isFalse();
     }
 
     @TestTemplate
     public void shouldRecognizeNonNilDoesNotContainElement() {
-        final boolean actual = of(1, 2, 3).contains(0);
+        boolean actual = of(1, 2, 3).contains(0);
         assertThat(actual).isFalse();
     }
 
     @TestTemplate
     public void shouldRecognizeNonNilDoesContainElement() {
-        final boolean actual = of(1, 2, 3).contains(2);
+        boolean actual = of(1, 2, 3).contains(2);
         assertThat(actual).isTrue();
     }
 
@@ -355,25 +355,25 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldHandleDuplicates() {
-        final boolean actual = of(1, 2, 3, 2, 3, 1).containsAll(of(1, 2, 2));
+        boolean actual = of(1, 2, 3, 2, 3, 1).containsAll(of(1, 2, 2));
         assertThat(actual).isTrue();
     }
 
     @TestTemplate
     public void shouldRecognizeNilNotContainsAllElements() {
-        final boolean actual = empty().containsAll(of(1, 2, 3));
+        boolean actual = empty().containsAll(of(1, 2, 3));
         assertThat(actual).isFalse();
     }
 
     @TestTemplate
     public void shouldRecognizeNonNilNotContainsAllOverlappingElements() {
-        final boolean actual = of(1, 2, 3).containsAll(of(2, 3, 4));
+        boolean actual = of(1, 2, 3).containsAll(of(2, 3, 4));
         assertThat(actual).isFalse();
     }
 
     @TestTemplate
     public void shouldRecognizeNonNilContainsAllOnSelf() {
-        final boolean actual = of(1, 2, 3).containsAll(of(1, 2, 3));
+        boolean actual = of(1, 2, 3).containsAll(of(1, 2, 3));
         assertThat(actual).isTrue();
     }
 
@@ -467,7 +467,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldFullyIterateNonNil() {
-        final java.util.Iterator<Integer> iterator = of(1, 2, 3).iterator();
+        java.util.Iterator<Integer> iterator = of(1, 2, 3).iterator();
         int actual;
         for (int i = 1; i <= 3; i++) {
             actual = iterator.next();
@@ -483,7 +483,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowWhenCallingNextTooOftenOnNonEmptyIterator() {
-        final java.util.Iterator<Integer> iterator = of(1).iterator();
+        java.util.Iterator<Integer> iterator = of(1).iterator();
         assertThatThrownBy(() -> {
                     iterator.next();
                     iterator.next();
@@ -539,14 +539,14 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSplitNil() {
-        final java.util.List<Integer> actual = new java.util.ArrayList<>();
+        java.util.List<Integer> actual = new java.util.ArrayList<>();
         this.<Integer>empty().spliterator().forEachRemaining(actual::add);
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldSplitNonNil() {
-        final java.util.List<Integer> actual = new java.util.ArrayList<>();
+        java.util.List<Integer> actual = new java.util.ArrayList<>();
         of(1, 2, 3).spliterator().forEachRemaining(actual::add);
         assertThat(actual).isEqualTo(asList(1, 2, 3));
     }
@@ -562,7 +562,7 @@ public abstract class AbstractTraversableTest {
     @SuppressWarnings("EqualsWithItself")
     @TestTemplate
     public void shouldEqualSameTraversableInstance() {
-        final Traversable<?> nonEmpty = of(1);
+        Traversable<?> nonEmpty = of(1);
         assertThat(nonEmpty.equals(nonEmpty)).isTrue();
         assertThat(empty().equals(empty())).isTrue();
     }
@@ -612,22 +612,22 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRecognizeSameObject() {
-        final Traversable<Integer> v = of(1);
+        Traversable<Integer> v = of(1);
         //noinspection EqualsWithItself
         assertThat(v.equals(v)).isTrue();
     }
 
     @TestTemplate
     public void shouldRecognizeEqualObjects() {
-        final Traversable<Integer> v1 = of(1);
-        final Traversable<Integer> v2 = of(1);
+        Traversable<Integer> v1 = of(1);
+        Traversable<Integer> v2 = of(1);
         assertThat(v1.equals(v2)).isTrue();
     }
 
     @TestTemplate
     public void shouldRecognizeUnequalObjects() {
-        final Traversable<Integer> v1 = of(1);
-        final Traversable<Integer> v2 = of(2);
+        Traversable<Integer> v1 = of(1);
+        Traversable<Integer> v2 = of(2);
         assertThat(v1.equals(v2)).isFalse();
     }
 
@@ -662,7 +662,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConformEmptyStringRepresentation() {
-        final Traversable<Object> testee = empty();
+        Traversable<Object> testee = empty();
         if (!hasDefiniteSize()) {
             assertThat(testee.toString()).isEqualTo(stringPrefix() + "()");
             testee.size(); // evaluates all elements of lazy collections
@@ -672,7 +672,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConformNonEmptyStringRepresentation() {
-        final Traversable<Object> testee = of("a", "b", "c");
+        Traversable<Object> testee = of("a", "b", "c");
         if (!hasDefiniteSize()) {
             assertThat(testee.toString()).isEqualTo(stringPrefix() + "(a, ?)");
             testee.size(); // evaluates all elements of lazy collections
@@ -689,7 +689,7 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldStreamAndCollectNil() {
         testCollector(() -> {
-            final Traversable<?> actual = java.util.stream.Stream.empty().collect(collector());
+            Traversable<?> actual = java.util.stream.Stream.empty().collect(collector());
             assertThat(actual).isEmpty();
         });
     }
@@ -697,7 +697,7 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldStreamAndCollectNonNil() {
         testCollector(() -> {
-            final Traversable<?> actual = java.util.stream.Stream.of(1, 2, 3).collect(this.<Object>collector());
+            Traversable<?> actual = java.util.stream.Stream.of(1, 2, 3).collect(this.<Object>collector());
             assertThat(actual).isEqualTo(of(1, 2, 3));
         });
     }
@@ -705,8 +705,7 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldParallelStreamAndCollectNil() {
         testCollector(() -> {
-            final Traversable<?> actual =
-                    java.util.stream.Stream.empty().parallel().collect(collector());
+            Traversable<?> actual = java.util.stream.Stream.empty().parallel().collect(collector());
             assertThat(actual).isEmpty();
         });
     }
@@ -714,7 +713,7 @@ public abstract class AbstractTraversableTest {
     @TestTemplate
     public void shouldParallelStreamAndCollectNonNil() {
         testCollector(() -> {
-            final Traversable<?> actual =
+            Traversable<?> actual =
                     java.util.stream.Stream.of(1, 2, 3).parallel().collect(this.<Object>collector());
             assertThat(actual).isEqualTo(of(1, 2, 3));
         });
@@ -724,16 +723,16 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTabulateTheSeq() {
-        final Function<Number, Integer> f = i -> i.intValue() * i.intValue();
-        final Traversable<Number> actual = tabulate(3, f);
+        Function<Number, Integer> f = i -> i.intValue() * i.intValue();
+        Traversable<Number> actual = tabulate(3, f);
         assertThat(actual).isEqualTo(of(0, 1, 4));
     }
 
     @TestTemplate
     public void shouldTabulateTheSeqCallingTheFunctionInTheRightOrder() {
-        final java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(asList(0, 1, 2));
-        final Function<Integer, Integer> f = i -> ints.remove();
-        final Traversable<Integer> actual = tabulate(3, f);
+        java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(asList(0, 1, 2));
+        Function<Integer, Integer> f = i -> ints.remove();
+        Traversable<Integer> actual = tabulate(3, f);
         assertThat(actual).isEqualTo(of(0, 1, 2));
     }
 
@@ -751,8 +750,8 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldFillTheSeqCallingTheSupplierInTheRightOrder() {
-        final java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(asList(0, 1));
-        final Traversable<Number> actual = fill(2, ints::remove);
+        java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(asList(0, 1));
+        Traversable<Number> actual = fill(2, ints::remove);
         assertThat(actual).isEqualTo(of(0, 1));
     }
 
@@ -786,8 +785,8 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldPerformsActionOnEachElement() {
-        final int[] consumer = new int[1];
-        final Traversable<Integer> value = of(1, 2, 3);
+        int[] consumer = new int[1];
+        Traversable<Integer> value = of(1, 2, 3);
         value.forEach(i -> consumer[0] += i);
         assertThat(consumer[0]).isEqualTo(6);
     }
@@ -866,7 +865,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToJavaArrayWithFactory() {
-        final Integer[] ints = of(1, 2, 3).toArray(Integer[]::new);
+        Integer[] ints = of(1, 2, 3).toArray(Integer[]::new);
         assertThat(ints).containsOnly(1, 2, 3);
     }
 
@@ -874,14 +873,14 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToJavaStream() {
-        final java.util.stream.Stream<Integer> s1 = of(1, 2, 3).stream();
-        final java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
+        java.util.stream.Stream<Integer> s1 = of(1, 2, 3).stream();
+        java.util.stream.Stream<Integer> s2 = java.util.stream.Stream.of(1, 2, 3);
         assertThat(List.ofAll(s1::iterator)).isEqualTo(List.ofAll(s2::iterator));
     }
 
     @TestTemplate
     public void shouldHaveAReasonableToString() {
-        final Traversable<Integer> value = of(1, 2);
+        Traversable<Integer> value = of(1, 2);
         value.toList(); // evaluate all elements (e.g. for Stream)
         assertThat(value.toString()).contains("1", "2");
     }
@@ -901,7 +900,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCopyIntoAnObjectArray() {
-        final Object[] array = of(1, 2, 3).toArray();
+        Object[] array = of(1, 2, 3).toArray();
         assertThat(array.getClass()).isEqualTo(Object[].class);
         assertThat(array).containsExactlyInAnyOrder(1, 2, 3);
         assertThat(of(1, 2, 3).toArray()).isNotSameAs(of(1, 2, 3).toArray());
@@ -909,7 +908,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCopyIntoATypedArrayOfTheExactSize() {
-        final Integer[] array = of(1, 2, 3).toArray(Integer[]::new);
+        Integer[] array = of(1, 2, 3).toArray(Integer[]::new);
         assertThat(array.getClass()).isEqualTo(Integer[].class);
         assertThat(array.length).isEqualTo(3);
         assertThat(this.<Integer>empty().toArray(Integer[]::new).length).isEqualTo(0);
@@ -924,9 +923,9 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldStreamTheElementsWithTheCollectionsCharacteristics() {
-        final java.util.stream.Stream<Integer> stream = of(1, 2, 3).stream();
+        java.util.stream.Stream<Integer> stream = of(1, 2, 3).stream();
         assertThat(stream.isParallel()).isFalse();
-        final Spliterator<Integer> spliterator = of(1, 2, 3).stream().spliterator();
+        Spliterator<Integer> spliterator = of(1, 2, 3).stream().spliterator();
         assertThat(spliterator.hasCharacteristics(Spliterator.IMMUTABLE)).isTrue();
         assertThat(spliterator.hasCharacteristics(Spliterator.SIZED)).isEqualTo(hasDefiniteSize());
         assertThat(spliterator.hasCharacteristics(Spliterator.DISTINCT)).isEqualTo(isDistinct());
@@ -938,8 +937,8 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldViewTheElementsAsAJavaCollection() {
-        final Traversable<Integer> elements = of(1, 2, 3);
-        final java.util.Collection<Integer> view = elements.asJava();
+        Traversable<Integer> elements = of(1, 2, 3);
+        java.util.Collection<Integer> view = elements.asJava();
         assertThat(view.size()).isEqualTo(3);
         assertThat(view.isEmpty()).isFalse();
         assertThat(view.contains(2)).isTrue();
@@ -954,7 +953,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRefuseEveryMutatorOnTheJavaView() {
-        final java.util.Collection<Integer> view = of(1, 2, 3).asJava();
+        java.util.Collection<Integer> view = of(1, 2, 3).asJava();
         assertThrows(UnsupportedOperationException.class, () -> view.add(4));
         assertThrows(UnsupportedOperationException.class, () -> view.addAll(asList(4, 5)));
         assertThrows(UnsupportedOperationException.class, () -> view.remove(1));
@@ -962,20 +961,20 @@ public abstract class AbstractTraversableTest {
         assertThrows(UnsupportedOperationException.class, () -> view.retainAll(asList(1)));
         assertThrows(UnsupportedOperationException.class, () -> view.removeIf(i -> true));
         assertThrows(UnsupportedOperationException.class, view::clear);
-        final java.util.Iterator<Integer> iterator = view.iterator();
+        java.util.Iterator<Integer> iterator = view.iterator();
         iterator.next();
         assertThrows(UnsupportedOperationException.class, iterator::remove);
     }
 
     @TestTemplate
     public void shouldRefuseEveryMutatorOnTheJavaViewEvenWhenNothingWouldChange() {
-        final java.util.Collection<Integer> view = of(1, 2, 3).asJava();
+        java.util.Collection<Integer> view = of(1, 2, 3).asJava();
         assertThrows(UnsupportedOperationException.class, () -> view.remove(99));
         assertThrows(UnsupportedOperationException.class, () -> view.removeAll(asList(99)));
         assertThrows(UnsupportedOperationException.class, () -> view.retainAll(asList(1, 2, 3)));
         assertThrows(UnsupportedOperationException.class, () -> view.removeIf(i -> false));
         assertThrows(UnsupportedOperationException.class, () -> view.addAll(asList()));
-        final java.util.Collection<Integer> empty = this.<Integer>empty().asJava();
+        java.util.Collection<Integer> empty = this.<Integer>empty().asJava();
         assertThrows(UnsupportedOperationException.class, () -> empty.remove(1));
         assertThrows(UnsupportedOperationException.class, () -> empty.removeIf(i -> true));
         assertThat(view.size()).isEqualTo(3);
@@ -983,7 +982,7 @@ public abstract class AbstractTraversableTest {
 
     @TestTemplate
     public void shouldViewWithoutCopying() {
-        final java.util.Collection<Integer> view = of(1, 2, 3).asJava();
+        java.util.Collection<Integer> view = of(1, 2, 3).asJava();
         assertThat(view.getClass().getPackageName()).isEqualTo("dev.zazr.collection.internal");
         assertThat(view).isInstanceOf(dev.zazr.collection.internal.JavaConverters.View.class);
     }
@@ -1011,7 +1010,7 @@ public abstract class AbstractTraversableTest {
             if (obj == this) {
                 return true;
             } else if (obj instanceof NonComparable) {
-                final NonComparable that = (NonComparable) obj;
+                NonComparable that = (NonComparable) obj;
                 return Objects.equals(this.value, that.value);
             } else {
                 return false;

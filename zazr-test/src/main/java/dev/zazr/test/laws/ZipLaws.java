@@ -124,14 +124,14 @@ public final class ZipLaws {
     }
 
     private static Object flattenLeft(Object nested) {
-        final Tuple2<?, ?> outer = (Tuple2<?, ?>) nested;
-        final Tuple2<?, ?> inner = (Tuple2<?, ?>) outer._1();
+        Tuple2<?, ?> outer = (Tuple2<?, ?>) nested;
+        Tuple2<?, ?> inner = (Tuple2<?, ?>) outer._1();
         return Tuple.of(inner._1(), inner._2(), outer._2());
     }
 
     private static Object flattenRight(Object nested) {
-        final Tuple2<?, ?> outer = (Tuple2<?, ?>) nested;
-        final Tuple2<?, ?> inner = (Tuple2<?, ?>) outer._2();
+        Tuple2<?, ?> outer = (Tuple2<?, ?>) nested;
+        Tuple2<?, ?> inner = (Tuple2<?, ?>) outer._2();
         return Tuple.of(outer._1(), inner._1(), inner._2());
     }
 }

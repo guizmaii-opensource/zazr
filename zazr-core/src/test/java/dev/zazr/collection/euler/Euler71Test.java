@@ -32,8 +32,8 @@ public class Euler71Test {
 
     private static int left37(int maxDenominator) {
         return Stream.iterate(Tuple.of(0, 1, 1, 1), (Tuple4<Integer, Integer, Integer, Integer> t) -> {
-                    final int m1 = t._1() + t._3();
-                    final int m2 = t._2() + t._4();
+                    int m1 = t._1() + t._3();
+                    int m2 = t._2() + t._4();
                     if (m1 * 7 >= m2 * 3) {
                         return Tuple.of(t._1(), t._2(), m1, m2);
                     } else {

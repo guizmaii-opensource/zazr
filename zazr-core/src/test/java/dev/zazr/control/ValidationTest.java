@@ -40,7 +40,7 @@ public class ValidationTest {
 
         @Test
         public void shouldCreateValid() {
-            final Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> valid = Validation.valid(1);
             assertThat(valid).isEqualTo(new Valid<>(1));
             assertThat(valid.isValid()).isTrue();
             assertThat(valid.get()).isEqualTo(1);
@@ -48,7 +48,7 @@ public class ValidationTest {
 
         @Test
         public void shouldCreateInvalidWithOneError() {
-            final Validation<String, Integer> invalid = Validation.invalid("e");
+            Validation<String, Integer> invalid = Validation.invalid("e");
             assertThat(invalid).isEqualTo(new Invalid<>(NonEmptyVector.single("e")));
             assertThat(invalid.isInvalid()).isTrue();
             assertThat(((Invalid<String, Integer>) invalid).errors()).isEqualTo(errors("e"));
@@ -56,7 +56,7 @@ public class ValidationTest {
 
         @Test
         public void shouldCreateInvalidWithAllErrors() {
-            final Validation<String, Integer> invalid = Validation.invalidAll(errors("a", "b"));
+            Validation<String, Integer> invalid = Validation.invalidAll(errors("a", "b"));
             assertThat(invalid).isEqualTo(new Invalid<>(errors("a", "b")));
             assertThat(((Invalid<String, Integer>) invalid).errors()).isEqualTo(errors("a", "b"));
         }
@@ -99,7 +99,7 @@ public class ValidationTest {
 
         @Test
         public void shouldCreateFromTry() {
-            final RuntimeException cause = new RuntimeException("boom");
+            RuntimeException cause = new RuntimeException("boom");
             assertThat(Validation.fromTry(Try.success(1))).isEqualTo(Validation.valid(1));
             assertThat(Validation.fromTry(Try.failure(cause))).isEqualTo(Validation.invalid(cause));
         }
@@ -112,8 +112,8 @@ public class ValidationTest {
 
         @Test
         public void shouldHandTheThrowableToOnError() {
-            final RuntimeException cause = new RuntimeException("boom");
-            final Validation<Throwable, Object> v = Validation.of(
+            RuntimeException cause = new RuntimeException("boom");
+            Validation<Throwable, Object> v = Validation.of(
                     () -> {
                         throw cause;
                     },
@@ -123,7 +123,7 @@ public class ValidationTest {
 
         @Test
         public void shouldTreatANullResultAsANullPointerException() {
-            final Validation<Class<?>, Object> v = Validation.of(() -> null, Throwable::getClass);
+            Validation<Class<?>, Object> v = Validation.of(() -> null, Throwable::getClass);
             assertThat(v).isEqualTo(Validation.invalid(NullPointerException.class));
         }
 
@@ -221,7 +221,7 @@ public class ValidationTest {
 
         @Test
         public void shouldReturnTheInvalidOperandItself() {
-            final Validation<String, Integer> invalid = invalid("a");
+            Validation<String, Integer> invalid = invalid("a");
             assertThat(invalid.zip(Validation.valid(1))).isSameAs(invalid);
             assertThat(Validation.<String, Integer>valid(1).zip(invalid)).isSameAs(invalid);
         }
@@ -275,9 +275,9 @@ public class ValidationTest {
 
         @Test
         public void shouldKeepTheErrorOrderAcrossThreeOperandsHoweverNested() {
-            final Validation<String, Integer> a = invalid("a");
-            final Validation<String, Integer> b = invalid("b");
-            final Validation<String, Integer> c = invalid("c");
+            Validation<String, Integer> a = invalid("a");
+            Validation<String, Integer> b = invalid("b");
+            Validation<String, Integer> c = invalid("c");
             assertThat(a.zip(b).zip(c)).isEqualTo(invalid("a", "b", "c"));
             assertThat(a.zip(b.zip(c))).isEqualTo(invalid("a", "b", "c"));
             assertThat(a.zip(Validation.<String, Integer>valid(1)).zip(c)).isEqualTo(invalid("a", "c"));
@@ -291,8 +291,8 @@ public class ValidationTest {
 
         @Test
         public void shouldPlaceAnEitherOperandWhereItStandsInAChain() {
-            final Validation<String, Integer> a = invalid("a");
-            final Validation<String, Integer> c = invalid("c");
+            Validation<String, Integer> a = invalid("a");
+            Validation<String, Integer> c = invalid("c");
             assertThat(a.zip(Either.<String, Integer>left("b")).zip(c)).isEqualTo(invalid("a", "b", "c"));
             assertThat(a.zip(c).zip(Either.<String, Integer>left("b"))).isEqualTo(invalid("a", "c", "b"));
             assertThat(Validation.<String, Integer>valid(1)
@@ -315,7 +315,7 @@ public class ValidationTest {
 
         @Test
         public void shouldRejectNulls() {
-            final Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> valid = Validation.valid(1);
             assertThatThrownBy(() -> valid.zip((Validation<String, Integer>) null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("that is null");
@@ -368,15 +368,14 @@ public class ValidationTest {
         @Test
         public void shouldCollectAcrossALeafBoundary() {
             // 33 validations: the results builder crosses the 32-wide leaf of the Vector trie
-            final Vector<Validation<String, Integer>> valids =
-                    Vector.range(0, 33).map(Validation::valid);
+            Vector<Validation<String, Integer>> valids = Vector.range(0, 33).map(Validation::valid);
             assertThat(Validation.collectAll(valids)).isEqualTo(Validation.valid(Vector.range(0, 33)));
-            final Vector<Validation<String, Integer>> invalids =
+            Vector<Validation<String, Integer>> invalids =
                     Vector.range(0, 33).map(i -> ValidationTest.<Integer>invalid("e" + i));
             assertThat(Validation.collectAll(invalids))
                     .isEqualTo(Validation.invalidAll(
                             NonEmptyVector.unsafeFromVector(Vector.range(0, 33).map(i -> "e" + i))));
-            final Vector<Validation<String, Integer>> lastInvalid = valids.update(32, invalid("last"));
+            Vector<Validation<String, Integer>> lastInvalid = valids.update(32, invalid("last"));
             assertThat(Validation.collectAll(lastInvalid)).isEqualTo(invalid("last"));
         }
 
@@ -426,7 +425,7 @@ public class ValidationTest {
 
         @Test
         public void shouldCallTheFunctionForEveryElementEvenAfterAnInvalid() {
-            final java.util.List<String> seen = new ArrayList<>();
+            java.util.List<String> seen = new ArrayList<>();
             Validation.forEach(List.of("x", "2", "y"), s -> {
                 seen.add(s);
                 return parse(s);
@@ -436,8 +435,8 @@ public class ValidationTest {
 
         @Test
         public void shouldCallTheFunctionForEveryElementOfANonEmptyVectorEvenAfterAnInvalid() {
-            final AtomicInteger calls = new AtomicInteger();
-            final Validation<String, NonEmptyVector<Integer>> result =
+            AtomicInteger calls = new AtomicInteger();
+            Validation<String, NonEmptyVector<Integer>> result =
                     Validation.forEach(NonEmptyVector.of("x", "2", "y"), s -> {
                         calls.incrementAndGet();
                         return parse(s);
@@ -448,7 +447,7 @@ public class ValidationTest {
 
         @Test
         public void shouldReturnANonEmptyVectorForANonEmptyVector() {
-            final Validation<String, NonEmptyVector<Integer>> valid =
+            Validation<String, NonEmptyVector<Integer>> valid =
                     Validation.forEach(NonEmptyVector.of("1", "2"), ValidationTest::parse);
             assertThat(valid).isEqualTo(Validation.valid(NonEmptyVector.of(1, 2)));
             assertThat(Validation.forEach(NonEmptyVector.of("x", "2", "y"), ValidationTest::parse))
@@ -532,7 +531,7 @@ public class ValidationTest {
 
         @Test
         public void shouldKeepAValidAndNotCallTheSupplier() {
-            final Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> valid = Validation.valid(1);
             assertThat(valid.orElse(() -> {
                         throw new AssertionError("must not be called");
                     }))
@@ -575,9 +574,9 @@ public class ValidationTest {
 
         @Test
         public void shouldShortCircuitWhereZipAccumulates() {
-            final Validation<String, Integer> first = invalid("a");
-            final AtomicInteger calls = new AtomicInteger();
-            final Validation<String, Integer> chained = first.flatMap(_ -> {
+            Validation<String, Integer> first = invalid("a");
+            AtomicInteger calls = new AtomicInteger();
+            Validation<String, Integer> chained = first.flatMap(_ -> {
                 calls.incrementAndGet();
                 return invalid("b");
             });
@@ -591,9 +590,9 @@ public class ValidationTest {
 
         @Test
         public void shouldRunACrossFieldRuleAfterTheFieldsAreValidated() {
-            final Validation<String, Integer> start = Validation.valid(1);
-            final Validation<String, Integer> end = Validation.valid(3);
-            final Validation<String, Integer> length = start.zip(end)
+            Validation<String, Integer> start = Validation.valid(1);
+            Validation<String, Integer> end = Validation.valid(3);
+            Validation<String, Integer> length = start.zip(end)
                     .flatMap(range -> range._1() < range._2()
                             ? Validation.valid(range._2() - range._1())
                             : invalid("start after end"));
@@ -615,7 +614,7 @@ public class ValidationTest {
 
         @Test
         public void shouldShortCircuitTheEitherStep() {
-            final Validation<String, Integer> first = invalid("a");
+            Validation<String, Integer> first = invalid("a");
             assertThat(first.flatMapEither(_ -> {
                         throw new AssertionError("must not be called");
                     }))
@@ -645,7 +644,7 @@ public class ValidationTest {
         @Test
         public void shouldMapTheValue() {
             assertThat(Validation.<String, Integer>valid(1).map(i -> i + 1)).isEqualTo(Validation.valid(2));
-            final Validation<String, Integer> invalid = invalid("a");
+            Validation<String, Integer> invalid = invalid("a");
             assertThat(invalid.map(i -> i + 1)).isSameAs(invalid);
         }
 
@@ -653,7 +652,7 @@ public class ValidationTest {
         public void shouldMapEachError() {
             assertThat(ValidationTest.<Integer>invalid("a", "b").mapError(String::toUpperCase))
                     .isEqualTo(invalid("A", "B"));
-            final Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> valid = Validation.valid(1);
             assertThat(valid.mapError(String::toUpperCase)).isSameAs(valid);
         }
 
@@ -664,7 +663,7 @@ public class ValidationTest {
                     .isEqualTo(invalid("a+b"));
             assertThat(ValidationTest.<Integer>invalid("a", "b").mapErrorAll(NonEmptyVector::reverse))
                     .isEqualTo(invalid("b", "a"));
-            final Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> valid = Validation.valid(1);
             assertThat(valid.mapErrorAll(NonEmptyVector::reverse)).isSameAs(valid);
         }
 
@@ -723,8 +722,8 @@ public class ValidationTest {
 
         @Test
         public void shouldFold() {
-            final int fromValid = Validation.<String, Integer>valid(1).fold(NonEmptyVector::size, i -> -i);
-            final int fromInvalid = ValidationTest.<Integer>invalid("a", "b").fold(NonEmptyVector::size, i -> -i);
+            int fromValid = Validation.<String, Integer>valid(1).fold(NonEmptyVector::size, i -> -i);
+            int fromInvalid = ValidationTest.<Integer>invalid("a", "b").fold(NonEmptyVector::size, i -> -i);
             assertThat(fromValid).isEqualTo(-1);
             assertThat(fromInvalid).isEqualTo(2);
         }
@@ -824,7 +823,7 @@ public class ValidationTest {
 
         @Test
         public void shouldConsumeTheValueWithForEach() {
-            final java.util.List<Integer> seen = new ArrayList<>();
+            java.util.List<Integer> seen = new ArrayList<>();
             Validation.<String, Integer>valid(1).forEach(seen::add);
             ValidationTest.<Integer>invalid("a").forEach(seen::add);
             assertThat(seen).containsExactly(1);
@@ -832,8 +831,8 @@ public class ValidationTest {
 
         @Test
         public void shouldTapTheValue() {
-            final java.util.List<Integer> seen = new ArrayList<>();
-            final Validation<String, Integer> valid = Validation.valid(1);
+            java.util.List<Integer> seen = new ArrayList<>();
+            Validation<String, Integer> valid = Validation.valid(1);
             assertThat(valid.tap(seen::add)).isSameAs(valid);
             assertThat(ValidationTest.<Integer>invalid("a").tap(seen::add)).isEqualTo(invalid("a"));
             assertThat(seen).containsExactly(1);
@@ -841,8 +840,8 @@ public class ValidationTest {
 
         @Test
         public void shouldTapTheErrors() {
-            final java.util.List<NonEmptyVector<String>> seen = new ArrayList<>();
-            final Validation<String, Integer> invalid = invalid("a", "b");
+            java.util.List<NonEmptyVector<String>> seen = new ArrayList<>();
+            Validation<String, Integer> invalid = invalid("a", "b");
             assertThat(invalid.tapError(seen::add)).isSameAs(invalid);
             assertThat(Validation.<String, Integer>valid(1).tapError(seen::add)).isEqualTo(Validation.valid(1));
             assertThat(seen).containsExactly(errors("a", "b"));
@@ -925,7 +924,7 @@ public class ValidationTest {
         public void shouldConvertToTry() {
             assertThat(Validation.<String, Integer>valid(1).toTry(es -> new IllegalStateException(es.mkString())))
                     .isEqualTo(Try.success(1));
-            final Try<Integer> failure =
+            Try<Integer> failure =
                     ValidationTest.<Integer>invalid("a", "b").toTry(es -> new IllegalStateException(es.mkString(", ")));
             assertThat(failure.isFailure()).isTrue();
             assertThat(failure.getCause())
@@ -969,12 +968,12 @@ public class ValidationTest {
 
         @Test
         public void shouldBeEqualAcrossConstructionPaths() {
-            final Validation<String, Object> zipped =
+            Validation<String, Object> zipped =
                     ValidationTest.<Integer>invalid("a").zip(invalid("b")).map(_ -> 0);
-            final Validation<String, Object> all = Validation.invalidAll(NonEmptyVector.of("a", "b"));
-            final Validation<String, Object> collected =
+            Validation<String, Object> all = Validation.invalidAll(NonEmptyVector.of("a", "b"));
+            Validation<String, Object> collected =
                     Validation.collectAll(List.of(invalid("a"), invalid("b"))).map(_ -> 0);
-            final Validation<String, Object> mapped =
+            Validation<String, Object> mapped =
                     ValidationTest.<Object>invalid("A", "B").mapError(String::toLowerCase);
             assertThat(zipped).isEqualTo(all).hasSameHashCodeAs(all);
             assertThat(collected).isEqualTo(all).hasSameHashCodeAs(all);
@@ -1003,10 +1002,10 @@ public class ValidationTest {
 
         @Test
         public void shouldDeconstructInASwitch() {
-            final Validation<String, Integer> valid = Validation.valid(1);
-            final Validation<String, Integer> invalid = invalid("a", "b");
+            Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> invalid = invalid("a", "b");
             for (Validation<String, Integer> v : java.util.List.of(valid, invalid)) {
-                final String s = switch (v) {
+                String s = switch (v) {
                     case Valid(var value) -> "valid " + value;
                     case Invalid(var errors) -> "invalid " + errors.size() + ": " + errors.mkString(", ");
                 };
@@ -1022,9 +1021,9 @@ public class ValidationTest {
 
         @Test
         public void shouldFlattenEveryCombination() {
-            final Validation<String, Integer> valid = Validation.valid(1);
-            final Validation<String, Integer> innerInvalid = Validation.invalidAll(NonEmptyVector.of("i1", "i2"));
-            final Validation<String, Validation<String, Integer>> outerInvalid =
+            Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> innerInvalid = Validation.invalidAll(NonEmptyVector.of("i1", "i2"));
+            Validation<String, Validation<String, Integer>> outerInvalid =
                     Validation.invalidAll(NonEmptyVector.of("o1", "o2"));
             assertThat(Validation.flatten(Validation.<String, Validation<String, Integer>>valid(valid)))
                     .isSameAs(valid);
@@ -1036,9 +1035,9 @@ public class ValidationTest {
         @Test
         public void shouldNotAccumulate() {
             // the outer errors and the inner validation never coexist: an Invalid outer has no value to look into
-            final Validation<String, Validation<String, Integer>> outerInvalid = Validation.invalid("outer");
+            Validation<String, Validation<String, Integer>> outerInvalid = Validation.invalid("outer");
             assertThat(Validation.flatten(outerInvalid)).isEqualTo(Validation.invalid("outer"));
-            final Validation<String, Integer> flat =
+            Validation<String, Integer> flat =
                     Validation.flatten(Validation.valid(Validation.invalidAll(NonEmptyVector.of("i1", "i2"))));
             assertThat(flat).isInstanceOf(Invalid.class);
             assertThat(((Invalid<String, Integer>) flat).errors()).isEqualTo(NonEmptyVector.of("i1", "i2"));
@@ -1046,7 +1045,7 @@ public class ValidationTest {
 
         @Test
         public void shouldRemoveOneLevelOnly() {
-            final Validation<String, Validation<String, Integer>> twice = Validation.valid(Validation.valid(1));
+            Validation<String, Validation<String, Integer>> twice = Validation.valid(Validation.valid(1));
             assertThat(Validation.flatten(
                             Validation.<String, Validation<String, Validation<String, Integer>>>valid(twice)))
                     .isSameAs(twice);
@@ -1054,7 +1053,7 @@ public class ValidationTest {
 
         @Test
         public void shouldWidenBothTypes() {
-            final Validation<CharSequence, Number> valid =
+            Validation<CharSequence, Number> valid =
                     Validation.flatten(Validation.<String, Validation<String, Integer>>valid(Validation.valid(1)));
             assertThat(valid).isEqualTo(Validation.valid(1));
             assertThat(valid).isInstanceOf(Valid.class);

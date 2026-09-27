@@ -45,13 +45,12 @@ class HashMapLawsTest extends MapLawsSuite<HashMap<?, ?>, HashMap<Integer, Integ
 
     @Test
     void mapLawsWithCollidingHashCodes() {
-        final CollectionSubject<Tuple2<Collider, Integer>, HashMap<Collider, Integer>> colliders =
-                new CollectionSubject<>(
-                        Gen.hashMap(Values.integers().map(Collider::new), Values.integers()),
-                        HashMap::ofEntries,
-                        HashMap::size,
-                        HashMap::toList,
-                        false);
+        CollectionSubject<Tuple2<Collider, Integer>, HashMap<Collider, Integer>> colliders = new CollectionSubject<>(
+                Gen.hashMap(Values.integers().map(Collider::new), Values.integers()),
+                HashMap::ofEntries,
+                HashMap::size,
+                HashMap::toList,
+                false);
         LawChecks.check(CollectionLaws.<Tuple2<Collider, Integer>, HashMap<Collider, Integer>>map(), colliders);
         LawChecks.check(
                 EqualityLaws.<HashMap<Collider, Integer>>all(),

@@ -89,7 +89,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     @Override
     default boolean contains(Tuple2<K, V> element) {
         // getOrElse via the ABSENT sentinel, not get: avoids allocating a Some just to test isDefined()
-        final V value = Maps.getOrAbsent(this, element._1());
+        V value = Maps.getOrAbsent(this, element._1());
         return value != Maps.ABSENT && Objects.equals(value, element._2());
     }
 
@@ -826,7 +826,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toMap(
             Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = HashMap::ofEntries;
+        Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = HashMap::ofEntries;
         return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Map.toMap: f returned null");
     }
 
@@ -861,7 +861,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     default <K2 extends @Nullable Object, V2 extends @Nullable Object> Map<K2, V2> toLinkedMap(
             Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
-        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = LinkedHashMap::ofEntries;
+        Function<Iterable<Tuple2<? extends K2, ? extends V2>>, Map<K2, V2>> ofAll = LinkedHashMap::ofEntries;
         return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Map.toLinkedMap: f returned null");
     }
 
@@ -934,7 +934,7 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
             Comparator<? super K2> comparator,
             Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final Function<Iterable<Tuple2<? extends K2, ? extends V2>>, SortedMap<K2, V2>> ofAll =
+        Function<Iterable<Tuple2<? extends K2, ? extends V2>>, SortedMap<K2, V2>> ofAll =
                 t -> TreeMap.ofEntries(comparator, t);
         return TraversableModule.toMap(this, TreeMap.empty(comparator), ofAll, f, "Map.toSortedMap: f returned null");
     }

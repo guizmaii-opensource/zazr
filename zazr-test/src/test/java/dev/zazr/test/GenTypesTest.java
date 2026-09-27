@@ -59,12 +59,12 @@ class GenTypesTest {
 
     /// 0, 1, 2 and so on, one per draw, counted from 0 for each generator built.
     private static Gen<Integer> counter() {
-        final int[] next = {0};
+        int[] next = {0};
         return Gen.fromRandom(random -> next[0]++);
     }
 
     private static ArrayList<Integer> elements(int n) {
-        final ArrayList<Integer> elements = new ArrayList<>(n);
+        ArrayList<Integer> elements = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             elements.add(i);
         }
@@ -73,7 +73,7 @@ class GenTypesTest {
 
     private static Object field(Object target, Class<?> owner, String name) {
         try {
-            final Field field = owner.getDeclaredField(name);
+            Field field = owner.getDeclaredField(name);
             field.setAccessible(true);
             return field.get(target);
         } catch (ReflectiveOperationException e) {
@@ -87,7 +87,7 @@ class GenTypesTest {
 
     /// The length generator of each of the collections whose length is drawn between 0 and the size.
     private static java.util.Map<String, Gen<Integer>> lengths() {
-        final java.util.Map<String, Gen<Integer>> lengths = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Gen<Integer>> lengths = new java.util.LinkedHashMap<>();
         lengths.put("vector", Gen.vector(distinct()).map(Traversable::size));
         lengths.put("list", Gen.list(distinct()).map(Traversable::size));
         lengths.put("queue", Gen.queue(distinct()).map(Traversable::size));
@@ -103,8 +103,8 @@ class GenTypesTest {
 
     /// Every generator of this class, over random elements.
     private static java.util.Map<String, Gen<?>> generators() {
-        final Gen<Integer> ints = Gen.integers();
-        final java.util.Map<String, Gen<?>> gens = new java.util.LinkedHashMap<>();
+        Gen<Integer> ints = Gen.integers();
+        java.util.Map<String, Gen<?>> gens = new java.util.LinkedHashMap<>();
         gens.put("option", Gen.option(ints));
         gens.put("some", Gen.some(ints));
         gens.put("either", Gen.either(ints, ints));
@@ -122,8 +122,8 @@ class GenTypesTest {
 
     /// Every collection generator, over random elements.
     private static java.util.Map<String, Gen<? extends Iterable<?>>> collections() {
-        final Gen<Integer> ints = Gen.integers();
-        final java.util.Map<String, Gen<? extends Iterable<?>>> gens = new java.util.LinkedHashMap<>();
+        Gen<Integer> ints = Gen.integers();
+        java.util.Map<String, Gen<? extends Iterable<?>>> gens = new java.util.LinkedHashMap<>();
         gens.put("vector", Gen.vector(ints));
         gens.put("vectorN", Gen.vectorN(40, ints));
         gens.put("nonEmptyVector", Gen.nonEmptyVector(ints));
@@ -143,7 +143,7 @@ class GenTypesTest {
 
     @Test
     void optionGivesNoneForOnePassInFour() {
-        final List<Option<Integer>> options = Gen.option(Gen.integers()).runCollectN(2_000, config(1));
+        List<Option<Integer>> options = Gen.option(Gen.integers()).runCollectN(2_000, config(1));
         assertThat(options.count(Option::isEmpty)).isBetween(400, 600);
         assertSome(options, Option::isDefined, "Some");
     }
@@ -161,7 +161,7 @@ class GenTypesTest {
 
     @Test
     void eitherGivesLeftAndRightAsLikely() {
-        final List<Either<Integer, String>> eithers =
+        List<Either<Integer, String>> eithers =
                 Gen.either(Gen.integers(), Gen.alphaNumericStrings()).runCollectN(2_000, config(1));
         assertThat(eithers.count(Either::isLeft)).isBetween(880, 1_120);
         assertSome(eithers, Either::isRight, "Right");
@@ -169,13 +169,13 @@ class GenTypesTest {
 
     @Test
     void tryOfGivesAFailureForOnePassInFourWithSharedExceptions() {
-        final List<Try<Integer>> tries = Gen.tryOf(Gen.integers()).runCollectN(2_000, config(1));
-        final List<Try<Integer>> failures = tries.filter(Try::isFailure);
+        List<Try<Integer>> tries = Gen.tryOf(Gen.integers()).runCollectN(2_000, config(1));
+        List<Try<Integer>> failures = tries.filter(Try::isFailure);
         assertThat(failures.size()).isBetween(400, 600);
         assertSome(tries, Try::isSuccess, "Success");
         assertThat(failures.distinct().size()).isLessThan(failures.size()).isBetween(2, 3);
         // another generator fails with the same exception instances
-        final List<Throwable> causes = failures.map(Try::getCause);
+        List<Throwable> causes = failures.map(Try::getCause);
         assertThat(Gen.tryOf(Gen.constant(1))
                         .runCollectN(200, config(2))
                         .filter(Try::isFailure)
@@ -186,8 +186,8 @@ class GenTypesTest {
 
     @Test
     void tryOfUsesTheGivenFailures() {
-        final Exception failure = new IllegalStateException("given");
-        final List<Try<Integer>> tries =
+        Exception failure = new IllegalStateException("given");
+        List<Try<Integer>> tries =
                 Gen.tryOf(Gen.integers(), Gen.constant(failure)).runCollectN(500, config(1));
         assertSome(tries, Try::isSuccess, "Success");
         assertThat(tries.filter(Try::isFailure)).isNotEmpty().allMatch(t -> t.getCause() == failure);
@@ -195,15 +195,15 @@ class GenTypesTest {
 
     @Test
     void validationGivesValidAndOneToThreeErrors() {
-        final List<Validation<String, Integer>> validations =
+        List<Validation<String, Integer>> validations =
                 Gen.validation(Gen.alphaNumericStrings(), Gen.integers()).runCollectN(2_000, config(1));
         assertThat(validations.count(Validation::isValid)).isBetween(880, 1_120);
-        final List<Integer> errorCounts = validations
+        List<Integer> errorCounts = validations
                 .filter(Validation::isInvalid)
                 .map(v -> ((Validation.Invalid<String, Integer>) v).errors().size());
         assertThat(errorCounts).allMatch(n -> n >= 1 && n <= 3);
         for (int n = 1; n <= 3; n++) {
-            final int errors = n;
+            int errors = n;
             assertThat(errorCounts.count(c -> c == errors))
                     .as("Invalid with %d errors", n)
                     .isGreaterThan(250);
@@ -215,7 +215,7 @@ class GenTypesTest {
 
     @Test
     void validationDrawsEachErrorAsTheFirstValueOfAPass() {
-        final List<Validation<String, Integer>> validations = Gen.validation(
+        List<Validation<String, Integer>> validations = Gen.validation(
                         Gen.fromIterable(java.util.List.of("x", "y")), Gen.integers())
                 .runCollectN(200, config(1));
         assertThat(validations.filter(Validation::isInvalid))
@@ -226,22 +226,22 @@ class GenTypesTest {
 
     @Test
     void lazyGivesEvaluatedAndUnevaluatedValues() {
-        final List<Lazy<Integer>> lazies = Gen.lazy(Gen.integers()).runCollectN(2_000, config(1));
+        List<Lazy<Integer>> lazies = Gen.lazy(Gen.integers()).runCollectN(2_000, config(1));
         assertThat(lazies.count(Lazy::isEvaluated)).isBetween(880, 1_120);
         assertThat(Gen.lazy(Gen.size()).withSize(9).runCollectN(200, config(1))).allMatch(l -> l.get() == 9);
     }
 
     @Test
     void tuplesTakeTheirComponentsInOrder() {
-        final Gen<Integer> g1 = Gen.constant(1);
-        final Gen<Integer> g2 = Gen.constant(2);
-        final Gen<Integer> g3 = Gen.constant(3);
-        final Gen<Integer> g4 = Gen.constant(4);
-        final Gen<Integer> g5 = Gen.constant(5);
-        final Gen<Integer> g6 = Gen.constant(6);
-        final Gen<Integer> g7 = Gen.constant(7);
-        final Gen<Integer> g8 = Gen.constant(8);
-        final CheckConfig config = config(1);
+        Gen<Integer> g1 = Gen.constant(1);
+        Gen<Integer> g2 = Gen.constant(2);
+        Gen<Integer> g3 = Gen.constant(3);
+        Gen<Integer> g4 = Gen.constant(4);
+        Gen<Integer> g5 = Gen.constant(5);
+        Gen<Integer> g6 = Gen.constant(6);
+        Gen<Integer> g7 = Gen.constant(7);
+        Gen<Integer> g8 = Gen.constant(8);
+        CheckConfig config = config(1);
         assertThat(Gen.tuple2(g1, g2).runCollect(config)).isEqualTo(List.of(Tuple.of(1, 2)));
         assertThat(Gen.tuple3(g1, g2, g3).runCollect(config)).isEqualTo(List.of(Tuple.of(1, 2, 3)));
         assertThat(Gen.tuple4(g1, g2, g3, g4).runCollect(config)).isEqualTo(List.of(Tuple.of(1, 2, 3, 4)));
@@ -256,8 +256,8 @@ class GenTypesTest {
 
     @Test
     void tuplesOfFiniteGeneratorsGiveEveryCombinationAsZip() {
-        final Gen<Integer> t = Gen.fromIterable(java.util.List.of(0, 1));
-        final CheckConfig config = config(1);
+        Gen<Integer> t = Gen.fromIterable(java.util.List.of(0, 1));
+        CheckConfig config = config(1);
         assertThat(Gen.tuple2(t, t).runCollect(config))
                 .isEqualTo(Gen.zip(t, t).runCollect(config))
                 .hasSize(4)
@@ -303,9 +303,9 @@ class GenTypesTest {
     /// Each pass is one of the shapes, and every shape occurs over the seeds.
     private static <A> void assertPassesAreOneOf(
             Gen<A> gen, java.util.List<List<A>> shapes, Function<List<A>, List<A>> normalize) {
-        final java.util.Set<List<A>> seen = new java.util.HashSet<>();
+        java.util.Set<List<A>> seen = new java.util.HashSet<>();
         for (long seed = 0; seed < 50; seed++) {
-            final List<A> pass = normalize.apply(gen.runCollect(config(seed)));
+            List<A> pass = normalize.apply(gen.runCollect(config(seed)));
             assertThat(shapes).as("pass of seed %d", seed).contains(pass);
             seen.add(pass);
         }
@@ -332,8 +332,8 @@ class GenTypesTest {
 
     @Test
     void tryOfPassesEveryValueOfAFiniteGeneratorThrough() {
-        final Exception first = new IllegalStateException("first");
-        final Exception second = new IllegalStateException("second");
+        Exception first = new IllegalStateException("first");
+        Exception second = new IllegalStateException("second");
         assertPassesAreOneOf(
                 Gen.tryOf(ONE_TWO_THREE, Gen.fromIterable(java.util.List.of(first, second))),
                 java.util.List.of(
@@ -367,9 +367,9 @@ class GenTypesTest {
 
     @Test
     void collectionLengthsStayWithinTheSizeAndFavourTheEdges() {
-        final List<Integer> edges = List.of(0, 1, 99, 100);
+        List<Integer> edges = List.of(0, 1, 99, 100);
         lengths().forEach((name, gen) -> {
-            final List<Integer> lengths = gen.withSize(100).runCollectN(1_000, config(1));
+            List<Integer> lengths = gen.withSize(100).runCollectN(1_000, config(1));
             assertThat(lengths).as(name).allMatch(n -> n >= 0 && n <= 100).containsAll(edges);
             // half of the lengths are an edge, and the other half are uniform over 101 lengths
             assertThat(lengths.count(edges::contains)).as(name).isBetween(420, 620);
@@ -379,8 +379,8 @@ class GenTypesTest {
     @Test
     void collectionLengthsAtSizesOneAndTwoReachZeroAndTheSize() {
         for (int size = 1; size <= 2; size++) {
-            final int max = size;
-            final int currentSize = size;
+            int max = size;
+            int currentSize = size;
             lengths()
                     .forEach((name, gen) -> assertThat(gen.withSize(currentSize).runCollectN(200, config(1)))
                             .as(name + " at size " + max)
@@ -391,7 +391,7 @@ class GenTypesTest {
 
     @Test
     void atSizeZeroEveryCollectionIsEmptyAndNoElementIsDrawn() {
-        final java.util.List<Gen<? extends Traversable<?>>> gens = java.util.List.of(
+        java.util.List<Gen<? extends Traversable<?>>> gens = java.util.List.of(
                 Gen.vector(failing()),
                 Gen.vectorN(0, failing()),
                 Gen.list(failing()),
@@ -410,7 +410,7 @@ class GenTypesTest {
 
     @Test
     void nonEmptyVectorHasOneToTheSizeElements() {
-        final List<Integer> lengths = Gen.nonEmptyVector(distinct())
+        List<Integer> lengths = Gen.nonEmptyVector(distinct())
                 .withSize(100)
                 .runCollectN(1_000, config(1))
                 .map(NonEmptyVector::size);
@@ -429,15 +429,15 @@ class GenTypesTest {
 
     @Test
     void setsAndMapsHoldAtMostTheDrawnElements() {
-        final Gen<Integer> small = Gen.integers(0, 9);
-        final java.util.List<Gen<? extends Traversable<Integer>>> sets =
+        Gen<Integer> small = Gen.integers(0, 9);
+        java.util.List<Gen<? extends Traversable<Integer>>> sets =
                 java.util.List.of(Gen.hashSet(small), Gen.linkedHashSet(small), Gen.treeSet(small));
         for (Gen<? extends Traversable<Integer>> gen : sets) {
             assertThat(gen.withSize(5).runCollectN(300, config(3)))
                     .allMatch(set -> set.size() <= 5 && set.forAll(x -> x >= 0 && x <= 9))
                     .anyMatch(set -> set.size() == 5);
         }
-        final java.util.List<Gen<? extends Traversable<Tuple2<Integer, Integer>>>> maps = java.util.List.of(
+        java.util.List<Gen<? extends Traversable<Tuple2<Integer, Integer>>>> maps = java.util.List.of(
                 Gen.hashMap(small, small), Gen.linkedHashMap(small, small), Gen.treeMap(small, small));
         for (Gen<? extends Traversable<Tuple2<Integer, Integer>>> gen : maps) {
             assertThat(gen.withSize(5).runCollectN(300, config(3)))
@@ -449,7 +449,7 @@ class GenTypesTest {
 
     @Test
     void everyCollectionHasItsRuntimeClass() {
-        final java.util.Map<String, Class<?>> classes = java.util.Map.ofEntries(
+        java.util.Map<String, Class<?>> classes = java.util.Map.ofEntries(
                 java.util.Map.entry("vector", Vector.class), java.util.Map.entry("vectorN", Vector.class),
                 java.util.Map.entry("nonEmptyVector", NonEmptyVector.class), java.util.Map.entry("list", List.class),
                 java.util.Map.entry("queue", Queue.class), java.util.Map.entry("stream", Stream.class),
@@ -459,7 +459,7 @@ class GenTypesTest {
                 java.util.Map.entry("linkedHashMap", LinkedHashMap.class),
                         java.util.Map.entry("treeMap", TreeMap.class));
         collections().forEach((name, gen) -> {
-            final List<?> values = gen.runCollectN(100, config(1));
+            List<?> values = gen.runCollectN(100, config(1));
             assertThat(values).as(name).hasSize(100).allMatch(classes.get(name)::isInstance);
         });
     }
@@ -485,28 +485,25 @@ class GenTypesTest {
         long seed = 0;
         for (int n : BOUNDARIES) {
             for (int layout = 0; layout < Shapes.VECTOR_LAYOUTS; layout++) {
-                final Vector<Integer> vector =
-                        Shapes.vector(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Vector<Integer> vector = Shapes.vector(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
                 assertThat(vector)
                         .as("vector layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
                 assertThat(vector.size()).isEqualTo(n);
             }
             for (int layout = 0; layout < Shapes.LIST_LAYOUTS; layout++) {
-                final List<Integer> list = Shapes.list(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                List<Integer> list = Shapes.list(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
                 assertThat(list).as("list layout %d of %d elements", layout, n).containsExactlyElementsOf(elements(n));
             }
             for (int layout = 0; layout < Shapes.QUEUE_LAYOUTS; layout++) {
-                final Queue<Integer> queue =
-                        Shapes.queue(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Queue<Integer> queue = Shapes.queue(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
                 assertThat(queue)
                         .as("queue layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
                 assertThat(queue.size()).isEqualTo(n);
             }
             for (int layout = 0; layout < Shapes.STREAM_LAYOUTS; layout++) {
-                final Stream<Integer> stream =
-                        Shapes.stream(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Stream<Integer> stream = Shapes.stream(layout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
                 assertThat(stream)
                         .as("stream layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
@@ -518,12 +515,11 @@ class GenTypesTest {
     void everyNonEmptyVectorLayoutHoldsTheHeadThenTheTail() {
         long seed = 0;
         for (int n : BOUNDARIES) {
-            final ArrayList<Integer> expected = new ArrayList<>();
+            ArrayList<Integer> expected = new ArrayList<>();
             expected.add(-1);
             expected.addAll(elements(n));
             for (int tailLayout = 0; tailLayout < Shapes.VECTOR_LAYOUTS; tailLayout++) {
-                final Vector<Integer> tail =
-                        Shapes.vector(tailLayout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
+                Vector<Integer> tail = Shapes.vector(tailLayout, elements(n), DROPPED, new Sampling(seed++, 1000), 100);
                 for (int layout = 0; layout < Shapes.NON_EMPTY_VECTOR_LAYOUTS; layout++) {
                     assertThat(Shapes.nonEmptyVector(layout, -1, tail))
                             .as(
@@ -538,20 +534,20 @@ class GenTypesTest {
     @Test
     void everySetLayoutHoldsTheElements() {
         // the extra elements overlap the kept ones, so the layout that removes them again must keep those
-        final Gen<Integer> extra = Gen.integers(0, 2_000);
-        final java.util.List<Shapes.SetOps<Integer, ? extends Traversable<Integer>>> kinds =
+        Gen<Integer> extra = Gen.integers(0, 2_000);
+        java.util.List<Shapes.SetOps<Integer, ? extends Traversable<Integer>>> kinds =
                 java.util.List.of(Shapes.hashSetOps(), Shapes.linkedHashSetOps(), Shapes.treeSetOps());
         long seed = 0;
         for (int n : BOUNDARIES) {
             // every element twice
-            final ArrayList<Integer> drawn = new ArrayList<>();
+            ArrayList<Integer> drawn = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 drawn.add(i / 2);
             }
-            final java.util.Set<Integer> expected = new java.util.HashSet<>(drawn);
+            java.util.Set<Integer> expected = new java.util.HashSet<>(drawn);
             for (Shapes.SetOps<Integer, ? extends Traversable<Integer>> ops : kinds) {
                 for (int layout = 0; layout < Shapes.SET_LAYOUTS; layout++) {
-                    final Traversable<Integer> set =
+                    Traversable<Integer> set =
                             set(layout, new ArrayList<>(drawn), extra, ops, new Sampling(seed++, 1000));
                     assertThat(set)
                             .as("%s layout %d of %d draws", set.getClass().getSimpleName(), layout, n)
@@ -569,21 +565,21 @@ class GenTypesTest {
     @Test
     void everyMapLayoutHoldsTheLastValueOfEachKey() {
         // the extra keys are not among the kept ones
-        final Gen<Integer> extraKeys = Gen.integers(1_000_000, 2_000_000);
-        final java.util.List<Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>>> kinds =
+        Gen<Integer> extraKeys = Gen.integers(1_000_000, 2_000_000);
+        java.util.List<Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>>> kinds =
                 java.util.List.of(Shapes.hashMapOps(), Shapes.linkedHashMapOps(), Shapes.treeMapOps());
         long seed = 0;
         for (int n : BOUNDARIES) {
             // every key twice, the second time with another value
-            final ArrayList<Tuple2<Integer, Integer>> entries = new ArrayList<>();
-            final java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
+            ArrayList<Tuple2<Integer, Integer>> entries = new ArrayList<>();
+            java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
             for (int i = 0; i < n; i++) {
                 entries.add(Tuple.of(i / 2, i));
                 expected.put(i / 2, i);
             }
             for (Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>> ops : kinds) {
                 for (int layout = 0; layout < Shapes.MAP_LAYOUTS; layout++) {
-                    final Traversable<Tuple2<Integer, Integer>> map =
+                    Traversable<Tuple2<Integer, Integer>> map =
                             map(layout, new ArrayList<>(entries), extraKeys, ops, new Sampling(seed++, 1000));
                     assertThat(toJava(map))
                             .as("%s layout %d of %d entries", map.getClass().getSimpleName(), layout, n)
@@ -597,14 +593,14 @@ class GenTypesTest {
     @Test
     void theExtraKeysOfAMapKeepTheValuesOfTheKeysItHolds() {
         // extra keys drawn among the kept ones: putting them would replace the kept values
-        final Gen<Integer> overlapping = Gen.integers(0, 2);
-        final java.util.List<Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>>> kinds =
+        Gen<Integer> overlapping = Gen.integers(0, 2);
+        java.util.List<Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>>> kinds =
                 java.util.List.of(Shapes.hashMapOps(), Shapes.linkedHashMapOps(), Shapes.treeMapOps());
-        final ArrayList<Tuple2<Integer, Integer>> entries =
+        ArrayList<Tuple2<Integer, Integer>> entries =
                 new ArrayList<>(java.util.List.of(Tuple.of(0, 0), Tuple.of(1, 1), Tuple.of(2, 2)));
         for (Shapes.MapOps<Integer, Integer, ? extends Traversable<Tuple2<Integer, Integer>>> ops : kinds) {
             for (long seed = 0; seed < 50; seed++) {
-                final Traversable<Tuple2<Integer, Integer>> map =
+                Traversable<Tuple2<Integer, Integer>> map =
                         map(2, new ArrayList<>(entries), overlapping, ops, new Sampling(seed, 1000));
                 assertThat(toJava(map)).isEqualTo(java.util.Map.of(0, 0, 1, 1, 2, 2));
             }
@@ -621,7 +617,7 @@ class GenTypesTest {
     }
 
     private static <K, V> java.util.Map<K, V> toJava(Traversable<Tuple2<K, V>> map) {
-        final java.util.Map<K, V> javaMap = new java.util.HashMap<>();
+        java.util.Map<K, V> javaMap = new java.util.HashMap<>();
         for (Tuple2<K, V> entry : map) {
             javaMap.put(entry._1(), entry._2());
         }
@@ -636,13 +632,13 @@ class GenTypesTest {
 
     @Test
     void vectorReachesAPartlyFilledFirstLeaf() {
-        final List<Vector<Integer>> vectors = samples(Gen.vector(Gen.integers()));
+        List<Vector<Integer>> vectors = samples(Gen.vector(Gen.integers()));
         assertSome(vectors, Vector::isEmpty, "an empty vector");
         assertSome(vectors, v -> v.size() > 32, "a vector longer than a leaf");
         assertSome(
                 vectors,
                 v -> {
-                    final Object tree = field(v, Vector.class, "trie");
+                    Object tree = field(v, Vector.class, "trie");
                     Class<?> owner = tree.getClass();
                     while (owner.getSuperclass() != Object.class) {
                         owner = owner.getSuperclass();
@@ -654,7 +650,7 @@ class GenTypesTest {
 
     @Test
     void queueReachesBothInternalLists() {
-        final List<Queue<Integer>> queues = samples(Gen.queue(Gen.integers()));
+        List<Queue<Integer>> queues = samples(Gen.queue(Gen.integers()));
         assertSome(
                 queues,
                 q -> !((List<?>) field(q, Queue.class, "front")).isEmpty()
@@ -666,7 +662,7 @@ class GenTypesTest {
 
     @Test
     void streamReachesEvaluatedAndUnevaluatedTails() {
-        final List<Stream<Integer>> streams = samples(Gen.stream(Gen.integers()));
+        List<Stream<Integer>> streams = samples(Gen.stream(Gen.integers()));
         assertSome(
                 streams,
                 s -> !s.isEmpty() && !((Lazy<?>) field(s, Stream.Cons.class, "tail")).isEvaluated(),
@@ -679,7 +675,7 @@ class GenTypesTest {
 
     @Test
     void nonEmptyVectorReachesOneAndMoreThanALeaf() {
-        final List<NonEmptyVector<Integer>> vectors = samples(Gen.nonEmptyVector(Gen.integers()));
+        List<NonEmptyVector<Integer>> vectors = samples(Gen.nonEmptyVector(Gen.integers()));
         assertSome(vectors, v -> v.size() == 1, "a single element");
         assertSome(vectors, v -> v.size() > 32, "more than one leaf");
     }
@@ -696,7 +692,7 @@ class GenTypesTest {
                         .allMatch(v -> v.size() == n);
                 // the elements are the first n draws, whatever the layout
                 for (long seed = 0; seed < 12; seed++) {
-                    final Vector<Integer> vector = Gen.vectorN(n, counter())
+                    Vector<Integer> vector = Gen.vectorN(n, counter())
                             .withSize(size)
                             .runCollect(config(seed))
                             .head();
@@ -717,8 +713,8 @@ class GenTypesTest {
     @Test
     void aNullElementMakesEveryCollectionGeneratorThrow() {
         // the Zazr collections reject null elements, keys and values
-        final CheckConfig config = config(1).withSize(10);
-        final java.util.Map<String, Gen<?>> gens = new java.util.LinkedHashMap<>();
+        CheckConfig config = config(1).withSize(10);
+        java.util.Map<String, Gen<?>> gens = new java.util.LinkedHashMap<>();
         gens.put("vector", Gen.vector(NULLS));
         gens.put("vectorN", Gen.vectorN(3, NULLS));
         gens.put("nonEmptyVector", Gen.nonEmptyVector(NULLS));
@@ -736,7 +732,7 @@ class GenTypesTest {
         gens.put("treeMap with null values", Gen.treeMap(Gen.integers(), NULLS));
         gens.forEach((name, gen) -> {
             assertThatThrownBy(() -> gen.runCollectN(50, config)).as(name).isInstanceOf(NullPointerException.class);
-            final CheckResult result = Check.evaluate(config.withSamples(50), gen, value -> true);
+            CheckResult result = Check.evaluate(config.withSamples(50), gen, value -> true);
             assertThat(result.isErroneous()).as(name).isTrue();
             assertThat(result.error().get()).as(name).isInstanceOf(NullPointerException.class);
         });
@@ -748,10 +744,10 @@ class GenTypesTest {
 
     @Test
     void aNullValueMakesTheControlTypesThrowButReachesLazyAndTuples() {
-        final CheckConfig config = config(1);
-        final Gen<Integer> ints = Gen.integers();
+        CheckConfig config = config(1);
+        Gen<Integer> ints = Gen.integers();
         // Some, Left, Right, Success, Valid and the errors of Invalid reject null
-        final java.util.List<ThrowingCallable> calls = java.util.List.of(
+        java.util.List<ThrowingCallable> calls = java.util.List.of(
                 () -> Gen.option(NULLS).runCollectN(50, config),
                         () -> Gen.some(NULLS).runCollect(config),
                 () -> Gen.either(NULLS, ints).runCollectN(50, config),
@@ -774,9 +770,9 @@ class GenTypesTest {
 
     @Test
     void everyGeneratorRejectsANullGenerator() {
-        final Gen<Integer> g = Gen.integers();
-        final Gen<Integer> n = null;
-        final java.util.List<ThrowingCallable> calls = java.util.List.of(
+        Gen<Integer> g = Gen.integers();
+        Gen<Integer> n = null;
+        java.util.List<ThrowingCallable> calls = java.util.List.of(
                 () -> Gen.option(n),
                 () -> Gen.some(n),
                 () -> Gen.either(n, g),
@@ -819,13 +815,13 @@ class GenTypesTest {
 
     @Test
     void aFilteredElementGeneratorStillFillsTheCollections() {
-        final Gen<Integer> evens = Gen.integers(0, 100).filter(i -> i % 2 == 0);
-        final List<Vector<Integer>> vectors = Gen.vector(evens).withSize(100).runCollectN(300, config(3));
+        Gen<Integer> evens = Gen.integers(0, 100).filter(i -> i % 2 == 0);
+        List<Vector<Integer>> vectors = Gen.vector(evens).withSize(100).runCollectN(300, config(3));
         assertThat(vectors).allMatch(v -> v.forAll(i -> i % 2 == 0)).anyMatch(v -> v.size() == 100);
-        final Gen<Long> evenLongs = distinct().filter(l -> l % 2 == 0);
-        final List<HashSet<Long>> sets = Gen.hashSet(evenLongs).withSize(100).runCollectN(300, config(3));
+        Gen<Long> evenLongs = distinct().filter(l -> l % 2 == 0);
+        List<HashSet<Long>> sets = Gen.hashSet(evenLongs).withSize(100).runCollectN(300, config(3));
         assertThat(sets).allMatch(s -> s.forAll(l -> l % 2 == 0)).anyMatch(s -> s.size() == 100);
-        final List<TreeMap<Long, Long>> maps =
+        List<TreeMap<Long, Long>> maps =
                 Gen.treeMap(evenLongs, evenLongs).withSize(100).runCollectN(300, config(3));
         assertThat(maps)
                 .allMatch(m -> m.forAll(e -> e._1() % 2 == 0 && e._2() % 2 == 0))
@@ -852,18 +848,18 @@ class GenTypesTest {
 
     @Test
     void streamElementsAreDrawnWhenTheStreamIsGenerated() {
-        final AtomicBoolean done = new AtomicBoolean();
-        final Gen<Integer> elements = Gen.fromRandom(random -> {
+        AtomicBoolean done = new AtomicBoolean();
+        Gen<Integer> elements = Gen.fromRandom(random -> {
             if (done.get()) {
                 throw new AssertionError("an element was drawn after the run");
             }
             return random.nextInt();
         });
-        final List<Stream<Integer>> first = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
+        List<Stream<Integer>> first = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
         done.set(true);
-        final List<List<Integer>> evaluated = first.map(List::ofAll);
+        List<List<Integer>> evaluated = first.map(List::ofAll);
         done.set(false);
-        final List<Stream<Integer>> second = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
+        List<Stream<Integer>> second = Gen.stream(elements).withSize(100).runCollectN(300, config(7));
         done.set(true);
         assertThat(second.map(List::ofAll)).isEqualTo(evaluated);
         assertThat(evaluated).anyMatch(l -> l.size() > 32);
@@ -882,8 +878,8 @@ class GenTypesTest {
 
     @Test
     void elementsAreDrawnAtTheCurrentSize() {
-        final Gen<Integer> size = Gen.size();
-        final java.util.List<Gen<? extends Iterable<?>>> gens = java.util.List.of(
+        Gen<Integer> size = Gen.size();
+        java.util.List<Gen<? extends Iterable<?>>> gens = java.util.List.of(
                 Gen.vector(size),
                 Gen.vectorN(40, size),
                 Gen.nonEmptyVector(size),
@@ -898,7 +894,7 @@ class GenTypesTest {
                     .anyMatch(c -> c.iterator().hasNext())
                     .allMatch(c -> onlySevens(c));
         }
-        final java.util.List<Gen<? extends Traversable<Tuple2<Integer, Integer>>>> maps =
+        java.util.List<Gen<? extends Traversable<Tuple2<Integer, Integer>>>> maps =
                 java.util.List.of(Gen.hashMap(size, size), Gen.linkedHashMap(size, size), Gen.treeMap(size, size));
         for (Gen<? extends Traversable<Tuple2<Integer, Integer>>> gen : maps) {
             assertThat(gen.withSize(7).runCollectN(100, config(1)))
@@ -919,7 +915,7 @@ class GenTypesTest {
     @Test
     void aCollectionFilteredToNonEmptyWorksWithTheDefaultConfiguration() {
         for (long seed = 0; seed < 10; seed++) {
-            final CheckConfig config = CheckConfig.defaults().withSeed(seed);
+            CheckConfig config = CheckConfig.defaults().withSeed(seed);
             Check.check(config, Gen.list(Gen.integers()).filter(l -> !l.isEmpty()), l -> !l.isEmpty());
             Check.check(config, Gen.vector(Gen.integers()).filter(v -> !v.isEmpty()), v -> !v.isEmpty());
             Check.check(config, Gen.hashSet(Gen.integers()).filter(s -> !s.isEmpty()), s -> !s.isEmpty());

@@ -28,8 +28,8 @@ public final class Collections {
 
     // checks, if the *elements* of the given iterables are equal
     static boolean areEqual(Iterable<?> iterable1, Iterable<?> iterable2) {
-        final java.util.Iterator<?> iter1 = iterable1.iterator();
-        final java.util.Iterator<?> iter2 = iterable2.iterator();
+        java.util.Iterator<?> iter1 = iterable1.iterator();
+        java.util.Iterator<?> iter2 = iterable2.iterator();
         while (iter1.hasNext() && iter2.hasNext()) {
             if (!Objects.equals(iter1.next(), iter2.next())) {
                 return false;
@@ -44,7 +44,7 @@ public final class Collections {
         if (source == object) {
             return true;
         } else if (source != null && object instanceof Map) {
-            final Map<K, V> map = (Map<K, V>) object;
+            Map<K, V> map = (Map<K, V>) object;
             if (source.size() != map.size()) {
                 return false;
             } else {
@@ -99,7 +99,7 @@ public final class Collections {
         if (source == object) {
             return true;
         } else if (source != null && object instanceof Set) {
-            final Set<V> set = (Set<V>) object;
+            Set<V> set = (Set<V>) object;
             if (source.size() != set.size()) {
                 return false;
             } else {
@@ -143,7 +143,7 @@ public final class Collections {
             return empty;
         } else {
             @SuppressWarnings("unchecked")
-            final T[] elements = (T[]) new Object[n];
+            T[] elements = (T[]) new Object[n];
             Arrays.fill(elements, element);
             return of.apply(elements);
         }
@@ -166,10 +166,10 @@ public final class Collections {
     private static <T extends @Nullable Object, C extends @Nullable Object>
             java.util.Set<java.util.Map.Entry<C, Collection<T>>> groupBy(
                     Traversable<T> source, Function<? super T, ? extends C> classifier, String nullResult) {
-        final java.util.Map<C, Collection<T>> results =
+        java.util.Map<C, Collection<T>> results =
                 new java.util.LinkedHashMap<>(isTraversableAgain(source) ? source.size() : 16);
         for (T value : source) {
-            final C key = Objects.requireNonNull(classifier.apply(value), nullResult);
+            C key = Objects.requireNonNull(classifier.apply(value), nullResult);
             results.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
         return results.entrySet();
@@ -252,13 +252,13 @@ public final class Collections {
     // SortedSet (null for the natural order, as Spliterator specifies), so that java.util.stream.Stream.sorted() sorts
     // a set ordered otherwise instead of skipping the sort.
     public static <T extends @Nullable Object> Spliterator<T> spliterator(Traversable<T> traversable) {
-        final int characteristics = spliteratorCharacteristics(traversable);
-        final Spliterator<T> spliterator = (characteristics & Spliterator.SIZED) != 0
+        int characteristics = spliteratorCharacteristics(traversable);
+        Spliterator<T> spliterator = (characteristics & Spliterator.SIZED) != 0
                 ? Spliterators.spliterator(traversable.iterator(), traversable.size(), characteristics)
                 : Spliterators.spliteratorUnknownSize(traversable.iterator(), characteristics);
         if (traversable instanceof SortedSet<?> sortedSet && !(sortedSet.comparator() instanceof NaturalComparator)) {
             @SuppressWarnings("unchecked")
-            final Comparator<? super T> comparator = (Comparator<? super T>) sortedSet.comparator();
+            Comparator<? super T> comparator = (Comparator<? super T>) sortedSet.comparator();
             return new SortedSpliterator<>(spliterator, comparator);
         }
         return spliterator;
@@ -286,7 +286,7 @@ public final class Collections {
 
         @Override
         public @Nullable Spliterator<T> trySplit() {
-            final Spliterator<T> prefix = delegate.trySplit();
+            Spliterator<T> prefix = delegate.trySplit();
             return prefix == null ? null : new SortedSpliterator<>(prefix, comparator);
         }
 
@@ -315,7 +315,7 @@ public final class Collections {
         if (source.isEmpty()) {
             throw new NoSuchElementException("last of empty " + source);
         } else {
-            final java.util.Iterator<T> it = source.iterator();
+            java.util.Iterator<T> it = source.iterator();
             T result = it.next();
             while (it.hasNext()) {
                 result = it.next();
@@ -339,10 +339,10 @@ public final class Collections {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMerge, "valueMerge is null");
         return source.foldLeft(zero, (acc, entry) -> {
-            final K2 k2 = Objects.requireNonNull(keyMapper.apply(entry._1()), "mapKeys: key is null");
-            final V v2 = entry._2();
-            final V v1 = Maps.getOrAbsent(acc, k2);
-            final V v = v1 != Maps.ABSENT ? valueMerge.apply(v1, v2) : v2;
+            K2 k2 = Objects.requireNonNull(keyMapper.apply(entry._1()), "mapKeys: key is null");
+            V v2 = entry._2();
+            V v1 = Maps.getOrAbsent(acc, k2);
+            V v = v1 != Maps.ABSENT ? valueMerge.apply(v1, v2) : v2;
             return (U) acc.put(k2, v);
         });
     }
@@ -350,8 +350,8 @@ public final class Collections {
     public static <C extends Traversable<T>, T extends @Nullable Object> Tuple2<C, C> partition(
             C collection, Function<Iterable<T>, C> creator, Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final java.util.List<T> left = new java.util.ArrayList<>();
-        final java.util.List<T> right = new java.util.ArrayList<>();
+        java.util.List<T> left = new java.util.ArrayList<>();
+        java.util.List<T> right = new java.util.ArrayList<>();
         for (T element : collection) {
             (predicate.test(element) ? left : right).add(element);
         }
@@ -368,10 +368,10 @@ public final class Collections {
      */
     public static <T extends @Nullable Object, K extends @Nullable Object> java.util.List<T> duplicatesBy(
             Iterable<? extends T> elements, Function<? super T, ? extends K> keyExtractor) {
-        final java.util.LinkedHashMap<K, T> first = new java.util.LinkedHashMap<>();
-        final java.util.HashSet<K> duplicated = new java.util.HashSet<>();
+        java.util.LinkedHashMap<K, T> first = new java.util.LinkedHashMap<>();
+        java.util.HashSet<K> duplicated = new java.util.HashSet<>();
         for (T element : elements) {
-            final K key = keyExtractor.apply(element);
+            K key = keyExtractor.apply(element);
             if (first.putIfAbsent(key, element) != null) {
                 duplicated.add(key);
             }
@@ -379,7 +379,7 @@ public final class Collections {
         if (duplicated.isEmpty()) {
             return java.util.List.of();
         }
-        final java.util.List<T> result = new java.util.ArrayList<>(duplicated.size());
+        java.util.List<T> result = new java.util.ArrayList<>(duplicated.size());
         for (java.util.Map.Entry<K, T> entry : first.entrySet()) {
             if (duplicated.contains(entry.getKey())) {
                 result.add(entry.getValue());
@@ -400,7 +400,7 @@ public final class Collections {
         if (source.isEmpty()) {
             return source;
         } else {
-            final Set<T> removed = HashSet.ofAll(elements);
+            Set<T> removed = HashSet.ofAll(elements);
             return removed.isEmpty() ? source : filter.apply(e -> !removed.contains(e));
         }
     }
@@ -430,7 +430,7 @@ public final class Collections {
         if (source.isEmpty()) {
             return source;
         } else {
-            final Set<T> retained = HashSet.ofAll(elements);
+            Set<T> retained = HashSet.ofAll(elements);
             return filter.apply(retained::contains);
         }
     }
@@ -439,7 +439,7 @@ public final class Collections {
         if (iterable instanceof java.util.List) {
             return reverseListIterator((java.util.List<T>) iterable);
         } else if (iterable instanceof Vector) {
-            final Vector<T> vector = (Vector<T>) iterable;
+            Vector<T> vector = (Vector<T>) iterable;
             return new AbstractIterator<T>() {
                 private int i = vector.size();
 
@@ -486,7 +486,7 @@ public final class Collections {
             BiFunction<? super U, ? super T, ? extends U> operation,
             Function<Iterator<U>, R> finisher) {
         Objects.requireNonNull(operation, "operation is null");
-        final Iterator<U> iterator = Iterator.ofAll(source).scanLeft(zero, operation);
+        Iterator<U> iterator = Iterator.ofAll(source).scanLeft(zero, operation);
         return finisher.apply(iterator);
     }
 
@@ -496,7 +496,7 @@ public final class Collections {
             BiFunction<? super T, ? super U, ? extends U> operation,
             Function<Iterator<U>, R> finisher) {
         Objects.requireNonNull(operation, "operation is null");
-        final Iterator<? extends T> reversedElements = reverseIterator(source);
+        Iterator<? extends T> reversedElements = reverseIterator(source);
         return scanLeft(
                 reversedElements, zero, (u, t) -> operation.apply(t, u), us -> finisher.apply(reverseIterator(us)));
     }
@@ -507,7 +507,7 @@ public final class Collections {
             return source;
         }
 
-        final java.util.List<T> list = new ArrayList<>(source.asJava());
+        java.util.List<T> list = new ArrayList<>(source.asJava());
         java.util.Collections.shuffle(list);
         return ofAll.apply(list);
     }
@@ -552,7 +552,7 @@ public final class Collections {
             return empty;
         } else {
             @SuppressWarnings("unchecked")
-            final T[] elements = (T[]) new Object[n];
+            T[] elements = (T[]) new Object[n];
             for (int i = 0; i < n; i++) {
                 elements[i] = f.apply(i);
             }
@@ -572,9 +572,9 @@ public final class Collections {
 
     private static <T extends @Nullable Object, U extends Traversable<T>, V extends Traversable<U>>
             V transposeNonEmptyMatrix(V matrix, Function<Iterable<U>, V> rowFactory, Function<T[], U> columnFactory) {
-        final int newHeight = matrix.iterator().next().size(), newWidth = matrix.size();
+        int newHeight = matrix.iterator().next().size(), newWidth = matrix.size();
         @SuppressWarnings("unchecked")
-        final T[][] results = (T[][]) new Object[newHeight][newWidth];
+        T[][] results = (T[][]) new Object[newHeight][newWidth];
 
         if (matrix.exists(r -> r.size() != newHeight)) {
             throw new IllegalArgumentException("the parameter `matrix` is invalid!");
@@ -631,8 +631,8 @@ public final class Collections {
             if (iterable instanceof Collection<?>) {
                 return ((Collection<? extends T>) iterable).toArray();
             } else {
-                final Object[] array = new Object[size];
-                final java.util.Iterator<? extends T> it = iterator();
+                Object[] array = new Object[size];
+                java.util.Iterator<? extends T> it = iterator();
                 for (int i = 0; i < size; i++) {
                     array[i] = it.next();
                 }

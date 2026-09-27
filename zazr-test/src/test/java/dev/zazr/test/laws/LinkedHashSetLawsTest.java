@@ -59,7 +59,7 @@ class LinkedHashSetLawsTest extends SetLawsSuite<LinkedHashSet<?>, LinkedHashSet
 
     @Test
     void setLawsWithCollidingHashCodes() {
-        final CollectionSubject<Collider, LinkedHashSet<Collider>> colliders = new CollectionSubject<>(
+        CollectionSubject<Collider, LinkedHashSet<Collider>> colliders = new CollectionSubject<>(
                 Gen.linkedHashSet(Values.integers().map(Collider::new)),
                 LinkedHashSet::ofAll,
                 LinkedHashSet::size,

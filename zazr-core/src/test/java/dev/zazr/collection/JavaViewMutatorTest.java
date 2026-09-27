@@ -46,8 +46,8 @@ class JavaViewMutatorTest {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void collection(String name, Collection<?> elements) {
-        final Collection view = elements;
-        final java.util.List<Object> copy = new java.util.ArrayList<>(view);
+        Collection view = elements;
+        java.util.List<Object> copy = new java.util.ArrayList<>(view);
         refused(name + ".add", () -> view.add(1));
         refused(name + ".addAll(empty)", () -> view.addAll(java.util.List.of()));
         refused(name + ".addAll", () -> view.addAll(java.util.List.of(1, 2)));
@@ -62,7 +62,7 @@ class JavaViewMutatorTest {
         refused(name + ".retainAll(empty)", () -> view.retainAll(java.util.List.of()));
         refused(name + ".clear", view::clear);
         iterator(name + ".iterator()", view.iterator());
-        final java.util.Iterator<?> advanced = view.iterator();
+        java.util.Iterator<?> advanced = view.iterator();
         if (advanced.hasNext()) {
             advanced.next();
             iterator(name + ".iterator() after next()", advanced);
@@ -78,7 +78,7 @@ class JavaViewMutatorTest {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void sequenced(String name, SequencedCollection<?> elements) {
-        final SequencedCollection view = elements;
+        SequencedCollection view = elements;
         refused(name + ".addFirst", () -> view.addFirst(1));
         refused(name + ".addLast", () -> view.addLast(1));
         refused(name + ".removeFirst", view::removeFirst);
@@ -125,7 +125,7 @@ class JavaViewMutatorTest {
                 set(name + ".tailSet(1)", navigable.tailSet(1, true), depth + 1);
                 // 1 is inside every range this test makes, so the nested sub-views are within their parent's bounds
                 if (depth == 0) {
-                    final boolean ascending = navigable.comparator() == null
+                    boolean ascending = navigable.comparator() == null
                             || navigable.comparator().compare(-10, 10) < 0;
                     set(
                             name + ".subSet(-10, 10)",
@@ -206,7 +206,7 @@ class JavaViewMutatorTest {
                 map(name + ".tailMap(1)", navigable.tailMap(1, true), depth + 1);
                 // 1 is inside every range this test makes, so the nested sub-views are within their parent's bounds
                 if (depth == 0) {
-                    final boolean ascending = navigable.comparator() == null
+                    boolean ascending = navigable.comparator() == null
                             || navigable.comparator().compare(-10, 10) < 0;
                     map(
                             name + ".subMap(-10, 10)",
@@ -231,7 +231,7 @@ class JavaViewMutatorTest {
         for (java.util.Map.Entry<Integer, String> entry : view) {
             refused(name + " entry.setValue", () -> entry.setValue("b"));
         }
-        final java.util.Iterator<java.util.Map.Entry<Integer, String>> advanced = view.iterator();
+        java.util.Iterator<java.util.Map.Entry<Integer, String>> advanced = view.iterator();
         if (advanced.hasNext()) {
             advanced.next();
             iterator(name + ".iterator() after next()", advanced);
@@ -265,7 +265,7 @@ class JavaViewMutatorTest {
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldRefuseEveryMutatorOfTheListViews() {
-        final java.util.Map<String, Function<java.util.List<Integer>, java.util.List<Integer>>> views =
+        java.util.Map<String, Function<java.util.List<Integer>, java.util.List<Integer>>> views =
                 new java.util.LinkedHashMap<>();
         views.put("Vector", elements -> Vector.ofAll(elements).asJava());
         views.put("List", elements -> List.ofAll(elements).asJava());

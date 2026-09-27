@@ -25,7 +25,7 @@ class GenScalarsTest {
 
     @Test
     void booleansGiveBothValuesAsOften() {
-        final List<Boolean> drawn = values(Gen.booleans(), 10_000);
+        List<Boolean> drawn = values(Gen.booleans(), 10_000);
         assertThat(drawn.count(b -> b)).isBetween(4_700, 5_300);
     }
 
@@ -42,9 +42,9 @@ class GenScalarsTest {
 
     @Test
     void integersFavourTheEdges() {
-        final List<Integer> drawn = values(Gen.integers(-1_000_000, 1_000_000), 10_000);
+        List<Integer> drawn = values(Gen.integers(-1_000_000, 1_000_000), 10_000);
         assertThat(drawn).contains(-1_000_000, -999_999, -1, 0, 1, 999_999, 1_000_000);
-        final int edges = drawn.count(
+        int edges = drawn.count(
                 i -> i == -1_000_000 || i == -999_999 || i == -1 || i == 0 || i == 1 || i == 999_999 || i == 1_000_000);
         assertThat(edges).isBetween(4_700, 5_300);
         // the other half is uniform
@@ -88,9 +88,9 @@ class GenScalarsTest {
 
     @Test
     void longsAreUniformOutsideTheEdges() {
-        final List<Long> drawn = values(Gen.longs(Long.MIN_VALUE + 5, Long.MAX_VALUE), 10_000);
+        List<Long> drawn = values(Gen.longs(Long.MIN_VALUE + 5, Long.MAX_VALUE), 10_000);
         assertThat(drawn.count(l -> l > 1 && l < Long.MAX_VALUE - 1)).isBetween(2_200, 2_800);
-        final List<Long> full = values(Gen.longs(Long.MIN_VALUE, Long.MAX_VALUE), 10_000);
+        List<Long> full = values(Gen.longs(Long.MIN_VALUE, Long.MAX_VALUE), 10_000);
         assertThat(full.count(l -> l > 1 && l < Long.MAX_VALUE - 1)).isBetween(2_200, 2_800);
     }
 
@@ -98,14 +98,14 @@ class GenScalarsTest {
 
     @Test
     void doublesAreBetweenZeroAndOne() {
-        final List<Double> drawn = values(Gen.doubles(), 5_000);
+        List<Double> drawn = values(Gen.doubles(), 5_000);
         assertThat(drawn).allMatch(d -> d >= 0.0 && d < 1.0);
         assertThat(drawn.average().get()).isBetween(0.45, 0.55);
     }
 
     @Test
     void doublesStayInRangeAndReachTheEdges() {
-        final List<Double> drawn = values(Gen.doubles(-2.0, 3.0), 2_000);
+        List<Double> drawn = values(Gen.doubles(-2.0, 3.0), 2_000);
         assertThat(drawn)
                 .allMatch(d -> d >= -2.0 && d <= 3.0)
                 .contains(
@@ -155,7 +155,7 @@ class GenScalarsTest {
                 .allMatch(c -> (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
                 .contains('A', 'Z', 'a', 'z')
                 .doesNotContain('0');
-        final List<Character> alphaNumeric = values(Gen.alphaNumericChars(), 5_000);
+        List<Character> alphaNumeric = values(Gen.alphaNumericChars(), 5_000);
         assertThat(alphaNumeric).allMatch(c -> Character.isLetterOrDigit(c) && c < 128);
         assertThat(alphaNumeric.distinct().size()).isEqualTo(62);
         assertThat(values(Gen.numericChars(), 500)).containsOnly('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
@@ -167,7 +167,7 @@ class GenScalarsTest {
 
     @Test
     void unicodeCharsHaveNoSurrogate() {
-        final List<Character> drawn = values(Gen.unicodeChars(), 5_000);
+        List<Character> drawn = values(Gen.unicodeChars(), 5_000);
         assertThat(drawn)
                 .noneMatch(Character::isSurrogate)
                 .allMatch(c -> c != '￾' && c != '￿')
@@ -178,7 +178,7 @@ class GenScalarsTest {
 
     @Test
     void stringLengthsReachFromZeroToTheSize() {
-        final List<String> drawn =
+        List<String> drawn =
                 Gen.strings(Gen.alphaChars()).withSize(20).runCollectN(500, new CheckConfig(500, 100, 3L, 1000));
         assertThat(drawn).allMatch(s -> s.length() <= 20 && s.chars().allMatch(Character::isLetter));
         assertThat(drawn.map(String::length)).contains(0, 1, 19, 20);
@@ -186,7 +186,7 @@ class GenScalarsTest {
 
     @Test
     void stringLengthsGrowWithTheSizeOfTheRun() {
-        final List<String> drawn = values(Gen.strings());
+        List<String> drawn = values(Gen.strings());
         assertThat(drawn.head()).isEmpty();
         assertThat(drawn.zipWithIndex())
                 .allMatch(t -> t._1().length() <= Runner.size(new CheckConfig(200, 100, 17L, 1000), t._2()));
@@ -215,9 +215,9 @@ class GenScalarsTest {
 
     @Test
     void localDateTimesStayInRange() {
-        final LocalDateTime min = LocalDateTime.of(2020, 1, 1, 0, 0, 0, 500);
-        final LocalDateTime max = LocalDateTime.of(2020, 1, 2, 0, 0, 0, 100);
-        final List<LocalDateTime> drawn = values(Gen.localDateTimes(min, max), 2_000);
+        LocalDateTime min = LocalDateTime.of(2020, 1, 1, 0, 0, 0, 500);
+        LocalDateTime max = LocalDateTime.of(2020, 1, 2, 0, 0, 0, 100);
+        List<LocalDateTime> drawn = values(Gen.localDateTimes(min, max), 2_000);
         assertThat(drawn).allMatch(d -> !d.isBefore(min) && !d.isAfter(max));
         // the first and the last seconds are reached, and the bounds themselves once the nanosecond is clamped
         assertThat(drawn)
@@ -234,7 +234,7 @@ class GenScalarsTest {
 
     @Test
     void localDateTimesRejectInvalidBounds() {
-        final LocalDateTime now = LocalDateTime.of(2020, 1, 1, 0, 0);
+        LocalDateTime now = LocalDateTime.of(2020, 1, 1, 0, 0);
         assertThatThrownBy(() -> Gen.localDateTimes(now, now.minusNanos(1)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Gen.localDateTimes(null, now)).isInstanceOf(NullPointerException.class);

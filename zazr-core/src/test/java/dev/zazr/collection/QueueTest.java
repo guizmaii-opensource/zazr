@@ -188,9 +188,9 @@ public class QueueTest extends AbstractTraversableTest {
     class QueueStaticNarrowTests {
         @Test
         public void shouldNarrowQueue() {
-            final Queue<Double> doubles = of(1.0d);
-            final Queue<Number> numbers = Queue.narrow(doubles);
-            final int actual = numbers.enqueue(new BigDecimal("2.0")).sum().intValue();
+            Queue<Double> doubles = of(1.0d);
+            Queue<Number> numbers = Queue.narrow(doubles);
+            int actual = numbers.enqueue(new BigDecimal("2.0")).sum().intValue();
             assertThat(actual).isEqualTo(3);
         }
     }
@@ -199,8 +199,8 @@ public class QueueTest extends AbstractTraversableTest {
     class StaticOfallTests {
         @Test
         public void shouldReadAOneShotIterableOnce() {
-            final AtomicInteger walks = new AtomicInteger();
-            final Iterable<Integer> that = () -> {
+            AtomicInteger walks = new AtomicInteger();
+            Iterable<Integer> that = () -> {
                 walks.incrementAndGet();
                 return java.util.List.of(1, 2, 3).iterator();
             };
@@ -213,15 +213,15 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfQueue() {
-            final Queue<Integer> source = ofAll(1, 2, 3);
-            final Queue<Integer> target = Queue.ofAll(source);
+            Queue<Integer> source = ofAll(1, 2, 3);
+            Queue<Integer> target = Queue.ofAll(source);
             assertThat(target).isSameAs(source);
         }
 
         @Test
         public void shouldReturnSelfWhenIterableIsInstanceOfListView() {
-            final Queue<Integer> persistent = ofAll(1, 2, 3);
-            final Queue<Integer> target = Queue.ofAll(persistent.asJava());
+            Queue<Integer> persistent = ofAll(1, 2, 3);
+            Queue<Integer> target = Queue.ofAll(persistent.asJava());
             assertThat(target).isSameAs(persistent);
         }
     }
@@ -230,8 +230,8 @@ public class QueueTest extends AbstractTraversableTest {
     class PartitionTests {
         @Test
         public void shouldPartitionInOneIteration() {
-            final AtomicInteger count = new AtomicInteger(0);
-            final Tuple2<Queue<Integer>, Queue<Integer>> results = of(1, 2, 3).partition(i -> {
+            AtomicInteger count = new AtomicInteger(0);
+            Tuple2<Queue<Integer>, Queue<Integer>> results = of(1, 2, 3).partition(i -> {
                 count.incrementAndGet();
                 return true;
             });
@@ -437,7 +437,7 @@ public class QueueTest extends AbstractTraversableTest {
     class ToqueueTests {
         @Test
         public void shouldReturnSelfOnConvertToQueue() {
-            final Queue<Integer> value = of(1, 2, 3);
+            Queue<Integer> value = of(1, 2, 3);
             assertThat(value.toQueue()).isSameAs(value);
         }
     }
@@ -512,8 +512,8 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendElementToNil() {
-        final Queue<Integer> actual = this.<Integer>empty().append(1);
-        final Queue<Integer> expected = of(1);
+        Queue<Integer> actual = this.<Integer>empty().append(1);
+        Queue<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -524,8 +524,8 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendElementToNonNil() {
-        final Queue<Integer> actual = of(1, 2).append(3);
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> actual = of(1, 2).append(3);
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -543,36 +543,36 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldAppendAllNilToNil() {
-        final Queue<Object> actual = empty().appendAll(empty());
-        final Queue<Object> expected = empty();
+        Queue<Object> actual = empty().appendAll(empty());
+        Queue<Object> expected = empty();
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNonNilToNil() {
-        final Queue<Integer> actual = this.<Integer>empty().appendAll(of(1, 2, 3));
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> actual = this.<Integer>empty().appendAll(of(1, 2, 3));
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNilToNonNil() {
-        final Queue<Integer> actual = of(1, 2, 3).appendAll(empty());
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> actual = of(1, 2, 3).appendAll(empty());
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllNonNilToNonNil() {
-        final Queue<Integer> actual = of(1, 2, 3).appendAll(of(4, 5, 6));
-        final Queue<Integer> expected = of(1, 2, 3, 4, 5, 6);
+        Queue<Integer> actual = of(1, 2, 3).appendAll(of(4, 5, 6));
+        Queue<Integer> expected = of(1, 2, 3, 4, 5, 6);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldAppendAllWhenUsedWithTypeHierarchy() {
-        final Queue<SomeInterface> empty = of();
-        final Queue<SomeInterface> all = empty.appendAll(of(OneEnum.values())).appendAll(of(SecondEnum.values()));
+        Queue<SomeInterface> empty = of();
+        Queue<SomeInterface> all = empty.appendAll(of(OneEnum.values())).appendAll(of(SecondEnum.values()));
 
         assertThat(all)
                 .isEqualTo(this.<SomeInterface>of(
@@ -581,19 +581,19 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameQueueWhenEmptyAppendAllEmpty() {
-        final Queue<Integer> empty = empty();
+        Queue<Integer> empty = empty();
         assertThat(empty.appendAll(empty())).isSameAs(empty);
     }
 
     @Test
     public void shouldReturnSameQueueWhenEmptyAppendAllNonEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(empty().appendAll(seq)).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameQueueWhenNonEmptyAppendAllEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.appendAll(empty())).isSameAs(seq);
     }
 
@@ -616,7 +616,7 @@ public class QueueTest extends AbstractTraversableTest {
     class AsjavaTests {
         @Test
         public void shouldConvertAsJavaImmutable() {
-            final java.util.List<Integer> list = of(1, 2, 3).asJava();
+            java.util.List<Integer> list = of(1, 2, 3).asJava();
             assertThat(list).isEqualTo(Arrays.asList(1, 2, 3));
             assertThatThrownBy(() -> list.add(4)).isInstanceOf(UnsupportedOperationException.class);
         }
@@ -645,19 +645,19 @@ public class QueueTest extends AbstractTraversableTest {
     class ContainssliceTests {
         @Test
         public void shouldRecognizeNilNotContainsSlice() {
-            final boolean actual = empty().containsSlice(of(1, 2, 3));
+            boolean actual = empty().containsSlice(of(1, 2, 3));
             assertThat(actual).isFalse();
         }
 
         @Test
         public void shouldRecognizeNonNilDoesContainSlice() {
-            final boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 3));
+            boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 3));
             assertThat(actual).isTrue();
         }
 
         @Test
         public void shouldRecognizeNonNilDoesNotContainSlice() {
-            final boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 1, 4));
+            boolean actual = of(1, 2, 3, 4, 5).containsSlice(of(2, 1, 4));
             assertThat(actual).isFalse();
         }
     }
@@ -666,16 +666,15 @@ public class QueueTest extends AbstractTraversableTest {
     class CrossproductTests {
         @Test
         public void shouldCalculateCrossProductOfNil() {
-            final Queue<Tuple2<Object, Object>> actual = empty().crossProduct();
+            Queue<Tuple2<Object, Object>> actual = empty().crossProduct();
             assertThat(actual).isEmpty();
         }
 
         @SuppressWarnings("unchecked")
         @Test
         public void shouldCalculateCrossProductOfNonNil() {
-            final List<Tuple2<Integer, Integer>> actual =
-                    of(1, 2, 3).crossProduct().toList();
-            final List<Tuple2<Integer, Integer>> expected = List.of(
+            List<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct().toList();
+            List<Tuple2<Integer, Integer>> expected = List.of(
                     Tuple.of(1, 1),
                     Tuple.of(1, 2),
                     Tuple.of(1, 3),
@@ -700,7 +699,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCalculateCrossProductPowerNow() {
-            final Queue<Queue<Integer>> actual = range(0, 3).crossProduct(3);
+            Queue<Queue<Integer>> actual = range(0, 3).crossProduct(3);
             assertThat(actual).isInstanceOf(Queue.class);
             assertThat(actual.size()).isEqualTo(27);
             assertThat(actual.head()).isEqualTo(tabulate(3, i -> 0));
@@ -717,28 +716,28 @@ public class QueueTest extends AbstractTraversableTest {
     class CrossproductIterableTests {
         @Test
         public void shouldCalculateCrossProductOfNilAndNil() {
-            final Queue<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
+            Queue<Tuple2<Object, Object>> actual = empty().crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNilAndNonNil() {
-            final Queue<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
+            Queue<Tuple2<Object, Object>> actual = empty().crossProduct(of(1, 2, 3));
             assertThat(actual).isEmpty();
         }
 
         @Test
         public void shouldCalculateCrossProductOfNonNilAndNil() {
-            final Queue<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
+            Queue<Tuple2<Integer, Integer>> actual = of(1, 2, 3).crossProduct(empty());
             assertThat(actual).isEmpty();
         }
 
         @SuppressWarnings("unchecked")
         @Test
         public void shouldCalculateCrossProductOfNonNilAndNonNil() {
-            final List<Tuple2<Integer, Character>> actual =
+            List<Tuple2<Integer, Character>> actual =
                     of(1, 2, 3).crossProduct(of('a', 'b')).toList();
-            final List<Tuple2<Integer, Character>> expected = of(
+            List<Tuple2<Integer, Character>> expected = of(
                             Tuple.of(1, 'a'),
                             Tuple.of(1, 'b'),
                             Tuple.of(2, 'a'),
@@ -757,7 +756,7 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldCalculateCrossProductWithAOneShotArgument() {
             // a java.util.stream can be iterated once: the argument is read exactly once
-            final Iterable<Character> oneShot = java.util.stream.Stream.of('a', 'b')::iterator;
+            Iterable<Character> oneShot = java.util.stream.Stream.of('a', 'b')::iterator;
             assertThat(of(1, 2).crossProduct(oneShot).toList())
                     .isEqualTo(List.of(Tuple.of(1, 'a'), Tuple.of(1, 'b'), Tuple.of(2, 'a'), Tuple.of(2, 'b')));
         }
@@ -772,7 +771,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldDropRightUntilNoneIfPredicateIsTrue() {
-            final Queue<Integer> values = of(1, 2, 3);
+            Queue<Integer> values = of(1, 2, 3);
             assertThat(values.dropRightUntil(ignored -> true)).isEqualTo(values);
         }
 
@@ -796,7 +795,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldDropRightWhileNoneIfPredicateIsFalse() {
-        final Queue<Integer> values = of(1, 2, 3);
+        Queue<Integer> values = of(1, 2, 3);
         assertThat(values.dropRightWhile(ignored -> false)).isEqualTo(values);
     }
 
@@ -1153,29 +1152,29 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldInsertIntoNil() {
-        final Queue<Integer> actual = this.<Integer>empty().insert(0, 1);
-        final Queue<Integer> expected = of(1);
+        Queue<Integer> actual = this.<Integer>empty().insert(0, 1);
+        Queue<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertInFrontOfElement() {
-        final Queue<Integer> actual = of(4).insert(0, 1);
-        final Queue<Integer> expected = of(1, 4);
+        Queue<Integer> actual = of(4).insert(0, 1);
+        Queue<Integer> expected = of(1, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertBehindOfElement() {
-        final Queue<Integer> actual = of(4).insert(1, 5);
-        final Queue<Integer> expected = of(4, 5);
+        Queue<Integer> actual = of(4).insert(1, 5);
+        Queue<Integer> expected = of(4, 5);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertIntoQueue() {
-        final Queue<Integer> actual = of(1, 2, 3).insert(2, 4);
-        final Queue<Integer> expected = of(1, 2, 4, 3);
+        Queue<Integer> actual = of(1, 2, 3).insert(2, 4);
+        Queue<Integer> expected = of(1, 2, 4, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1200,29 +1199,29 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldInsertAllIntoNil() {
-        final Queue<Integer> actual = this.<Integer>empty().insertAll(0, of(1, 2, 3));
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> actual = this.<Integer>empty().insertAll(0, of(1, 2, 3));
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllInFrontOfElement() {
-        final Queue<Integer> actual = of(4).insertAll(0, of(1, 2, 3));
-        final Queue<Integer> expected = of(1, 2, 3, 4);
+        Queue<Integer> actual = of(4).insertAll(0, of(1, 2, 3));
+        Queue<Integer> expected = of(1, 2, 3, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllBehindOfElement() {
-        final Queue<Integer> actual = of(4).insertAll(1, of(1, 2, 3));
-        final Queue<Integer> expected = of(4, 1, 2, 3);
+        Queue<Integer> actual = of(4).insertAll(1, of(1, 2, 3));
+        Queue<Integer> expected = of(4, 1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldInsertAllIntoQueue() {
-        final Queue<Integer> actual = of(1, 2, 3).insertAll(2, of(4, 5));
-        final Queue<Integer> expected = of(1, 2, 4, 5, 3);
+        Queue<Integer> actual = of(1, 2, 3).insertAll(2, of(4, 5));
+        Queue<Integer> expected = of(1, 2, 4, 5, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1248,19 +1247,19 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameQueueWhenEmptyInsertAllEmpty() {
-        final Queue<Integer> empty = empty();
+        Queue<Integer> empty = empty();
         assertThat(empty.insertAll(0, empty())).isSameAs(empty);
     }
 
     @Test
     public void shouldReturnSameQueueWhenEmptyInsertAllNonEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(empty().insertAll(0, seq)).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameQueueWhenNonEmptyInsertAllEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.insertAll(0, empty())).isSameAs(seq);
     }
 
@@ -1295,7 +1294,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPadNonEmptyZeroLen() {
-            final Queue<Integer> seq = of(1);
+            Queue<Integer> seq = of(1);
             assertThat(seq.padTo(0, 2)).isSameAs(seq);
         }
 
@@ -1321,7 +1320,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldLeftPadNonEmptyZeroLen() {
-            final Queue<Integer> seq = of(1);
+            Queue<Integer> seq = of(1);
             assertThat(seq.leftPadTo(0, 2)).isSameAs(seq);
         }
 
@@ -1346,7 +1345,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchEmptyByNonEmpty() {
-            final Queue<Character> s = of('1', '2', '3');
+            Queue<Character> s = of('1', '2', '3');
             assertThat(empty().patch(0, s, 0)).isEqualTo(s);
             assertThat(empty().patch(-1, s, -1)).isEqualTo(s);
             assertThat(empty().patch(-1, s, 1)).isEqualTo(s);
@@ -1356,7 +1355,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchNonEmptyByEmpty() {
-            final Queue<Character> s = of('1', '2', '3');
+            Queue<Character> s = of('1', '2', '3');
             assertThat(s.patch(-1, empty(), -1)).isEqualTo(of('1', '2', '3'));
             assertThat(s.patch(-1, empty(), 0)).isEqualTo(of('1', '2', '3'));
             assertThat(s.patch(-1, empty(), 1)).isEqualTo(of('2', '3'));
@@ -1377,8 +1376,8 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldPatchNonEmptyByNonEmpty() {
-            final Queue<Character> s = of('1', '2', '3');
-            final Queue<Character> d = of('4', '5', '6');
+            Queue<Character> s = of('1', '2', '3');
+            Queue<Character> d = of('4', '5', '6');
             assertThat(s.patch(-1, d, -1)).isEqualTo(of('4', '5', '6', '1', '2', '3'));
             assertThat(s.patch(-1, d, 0)).isEqualTo(of('4', '5', '6', '1', '2', '3'));
             assertThat(s.patch(-1, d, 1)).isEqualTo(of('4', '5', '6', '2', '3'));
@@ -1429,7 +1428,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldMapTransformedQueue() {
-        final Function<Integer, Integer> mapper = o -> o + 1;
+        Function<Integer, Integer> mapper = o -> o + 1;
         assertThat(this.<Integer>empty().map(mapper)).isEmpty();
         assertThat(of(3, 1, 4, 1, 5).map(mapper)).isEqualTo(of(4, 2, 5, 2, 6));
         assertThat(of(3, 1, 4, 1, 5, 9, 2)
@@ -1487,15 +1486,15 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependElementToNil() {
-        final Queue<Integer> actual = this.<Integer>empty().prepend(1);
-        final Queue<Integer> expected = of(1);
+        Queue<Integer> actual = this.<Integer>empty().prepend(1);
+        Queue<Integer> expected = of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependElementToNonNil() {
-        final Queue<Integer> actual = of(2, 3).prepend(1);
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> actual = of(2, 3).prepend(1);
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -1508,51 +1507,51 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldPrependAllNilToNil() {
-        final Queue<Integer> actual = this.<Integer>empty().prependAll(empty());
-        final Queue<Integer> expected = empty();
+        Queue<Integer> actual = this.<Integer>empty().prependAll(empty());
+        Queue<Integer> expected = empty();
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNilToNonNil() {
-        final Queue<Integer> actual = of(1, 2, 3).prependAll(empty());
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> actual = of(1, 2, 3).prependAll(empty());
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNonNilToNil() {
-        final Queue<Integer> actual = this.<Integer>empty().prependAll(of(1, 2, 3));
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> actual = this.<Integer>empty().prependAll(of(1, 2, 3));
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldPrependAllNonNilToNonNil() {
-        final Queue<Integer> expected = range(0, 100);
+        Queue<Integer> expected = range(0, 100);
 
-        final Queue<Integer> actualFirstPartLarger = range(90, 100).prependAll(range(0, 90));
+        Queue<Integer> actualFirstPartLarger = range(90, 100).prependAll(range(0, 90));
         assertThat(actualFirstPartLarger).isEqualTo(expected);
 
-        final Queue<Integer> actualSecondPartLarger = range(10, 100).prependAll(range(0, 10));
+        Queue<Integer> actualSecondPartLarger = range(10, 100).prependAll(range(0, 10));
         assertThat(actualSecondPartLarger).isEqualTo(expected);
     }
 
     @Test
     public void shouldReturnSameQueueWhenEmptyPrependAllEmpty() {
-        final Queue<Integer> empty = empty();
+        Queue<Integer> empty = empty();
         assertThat(empty.prependAll(empty())).isSameAs(empty);
     }
 
     @Test
     public void shouldReturnSameQueueWhenEmptyPrependAllNonEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(empty().prependAll(seq)).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameQueueWhenNonEmptyPrependAllEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.prependAll(empty())).isSameAs(seq);
     }
 
@@ -1585,7 +1584,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRemoveNonExistingElement() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.remove(4)).isSameAs(t);
     }
 
@@ -1623,7 +1622,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRemoveFirstElementByPredicateNonExisting() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.removeFirst(v -> v == 4)).isSameAs(t);
     }
 
@@ -1661,7 +1660,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldRemoveLastElementByPredicateNonExisting() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.removeLast(v -> v == 4)).isSameAs(t);
     }
 
@@ -1679,19 +1678,19 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNotRemoveAllNonExistingElementsFromNonNil() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.removeAll(of(4, 5))).isSameAs(t);
     }
 
     @Test
     public void shouldReturnSameQueueWhenNonEmptyRemoveAllEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(empty())).isSameAs(seq);
     }
 
     @Test
     public void shouldReturnSameQueueWhenEmptyRemoveAllNonEmpty() {
-        final Queue<Integer> empty = empty();
+        Queue<Integer> empty = empty();
         assertThat(empty.removeAll(of(1, 2, 3))).isSameAs(empty);
     }
 
@@ -1700,7 +1699,7 @@ public class QueueTest extends AbstractTraversableTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldRemoveExistingElements() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(i -> i == 1)).isEqualTo(of(2, 3));
         assertThat(seq.removeAll(i -> i == 2)).isEqualTo(of(1, 3));
         assertThat(seq.removeAll(i -> i == 3)).isEqualTo(of(1, 2));
@@ -1736,8 +1735,8 @@ public class QueueTest extends AbstractTraversableTest {
     @SuppressWarnings("deprecation")
     @Test
     public void shouldNotRemoveAllNonMatchedElementsFromNonNil() {
-        final Queue<Integer> t = of(1, 2, 3);
-        final Predicate<Integer> isTooBig = i -> i >= 4;
+        Queue<Integer> t = of(1, 2, 3);
+        Predicate<Integer> isTooBig = i -> i >= 4;
         assertThat(t.removeAll(isTooBig)).isSameAs(t);
     }
 
@@ -1755,13 +1754,13 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNotRemoveAllNonObjectsElementsFromNonNil() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll(4)).isSameAs(seq);
     }
 
     @Test
     public void shouldNotRemoveAbsentNullFromNonEmpty() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.removeAll((Integer) null)).isEqualTo(seq);
     }
 
@@ -1844,15 +1843,13 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldIterateSingleInReverse() {
-        final java.util.Iterator<String> iterator =
-                ofAll(this.of("a")).reverse().iterator();
+        java.util.Iterator<String> iterator = ofAll(this.of("a")).reverse().iterator();
         assertThat(List.ofAll(() -> iterator)).isEqualTo(List.of("a"));
     }
 
     @Test
     public void shouldIterateNonEmptyInReverse() {
-        final java.util.Iterator<String> iterator =
-                ofAll(of("a", "b", "c")).reverse().iterator();
+        java.util.Iterator<String> iterator = ofAll(of("a", "b", "c")).reverse().iterator();
         assertThat(List.ofAll(() -> iterator)).isEqualTo(List.of("c", "b", "a"));
     }
 
@@ -1878,9 +1875,9 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldRotateByZeroWithoutWalkingTheElements() {
             // the zero fast path answers before size(), which walks a Queue
-            final Queue<Integer> none = empty();
-            final Queue<Integer> one = of(1);
-            final Queue<Integer> many = of(1, 2, 3, 4, 5);
+            Queue<Integer> none = empty();
+            Queue<Integer> one = of(1);
+            Queue<Integer> many = of(1, 2, 3, 4, 5);
             assertThat(none.rotateLeft(0)).isSameAs(none);
             assertThat(none.rotateRight(0)).isSameAs(none);
             assertThat(one.rotateLeft(0)).isSameAs(one);
@@ -1977,7 +1974,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldShuffleHaveSameElements() {
-            final Queue<Integer> shuffled = of(1, 2, 3).shuffle();
+            Queue<Integer> shuffled = of(1, 2, 3).shuffle();
             assertThat(shuffled.indexOf(1)).isNotEqualTo(-1);
             assertThat(shuffled.indexOf(2)).isNotEqualTo(-1);
             assertThat(shuffled.indexOf(3)).isNotEqualTo(-1);
@@ -2073,8 +2070,8 @@ public class QueueTest extends AbstractTraversableTest {
     class HigherOrderUpdateTests {
         @Test
         public void shouldUpdateViaFunction() throws Exception {
-            final Queue<Character> actual = ofAll("hello".toCharArray()).update(0, Character::toUpperCase);
-            final Queue<Character> expected = ofAll("Hello".toCharArray());
+            Queue<Character> actual = ofAll("hello".toCharArray()).update(0, Character::toUpperCase);
+            Queue<Character> expected = ofAll("Hello".toCharArray());
             assertThat(actual).isEqualTo(expected);
         }
     }
@@ -2083,37 +2080,37 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSliceFrom0To0OnNil() {
-        final Queue<Integer> actual = this.<Integer>empty().slice(0, 0);
+        Queue<Integer> actual = this.<Integer>empty().slice(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnNilWhenSliceFrom0To0OnNonNil() {
-        final Queue<Integer> actual = of(1).slice(0, 0);
+        Queue<Integer> actual = of(1).slice(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnQueueWithFirstElementWhenSliceFrom0To1OnNonNil() {
-        final Queue<Integer> actual = of(1).slice(0, 1);
+        Queue<Integer> actual = of(1).slice(0, 1);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSliceFrom1To1OnNonNil() {
-        final Queue<Integer> actual = of(1).slice(1, 1);
+        Queue<Integer> actual = of(1).slice(1, 1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSliceWhenIndicesAreWithinRange() {
-        final Queue<Integer> actual = of(1, 2, 3).slice(1, 3);
+        Queue<Integer> actual = of(1, 2, 3).slice(1, 3);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilOnSliceWhenIndicesBothAreUpperBound() {
-        final Queue<Integer> actual = of(1, 2, 3).slice(3, 3);
+        Queue<Integer> actual = of(1, 2, 3).slice(3, 3);
         assertThat(actual).isEmpty();
     }
 
@@ -2191,20 +2188,20 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNonNilUsingFunction() {
-        final Queue<String> testee = of("aaa", "b", "cc");
-        final Queue<String> actual = testee.sortBy(String::length);
-        final Queue<String> expected = of("b", "cc", "aaa");
+        Queue<String> testee = of("aaa", "b", "cc");
+        Queue<String> actual = testee.sortBy(String::length);
+        Queue<String> expected = of("b", "cc", "aaa");
         assertThat(actual).isEqualTo(expected);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void shouldSortByFunctionWhenElementsAreInfiniteStreams() {
-        final Stream<Integer> stream1 = Stream.continually(1);
-        final Stream<Integer> stream2 = Stream.continually(2);
-        final Queue<Stream<Integer>> testee = of(stream2, stream1);
-        final Queue<Stream<Integer>> actual = testee.sortBy(Stream::head);
-        final Queue<Stream<Integer>> expected = of(stream1, stream2);
+        Stream<Integer> stream1 = Stream.continually(1);
+        Stream<Integer> stream2 = Stream.continually(2);
+        Queue<Stream<Integer>> testee = of(stream2, stream1);
+        Queue<Stream<Integer>> actual = testee.sortBy(Stream::head);
+        Queue<Stream<Integer>> expected = of(stream1, stream2);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2217,9 +2214,9 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldSortByNonNilUsingComparatorAndFunction() {
-        final Queue<String> testee = of("aaa", "b", "cc");
-        final Queue<String> actual = testee.sortBy((i1, i2) -> i2 - i1, String::length);
-        final Queue<String> expected = of("aaa", "cc", "b");
+        Queue<String> testee = of("aaa", "b", "cc");
+        Queue<String> actual = testee.sortBy((i1, i2) -> i2 - i1, String::length);
+        Queue<String> expected = of("aaa", "cc", "b");
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -2409,31 +2406,31 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0OnNil() {
-        final Queue<Integer> actual = this.<Integer>empty().subSequence(0);
+        Queue<Integer> actual = this.<Integer>empty().subSequence(0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnIdentityWhenSubSequenceFrom0OnNonNil() {
-        final Queue<Integer> actual = of(1).subSequence(0);
+        Queue<Integer> actual = of(1).subSequence(0);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom1OnQueueOf1() {
-        final Queue<Integer> actual = of(1).subSequence(1);
+        Queue<Integer> actual = of(1).subSequence(1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSubSequenceWhenIndexIsWithinRange() {
-        final Queue<Integer> actual = of(1, 2, 3).subSequence(1);
+        Queue<Integer> actual = of(1, 2, 3).subSequence(1);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilWhenSubSequenceBeginningWithSize() {
-        final Queue<Integer> actual = of(1, 2, 3).subSequence(3);
+        Queue<Integer> actual = of(1, 2, 3).subSequence(3);
         assertThat(actual).isEmpty();
     }
 
@@ -2454,7 +2451,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameInstanceIfSubSequenceStartsAtZero() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.subSequence(0)).isSameAs(seq);
     }
 
@@ -2462,37 +2459,37 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0To0OnNil() {
-        final Queue<Integer> actual = this.<Integer>empty().subSequence(0, 0);
+        Queue<Integer> actual = this.<Integer>empty().subSequence(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom0To0OnNonNil() {
-        final Queue<Integer> actual = of(1).subSequence(0, 0);
+        Queue<Integer> actual = of(1).subSequence(0, 0);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnQueueWithFirstElementWhenSubSequenceFrom0To1OnNonNil() {
-        final Queue<Integer> actual = of(1).subSequence(0, 1);
+        Queue<Integer> actual = of(1).subSequence(0, 1);
         assertThat(actual).isEqualTo(of(1));
     }
 
     @Test
     public void shouldReturnNilWhenSubSequenceFrom1To1OnNonNil() {
-        final Queue<Integer> actual = of(1).subSequence(1, 1);
+        Queue<Integer> actual = of(1).subSequence(1, 1);
         assertThat(actual).isEmpty();
     }
 
     @Test
     public void shouldReturnSubSequenceWhenIndicesAreWithinRange() {
-        final Queue<Integer> actual = of(1, 2, 3).subSequence(1, 3);
+        Queue<Integer> actual = of(1, 2, 3).subSequence(1, 3);
         assertThat(actual).isEqualTo(of(2, 3));
     }
 
     @Test
     public void shouldReturnNilWhenOnSubSequenceIndicesBothAreUpperBound() {
-        final Queue<Integer> actual = of(1, 2, 3).subSequence(3, 3);
+        Queue<Integer> actual = of(1, 2, 3).subSequence(3, 3);
         assertThat(actual).isEmpty();
     }
 
@@ -2541,7 +2538,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameInstanceIfSubSequenceStartsAtZeroAndEndsAtLastElement() {
-        final Queue<Integer> seq = of(1, 2, 3);
+        Queue<Integer> seq = of(1, 2, 3);
         assertThat(seq.subSequence(0, 3)).isSameAs(seq);
     }
 
@@ -2576,74 +2573,74 @@ public class QueueTest extends AbstractTraversableTest {
     class TransposeTests {
         @Test
         public void shouldTransposeIfEmpty() {
-            final Queue<Queue<Integer>> actual = empty();
+            Queue<Queue<Integer>> actual = empty();
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfIs1x0() {
-            final Queue<Queue<Integer>> actual = of(empty());
+            Queue<Queue<Integer>> actual = of(empty());
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfIs1x1() {
-            final Queue<Queue<Integer>> actual = of(of(1));
+            Queue<Queue<Integer>> actual = of(of(1));
             assertThat(transpose(actual)).isSameAs(actual);
         }
 
         @Test
         public void shouldTransposeIfSingleValued() {
-            final Queue<Queue<Integer>> actual = of(of(0));
-            final Queue<Queue<Integer>> expected = of(of(0));
+            Queue<Queue<Integer>> actual = of(of(0));
+            Queue<Queue<Integer>> expected = of(of(0));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedColumn() {
-            final Queue<Queue<Integer>> actual = of(of(0, 1, 2));
-            final Queue<Queue<Integer>> expected = of(of(0), of(1), of(2));
+            Queue<Queue<Integer>> actual = of(of(0, 1, 2));
+            Queue<Queue<Integer>> expected = of(of(0), of(1), of(2));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedRow() {
-            final Queue<Queue<Integer>> actual = of(of(0), of(1), of(2));
-            final Queue<Queue<Integer>> expected = of(of(0, 1, 2));
+            Queue<Queue<Integer>> actual = of(of(0), of(1), of(2));
+            Queue<Queue<Integer>> expected = of(of(0, 1, 2));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedIfSymmetric() {
-            final Queue<Queue<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9));
-            final Queue<Queue<Integer>> expected = of(of(1, 4, 7), of(2, 5, 8), of(3, 6, 9));
+            Queue<Queue<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6), of(7, 8, 9));
+            Queue<Queue<Integer>> expected = of(of(1, 4, 7), of(2, 5, 8), of(3, 6, 9));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreColumnsThanRows() {
-            final Queue<Queue<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
-            final Queue<Queue<Integer>> expected = of(of(1, 4), of(2, 5), of(3, 6));
+            Queue<Queue<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
+            Queue<Queue<Integer>> expected = of(of(1, 4), of(2, 5), of(3, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldTransposeIfMultiValuedWithMoreRowsThanColumns() {
-            final Queue<Queue<Integer>> actual = of(of(1, 2), of(3, 4), of(5, 6));
-            final Queue<Queue<Integer>> expected = of(of(1, 3, 5), of(2, 4, 6));
+            Queue<Queue<Integer>> actual = of(of(1, 2), of(3, 4), of(5, 6));
+            Queue<Queue<Integer>> expected = of(of(1, 3, 5), of(2, 4, 6));
             assertThat(transpose(actual)).isEqualTo(expected);
         }
 
         @Test
         @SuppressWarnings("unchecked")
         public void shouldBeEqualIfTransposedTwice() {
-            final Queue<Queue<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
-            final Queue<Queue<Integer>> transposed = transpose(actual);
+            Queue<Queue<Integer>> actual = of(of(1, 2, 3), of(4, 5, 6));
+            Queue<Queue<Integer>> transposed = transpose(actual);
             assertThat(transpose(transposed)).isEqualTo(actual);
         }
 
@@ -2651,7 +2648,7 @@ public class QueueTest extends AbstractTraversableTest {
         @SuppressWarnings("unchecked")
         public void shouldNotTransposeForMissingOrEmptyValues() {
             assertThrows(IllegalArgumentException.class, () -> {
-                final Queue<Queue<Integer>> actual = of(of(), of(0, 1), of(2, 3, 4, 5), of(), of(6, 7, 8));
+                Queue<Queue<Integer>> actual = of(of(), of(0, 1), of(2, 3, 4, 5), of(), of(6, 7, 8));
                 transpose(actual);
             });
         }
@@ -2677,7 +2674,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfEmptyQueueUsingComparator() {
-        final Comparator<Integer> comparator = comparingInt(i -> i);
+        Comparator<Integer> comparator = comparingInt(i -> i);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(this.<Integer>empty().distinctByKeepLast(comparator)).isEqualTo(empty());
         } else {
@@ -2687,14 +2684,14 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfNonEmptyQueueUsingComparator() {
-        final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        final Queue<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(comparator);
+        Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
+        Queue<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(comparator);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByKeepLastComparatorEmptyQueue() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.distinctByKeepLast(Comparators.naturalComparator())).isSameAs(empty);
     }
 
@@ -2711,14 +2708,14 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByKeepLastOfNonEmptyQueueUsingKeyExtractor() {
-        final Function<String, Character> function = c -> c.charAt(1);
-        final Queue<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(function);
+        Function<String, Character> function = c -> c.charAt(1);
+        Queue<String> distinct = of("1a", "2a", "3b", "4b", "3a", "5c").distinctByKeepLast(function);
         assertThat(distinct).isEqualTo(of("4b", "3a", "5c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByKeepLastFunctionEmptyQueue() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.distinctByKeepLast(Function.identity())).isSameAs(empty);
     }
 
@@ -2778,7 +2775,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         /** A Queue whose front has been refilled from the rear: front = [4, 5], rear = []. */
         private Queue<Integer> rebalanced() {
-            final Queue<Integer> queue = Queue.of(1, 2, 3).enqueue(4).enqueue(5);
+            Queue<Integer> queue = Queue.of(1, 2, 3).enqueue(4).enqueue(5);
             return queue.tail().tail().tail();
         }
 
@@ -2789,7 +2786,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRebalanceTheRearIntoTheFrontOnDequeue() {
-            final Queue<Integer> queue = rebalanced();
+            Queue<Integer> queue = rebalanced();
             assertThat(queue).isEqualTo(Queue.of(4, 5));
             assertThat(queue.head()).isEqualTo(4);
             assertThat(queue.last()).isEqualTo(5);
@@ -2801,7 +2798,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReadAcrossTheFrontRearBoundary() {
-            final Queue<Integer> queue = bothSides();
+            Queue<Integer> queue = bothSides();
             assertThat(queue).isEqualTo(Queue.of(1, 2, 3, 4));
             assertThat(queue.get(0)).isEqualTo(1);
             assertThat(queue.get(1)).isEqualTo(2);
@@ -2831,7 +2828,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldHandleTheEmptyAndSingleCases() {
-            final Queue<Integer> empty = Queue.empty();
+            Queue<Integer> empty = Queue.empty();
             assertThat(empty.reverse().iterator().hasNext()).isFalse();
             assertThat(empty.indexOf(1)).isEqualTo(-1);
             assertThat(empty.lastIndexOf(1)).isEqualTo(-1);
@@ -2844,7 +2841,7 @@ public class QueueTest extends AbstractTraversableTest {
             assertThat(empty.endsWith(Queue.empty())).isTrue();
             assertThat(empty.search(1)).isEqualTo(-1);
             assertThat(empty.crossProduct().isEmpty()).isTrue();
-            final Queue<Integer> one = Queue.of(1);
+            Queue<Integer> one = Queue.of(1);
             assertThat(one.reverse().toList()).isEqualTo(dev.zazr.collection.List.of(1));
             assertThat(one.crossProduct().toList().size()).isEqualTo(1);
             assertThat(one.endsWith(Queue.of(1))).isTrue();
@@ -2853,7 +2850,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnAQueue() {
-            final Queue<Integer> queue = bothSides();
+            Queue<Integer> queue = bothSides();
             assertThat(queue.rotateLeft(1)).isInstanceOf(Queue.class).isEqualTo(Queue.of(2, 3, 4, 1));
             assertThat(queue.rotateRight(1)).isInstanceOf(Queue.class).isEqualTo(Queue.of(4, 1, 2, 3));
             assertThat(queue.sortBy(i -> -i)).isInstanceOf(Queue.class).isEqualTo(Queue.of(4, 3, 2, 1));
@@ -2862,7 +2859,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldRejectNullArgumentsOfEveryNewlyDeclaredMethod() {
-            final Queue<Integer> queue = Queue.of(1, 2, 3);
+            Queue<Integer> queue = Queue.of(1, 2, 3);
             assertThatNullPointerException()
                     .isThrownBy(() -> queue.containsSlice(null))
                     .withMessage("that is null");
@@ -3008,9 +3005,9 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctOfNonEmptyTraversable() {
-        final Queue<Integer> testee = of(1, 1, 2, 2, 3, 3);
-        final Queue<Integer> actual = testee.distinct();
-        final Queue<Integer> expected = of(1, 2, 3);
+        Queue<Integer> testee = of(1, 1, 2, 2, 3, 3);
+        Queue<Integer> actual = testee.distinct();
+        Queue<Integer> expected = of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
         if (isDistinct()) {
             assertThat(actual).isSameAs(testee);
@@ -3021,7 +3018,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByOfEmptyTraversableUsingComparator() {
-        final Comparator<Integer> comparator = comparingInt(i -> i);
+        Comparator<Integer> comparator = comparingInt(i -> i);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(this.<Integer>empty().distinctBy(comparator)).isEqualTo(empty());
         } else {
@@ -3031,15 +3028,15 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingComparator() {
-        final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        final Queue<String> distinct =
+        Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
+        Queue<String> distinct =
                 of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByComparatorEmptyTraversable() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.distinctBy(Comparators.naturalComparator())).isSameAs(empty);
     }
 
@@ -3056,15 +3053,15 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingKeyExtractor() {
-        final Function<String, Character> function = c -> c.charAt(1);
-        final Queue<String> distinct =
+        Function<String, Character> function = c -> c.charAt(1);
+        Queue<String> distinct =
                 of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function).map(s -> s.substring(1));
         assertThat(distinct).isEqualTo(of("a", "b", "c"));
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDistinctByFunctionEmptyTraversable() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.distinctBy(Function.identity())).isSameAs(empty);
     }
 
@@ -3100,19 +3097,19 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropZeroCount() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.drop(0)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropNegativeCount() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.drop(-1)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropOne() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.drop(1)).isSameAs(empty);
     }
 
@@ -3148,19 +3145,19 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropRightZeroCount() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.dropRight(0)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenDropRightNegativeCount() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         assertThat(t.dropRight(-1)).isSameAs(t);
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropRightOne() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.dropRight(1)).isSameAs(empty);
     }
 
@@ -3180,7 +3177,7 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).dropUntil(ignored -> true)).isEqualTo(of(1, 2, 3));
         } else {
-            final Queue<Integer> t = of(1, 2, 3);
+            Queue<Integer> t = of(1, 2, 3);
             assertThat(t.dropUntil(ignored -> true)).isSameAs(t);
         }
     }
@@ -3201,7 +3198,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropUntil() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.dropUntil(ignored -> true)).isSameAs(empty);
     }
 
@@ -3209,8 +3206,8 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldDropWhileNoneOnNil() {
-        final Queue<?> empty = empty();
-        final Queue<?> actual = empty.dropWhile(ignored -> true);
+        Queue<?> empty = empty();
+        Queue<?> actual = empty.dropWhile(ignored -> true);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty);
         } else {
@@ -3223,14 +3220,14 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).dropWhile(ignored -> false)).isEqualTo(of(1, 2, 3));
         } else {
-            final Queue<Integer> t = of(1, 2, 3);
+            Queue<Integer> t = of(1, 2, 3);
             assertThat(t.dropWhile(ignored -> false)).isSameAs(t);
         }
     }
 
     @TestTemplate
     public void shouldDropWhileAllIfPredicateIsTrue() {
-        final Queue<Integer> actual = of(1, 2, 3).dropWhile(ignored -> true);
+        Queue<Integer> actual = of(1, 2, 3).dropWhile(ignored -> true);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty());
         } else {
@@ -3250,7 +3247,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyDropWhile() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.dropWhile(ignored -> true)).isSameAs(empty);
     }
 
@@ -3281,7 +3278,7 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).filter(ignore -> true)).isEqualTo(of(1, 2, 3));
         } else {
-            final Queue<Integer> t = of(1, 2, 3);
+            Queue<Integer> t = of(1, 2, 3);
             assertThat(t.filter(ignore -> true)).isSameAs(t);
         }
     }
@@ -3299,7 +3296,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.filter(v -> true)).isSameAs(empty);
     }
 
@@ -3313,7 +3310,7 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).reject(ignore -> false)).isEqualTo(of(1, 2, 3));
         } else {
-            final Queue<Integer> t = of(1, 2, 3);
+            Queue<Integer> t = of(1, 2, 3);
             assertThat(t.reject(ignore -> false)).isSameAs(t);
         }
     }
@@ -3331,7 +3328,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenRejectingEmptyTraversable() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.reject(v -> true)).isSameAs(empty);
     }
 
@@ -3367,8 +3364,8 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectNothingFromEmpty() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Queue<Integer> actual = this.<Integer>empty().collect(i -> {
+        AtomicInteger calls = new AtomicInteger();
+        Queue<Integer> actual = this.<Integer>empty().collect(i -> {
             calls.incrementAndGet();
             return Option.some(i);
         });
@@ -3394,7 +3391,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithASwitchInsideTheLambda() {
-        final Queue<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+        Queue<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
             case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
             default -> Option.none();
         });
@@ -3403,7 +3400,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallTheCollectMapperOncePerElement() {
-        final AtomicInteger calls = new AtomicInteger();
+        AtomicInteger calls = new AtomicInteger();
         of(1, 2, 3)
                 .collect(i -> {
                     calls.incrementAndGet();
@@ -3416,7 +3413,7 @@ public class QueueTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldRejectNullOptionFromCollectMapper() {
         // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, Iterator...)
-        final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
+        String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage(type + ".collect: mapper returned null");
@@ -3424,7 +3421,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowOnCollectWithNullMapper() {
-        final Function<Integer, Option<Integer>> mapper = null;
+        Function<Integer, Option<Integer>> mapper = null;
         assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
     }
 
@@ -3471,16 +3468,16 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConsumeNoElementWithIndexWhenEmpty() {
-        final boolean[] actual = {false};
-        final boolean[] expected = {false};
+        boolean[] actual = {false};
+        boolean[] expected = {false};
         empty().forEachWithIndex((chr, index) -> actual[0] = true);
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldConsumeEachElementWithIndexWhenNonEmpty() {
-        final java.util.List<Tuple2<Character, Integer>> actual = new java.util.ArrayList<>();
-        final java.util.List<Tuple2<Character, Integer>> expected =
+        java.util.List<Tuple2<Character, Integer>> actual = new java.util.ArrayList<>();
+        java.util.List<Tuple2<Character, Integer>> expected =
                 Arrays.asList(Tuple.of('a', 0), Tuple.of('b', 1), Tuple.of('c', 2));
         ofAll('a', 'b', 'c').forEachWithIndex((chr, index) -> actual.add(Tuple.of(chr, index)));
         assertThat(actual).isEqualTo(expected);
@@ -3495,16 +3492,16 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilGroupByIdentity() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected =
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
+        Map<?, ?> expected =
                 LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilGroupByEqual() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
-        final Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
+        Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -3517,16 +3514,16 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
-        final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected =
+        Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
+        Option<Map<?, ?>> expected =
                 Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilArrangeByEqual() {
-        final Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
-        final Option<Map<?, ?>> expected = Option.none();
+        Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
+        Option<Map<?, ?>> expected = Option.none();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -3549,22 +3546,22 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldGroupedTraversableWithEqualSizedBlocks() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(3, 4));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4).grouped(2).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedTraversableWithRemainder() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(3, 4), Queue.of(5));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).grouped(2).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(3, 4), Queue.of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldGroupedWhenTraversableLengthIsSmallerThanBlockSize() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3, 4));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4).grouped(5).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -3802,7 +3799,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMaxFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).maxBy(i -> {
                     cnt[0]++;
                     return i;
@@ -3961,7 +3958,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMinFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).minBy(i -> {
                     cnt[0]++;
                     return i;
@@ -3974,7 +3971,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameOther() {
-        final Iterable<Integer> other = of(42);
+        Iterable<Integer> other = of(42);
         assertThat(empty().orElse(other)).isSameAs(other);
     }
 
@@ -3985,14 +3982,14 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseOther() {
-        final Queue<Integer> src = of(42);
+        Queue<Integer> src = of(42);
         assertThat(src.orElse(List.of(1))).isSameAs(src);
     }
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameSupplier() {
-        final Iterable<Integer> other = of(42);
-        final Supplier<Iterable<Integer>> supplier = () -> other;
+        Iterable<Integer> other = of(42);
+        Supplier<Iterable<Integer>> supplier = () -> other;
         assertThat(empty().orElse(supplier)).isSameAs(other);
     }
 
@@ -4003,7 +4000,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseSupplier() {
-        final Queue<Integer> src = of(42);
+        Queue<Integer> src = of(42);
         assertThat(src.orElse(() -> List.of(1))).isSameAs(src);
     }
 
@@ -4202,9 +4199,9 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReplaceFirstOccurrenceOfNonNilUsingCurrNewWhenMultipleOccurrencesExist() {
-        final Queue<Integer> testee = of(0, 1, 2, 1);
-        final Queue<Integer> actual = testee.replace(1, 3);
-        final Queue<Integer> expected = of(0, 3, 2, 1);
+        Queue<Integer> testee = of(0, 1, 2, 1);
+        Queue<Integer> actual = testee.replace(1, 3);
+        Queue<Integer> expected = of(0, 3, 2, 1);
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4218,7 +4215,7 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2).replace(33, 3)).isEqualTo(of(0, 1, 2));
         } else {
-            final Queue<Integer> src = of(0, 1, 2);
+            Queue<Integer> src = of(0, 1, 2);
             assertThat(src.replace(33, 3)).isSameAs(src);
         }
     }
@@ -4239,7 +4236,7 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2, 1).replaceAll(33, 3)).isEqualTo(of(0, 1, 2, 1));
         } else {
-            final Queue<Integer> src = of(0, 1, 2, 1);
+            Queue<Integer> src = of(0, 1, 2, 1);
             assertThat(src.replaceAll(33, 3)).isSameAs(src);
         }
     }
@@ -4253,8 +4250,8 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllElementsFromNil() {
-        final Queue<Object> empty = empty();
-        final Queue<Object> actual = empty.retainAll(of(1, 2, 3));
+        Queue<Object> empty = empty();
+        Queue<Object> actual = empty.retainAll(of(1, 2, 3));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty);
         } else {
@@ -4264,17 +4261,17 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllExistingElementsFromNonNil() {
-        final Queue<Integer> src = of(1, 2, 3, 2, 1, 3);
-        final Queue<Integer> expected = of(1, 2, 2, 1);
-        final Queue<Integer> actual = src.retainAll(of(1, 2));
+        Queue<Integer> src = of(1, 2, 3, 2, 1, 3);
+        Queue<Integer> expected = of(1, 2, 2, 1);
+        Queue<Integer> actual = src.retainAll(of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldRetainAllElementsFromNonNil() {
-        final Queue<Integer> src = of(1, 2, 1, 2, 2);
-        final Queue<Integer> expected = of(1, 2, 1, 2, 2);
-        final Queue<Integer> actual = src.retainAll(of(1, 2));
+        Queue<Integer> src = of(1, 2, 1, 2, 2);
+        Queue<Integer> expected = of(1, 2, 1, 2, 2);
+        Queue<Integer> actual = src.retainAll(of(1, 2));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -4284,9 +4281,9 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNotRetainAllNonExistingElementsFromNonNil() {
-        final Queue<Integer> src = of(1, 2, 3);
-        final Queue<Object> expected = empty();
-        final Queue<Integer> actual = src.retainAll(of(4, 5));
+        Queue<Integer> src = of(1, 2, 3);
+        Queue<Object> expected = empty();
+        Queue<Integer> actual = src.retainAll(of(4, 5));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -4298,52 +4295,52 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanEmpty() {
-        final Queue<Integer> testee = empty();
-        final Queue<Integer> actual = testee.scan(0, (s1, s2) -> s1 + s2);
+        Queue<Integer> testee = empty();
+        Queue<Integer> actual = testee.scan(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(this.of(0));
     }
 
     @TestTemplate
     public void shouldScanLeftEmpty() {
-        final Queue<Integer> testee = empty();
-        final Queue<Integer> actual = testee.scanLeft(0, (s1, s2) -> s1 + s2);
+        Queue<Integer> testee = empty();
+        Queue<Integer> actual = testee.scanLeft(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(of(0));
     }
 
     @TestTemplate
     public void shouldScanRightEmpty() {
-        final Queue<Integer> testee = empty();
-        final Queue<Integer> actual = testee.scanRight(0, (s1, s2) -> s1 + s2);
+        Queue<Integer> testee = empty();
+        Queue<Integer> actual = testee.scanRight(0, (s1, s2) -> s1 + s2);
         assertThat(actual).isEqualTo(of(0));
     }
 
     @TestTemplate
     public void shouldScanNonEmpty() {
-        final Queue<Integer> testee = of(1, 2, 3);
-        final Queue<Integer> actual = testee.scan(0, (acc, s) -> acc + s);
+        Queue<Integer> testee = of(1, 2, 3);
+        Queue<Integer> actual = testee.scan(0, (acc, s) -> acc + s);
         assertThat(actual).isEqualTo(of(0, 1, 3, 6));
     }
 
     @TestTemplate
     public void shouldScanLeftNonEmpty() {
-        final Queue<Integer> testee = of(1, 2, 3);
-        final Queue<String> actual = testee.scanLeft("x", (acc, i) -> acc + i);
+        Queue<Integer> testee = of(1, 2, 3);
+        Queue<String> actual = testee.scanLeft("x", (acc, i) -> acc + i);
         assertThat(actual).isEqualTo(of("x", "x1", "x12", "x123"));
     }
 
     @TestTemplate
     public void shouldScanRightNonEmpty() {
-        final Queue<Integer> testee = of(1, 2, 3);
-        final Queue<String> actual = testee.scanRight("x", (i, acc) -> acc + i);
+        Queue<Integer> testee = of(1, 2, 3);
+        Queue<String> actual = testee.scanRight("x", (i, acc) -> acc + i);
         assertThat(actual).isEqualTo(of("x321", "x32", "x3", "x"));
     }
 
     @TestTemplate
     public void shouldScanWithNonComparable() {
-        final Queue<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual =
+        Queue<NonComparable> testee = of(new NonComparable("a"));
+        List<NonComparable> actual =
                 List.ofAll(testee.scan(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
-        final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
+        List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
         assertThat(actual.size()).isEqualTo(expected.size());
@@ -4351,10 +4348,10 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanLeftWithNonComparable() {
-        final Queue<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual =
+        Queue<NonComparable> testee = of(new NonComparable("a"));
+        List<NonComparable> actual =
                 List.ofAll(testee.scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
-        final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
+        List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
         assertThat(actual.size()).isEqualTo(expected.size());
@@ -4362,10 +4359,10 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldScanRightWithNonComparable() {
-        final Queue<NonComparable> testee = of(new NonComparable("a"));
-        final List<NonComparable> actual = List.ofAll(
+        Queue<NonComparable> testee = of(new NonComparable("a"));
+        List<NonComparable> actual = List.ofAll(
                 testee.scanRight(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
-        final List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
+        List<NonComparable> expected = List.of("ax", "x").map(NonComparable::new);
         assertThat(actual).containsAll(expected);
         assertThat(expected).containsAll(actual);
         assertThat(actual.size()).isEqualTo(expected.size());
@@ -4393,39 +4390,37 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideSingularByClassifier() {
-        final List<Queue<Integer>> actual = of(1).slideBy(Function.identity()).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1));
+        List<Queue<Integer>> actual = of(1).slideBy(Function.identity()).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByIdentityClassifier() {
-        final List<Queue<Integer>> actual =
-                of(1, 2, 3).slideBy(Function.identity()).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1), Queue.of(2), Queue.of(3));
+        List<Queue<Integer>> actual = of(1, 2, 3).slideBy(Function.identity()).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1), Queue.of(2), Queue.of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilByConstantClassifier() {
-        final List<Queue<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3));
+        List<Queue<Integer>> actual = of(1, 2, 3).slideBy(e -> "same").toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySomeClassifier() {
-        final List<Queue<Integer>> actual =
+        List<Queue<Integer>> actual =
                 of(10, 20, 30, 42, 52, 60, 72).slideBy(e -> e % 10).toList();
-        final List<Queue<Integer>> expected =
-                List.of(Queue.of(10, 20, 30), Queue.of(42, 52), Queue.of(60), Queue.of(72));
+        List<Queue<Integer>> expected = List.of(Queue.of(10, 20, 30), Queue.of(42, 52), Queue.of(60), Queue.of(72));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideByClassifierReturningNull() {
-        final List<Queue<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3));
+        List<Queue<Integer>> actual = of(1, 2, 3).slideBy(e -> null).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4458,15 +4453,15 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlideNonNilBySize1() {
-        final List<Queue<Integer>> actual = of(1, 2, 3).sliding(1).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1), Queue.of(2), Queue.of(3));
+        List<Queue<Integer>> actual = of(1, 2, 3).sliding(1).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1), Queue.of(2), Queue.of(3));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlideNonNilBySize2() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(2, 3), Queue.of(3, 4), Queue.of(4, 5));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(2, 3), Queue.of(3, 4), Queue.of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4494,45 +4489,43 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep3() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(4, 5));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 3).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(4, 5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep4() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(5));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 4).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(5));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide5ElementsBySize2AndStep5() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4, 5).sliding(2, 5).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide4ElementsBySize5AndStep3() {
-        final List<Queue<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3, 4));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4).sliding(5, 3).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2, 3, 4));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize1AndStep3() {
-        final List<Queue<Integer>> actual =
-                of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1), Queue.of(4), Queue.of(7));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(1, 3).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1), Queue.of(4), Queue.of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldSlide7ElementsBySize2AndStep3() {
-        final List<Queue<Integer>> actual =
-                of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
-        final List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(4, 5), Queue.of(7));
+        List<Queue<Integer>> actual = of(1, 2, 3, 4, 5, 6, 7).sliding(2, 3).toList();
+        List<Queue<Integer>> expected = List.of(Queue.of(1, 2), Queue.of(4, 5), Queue.of(7));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4637,14 +4630,14 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).take(4)).isEqualTo(of(1, 2, 3));
         } else {
-            final Queue<Integer> t = of(1, 2, 3);
+            Queue<Integer> t = of(1, 2, 3);
             assertThat(t.take(4)).isSameAs(t);
         }
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceIfTakeAll() {
-        final Queue<?> t = of(1, 2, 3);
+        Queue<?> t = of(1, 2, 3);
         assertThat(t.take(3)).isSameAs(t);
         assertThat(t.take(4)).isSameAs(t);
     }
@@ -4679,14 +4672,14 @@ public class QueueTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).takeRight(4)).isEqualTo(of(1, 2, 3));
         } else {
-            final Queue<Integer> t = of(1, 2, 3);
+            Queue<Integer> t = of(1, 2, 3);
             assertThat(t.takeRight(4)).isSameAs(t);
         }
     }
 
     @TestTemplate
     public void shouldReturnSameInstanceIfTakeRightAll() {
-        final Queue<?> t = of(1, 2, 3);
+        Queue<?> t = of(1, 2, 3);
         assertThat(t.takeRight(3)).isSameAs(t);
         assertThat(t.takeRight(4)).isSameAs(t);
     }
@@ -4704,7 +4697,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeUntilAllOnFalseCondition() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).takeUntil(x -> false)).isEqualTo(of(1, 2, 3));
         } else {
@@ -4728,7 +4721,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyTakeUntil() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.takeUntil(ignored -> false)).isSameAs(empty);
     }
 
@@ -4754,7 +4747,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTakeWhileAllOnTrueCondition() {
-        final Queue<Integer> t = of(1, 2, 3);
+        Queue<Integer> t = of(1, 2, 3);
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).takeWhile(x -> true)).isEqualTo(of(1, 2, 3));
         } else {
@@ -4769,7 +4762,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenEmptyTakeWhile() {
-        final Queue<?> empty = empty();
+        Queue<?> empty = empty();
         assertThat(empty.takeWhile(ignored -> false)).isSameAs(empty);
     }
 
@@ -4806,8 +4799,8 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldUnzipNonNil() {
-        final Tuple actual = of(0, 1).unzip(i -> Tuple.of(i, (char) ((short) 'a' + i)));
-        final Tuple expected = Tuple.of(of(0, 1), of('a', 'b'));
+        Tuple actual = of(0, 1).unzip(i -> Tuple.of(i, (char) ((short) 'a' + i)));
+        Tuple expected = Tuple.of(of(0, 1), of('a', 'b'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4818,8 +4811,8 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldUnzip3NonNil() {
-        final Tuple actual = of(0, 1).unzip3(i -> Tuple.of(i, (char) ((short) 'a' + i), (char) ((short) 'a' + i + 1)));
-        final Tuple expected = Tuple.of(of(0, 1), of('a', 'b'), of('b', 'c'));
+        Tuple actual = of(0, 1).unzip3(i -> Tuple.of(i, (char) ((short) 'a' + i), (char) ((short) 'a' + i + 1)));
+        Tuple expected = Tuple.of(of(0, 1), of('a', 'b'), of('b', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4827,51 +4820,51 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipNils() {
-        final Queue<?> actual = empty().zip(empty());
+        Queue<?> actual = empty().zip(empty());
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipEmptyAndNonNil() {
-        final Queue<?> actual = empty().zip(of(1));
+        Queue<?> actual = empty().zip(of(1));
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipNonEmptyAndNil() {
-        final Queue<?> actual = of(1).zip(empty());
+        Queue<?> actual = of(1).zip(empty());
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipNonNilsIfThisIsSmaller() {
-        final Queue<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
+        Queue<Tuple2<Integer, String>> actual = of(1, 2).zip(of("a", "b", "c"));
         @SuppressWarnings("unchecked")
-        final Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsIfThatIsSmaller() {
-        final Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
+        Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b"));
         @SuppressWarnings("unchecked")
-        final Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+        Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipNonNilsOfSameSize() {
-        final Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
+        Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zip(of("a", "b", "c"));
         @SuppressWarnings("unchecked")
-        final Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     @SuppressWarnings("unchecked")
     public void shouldZipWithNonNilsOfSameSize() {
-        final Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zipWith(of("a", "b", "c"), Tuple::of);
-        final Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zipWith(of("a", "b", "c"), Tuple::of);
+        Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4884,21 +4877,21 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipAllNils() {
-        final Queue<?> actual = empty().zipAll(empty(), 0, 0);
+        Queue<?> actual = empty().zipAll(empty(), 0, 0);
         assertThat(actual).isEmpty();
     }
 
     @TestTemplate
     public void shouldZipAllEmptyAndNonNil() {
-        final Queue<?> actual = empty().zipAll(of(1), 0, 0);
-        final Queue<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
+        Queue<?> actual = empty().zipAll(of(1), 0, 0);
+        Queue<Tuple2<Object, Integer>> expected = of(Tuple.of(0, 1));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonEmptyAndNil() {
-        final Queue<?> actual = of(1).zipAll(empty(), 0, 0);
-        final Queue<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
+        Queue<?> actual = of(1).zipAll(empty(), 0, 0);
+        Queue<Tuple2<Integer, Object>> expected = of(Tuple.of(1, 0));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4910,25 +4903,25 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipAllNonNilsIfThisIsSmaller() {
-        final Queue<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
+        Queue<Tuple2<Integer, String>> actual = of(1, 2).zipAll(of("a", "b", "c"), 9, "z");
         @SuppressWarnings("unchecked")
-        final Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
+        Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(9, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsIfThatIsSmaller() {
-        final Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
+        Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b"), 9, "z");
         @SuppressWarnings("unchecked")
-        final Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
+        Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "z"));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldZipAllNonNilsOfSameSize() {
-        final Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
+        Queue<Tuple2<Integer, String>> actual = of(1, 2, 3).zipAll(of("a", "b", "c"), 9, "z");
         @SuppressWarnings("unchecked")
-        final Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
+        Queue<Tuple2<Integer, String>> expected = of(Tuple.of(1, "a"), Tuple.of(2, "b"), Tuple.of(3, "c"));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4946,17 +4939,17 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldZipNonNilWithIndex() {
-        final Queue<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
+        Queue<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex();
         @SuppressWarnings("unchecked")
-        final Queue<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        Queue<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     @SuppressWarnings("unchecked")
     public void shouldZipNonNilWithIndexWithMapper() {
-        final Queue<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex(Tuple::of);
-        final Queue<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
+        Queue<Tuple2<String, Integer>> actual = of("a", "b", "c").zipWithIndex(Tuple::of);
+        Queue<Tuple2<String, Integer>> expected = of(Tuple.of("a", 0), Tuple.of("b", 1), Tuple.of("c", 2));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -4964,15 +4957,15 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertNilToJavaArray() {
-        final Integer[] actual = List.<Integer>empty().toArray(Integer[]::new);
-        final Integer[] expected = new Integer[] {};
+        Integer[] actual = List.<Integer>empty().toArray(Integer[]::new);
+        Integer[] expected = new Integer[] {};
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldConvertNonNilToJavaArray() {
-        final Integer[] array = of(1, 2).toArray(Integer[]::new);
-        final Integer[] expected = new Integer[] {1, 2};
+        Integer[] array = of(1, 2).toArray(Integer[]::new);
+        Integer[] expected = new Integer[] {1, 2};
         assertThat(array).isEqualTo(expected);
     }
 
@@ -5035,23 +5028,23 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTapSingleValuePerformingAnAction() {
-        final int[] effect = {0};
-        final Queue<Integer> actual = of(1).tap(i -> effect[0] = i);
+        int[] effect = {0};
+        Queue<Integer> actual = of(1).tap(i -> effect[0] = i);
         assertThat(actual).isEqualTo(of(1));
         assertThat(effect[0]).isEqualTo(1);
     }
 
     @TestTemplate
     public void shouldTapEveryElement() {
-        final int[] sum = {0};
-        final Queue<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
+        int[] sum = {0};
+        Queue<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
         assertThat(actual).isEqualTo(of(1, 2, 3)); // consumes every element in the lazy case
         assertThat(sum[0]).isEqualTo(6);
     }
 
     @TestTemplate
     public void shouldReturnThisOnTapOfEagerCollection() {
-        final Queue<Integer> testee = of(1, 2, 3);
+        Queue<Integer> testee = of(1, 2, 3);
         if (hasDefiniteSize()) {
             assertThat(testee.tap(i -> {})).isSameAs(testee);
         }
@@ -5076,14 +5069,13 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithACollector() {
-        final java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
     @TestTemplate
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Integer> actual =
-                of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -5124,14 +5116,14 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedMapWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i)))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity()))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
@@ -5144,9 +5136,9 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedSet() {
-        final Queue<Integer> value = of(3, 7, 1, 15, 0);
-        final Set<Integer> set = value.toLinkedSet();
-        final List<Integer> itemsInOrder = true ? value.toList() : List.of(3, 7, 1, 15, 0);
+        Queue<Integer> value = of(3, 7, 1, 15, 0);
+        Set<Integer> set = value.toLinkedSet();
+        List<Integer> itemsInOrder = true ? value.toList() : List.of(3, 7, 1, 15, 0);
         assertThat(set).isEqualTo(itemsInOrder.foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
         assertThat(empty().toLinkedSet()).isSameAs(LinkedHashSet.empty());
     }
@@ -5164,7 +5156,7 @@ public class QueueTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedSet() {
-        final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
+        Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
         assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
                 .isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
     }
@@ -5795,7 +5787,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldGroupIntoQueuesOfQueues() {
-            final Queue<Queue<Integer>> groups = of(1, 2, 3, 4, 5).grouped(2);
+            Queue<Queue<Integer>> groups = of(1, 2, 3, 4, 5).grouped(2);
             assertThat(groups).isInstanceOf(Queue.class);
             assertThat(groups).isEqualTo(Queue.of(Queue.of(1, 2), Queue.of(3, 4), Queue.of(5)));
             assertThat(groups.head()).isInstanceOf(Queue.class);
@@ -5815,7 +5807,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldSlideByIntoQueuesOfQueues() {
-            final Queue<Queue<Integer>> runs = of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10);
+            Queue<Queue<Integer>> runs = of(1, 2, 3, 10, 12, 5, 7, 20, 29).slideBy(x -> x / 10);
             assertThat(runs).isInstanceOf(Queue.class);
             assertThat(runs).isEqualTo(Queue.of(Queue.of(1, 2, 3), Queue.of(10, 12), Queue.of(5, 7), Queue.of(20, 29)));
             assertThat(runs.head()).isInstanceOf(Queue.class);
@@ -5823,12 +5815,12 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldBuildTheWindowsNow() {
-            final AtomicInteger keys = new AtomicInteger();
-            final Queue<Queue<Integer>> runs = of(1, 2, 3).slideBy(x -> {
+            AtomicInteger keys = new AtomicInteger();
+            Queue<Queue<Integer>> runs = of(1, 2, 3).slideBy(x -> {
                 keys.incrementAndGet();
                 return x;
             });
-            final int keysAtReturn = keys.get();
+            int keysAtReturn = keys.get();
             assertThat(keysAtReturn).isGreaterThanOrEqualTo(3); // every element is classified before the call returns
             assertThat(runs.size()).isEqualTo(3);
             assertThat(runs.toList()).isEqualTo(List.of(Queue.of(1), Queue.of(2), Queue.of(3)));
@@ -5872,13 +5864,13 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldWalkTheCrossProductArgumentNow() {
-            final AtomicInteger walks = new AtomicInteger();
-            final Iterable<Character> that = () -> {
+            AtomicInteger walks = new AtomicInteger();
+            Iterable<Character> that = () -> {
                 walks.incrementAndGet();
                 return java.util.List.of('a', 'b').iterator();
             };
-            final Queue<Tuple2<Integer, Character>> product = of(1, 2, 3).crossProduct(that);
-            final int walksAtReturn = walks.get();
+            Queue<Tuple2<Integer, Character>> product = of(1, 2, 3).crossProduct(that);
+            int walksAtReturn = walks.get();
             assertThat(walksAtReturn).isEqualTo(1); // the argument is copied, once, before the call returns
             assertThat(product.size()).isEqualTo(6);
             assertThat(product.toList())
@@ -5895,7 +5887,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldWindowAQueueWithBothEndsPopulated() {
-            final Queue<Integer> queue = bothSides();
+            Queue<Integer> queue = bothSides();
             assertThat(queue.grouped(3)).isEqualTo(Queue.of(Queue.of(1, 2, 3), Queue.of(4)));
             assertThat(queue.sliding(2)).isEqualTo(Queue.of(Queue.of(1, 2), Queue.of(2, 3), Queue.of(3, 4)));
             assertThat(queue.sliding(3, 2)).isEqualTo(Queue.of(Queue.of(1, 2, 3), Queue.of(3, 4)));
@@ -5918,7 +5910,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldWindowAQueueAfterADequeueRefilledTheFront() {
-            final Queue<Integer> queue = rebalanced();
+            Queue<Integer> queue = rebalanced();
             assertThat(queue).isEqualTo(Queue.of(2, 3, 4, 5));
             assertThat(queue.grouped(3)).isEqualTo(Queue.of(Queue.of(2, 3, 4), Queue.of(5)));
             assertThat(queue.sliding(2, 2)).isEqualTo(Queue.of(Queue.of(2, 3), Queue.of(4, 5)));
@@ -5983,7 +5975,7 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldReadAOneShotArgumentOnceOnBothEnds() {
             // a queue whose rear is populated: insertAll past the front goes through the rear
-            final Queue<Integer> queue = Queue.<Integer>empty().enqueue(1).enqueue(4);
+            Queue<Integer> queue = Queue.<Integer>empty().enqueue(1).enqueue(4);
             assertThat(queue.insertAll(1, oneShot(2, 3))).isEqualTo(of(1, 2, 3, 4));
             assertThat(queue.enqueueAll(oneShot(5, 6))).isEqualTo(of(1, 4, 5, 6));
             assertThat(queue.lastIndexOfSlice(oneShot(1, 4))).isEqualTo(0);
@@ -6004,10 +5996,10 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final Queue<Integer> source = Queue.range(0, n);
-                final Tuple2<Queue<String>, Queue<Integer>> actual =
+                Queue<Integer> source = Queue.range(0, n);
+                Tuple2<Queue<String>, Queue<Integer>> actual =
                         source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
-                final Tuple2<Queue<Integer>, Queue<Integer>> expected = source.partition(i -> i % 3 == 0);
+                Tuple2<Queue<Integer>, Queue<Integer>> expected = source.partition(i -> i % 3 == 0);
                 assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
                 assertThat(actual._2()).isEqualTo(expected._2());
                 assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
@@ -6020,7 +6012,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeepTheSourceOrderOnEachSide() {
-            final Tuple2<Queue<Integer>, Queue<String>> actual =
+            Tuple2<Queue<Integer>, Queue<String>> actual =
                     Queue.of(5, 2, 8, 1, 9, 4).partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
             assertThat(actual).isEqualTo(Tuple.of(Queue.of(2, 8, 4), Queue.of("o5", "o1", "o9")));
         }
@@ -6028,7 +6020,7 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldCallTheFunctionOncePerElementInOrder() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final java.util.List<Integer> seen = new ArrayList<>();
+                java.util.List<Integer> seen = new ArrayList<>();
                 Queue.range(0, n).partitionMap(i -> {
                     seen.add(i);
                     return i % 2 == 0 ? Either.left(i) : Either.right(i);
@@ -6039,8 +6031,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnTheEmptyQueueForAnEmptySide() {
-            final Tuple2<Queue<Integer>, Queue<Integer>> none =
-                    Queue.<Integer>empty().partitionMap(Either::left);
+            Tuple2<Queue<Integer>, Queue<Integer>> none = Queue.<Integer>empty().partitionMap(Either::left);
             assertThat(none._1()).isSameAs(Queue.empty());
             assertThat(none._2()).isSameAs(Queue.empty());
             assertThat(Queue.of(1, 2)
@@ -6059,7 +6050,7 @@ public class QueueTest extends AbstractTraversableTest {
                     .isThrownBy(() -> Queue.of(1).partitionMap(null))
                     .withMessage("f is null");
             for (int n : new int[] {1, 32, 33}) {
-                final int last = n - 1;
+                int last = n - 1;
                 assertThatNullPointerException()
                         .isThrownBy(() -> Queue.range(0, n)
                                 .partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)))
@@ -6074,7 +6065,7 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldFlattenAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final Queue<Integer> inner = Queue.range(0, n);
+                Queue<Integer> inner = Queue.range(0, n);
                 assertThat(Queue.flatten(Queue.of(inner))).isEqualTo(inner);
                 assertThat(Queue.flatten(Queue.of(inner, inner))).isEqualTo(inner.appendAll(inner));
                 assertThat(Queue.flatten(Queue.of(Queue.<Integer>empty(), inner, Queue.<Integer>empty())))
@@ -6100,7 +6091,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldWidenTheElementType() {
-            final Queue<Number> numbers = Queue.flatten(Queue.of(Queue.of(1), Queue.of(2.0)));
+            Queue<Number> numbers = Queue.flatten(Queue.of(Queue.of(1), Queue.of(2.0)));
             assertThat(numbers).isEqualTo(Queue.<Number>of(1, 2.0));
         }
 
@@ -6162,7 +6153,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldComputeTheKeyOncePerElementInOrder() {
-            final java.util.List<Integer> seen = new ArrayList<>();
+            java.util.List<Integer> seen = new ArrayList<>();
             assertThat(Queue.range(0, 33).duplicatesBy(i -> {
                         seen.add(i);
                         return i % 5;
@@ -6174,7 +6165,7 @@ public class QueueTest extends AbstractTraversableTest {
         @Test
         public void shouldFindDuplicatesAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final Queue<Integer> source = Queue.range(0, n);
+                Queue<Integer> source = Queue.range(0, n);
                 assertThat(source.duplicates()).isSameAs(Queue.empty());
                 assertThat(source.appendAll(source).duplicates()).isEqualTo(source);
                 assertThat(source.appendAll(source.reverse()).duplicates()).isEqualTo(source);
@@ -6231,7 +6222,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         // an Iterable whose iterator can be asked for once
         private Iterable<Integer> oneShot(List<Integer> elements) {
-            final AtomicInteger calls = new AtomicInteger();
+            AtomicInteger calls = new AtomicInteger();
             return () -> {
                 assertThat(calls.incrementAndGet()).isEqualTo(1);
                 return elements.iterator();
@@ -6244,7 +6235,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldAgreeWithListOnEverySplitAndBound() {
-            final List<List<Integer>> prefixes = List.of(
+            List<List<Integer>> prefixes = List.of(
                     List.empty(),
                     List.of(0),
                     List.of(0, 1),
@@ -6255,7 +6246,7 @@ public class QueueTest extends AbstractTraversableTest {
                     List.range(0, 5),
                     List.range(0, 6));
             for (int n : new int[] {0, 1, 5}) {
-                final List<Integer> list = List.range(0, n);
+                List<Integer> list = List.range(0, n);
                 for (Queue<Integer> queue : shapes(n)) {
                     assertThat(queue.toList()).isEqualTo(list);
                     for (int i : indices(n)) {
@@ -6272,7 +6263,7 @@ public class QueueTest extends AbstractTraversableTest {
                         }
                     }
                     for (int k = 0; k <= 4; k++) {
-                        final int limit = k;
+                        int limit = k;
                         assertThat(queue.prefixLength(x -> x < limit)).isEqualTo(list.prefixLength(x -> x < limit));
                     }
                     for (List<Integer> prefix : prefixes) {
@@ -6291,8 +6282,8 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldStopReadingTheArgumentsWhereTheWalkStops() {
-            final Queue<Integer> queue = Queue.ofAll(List.range(0, 3)).enqueueAll(List.range(3, 6));
-            final AtomicInteger tested = new AtomicInteger();
+            Queue<Integer> queue = Queue.ofAll(List.range(0, 3)).enqueueAll(List.range(3, 6));
+            AtomicInteger tested = new AtomicInteger();
             assertThat(queue.prefixLength(x -> tested.incrementAndGet() > 0 && x < 4))
                     .isEqualTo(4);
             assertThat(tested.get()).isEqualTo(5);
@@ -6300,8 +6291,8 @@ public class QueueTest extends AbstractTraversableTest {
             assertThat(queue.segmentLength(x -> tested.incrementAndGet() > 0 && x < 2, 1))
                     .isEqualTo(1);
             assertThat(tested.get()).isEqualTo(2);
-            final AtomicInteger read = new AtomicInteger();
-            final Iterable<Integer> counted = () -> java.util.stream.Stream.of(0, 1, 9, 3)
+            AtomicInteger read = new AtomicInteger();
+            Iterable<Integer> counted = () -> java.util.stream.Stream.of(0, 1, 9, 3)
                     .peek(x -> read.incrementAndGet())
                     .iterator();
             assertThat(queue.startsWith(counted)).isFalse();
@@ -6358,7 +6349,7 @@ public class QueueTest extends AbstractTraversableTest {
 
         @Test
         public void shouldAgreeWithVectorOverRandomOperations() {
-            final java.util.Random random = new java.util.Random(93);
+            java.util.Random random = new java.util.Random(93);
             for (int run = 0; run < 200; run++) {
                 Queue<Integer> queue = Queue.empty();
                 Vector<Integer> model = Vector.empty();
@@ -6366,7 +6357,7 @@ public class QueueTest extends AbstractTraversableTest {
                 Queue<Integer> older = queue;
                 Vector<Integer> olderModel = model;
                 for (int step = 0; step < 60; step++) {
-                    final int element = random.nextInt(1000);
+                    int element = random.nextInt(1000);
                     switch (random.nextInt(9)) {
                         case 0 -> {
                             queue = queue.enqueue(element);
@@ -6398,7 +6389,7 @@ public class QueueTest extends AbstractTraversableTest {
                         }
                         case 6 -> {
                             if (!model.isEmpty()) {
-                                final Tuple2<Integer, Queue<Integer>> dequeued = queue.dequeue();
+                                Tuple2<Integer, Queue<Integer>> dequeued = queue.dequeue();
                                 assertThat(dequeued._1()).isEqualTo(model.head());
                                 queue = dequeued._2();
                                 model = model.tail();
@@ -6420,7 +6411,7 @@ public class QueueTest extends AbstractTraversableTest {
                     if (!model.isEmpty()) {
                         assertThat(queue.head()).isEqualTo(model.head());
                         assertThat(queue.last()).isEqualTo(model.last());
-                        final int index = random.nextInt(model.size());
+                        int index = random.nextInt(model.size());
                         assertThat(queue.get(index)).isEqualTo(model.get(index));
                     }
                 }

@@ -70,7 +70,7 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
                     || !java.util.Arrays.equals(x.hashes, y.hashes)) {
                 return false;
             }
-            final int payload = Integer.bitCount(x.dataMap);
+            int payload = Integer.bitCount(x.dataMap);
             for (int i = 0; i < payload; i++) {
                 if (!java.util.Objects.equals(x.content[i], y.content[i])) {
                     return false;

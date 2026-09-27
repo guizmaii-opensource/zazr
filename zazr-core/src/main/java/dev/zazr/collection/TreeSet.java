@@ -63,10 +63,10 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     public static <T extends @Nullable Object> Collector<T, Builder<T>, TreeSet<T>> collector(
             Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final Supplier<Builder<T>> supplier = () -> newBuilder(comparator);
-        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
-        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
-        final Function<Builder<T>, TreeSet<T>> finisher = Builder::result;
+        Supplier<Builder<T>> supplier = () -> newBuilder(comparator);
+        BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        Function<Builder<T>, TreeSet<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -255,7 +255,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return (TreeSet<T>) underlying;
         } else {
             // one read of the argument, which may be a one-shot Iterable: the emptiness is answered by the tree
-            final RedBlackTree<T> tree = RedBlackTree.ofAll(comparator, values);
+            RedBlackTree<T> tree = RedBlackTree.ofAll(comparator, values);
             return tree.isEmpty() ? empty(comparator) : new TreeSet<>(tree);
         }
     }
@@ -291,13 +291,13 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         Objects.requireNonNull(nested, "nested is null");
         // the builder of ofAll, inlined so that a null element is reported under this type's name; of equal elements,
         // the last one is kept
-        final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder");
+        RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder");
         for (Iterable<? extends T> inner : nested) {
             for (T element : inner) {
                 builder.add(Objects.requireNonNull(element, "TreeSet.flatten: element is null"));
             }
         }
-        final RedBlackTree<T> tree = builder.result();
+        RedBlackTree<T> tree = builder.result();
         return tree.isEmpty() ? empty(comparator) : new TreeSet<>(tree);
     }
 
@@ -754,12 +754,11 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (tree.isEmpty() || knownSize(elements) >= tree.size()) {
             // many elements: sorted into a tree, the first of equal ones kept, then united with this tree, whose
             // elements win over equal given ones; the same set as adding them one by one below
-            final RedBlackTreeBuilder<T> builder =
-                    new RedBlackTreeBuilder<>(tree.comparator(), "TreeSet.Builder", 0, true);
+            RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(tree.comparator(), "TreeSet.Builder", 0, true);
             for (T element : elements) {
                 builder.add(Objects.requireNonNull(element, "TreeSet: element is null"));
             }
-            final RedBlackTree<T> added = builder.result().union(tree);
+            RedBlackTree<T> added = builder.result().union(tree);
             return (added.size() == tree.size()) ? this : new TreeSet<>(added);
         }
         // a few elements: each one not present yet is inserted, so of equal elements the one already here, or else
@@ -820,7 +819,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             return this;
         } else if (hasSameComparator(elements)) {
-            final TreeSet<T> that = (TreeSet<T>) elements;
+            TreeSet<T> that = (TreeSet<T>) elements;
             return that.isEmpty() ? this : new TreeSet<>(tree.difference(that.tree));
         } else {
             return removeAll(elements);
@@ -923,7 +922,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         if (isEmpty()) {
             return this;
         } else if (hasSameComparator(elements)) {
-            final TreeSet<T> that = (TreeSet<T>) elements;
+            TreeSet<T> that = (TreeSet<T>) elements;
             return new TreeSet<>(tree.intersection(that.tree));
         } else {
             return retainAll(elements);
@@ -1068,7 +1067,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public Tuple2<TreeSet<T>, TreeSet<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final Tuple2<RedBlackTree<T>, RedBlackTree<T>> trees = RedBlackTreeModule.Node.partition(tree, predicate);
+        Tuple2<RedBlackTree<T>, RedBlackTree<T>> trees = RedBlackTreeModule.Node.partition(tree, predicate);
         return Tuple.of(withTree(trees._1()), withTree(trees._2()));
     }
 
@@ -1115,7 +1114,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     public TreeSet<T> union(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (hasSameComparator(elements)) {
-            final TreeSet<T> that = (TreeSet<T>) elements;
+            TreeSet<T> that = (TreeSet<T>) elements;
             return that.isEmpty() ? this : new TreeSet<>(tree.union(that.tree));
         } else {
             return addAll(elements);
@@ -1248,7 +1247,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     // the elements of rank from (inclusive) to until (exclusive), clamped; this set when nothing is cut off
     private TreeSet<T> slice(int from, int until) {
-        final RedBlackTree<T> sliced = RedBlackTreeModule.Node.slice(tree, from, until);
+        RedBlackTree<T> sliced = RedBlackTreeModule.Node.slice(tree, from, until);
         return sliced == tree ? this : new TreeSet<>(sliced);
     }
 

@@ -86,7 +86,7 @@ public interface CheckedFunction2<
             BiFunction<T1, T2, Option<R>> lift(CheckedFunction2<? super T1, ? super T2, ? extends R> partialFunction) {
         return (t1, t2) -> {
             try {
-                final R result = partialFunction.apply(t1, t2);
+                R result = partialFunction.apply(t1, t2);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {
@@ -188,9 +188,9 @@ public interface CheckedFunction2<
                 if (isFatal(throwable)) {
                     return sneakyThrow(throwable);
                 }
-                final BiFunction<? super T1, ? super T2, ? extends R> func = recover.apply(throwable);
+                BiFunction<? super T1, ? super T2, ? extends R> func = recover.apply(throwable);
                 if (func == null) {
-                    final NullPointerException nullResult =
+                    NullPointerException nullResult =
                             new NullPointerException("CheckedFunction2.recover: recover returned null");
                     nullResult.initCause(throwable);
                     throw nullResult;

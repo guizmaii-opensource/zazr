@@ -24,9 +24,8 @@ public class Issue2559Test {
 
     @Test
     public void partitionShouldBeUnique() {
-        final Set<String> fruitsToEat = HashSet.of("apple", "banana");
-        final Tuple2<? extends Set<String>, ? extends Set<String>> partition =
-                fruitsToEat.partition(this::biteAndCheck);
+        Set<String> fruitsToEat = HashSet.of("apple", "banana");
+        Tuple2<? extends Set<String>, ? extends Set<String>> partition = fruitsToEat.partition(this::biteAndCheck);
         // Set now implements Predicate<T> (docs/design.md 3.1), so assertThat(Iterable) vs assertThat(Predicate)
         // is ambiguous without a type witness.
         assertThat((Iterable<String>) partition._1()).isEmpty();
@@ -38,7 +37,7 @@ public class Issue2559Test {
     }
 
     private boolean biteAndCheck(String name) {
-        final Eat eat = fruitsBeingEaten.getOrDefault(name, Eat.prepare(name)).bite();
+        Eat eat = fruitsBeingEaten.getOrDefault(name, Eat.prepare(name)).bite();
         fruitsBeingEaten.put(name, eat);
         return eat.isEaten();
     }

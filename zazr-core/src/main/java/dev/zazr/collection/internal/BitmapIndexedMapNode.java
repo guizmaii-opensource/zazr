@@ -150,9 +150,9 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     @Override
     V getOrElse(K key, int hash, int shift, V defaultValue) {
-        final int bitpos = bitposFrom(maskFrom(hash, shift));
+        int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
-            final int index = indexFrom(dataMap, bitpos);
+            int index = indexFrom(dataMap, bitpos);
             return (hashes[index] == hash && Objects.equals(key, getKey(index))) ? getValue(index) : defaultValue;
         } else if ((nodeMap & bitpos) != 0) {
             return getNode(indexFrom(nodeMap, bitpos)).getOrElse(key, hash, shift + BIT_PARTITION_SIZE, defaultValue);
@@ -163,9 +163,9 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     @Override
     boolean containsKey(K key, int hash, int shift) {
-        final int bitpos = bitposFrom(maskFrom(hash, shift));
+        int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
-            final int index = indexFrom(dataMap, bitpos);
+            int index = indexFrom(dataMap, bitpos);
             return hashes[index] == hash && Objects.equals(key, getKey(index));
         } else if ((nodeMap & bitpos) != 0) {
             return getNode(indexFrom(nodeMap, bitpos)).containsKey(key, hash, shift + BIT_PARTITION_SIZE);
@@ -177,9 +177,9 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     @Override
     @Nullable
     Tuple2<K, V> getEntry(K key, int hash, int shift) {
-        final int bitpos = bitposFrom(maskFrom(hash, shift));
+        int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
-            final int index = indexFrom(dataMap, bitpos);
+            int index = indexFrom(dataMap, bitpos);
             return (hashes[index] == hash && Objects.equals(key, getKey(index)))
                     ? Tuple.of(getKey(index), getValue(index))
                     : null;
@@ -194,11 +194,11 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     @Override
     BitmapIndexedMapNode<K, V> updated(K key, V value, int hash, int shift, boolean replace) {
-        final int bitpos = bitposFrom(maskFrom(hash, shift));
+        int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
-            final int index = indexFrom(dataMap, bitpos);
-            final K key0 = getKey(index);
-            final int hash0 = hashes[index];
+            int index = indexFrom(dataMap, bitpos);
+            K key0 = getKey(index);
+            int hash0 = hashes[index];
             if (hash0 == hash && Objects.equals(key0, key)) {
                 if (replace && (key0 != key || getValue(index) != value)) {
                     return copyAndSetEntry(index, key, value);
@@ -206,13 +206,13 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                     return this;
                 }
             } else {
-                final MapNode<K, V> subNodeNew = mergeTwoKeyValPairs(
+                MapNode<K, V> subNodeNew = mergeTwoKeyValPairs(
                         null, key0, getValue(index), hash0, key, value, hash, shift + BIT_PARTITION_SIZE);
                 return copyAndMigrateFromInlineToNode(bitpos, hash0, subNodeNew);
             }
         } else if ((nodeMap & bitpos) != 0) {
-            final MapNode<K, V> subNode = getNode(indexFrom(nodeMap, bitpos));
-            final MapNode<K, V> subNodeNew = subNode.updated(key, value, hash, shift + BIT_PARTITION_SIZE, replace);
+            MapNode<K, V> subNode = getNode(indexFrom(nodeMap, bitpos));
+            MapNode<K, V> subNodeNew = subNode.updated(key, value, hash, shift + BIT_PARTITION_SIZE, replace);
             return (subNodeNew == subNode) ? this : copyAndSetNode(bitpos, subNode, subNodeNew);
         } else {
             return copyAndInsertValue(bitpos, key, hash, value);
@@ -221,15 +221,15 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     @Override
     BitmapIndexedMapNode<K, V> removed(K key, int hash, int shift) {
-        final int bitpos = bitposFrom(maskFrom(hash, shift));
+        int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
-            final int index = indexFrom(dataMap, bitpos);
+            int index = indexFrom(dataMap, bitpos);
             if (hashes[index] == hash && Objects.equals(getKey(index), key)) {
                 if (payloadArity() == 2 && nodeArity() == 0) {
                     // the node of the remaining entry either becomes the root, or is inlined by the parent: its slot is
                     // the one of the root level
-                    final int newDataMap = (shift == 0) ? (dataMap ^ bitpos) : bitposFrom(maskFrom(hash, 0));
-                    final int other = 1 - index;
+                    int newDataMap = (shift == 0) ? (dataMap ^ bitpos) : bitposFrom(maskFrom(hash, 0));
+                    int other = 1 - index;
                     return new BitmapIndexedMapNode<>(
                             null,
                             newDataMap,
@@ -245,12 +245,12 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 return this;
             }
         } else if ((nodeMap & bitpos) != 0) {
-            final MapNode<K, V> subNode = getNode(indexFrom(nodeMap, bitpos));
-            final MapNode<K, V> subNodeNew = subNode.removed(key, hash, shift + BIT_PARTITION_SIZE);
+            MapNode<K, V> subNode = getNode(indexFrom(nodeMap, bitpos));
+            MapNode<K, V> subNodeNew = subNode.removed(key, hash, shift + BIT_PARTITION_SIZE);
             if (subNodeNew == subNode) {
                 return this;
             }
-            final int subNodeNewSize = subNodeNew.size();
+            int subNodeNewSize = subNodeNew.size();
             if (subNodeNewSize == 1) {
                 if (size == subNode.size()) {
                     // the child was all this node held: the single remaining entry goes up, to be inlined by the parent
@@ -274,11 +274,11 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         if (shift >= HASH_CODE_LENGTH) {
             return new HashCollisionMapNode<>(hash0, new Object[] {key0, value0, key1, value1});
         }
-        final int mask0 = maskFrom(hash0, shift);
-        final int mask1 = maskFrom(hash1, shift);
+        int mask0 = maskFrom(hash0, shift);
+        int mask1 = maskFrom(hash1, shift);
         if (mask0 != mask1) {
-            final int dataMap = bitposFrom(mask0) | bitposFrom(mask1);
-            final int keyHashSum = hash0 + hash1;
+            int dataMap = bitposFrom(mask0) | bitposFrom(mask1);
+            int keyHashSum = hash0 + hash1;
             if (mask0 < mask1) {
                 return new BitmapIndexedMapNode<>(
                         owner,
@@ -299,7 +299,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                         keyHashSum);
             }
         } else {
-            final MapNode<K, V> node =
+            MapNode<K, V> node =
                     mergeTwoKeyValPairs(owner, key0, value0, hash0, key1, value1, hash1, shift + BIT_PARTITION_SIZE);
             return new BitmapIndexedMapNode<>(
                     owner, 0, bitposFrom(mask0), new Object[] {node}, EMPTY_INTS, node.size(), node.keyHashSum());
@@ -307,14 +307,14 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     }
 
     private BitmapIndexedMapNode<K, V> copyAndSetEntry(int index, K key, V value) {
-        final Object[] dst = content.clone();
+        Object[] dst = content.clone();
         dst[2 * index] = key;
         dst[2 * index + 1] = value;
         return new BitmapIndexedMapNode<>(null, dataMap, nodeMap, dst, hashes, size, keyHashSum);
     }
 
     private BitmapIndexedMapNode<K, V> copyAndSetNode(int bitpos, MapNode<K, V> oldNode, MapNode<K, V> newNode) {
-        final Object[] dst = content.clone();
+        Object[] dst = content.clone();
         dst[dst.length - 1 - nodeIndex(bitpos)] = newNode;
         return new BitmapIndexedMapNode<>(
                 null,
@@ -327,10 +327,10 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     }
 
     private BitmapIndexedMapNode<K, V> copyAndInsertValue(int bitpos, K key, int hash, V value) {
-        final int dataIx = dataIndex(bitpos);
-        final int idx = 2 * dataIx;
-        final Object[] src = content;
-        final Object[] dst = new Object[src.length + 2];
+        int dataIx = dataIndex(bitpos);
+        int idx = 2 * dataIx;
+        Object[] src = content;
+        Object[] dst = new Object[src.length + 2];
         System.arraycopy(src, 0, dst, 0, idx);
         dst[idx] = key;
         dst[idx + 1] = value;
@@ -340,10 +340,10 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     }
 
     private BitmapIndexedMapNode<K, V> copyAndRemoveValue(int bitpos, int hash) {
-        final int dataIx = dataIndex(bitpos);
-        final int idx = 2 * dataIx;
-        final Object[] src = content;
-        final Object[] dst = new Object[src.length - 2];
+        int dataIx = dataIndex(bitpos);
+        int idx = 2 * dataIx;
+        Object[] src = content;
+        Object[] dst = new Object[src.length - 2];
         System.arraycopy(src, 0, dst, 0, idx);
         System.arraycopy(src, idx + 2, dst, idx, src.length - idx - 2);
         return new BitmapIndexedMapNode<>(
@@ -352,10 +352,10 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     // the content of this node with the entry of `bitpos` moved out, and `node` inserted among the children
     private Object[] migratedFromInlineToNode(int bitpos, MapNode<K, V> node) {
-        final int idxOld = 2 * dataIndex(bitpos);
-        final int idxNew = content.length - 2 - nodeIndex(bitpos);
-        final Object[] src = content;
-        final Object[] dst = new Object[src.length - 2 + 1];
+        int idxOld = 2 * dataIndex(bitpos);
+        int idxNew = content.length - 2 - nodeIndex(bitpos);
+        Object[] src = content;
+        Object[] dst = new Object[src.length - 2 + 1];
         System.arraycopy(src, 0, dst, 0, idxOld);
         System.arraycopy(src, idxOld + 2, dst, idxOld, idxNew - idxOld);
         dst[idxNew] = node;
@@ -376,11 +376,11 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     private BitmapIndexedMapNode<K, V> copyAndMigrateFromNodeToInline(
             int bitpos, MapNode<K, V> oldNode, MapNode<K, V> node) {
-        final int idxOld = content.length - 1 - nodeIndex(bitpos);
-        final int dataIxNew = dataIndex(bitpos);
-        final int idxNew = 2 * dataIxNew;
-        final Object[] src = content;
-        final Object[] dst = new Object[src.length - 1 + 2];
+        int idxOld = content.length - 1 - nodeIndex(bitpos);
+        int dataIxNew = dataIndex(bitpos);
+        int idxNew = 2 * dataIxNew;
+        Object[] src = content;
+        Object[] dst = new Object[src.length - 1 + 2];
         System.arraycopy(src, 0, dst, 0, idxNew);
         dst[idxNew] = node.getKey(0);
         dst[idxNew + 1] = node.getValue(0);
@@ -401,22 +401,22 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     // Scala's concat: a first pass sorts each slot into one of nine cases, a second builds the node
     @Override
     public BitmapIndexedMapNode<K, V> concat(MapNode<K, V> that, int shift) {
-        final BitmapIndexedMapNode<K, V> bm = (BitmapIndexedMapNode<K, V>) that;
+        BitmapIndexedMapNode<K, V> bm = (BitmapIndexedMapNode<K, V>) that;
         if (size == 0) {
             return bm;
         } else if (bm.size == 0 || bm == this) {
             return this;
         } else if (bm.size == 1) {
-            final BitmapIndexedMapNode<K, V> result = updated(bm.getKey(0), bm.getValue(0), bm.hashes[0], shift, true);
+            BitmapIndexedMapNode<K, V> result = updated(bm.getKey(0), bm.getValue(0), bm.hashes[0], shift, true);
             // this node held only the key of `bm`, whose entry wins: the result is `bm`
             return result.size == 1 ? bm : result;
         }
         // set as soon as the result differs from `bm`, which is returned otherwise
         boolean anyChangesMadeSoFar = false;
-        final int allMap = dataMap | bm.dataMap | nodeMap | bm.nodeMap;
+        int allMap = dataMap | bm.dataMap | nodeMap | bm.nodeMap;
         // both inclusive
-        final int minimumBitPos = bitposFrom(Integer.numberOfTrailingZeros(allMap));
-        final int maximumBitPos = bitposFrom(BRANCHING_FACTOR - Integer.numberOfLeadingZeros(allMap) - 1);
+        int minimumBitPos = bitposFrom(Integer.numberOfTrailingZeros(allMap));
+        int maximumBitPos = bitposFrom(BRANCHING_FACTOR - Integer.numberOfLeadingZeros(allMap) - 1);
 
         int leftNodeRightNode = 0;
         int leftDataRightNode = 0;
@@ -435,7 +435,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         while (true) {
             if ((bitpos & dataMap) != 0) {
                 if ((bitpos & bm.dataMap) != 0) {
-                    final int leftHash = hashes[leftIdx];
+                    int leftHash = hashes[leftIdx];
                     if (leftHash == bm.hashes[rightIdx] && Objects.equals(getKey(leftIdx), bm.getKey(rightIdx))) {
                         leftDataRightDataRightOverwrites |= bitpos;
                     } else {
@@ -470,8 +470,8 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
             bitpos <<= 1;
         }
 
-        final int newDataMap = leftDataOnly | rightDataOnly | leftDataRightDataRightOverwrites;
-        final int newNodeMap = leftNodeRightNode
+        int newDataMap = leftDataOnly | rightDataOnly | leftDataRightDataRightOverwrites;
+        int newNodeMap = leftNodeRightNode
                 | leftDataRightNode
                 | leftNodeRightData
                 | leftNodeOnly
@@ -482,10 +482,10 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
             return bm;
         }
 
-        final int newDataSize = bitCount(newDataMap);
-        final int newContentSize = 2 * newDataSize + bitCount(newNodeMap);
-        final Object[] newContent = new Object[newContentSize];
-        final int[] newHashes = new int[newDataSize];
+        int newDataSize = bitCount(newDataMap);
+        int newContentSize = 2 * newDataSize + bitCount(newNodeMap);
+        Object[] newContent = new Object[newContentSize];
+        int[] newHashes = new int[newDataSize];
         int newSize = 0;
         int newKeyHashSum = 0;
 
@@ -493,14 +493,14 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         int rightDataIdx = 0;
         int leftNodeIdx = 0;
         int rightNodeIdx = 0;
-        final int nextShift = shift + BIT_PARTITION_SIZE;
+        int nextShift = shift + BIT_PARTITION_SIZE;
         int compressedDataIdx = 0;
         int compressedNodeIdx = 0;
         bitpos = minimumBitPos;
         while (true) {
             if ((bitpos & leftNodeRightNode) != 0) {
-                final MapNode<K, V> rightNode = bm.getNode(rightNodeIdx);
-                final MapNode<K, V> newNode = getNode(leftNodeIdx).concat(rightNode, nextShift);
+                MapNode<K, V> rightNode = bm.getNode(rightNodeIdx);
+                MapNode<K, V> newNode = getNode(leftNodeIdx).concat(rightNode, nextShift);
                 if (rightNode != newNode) {
                     anyChangesMadeSoFar = true;
                 }
@@ -511,8 +511,8 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 newSize += newNode.size();
                 newKeyHashSum += newNode.keyHashSum();
             } else if ((bitpos & leftDataRightNode) != 0) {
-                final MapNode<K, V> n = bm.getNode(rightNodeIdx);
-                final MapNode<K, V> newNode =
+                MapNode<K, V> n = bm.getNode(rightNodeIdx);
+                MapNode<K, V> newNode =
                         n.updated(getKey(leftDataIdx), getValue(leftDataIdx), hashes[leftDataIdx], nextShift, false);
                 if (newNode != n) {
                     anyChangesMadeSoFar = true;
@@ -525,7 +525,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 newKeyHashSum += newNode.keyHashSum();
             } else if ((bitpos & leftNodeRightData) != 0) {
                 anyChangesMadeSoFar = true;
-                final MapNode<K, V> newNode = getNode(leftNodeIdx)
+                MapNode<K, V> newNode = getNode(leftNodeIdx)
                         .updated(
                                 bm.getKey(rightDataIdx),
                                 bm.getValue(rightDataIdx),
@@ -557,14 +557,14 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 newSize++;
             } else if ((bitpos & leftNodeOnly) != 0) {
                 anyChangesMadeSoFar = true;
-                final MapNode<K, V> newNode = getNode(leftNodeIdx);
+                MapNode<K, V> newNode = getNode(leftNodeIdx);
                 newContent[newContentSize - compressedNodeIdx - 1] = newNode;
                 compressedNodeIdx++;
                 leftNodeIdx++;
                 newSize += newNode.size();
                 newKeyHashSum += newNode.keyHashSum();
             } else if ((bitpos & rightNodeOnly) != 0) {
-                final MapNode<K, V> newNode = bm.getNode(rightNodeIdx);
+                MapNode<K, V> newNode = bm.getNode(rightNodeIdx);
                 newContent[newContentSize - compressedNodeIdx - 1] = newNode;
                 compressedNodeIdx++;
                 rightNodeIdx++;
@@ -572,7 +572,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 newKeyHashSum += newNode.keyHashSum();
             } else if ((bitpos & leftDataRightDataMigrateToNode) != 0) {
                 anyChangesMadeSoFar = true;
-                final MapNode<K, V> newNode = mergeTwoKeyValPairs(
+                MapNode<K, V> newNode = mergeTwoKeyValPairs(
                         null,
                         getKey(leftDataIdx),
                         getValue(leftDataIdx),
@@ -610,15 +610,15 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     @Override
     public BitmapIndexedMapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
-        final int payload = payloadArity();
-        final int children = nodeArity();
+        int payload = payloadArity();
+        int children = nodeArity();
         // the entries first, then the children, as the iteration goes
         int keptDataMap = 0;
         int newSize = 0;
         int newKeyHashSum = 0;
         int bits = dataMap;
         for (int i = 0; i < payload; i++) {
-            final int bitpos = Integer.lowestOneBit(bits);
+            int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
             if (predicate.test(getKey(i), getValue(i)) == keep) {
                 keptDataMap |= bitpos;
@@ -632,14 +632,14 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         int migratedDataMap = 0;
         bits = nodeMap;
         for (int i = 0; i < children; i++) {
-            final int bitpos = Integer.lowestOneBit(bits);
+            int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
-            final MapNode<K, V> child = getNode(i);
-            final MapNode<K, V> newChild = child.filter(predicate, keep);
-            final int childSize = newChild.size();
+            MapNode<K, V> child = getNode(i);
+            MapNode<K, V> newChild = child.filter(predicate, keep);
+            int childSize = newChild.size();
             if (newChild != child && newChildren == null) {
                 @SuppressWarnings("unchecked")
-                final MapNode<K, V>[] array = (MapNode<K, V>[]) new MapNode<?, ?>[children];
+                MapNode<K, V>[] array = (MapNode<K, V>[]) new MapNode<?, ?>[children];
                 newChildren = array;
             }
             if (newChildren != null) {
@@ -658,17 +658,17 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         } else if (newSize == 0) {
             return MapNode.empty();
         }
-        final int newDataMap = keptDataMap | migratedDataMap;
-        final int newDataSize = bitCount(newDataMap);
-        final Object[] newContent = new Object[2 * newDataSize + bitCount(newNodeMap)];
-        final int[] newHashes = new int[newDataSize];
+        int newDataMap = keptDataMap | migratedDataMap;
+        int newDataSize = bitCount(newDataMap);
+        Object[] newContent = new Object[2 * newDataSize + bitCount(newNodeMap)];
+        int[] newHashes = new int[newDataSize];
         int dataIdx = 0;
         int nodeIdx = 0;
         int oldDataIdx = 0;
         int oldNodeIdx = 0;
         bits = dataMap | nodeMap;
         while (bits != 0) {
-            final int bitpos = Integer.lowestOneBit(bits);
+            int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
             if ((bitpos & dataMap) != 0) {
                 if ((bitpos & keptDataMap) != 0) {
@@ -680,7 +680,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
             } else {
                 // a child changes only when the filter drops one of its entries, so newChildren is set here
                 @SuppressWarnings("NullAway")
-                final MapNode<K, V> newChild = (newChildren == null || newChildren[oldNodeIdx] == null)
+                MapNode<K, V> newChild = (newChildren == null || newChildren[oldNodeIdx] == null)
                         ? getNode(oldNodeIdx)
                         : newChildren[oldNodeIdx];
                 if ((bitpos & migratedDataMap) != 0) {
@@ -700,9 +700,9 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     public <W extends @Nullable Object> BitmapIndexedMapNode<K, W> transform(
             BiFunction<? super K, ? super V, ? extends W> f) {
         Object[] newContent = null;
-        final int payload = payloadArity();
+        int payload = payloadArity();
         for (int i = 0; i < payload; i++) {
-            final W value = Objects.requireNonNull(f.apply(getKey(i), getValue(i)), "HashMap: value is null");
+            W value = Objects.requireNonNull(f.apply(getKey(i), getValue(i)), "HashMap: value is null");
             if (newContent == null && value != content[2 * i + 1]) {
                 newContent = content.clone();
             }
@@ -710,10 +710,10 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 newContent[2 * i + 1] = value;
             }
         }
-        final int children = nodeArity();
+        int children = nodeArity();
         for (int i = 0; i < children; i++) {
-            final MapNode<K, V> child = getNode(i);
-            final MapNode<K, W> newChild = child.transform(f);
+            MapNode<K, V> child = getNode(i);
+            MapNode<K, W> newChild = child.transform(f);
             if (newContent == null && newChild != (Object) child) {
                 newContent = content.clone();
             }
@@ -723,7 +723,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         }
         if (newContent == null) {
             @SuppressWarnings("unchecked")
-            final BitmapIndexedMapNode<K, W> unchanged = (BitmapIndexedMapNode<K, W>) this;
+            BitmapIndexedMapNode<K, W> unchanged = (BitmapIndexedMapNode<K, W>) this;
             return unchanged;
         }
         return new BitmapIndexedMapNode<>(null, dataMap, nodeMap, newContent, hashes, size, keyHashSum);
@@ -733,7 +733,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     @Override
     BitmapIndexedMapNode<K, V> putInPlace(Object owner, K key, V value, int hash, int shift) {
-        final BitmapIndexedMapNode<K, V> node = (this.owner == owner)
+        BitmapIndexedMapNode<K, V> node = (this.owner == owner)
                 ? this
                 : new BitmapIndexedMapNode<>(owner, dataMap, nodeMap, content.clone(), hashes, size, keyHashSum);
         node.update(owner, key, value, hash, shift);
@@ -742,18 +742,18 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     // `this` is owned by `owner`; its hashes array is never written in place, only replaced, so it may be shared
     private void update(Object owner, K key, V value, int hash, int shift) {
-        final int bitpos = bitposFrom(maskFrom(hash, shift));
+        int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
-            final int index = indexFrom(dataMap, bitpos);
-            final K key0 = getKey(index);
-            final int hash0 = hashes[index];
+            int index = indexFrom(dataMap, bitpos);
+            K key0 = getKey(index);
+            int hash0 = hashes[index];
             if (hash0 == hash && Objects.equals(key0, key)) {
                 content[2 * index] = key;
                 content[2 * index + 1] = value;
             } else {
-                final MapNode<K, V> subNodeNew = mergeTwoKeyValPairs(
+                MapNode<K, V> subNodeNew = mergeTwoKeyValPairs(
                         owner, key0, getValue(index), hash0, key, value, hash, shift + BIT_PARTITION_SIZE);
-                final Object[] newContent = migratedFromInlineToNode(bitpos, subNodeNew);
+                Object[] newContent = migratedFromInlineToNode(bitpos, subNodeNew);
                 hashes = removeElement(hashes, index);
                 content = newContent;
                 dataMap ^= bitpos;
@@ -762,21 +762,21 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 keyHashSum = keyHashSum - hash0 + subNodeNew.keyHashSum();
             }
         } else if ((nodeMap & bitpos) != 0) {
-            final int slot = content.length - 1 - nodeIndex(bitpos);
+            int slot = content.length - 1 - nodeIndex(bitpos);
             @SuppressWarnings("unchecked")
-            final MapNode<K, V> subNode = (MapNode<K, V>) content[slot];
+            MapNode<K, V> subNode = (MapNode<K, V>) content[slot];
             // read before the put, which may update the child in place
-            final int subNodeSize = subNode.size();
-            final int subNodeHashSum = subNode.keyHashSum();
-            final MapNode<K, V> subNodeNew = subNode.putInPlace(owner, key, value, hash, shift + BIT_PARTITION_SIZE);
+            int subNodeSize = subNode.size();
+            int subNodeHashSum = subNode.keyHashSum();
+            MapNode<K, V> subNodeNew = subNode.putInPlace(owner, key, value, hash, shift + BIT_PARTITION_SIZE);
             content[slot] = subNodeNew;
             size = size - subNodeSize + subNodeNew.size();
             keyHashSum = keyHashSum - subNodeHashSum + subNodeNew.keyHashSum();
         } else {
-            final int dataIx = dataIndex(bitpos);
-            final int idx = 2 * dataIx;
-            final Object[] src = content;
-            final Object[] dst = new Object[src.length + 2];
+            int dataIx = dataIndex(bitpos);
+            int idx = 2 * dataIx;
+            Object[] src = content;
+            Object[] dst = new Object[src.length + 2];
             System.arraycopy(src, 0, dst, 0, idx);
             dst[idx] = key;
             dst[idx + 1] = value;

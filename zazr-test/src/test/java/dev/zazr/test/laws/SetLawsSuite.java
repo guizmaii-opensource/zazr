@@ -84,7 +84,7 @@ abstract class SetLawsSuite<F, C extends Iterable<Integer>> {
 
     /// Equality modelled by the elements: a JDK list for a sequence, a JDK set otherwise.
     private EqualitySubject<C> equality() {
-        final CollectionSubject<Integer, C> collection = collection();
+        CollectionSubject<Integer, C> collection = collection();
         return new EqualitySubject<>(
                 collection.values(),
                 c -> collection.ofAll().apply(collection.toList().apply(c)),

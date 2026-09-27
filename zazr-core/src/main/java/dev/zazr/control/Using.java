@@ -81,7 +81,7 @@ public final class Using {
         Objects.requireNonNull(resource, "resource is null");
         Objects.requireNonNull(f, "f is null");
         try {
-            final T value = use(resource.call(), f);
+            T value = use(resource.call(), f);
             return value == null ? TryModule.nullResult("Using.of") : new Try.Success<>(value);
         } catch (Throwable t) {
             return new Try.Failure<>(t);
@@ -105,7 +105,7 @@ public final class Using {
     public static <T extends @Nullable Object> Try<T> manager(CheckedFunction1<? super Manager, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
         try {
-            final @Nullable T value = new Manager().manage(f);
+            @Nullable T value = new Manager().manage(f);
             return value == null ? TryModule.nullResult("Using.manager") : new Try.Success<>(value);
         } catch (Throwable t) {
             return new Try.Failure<>(t);
@@ -195,7 +195,7 @@ public final class Using {
                 toThrow = t;
             }
             closed = true;
-            final @Nullable Object[] acquired = slots;
+            @Nullable Object[] acquired = slots;
             slots = NO_SLOTS;
             for (int i = size - 2; i >= 0; i -= 2) {
                 try {
@@ -237,7 +237,7 @@ public final class Using {
         if (resource == null) {
             throw new NullPointerException("Using.of: the resource is null");
         }
-        final T value;
+        T value;
         try {
             value = f.apply(resource);
         } catch (Throwable t) {

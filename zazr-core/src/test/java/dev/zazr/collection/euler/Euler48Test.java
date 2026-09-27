@@ -29,12 +29,12 @@ public class Euler48Test {
     }
 
     private static long selfPower(long v) {
-        final Stream<Long> powers = Stream.iterate(v, el -> multMod(el, el));
+        Stream<Long> powers = Stream.iterate(v, el -> multMod(el, el));
         return bits(v).map(powers::get).prepend(1L).reduce(Euler48Test::multMod);
     }
 
     private static long multMod(long v1, long v2) {
-        final Stream<Long> shifts = Stream.iterate(v1, el -> sumMod(el, el));
+        Stream<Long> shifts = Stream.iterate(v1, el -> sumMod(el, el));
         return bits(v2).map(shifts::get).prepend(0L).reduce(Euler48Test::sumMod);
     }
 

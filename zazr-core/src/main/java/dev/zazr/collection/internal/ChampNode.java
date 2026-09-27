@@ -87,14 +87,14 @@ public abstract sealed class ChampNode<N extends ChampNode<N>> permits MapNode, 
     abstract int keyHashSum();
 
     static int[] removeElement(int[] as, int ix) {
-        final int[] result = new int[as.length - 1];
+        int[] result = new int[as.length - 1];
         System.arraycopy(as, 0, result, 0, ix);
         System.arraycopy(as, ix + 1, result, ix, as.length - ix - 1);
         return result;
     }
 
     static int[] insertElement(int[] as, int ix, int elem) {
-        final int[] result = new int[as.length + 1];
+        int[] result = new int[as.length + 1];
         System.arraycopy(as, 0, result, 0, ix);
         result[ix] = elem;
         System.arraycopy(as, ix, result, ix + 1, as.length - ix);

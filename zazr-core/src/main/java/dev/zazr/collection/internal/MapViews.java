@@ -85,7 +85,7 @@ public final class MapViews {
         @SuppressWarnings("unchecked")
         @Override
         public X next() {
-            final Tuple2<K, V> entry = entries.next();
+            Tuple2<K, V> entry = entries.next();
             return (X)
                     switch (part) {
                         case KEY -> entry._1();
@@ -117,14 +117,14 @@ public final class MapViews {
         @SuppressWarnings("unchecked")
         @Override
         public @Nullable V get(@Nullable Object key) {
-            final Object value = lookup(key);
+            Object value = lookup(key);
             return value == ABSENT ? null : (V) value;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public @Nullable V getOrDefault(@Nullable Object key, @Nullable V defaultValue) {
-            final Object value = lookup(key);
+            Object value = lookup(key);
             return value == ABSENT ? defaultValue : (V) value;
         }
 
@@ -135,7 +135,7 @@ public final class MapViews {
 
         @Override
         public boolean containsValue(@Nullable Object value) {
-            final java.util.Iterator<V> values = valueIterator();
+            java.util.Iterator<V> values = valueIterator();
             while (values.hasNext()) {
                 if (Objects.equals(value, values.next())) {
                     return true;
@@ -421,7 +421,7 @@ public final class MapViews {
 
         @Override
         public V getFirst() {
-            final java.util.Iterator<V> values = iterator();
+            java.util.Iterator<V> values = iterator();
             if (!values.hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -483,7 +483,7 @@ public final class MapViews {
             if (!(object instanceof java.util.Map.Entry<?, ?> entry)) {
                 return false;
             }
-            final Object value = map.lookup(entry.getKey());
+            Object value = map.lookup(entry.getKey());
             return value != ABSENT && Objects.equals(value, entry.getValue());
         }
 
@@ -628,7 +628,7 @@ public final class MapViews {
             if (map.isEmpty()) {
                 return null;
             }
-            final Tuple2<K, V> first = reversed ? map.last() : map.head();
+            Tuple2<K, V> first = reversed ? map.last() : map.head();
             return entry(first._1(), first._2());
         }
 
@@ -637,7 +637,7 @@ public final class MapViews {
             if (map.isEmpty()) {
                 return null;
             }
-            final Tuple2<K, V> last = reversed ? map.head() : map.last();
+            Tuple2<K, V> last = reversed ? map.head() : map.last();
             return entry(last._1(), last._2());
         }
 

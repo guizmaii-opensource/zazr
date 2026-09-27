@@ -31,7 +31,7 @@ public class NonEmptySetTest {
 
     /* (size, set) */
     static Stream<Arguments> sets() {
-        final ArrayList<Arguments> cases = new ArrayList<>();
+        ArrayList<Arguments> cases = new ArrayList<>();
         for (int n : SIZES) {
             cases.add(Arguments.of(n, HashSet.range(0, n)));
         }
@@ -61,7 +61,7 @@ public class NonEmptySetTest {
 
     /* a one-shot iterable: a second iterator() throws, so an operation that reads its argument twice fails */
     static <A> Iterable<A> once(Iterable<A> elements) {
-        final boolean[] read = {false};
+        boolean[] read = {false};
         return () -> {
             if (read[0]) {
                 throw new IllegalStateException("read twice");
@@ -79,7 +79,7 @@ public class NonEmptySetTest {
             assertThat(NonEmptySet.of(1).toSet()).isEqualTo(HashSet.of(1));
             assertThat(NonEmptySet.of(1, 2, 1).toSet()).isEqualTo(HashSet.of(1, 2));
             for (int n : SIZES) {
-                final Integer[] tail = Vector.range(1, n).toArray(Integer[]::new);
+                Integer[] tail = Vector.range(1, n).toArray(Integer[]::new);
                 assertThat(NonEmptySet.of(0, tail).toSet()).isEqualTo(HashSet.range(0, n));
                 assertThat(NonEmptySet.of(0, tail).size()).isEqualTo(n);
                 assertThat(NonEmptySet.of(0, Vector.range(0, n).toArray(Integer[]::new))
@@ -91,7 +91,7 @@ public class NonEmptySetTest {
         @Test
         public void shouldBuildFromHeadAndIterableTail() {
             for (int n : SIZES) {
-                final HashSet<Integer> expected = HashSet.range(0, n);
+                HashSet<Integer> expected = HashSet.range(0, n);
                 assertThat(NonEmptySet.fromIterable(0, HashSet.range(1, n)).toSet())
                         .isEqualTo(expected);
                 assertThat(NonEmptySet.fromIterable(0, once(Vector.range(0, n))).toSet())
@@ -106,8 +106,8 @@ public class NonEmptySetTest {
 
         @Test
         public void shouldTakeIterablesAsElementsNotAsTail() {
-            final NonEmptySet<Integer> x = NonEmptySet.of(1);
-            final NonEmptySet<Integer> y = NonEmptySet.of(2, 3);
+            NonEmptySet<Integer> x = NonEmptySet.of(1);
+            NonEmptySet<Integer> y = NonEmptySet.of(2, 3);
             assertThat(NonEmptySet.of(x, y).size()).isEqualTo(2);
             assertThat(NonEmptySet.of(java.util.List.of(1), java.util.List.of(2, 3))
                             .size())
@@ -124,7 +124,7 @@ public class NonEmptySetTest {
         @Test
         public void shouldWrapANonEmptySetWithoutCopying() {
             for (int n : SIZES) {
-                final HashSet<Integer> set = HashSet.range(0, n);
+                HashSet<Integer> set = HashSet.range(0, n);
                 assertThat(NonEmptySet.fromSet(set).get().toSet()).isSameAs(set);
                 assertThat(NonEmptySet.unsafeFromSet(set).toSet()).isSameAs(set);
                 assertThat(set.toNonEmptySet().get().toSet()).isSameAs(set);
@@ -144,7 +144,7 @@ public class NonEmptySetTest {
         @Test
         public void shouldCopyANonEmptyIterable() {
             for (int n : SIZES) {
-                final HashSet<Integer> expected = HashSet.range(0, n);
+                HashSet<Integer> expected = HashSet.range(0, n);
                 assertThat(NonEmptySet.fromIterable(once(Vector.range(0, n).appendAll(Vector.range(0, n))))
                                 .get()
                                 .toSet())
@@ -207,7 +207,7 @@ public class NonEmptySetTest {
 
         @Test
         public void shouldRejectNullArguments() {
-            final NonEmptySet<Integer> nes = NonEmptySet.of(1, 2);
+            NonEmptySet<Integer> nes = NonEmptySet.of(1, 2);
             assertThatNullPointerException()
                     .isThrownBy(() -> nes.add(null))
                     .withMessage("NonEmptySet.add: element is null");
@@ -273,7 +273,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldAddAndKeepTheOriginal(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.add(-1).toSet()).isEqualTo(set.add(-1));
             assertThat(nes.add(-1).size()).isEqualTo(n + 1);
             assertThat(nes.add(0)).isSameAs(nes);
@@ -284,9 +284,9 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldAddAllAndUnion(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             for (int m : new int[] {0, 1, 32, 33, 1025}) {
-                final HashSet<Integer> that = HashSet.range(n / 2, n / 2 + m);
+                HashSet<Integer> that = HashSet.range(n / 2, n / 2 + m);
                 assertThat(nes.addAll(that).toSet()).isEqualTo(set.addAll(that));
                 assertThat(nes.addAll(once(that.toVector())).toSet()).isEqualTo(set.addAll(that));
                 assertThat(nes.union(that).toSet()).isEqualTo(set.union(that));
@@ -301,7 +301,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldMapCollapsingEqualResults(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.map(i -> i * 2).toSet()).isEqualTo(set.map(i -> i * 2));
             assertThat(nes.map(i -> i * 2).size()).isEqualTo(n);
             assertThat(nes.map(i -> 0).toSet()).isEqualTo(HashSet.of(0));
@@ -312,7 +312,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldFlatMapToNonEmptySets(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.flatMap(i -> NonEmptySet.of(i, -i - 1)).toSet())
                     .isEqualTo(set.flatMap(i -> HashSet.of(i, -i - 1)));
             assertThat(nes.flatMap(i -> NonEmptySet.of(i, -i - 1)).size()).isEqualTo(2 * n);
@@ -324,7 +324,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldReplace(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.replace(0, -1).toSet()).isEqualTo(set.replace(0, -1));
             assertThat(nes.replace(0, -1).size()).isEqualTo(n);
             assertThat(nes.replaceAll(0, -1).toSet()).isEqualTo(set.replaceAll(0, -1));
@@ -337,8 +337,8 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldTapEveryElementAndReturnItself(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
-            final java.util.HashSet<Integer> seen = new java.util.HashSet<>();
+            NonEmptySet<Integer> nes = nes(set);
+            java.util.HashSet<Integer> seen = new java.util.HashSet<>();
             assertThat(nes.tap(seen::add)).isSameAs(nes);
             assertThat(seen).isEqualTo(set.asJava());
         }
@@ -346,10 +346,10 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldGroupByIntoNonEmptyGroups(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             for (Function<Integer, Integer> classifier :
                     java.util.List.<Function<Integer, Integer>>of(i -> 0, i -> i % 3, i -> i)) {
-                final NonEmptyMap<Integer, NonEmptySet<Integer>> groups = nes.groupBy(classifier);
+                NonEmptyMap<Integer, NonEmptySet<Integer>> groups = nes.groupBy(classifier);
                 assertThat(groups.mapValues(NonEmptySet::toSet).toMap()).isEqualTo(set.groupBy(classifier));
                 assertThat(groups.values().forAll(group -> group.size() >= 1)).isTrue();
             }
@@ -362,7 +362,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldFilterRejectAndCollect(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.filter(i -> i % 2 == 0)).isEqualTo(set.filter(i -> i % 2 == 0));
             assertThat(nes.filter(i -> false)).isEmpty();
             assertThat(nes.reject(i -> i % 2 == 0)).isEqualTo(set.reject(i -> i % 2 == 0));
@@ -378,7 +378,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldRemoveDownToEmpty(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.remove(0)).isEqualTo(set.remove(0));
             assertThat(nes.remove(0).size()).isEqualTo(n - 1);
             assertThat(nes.remove(-1)).isEqualTo(set);
@@ -393,9 +393,9 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldIntersectAndDiff(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             for (int m : new int[] {0, 1, 32, 33, 1025}) {
-                final HashSet<Integer> that = HashSet.range(n / 2, n / 2 + m);
+                HashSet<Integer> that = HashSet.range(n / 2, n / 2 + m);
                 assertThat(nes.intersect(that)).isEqualTo(set.intersect(that));
                 assertThat(nes.diff(that)).isEqualTo(set.diff(that));
                 assertThat(nes.intersect(that.toSortedSet())).isEqualTo(set.intersect(that));
@@ -407,12 +407,11 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldPartition(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.partition(i -> i % 2 == 0)).isEqualTo(set.partition(i -> i % 2 == 0));
             assertThat(nes.partition(i -> true)._2()).isEmpty();
             assertThat(nes.partition(i -> false)._1()).isEmpty();
-            final Function<Integer, Either<String, Integer>> f =
-                    i -> i % 3 == 0 ? Either.left("x" + i) : Either.right(i);
+            Function<Integer, Either<String, Integer>> f = i -> i % 3 == 0 ? Either.left("x" + i) : Either.right(i);
             assertThat(nes.partitionMap(f)).isEqualTo(set.partitionMap(f));
             assertThat(nes.partitionMap(i -> Either.<String, Integer>right(i))._1())
                     .isEmpty();
@@ -425,7 +424,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldReturnMaxAndMin(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.max()).isEqualTo(set.max().get()).isEqualTo(n - 1);
             assertThat(nes.min()).isEqualTo(set.min().get()).isEqualTo(0);
             assertThat(nes.maxBy(Comparator.reverseOrder())).isEqualTo(0);
@@ -441,10 +440,10 @@ public class NonEmptySetTest {
 
         @Test
         public void shouldTreatNaNAsHashSetDoes() {
-            final NonEmptySet<Double> doubles = NonEmptySet.of(1.0, Double.NaN, -1.0);
+            NonEmptySet<Double> doubles = NonEmptySet.of(1.0, Double.NaN, -1.0);
             assertThat(doubles.min()).isEqualTo(doubles.toSet().min().get()).isNaN();
             assertThat(doubles.max()).isEqualTo(doubles.toSet().max().get()).isNaN();
-            final NonEmptySet<Float> floats = NonEmptySet.of(1.0f, Float.NaN);
+            NonEmptySet<Float> floats = NonEmptySet.of(1.0f, Float.NaN);
             assertThat(floats.min()).isEqualTo(floats.toSet().min().get()).isNaN();
             assertThatThrownBy(() -> NonEmptySet.of(new Object(), new Object()).max())
                     .isInstanceOf(ClassCastException.class);
@@ -453,7 +452,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldReduceAndFold(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.reduce(Integer::sum))
                     .isEqualTo(set.reduce(Integer::sum))
                     .isEqualTo(n * (n - 1) / 2);
@@ -470,7 +469,7 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldQuery(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> nes = nes(set);
             assertThat(nes.size()).isEqualTo(n);
             assertThat(nes.contains(n - 1)).isTrue();
             assertThat(nes.contains(n)).isFalse();
@@ -495,8 +494,8 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldIterateStreamAndConvert(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
-            final java.util.List<Integer> iterated = new java.util.ArrayList<>();
+            NonEmptySet<Integer> nes = nes(set);
+            java.util.List<Integer> iterated = new java.util.ArrayList<>();
             nes.forEach(iterated::add);
             assertThat(iterated)
                     .isEqualTo(new java.util.ArrayList<>(set.toVector().asJava()));
@@ -553,8 +552,8 @@ public class NonEmptySetTest {
         @Test
         public void shouldKeepTheContractOnCollidingElements() {
             for (int n : SIZES) {
-                final HashSet<Colliding> set = colliding(n);
-                final NonEmptySet<Colliding> nes = nes(set);
+                HashSet<Colliding> set = colliding(n);
+                NonEmptySet<Colliding> nes = nes(set);
                 assertThat(nes.size()).isEqualTo(n);
                 assertThat(nes.add(new Colliding(n)).toSet()).isEqualTo(set.add(new Colliding(n)));
                 assertThat(nes.add(new Colliding(0))).isSameAs(nes);
@@ -589,7 +588,7 @@ public class NonEmptySetTest {
 
         /* signature -> calls of that overload, with arguments chosen to shrink the result as far as they can */
         static java.util.Map<String, Function<NonEmptySet<Integer>, java.util.List<Object>>> calls() {
-            final java.util.Map<String, Function<NonEmptySet<Integer>, java.util.List<Object>>> calls =
+            java.util.Map<String, Function<NonEmptySet<Integer>, java.util.List<Object>>> calls =
                     new java.util.HashMap<>();
             // constructors and narrowings
             calls.put(
@@ -705,13 +704,12 @@ public class NonEmptySetTest {
         @Test
         public void shouldFlattenNestedNonEmptySets() {
             for (int n : SIZES) {
-                final NonEmptySet<NonEmptySet<Integer>> nested =
+                NonEmptySet<NonEmptySet<Integer>> nested =
                         nes(HashSet.range(0, n)).map(i -> nes(HashSet.range(i, i + 3)));
-                final NonEmptySet<Integer> flat = NonEmptySet.flatten(nested);
+                NonEmptySet<Integer> flat = NonEmptySet.flatten(nested);
                 assertThat(flat.toSet()).isEqualTo(HashSet.range(0, n + 2));
             }
-            final NonEmptySet<Number> covariant =
-                    NonEmptySet.flatten(NonEmptySet.of(NonEmptySet.of(1), NonEmptySet.of(2.0)));
+            NonEmptySet<Number> covariant = NonEmptySet.flatten(NonEmptySet.of(NonEmptySet.of(1), NonEmptySet.of(2.0)));
             assertThat(covariant.toSet()).isEqualTo(HashSet.<Number>of(1, 2.0));
         }
     }
@@ -722,8 +720,8 @@ public class NonEmptySetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySetTest#sets")
         public void shouldBeEqualToANonEmptySetWithTheSameElements(int n, HashSet<Integer> set) {
-            final NonEmptySet<Integer> nes = nes(set);
-            final NonEmptySet<Integer> copy =
+            NonEmptySet<Integer> nes = nes(set);
+            NonEmptySet<Integer> copy =
                     NonEmptySet.fromIterable(set.toVector().reverse()).get();
             assertThat(nes).isEqualTo(nes);
             assertThat(nes).isEqualTo(copy);
@@ -735,7 +733,7 @@ public class NonEmptySetTest {
             assertThat(nes).isNotEqualTo(null);
             assertThat(nes).isNotEqualTo(set.toVector());
             // sets are equal to sets, whatever the representation
-            final NonEmptySortedSet<Integer> sorted =
+            NonEmptySortedSet<Integer> sorted =
                     NonEmptySortedSet.unsafeFromSortedSet(TreeSet.ofAll(Comparator.reverseOrder(), set));
             assertThat(nes).isEqualTo(sorted);
             assertThat(sorted).isEqualTo(nes);

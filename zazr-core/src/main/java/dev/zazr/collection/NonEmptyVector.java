@@ -87,7 +87,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public static <A extends @Nullable Object> NonEmptyVector<A> of(A head, A... tail) {
         Objects.requireNonNull(head, "NonEmptyVector: head is null");
         Objects.requireNonNull(tail, "NonEmptyVector: tail is null");
-        final Vector.Builder<A> builder = Vector.newBuilder(tail.length + 1);
+        Vector.Builder<A> builder = Vector.newBuilder(tail.length + 1);
         builder.add(head);
         for (A element : tail) {
             builder.add(Objects.requireNonNull(element, "NonEmptyVector: element is null"));
@@ -109,7 +109,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public static <A extends @Nullable Object> NonEmptyVector<A> fromIterable(A head, Iterable<? extends A> tail) {
         Objects.requireNonNull(head, "NonEmptyVector: head is null");
         Objects.requireNonNull(tail, "NonEmptyVector: tail is null");
-        final Vector.Builder<A> builder = Vector.newBuilder();
+        Vector.Builder<A> builder = Vector.newBuilder();
         builder.add(head);
         return new NonEmptyVector<>(addAll(builder, tail).result());
     }
@@ -186,7 +186,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public static <A extends @Nullable Object> NonEmptyVector<A> flatten(
             NonEmptyVector<? extends NonEmptyVector<? extends A>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        final Vector.Builder<A> builder = Vector.newBuilder();
+        Vector.Builder<A> builder = Vector.newBuilder();
         for (NonEmptyVector<? extends A> inner : nested) {
             builder.addAll(inner.vector);
         }
@@ -209,7 +209,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public static <A extends @Nullable Object> NonEmptyVector<NonEmptyVector<A>> transpose(
             NonEmptyVector<? extends NonEmptyVector<? extends A>> matrix) {
         Objects.requireNonNull(matrix, "matrix is null");
-        final Vector<Vector<A>> rows = matrix.vector.map(row -> Vector.<A>narrow(row.toVector()));
+        Vector<Vector<A>> rows = matrix.vector.map(row -> Vector.<A>narrow(row.toVector()));
         return new NonEmptyVector<>(Vector.transpose(rows).map(NonEmptyVector::new));
     }
 
@@ -251,7 +251,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public <B extends @Nullable Object> NonEmptyVector<B> flatMap(
             Function<? super A, ? extends NonEmptyVector<? extends B>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final Vector.Builder<B> builder = Vector.newBuilder();
+        Vector.Builder<B> builder = Vector.newBuilder();
         for (A element : vector) {
             builder.addAll(Objects.requireNonNull(mapper.apply(element), "NonEmptyVector.flatMap: mapper returned null")
                     .vector);
@@ -566,7 +566,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public <K extends @Nullable Object> NonEmptyMap<K, NonEmptyVector<A>> groupBy(
             Function<? super A, ? extends K> classifier) {
         Objects.requireNonNull(classifier, "classifier is null");
-        final HashMap.Builder<K, NonEmptyVector<A>> groups = HashMap.newBuilder();
+        HashMap.Builder<K, NonEmptyVector<A>> groups = HashMap.newBuilder();
         for (Tuple2<K, Vector<A>> group : vector.<K>groupBy(element -> Objects.requireNonNull(
                 classifier.apply(element), "NonEmptyVector.groupBy: classifier returned null"))) {
             groups.put(group._1(), new NonEmptyVector<>(group._2()));
@@ -862,10 +862,10 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             Tuple2<NonEmptyVector<T1>, NonEmptyVector<T2>> unzip(
                     Function<? super A, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Vector.Builder<T1> xs = Vector.newBuilder(size());
-        final Vector.Builder<T2> ys = Vector.newBuilder(size());
+        Vector.Builder<T1> xs = Vector.newBuilder(size());
+        Vector.Builder<T2> ys = Vector.newBuilder(size());
         for (A element : vector) {
-            final Tuple2<? extends T1, ? extends T2> t =
+            Tuple2<? extends T1, ? extends T2> t =
                     Objects.requireNonNull(unzipper.apply(element), "NonEmptyVector.unzip: unzipper returned null");
             xs.add(Objects.requireNonNull(t._1(), "NonEmptyVector.unzip: unzipper returned a null component"));
             ys.add(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip: unzipper returned a null component"));
@@ -890,11 +890,11 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             Tuple3<NonEmptyVector<T1>, NonEmptyVector<T2>, NonEmptyVector<T3>> unzip3(
                     Function<? super A, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Vector.Builder<T1> xs = Vector.newBuilder(size());
-        final Vector.Builder<T2> ys = Vector.newBuilder(size());
-        final Vector.Builder<T3> zs = Vector.newBuilder(size());
+        Vector.Builder<T1> xs = Vector.newBuilder(size());
+        Vector.Builder<T2> ys = Vector.newBuilder(size());
+        Vector.Builder<T3> zs = Vector.newBuilder(size());
         for (A element : vector) {
-            final Tuple3<? extends T1, ? extends T2, ? extends T3> t =
+            Tuple3<? extends T1, ? extends T2, ? extends T3> t =
                     Objects.requireNonNull(unzipper.apply(element), "NonEmptyVector.unzip3: unzipper returned null");
             xs.add(Objects.requireNonNull(t._1(), "NonEmptyVector.unzip3: unzipper returned a null component"));
             ys.add(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip3: unzipper returned a null component"));
@@ -1072,8 +1072,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             Function<? super A, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
         // Vector's loop, not a delegation, so that a null result is reported under this type's name
-        final Vector.Builder<L> lefts = Vector.newBuilder();
-        final Vector.Builder<R> rights = Vector.newBuilder();
+        Vector.Builder<L> lefts = Vector.newBuilder();
+        Vector.Builder<R> rights = Vector.newBuilder();
         for (A element : vector) {
             switch (Objects.requireNonNull(f.apply(element), "NonEmptyVector.partitionMap: f returned null")) {
                 case Either.Left(var left) -> lefts.add(left);
@@ -1439,7 +1439,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if {@code predicate} is null
      */
     public Tuple2<NonEmptyVector<A>, Vector<A>> splitAtInclusive(Predicate<? super A> predicate) {
-        final Tuple2<Vector<A>, Vector<A>> split = vector.splitAtInclusive(predicate);
+        Tuple2<Vector<A>, Vector<A>> split = vector.splitAtInclusive(predicate);
         return Tuple.of(new NonEmptyVector<>(split._1()), split._2());
     }
 
@@ -1576,10 +1576,10 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public A max(Comparator<? super A> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Iterator<A> iterator = vector.iterator();
+        java.util.Iterator<A> iterator = vector.iterator();
         A max = iterator.next();
         while (iterator.hasNext()) {
-            final A element = iterator.next();
+            A element = iterator.next();
             if (comparator.compare(element, max) > 0) {
                 max = element;
             }
@@ -1596,10 +1596,10 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public A min(Comparator<? super A> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Iterator<A> iterator = vector.iterator();
+        java.util.Iterator<A> iterator = vector.iterator();
         A min = iterator.next();
         while (iterator.hasNext()) {
-            final A element = iterator.next();
+            A element = iterator.next();
             if (comparator.compare(element, min) < 0) {
                 min = element;
             }
@@ -1615,12 +1615,12 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public <U extends Comparable<? super U>> A maxBy(Function<? super A, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
-        final java.util.Iterator<A> iterator = vector.iterator();
+        java.util.Iterator<A> iterator = vector.iterator();
         A max = iterator.next();
         U maxKey = f.apply(max);
         while (iterator.hasNext()) {
-            final A element = iterator.next();
-            final U key = f.apply(element);
+            A element = iterator.next();
+            U key = f.apply(element);
             if (key.compareTo(maxKey) > 0) {
                 max = element;
                 maxKey = key;
@@ -1637,12 +1637,12 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public <U extends Comparable<? super U>> A minBy(Function<? super A, ? extends U> f) {
         Objects.requireNonNull(f, "f is null");
-        final java.util.Iterator<A> iterator = vector.iterator();
+        java.util.Iterator<A> iterator = vector.iterator();
         A min = iterator.next();
         U minKey = f.apply(min);
         while (iterator.hasNext()) {
-            final A element = iterator.next();
-            final U key = f.apply(element);
+            A element = iterator.next();
+            U key = f.apply(element);
             if (key.compareTo(minKey) < 0) {
                 min = element;
                 minKey = key;
@@ -1695,7 +1695,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             Function<? super A, ? extends B> mapper, BiFunction<? super B, ? super B, ? extends B> op) {
         Objects.requireNonNull(mapper, "mapper is null");
         Objects.requireNonNull(op, "op is null");
-        final java.util.Iterator<A> iterator = vector.iterator();
+        java.util.Iterator<A> iterator = vector.iterator();
         B result = mapper.apply(iterator.next());
         while (iterator.hasNext()) {
             result = op.apply(result, mapper.apply(iterator.next()));
@@ -2082,8 +2082,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     @SuppressWarnings("unchecked")
     public A min() {
-        final java.util.Iterator<A> iterator = vector.iterator();
-        final A head = iterator.next();
+        java.util.Iterator<A> iterator = vector.iterator();
+        A head = iterator.next();
         if (head instanceof Double first) {
             double min = first;
             while (iterator.hasNext()) {
@@ -2173,7 +2173,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public double average() {
         try {
-            final double[] sum = TraversableModule.neumaierSum(vector, element -> ((Number) element).doubleValue());
+            double[] sum = TraversableModule.neumaierSum(vector, element -> ((Number) element).doubleValue());
             return sum[0] / sum[1];
         } catch (ClassCastException x) {
             throw new UnsupportedOperationException("Elements are not numeric", x);
@@ -2521,11 +2521,11 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
         return element -> {
-            final K key = keyMapper.apply(element);
+            K key = keyMapper.apply(element);
             if (key == null) {
                 throw new NullPointerException(method + ": keyMapper returned null");
             }
-            final V value = valueMapper.apply(element);
+            V value = valueMapper.apply(element);
             if (value == null) {
                 throw new NullPointerException(method + ": valueMapper returned null");
             }
@@ -2538,7 +2538,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             Function<? super A, ? extends E> f, String method) {
         Objects.requireNonNull(f, "f is null");
         return element -> {
-            final E entry = f.apply(element);
+            E entry = f.apply(element);
             if (entry == null) {
                 throw new NullPointerException(method + ": f returned null");
             }

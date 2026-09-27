@@ -23,7 +23,7 @@ public final class FlatMapLaws {
      */
     public static <F> Law<FlatMapSubject<F>> flatMapAssociativity() {
         return Law.of("flatMapAssociativity", (subject, config) -> {
-            final Gen<Function<Object, F>> functions = functions(subject);
+            Gen<Function<Object, F>> functions = functions(subject);
             return Check.evaluate(
                     config,
                     subject.values(),

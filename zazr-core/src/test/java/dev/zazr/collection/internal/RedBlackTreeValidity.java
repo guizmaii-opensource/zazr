@@ -33,13 +33,13 @@ public final class RedBlackTreeValidity {
         if (tree.isEmpty()) {
             return 1;
         }
-        final RedBlackTreeModule.Node<T> node = (RedBlackTreeModule.Node<T>) tree;
+        RedBlackTreeModule.Node<T> node = (RedBlackTreeModule.Node<T>) tree;
         if (node.color == RedBlackTree.Color.RED) {
             assertThat(node.left.color()).as("red-red in %s", tree).isEqualTo(RedBlackTree.Color.BLACK);
             assertThat(node.right.color()).as("red-red in %s", tree).isEqualTo(RedBlackTree.Color.BLACK);
         }
-        final int left = blackNodesBelow(node.left);
-        final int right = blackNodesBelow(node.right);
+        int left = blackNodesBelow(node.left);
+        int right = blackNodesBelow(node.right);
         assertThat(left).as("black height of %s", tree).isEqualTo(right);
         assertThat(node.blackHeight).as("blackHeight field of %s", tree).isEqualTo(left);
         assertThat(node.size).as("size field of %s", tree).isEqualTo(node.left.size() + node.right.size() + 1);

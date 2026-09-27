@@ -14,7 +14,7 @@ public class ComparatorsTest {
     class NaturalcomparatorTests {
         @Test
         public void shouldCompareTwoIntegersUsingNaturalOrder() {
-            final Comparator<Integer> comparator = naturalComparator();
+            Comparator<Integer> comparator = naturalComparator();
             assertThat(comparator.compare(0, 1)).isEqualTo(-1);
             assertThat(comparator.compare(2, -1)).isEqualTo(1);
             assertThat(comparator.compare(3, 3)).isEqualTo(0);
@@ -32,8 +32,8 @@ public class ComparatorsTest {
 
         @Test
         public void shouldBeEqualToTheNaturalComparatorOfEveryType() {
-            final Comparator<Integer> integers = naturalComparator();
-            final Comparator<String> strings = naturalComparator();
+            Comparator<Integer> integers = naturalComparator();
+            Comparator<String> strings = naturalComparator();
             assertThat(integers).isEqualTo(strings);
             assertThat(integers).isNotEqualTo(Comparator.<Integer>reverseOrder());
         }
@@ -42,7 +42,7 @@ public class ComparatorsTest {
         // checks that hashCode is consistent across calls.
         @Test
         public void shouldHaveAConsistentHashCode() {
-            final Comparator<Integer> comparator = naturalComparator();
+            Comparator<Integer> comparator = naturalComparator();
             assertThat(comparator.hashCode()).isEqualTo(comparator.hashCode());
         }
     }

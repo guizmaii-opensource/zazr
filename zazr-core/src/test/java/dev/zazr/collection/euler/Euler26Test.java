@@ -77,7 +77,7 @@ public class Euler26Test {
 
     private static int recurringCycleLengthInDecimalFractionPart(String decimalFractionPart) {
         // Stream is lazy, so the rest is only evaluated until the recurring cycle is found.
-        final Stream<Character> reversed =
+        Stream<Character> reversed =
                 Vector.ofAll(decimalFractionPart.toCharArray()).reverse().toStream();
         return createCandidateCycles()
                 .andThen(removeCandidatesLongerThanHalfTheFullString(decimalFractionPart))

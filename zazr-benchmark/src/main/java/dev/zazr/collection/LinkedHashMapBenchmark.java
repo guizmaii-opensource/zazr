@@ -44,14 +44,14 @@ public class LinkedHashMapBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-        final Random random = new Random(0xC0FFEE);
-        final java.util.LinkedHashSet<Integer> distinct = new java.util.LinkedHashSet<>();
+        Random random = new Random(0xC0FFEE);
+        java.util.LinkedHashSet<Integer> distinct = new java.util.LinkedHashSet<>();
         while (distinct.size() < size) {
             distinct.add(random.nextInt(size * 4));
         }
         keys = distinct.toArray(new Integer[0]);
         shuffledKeys = keys.clone();
-        final java.util.List<Integer> shuffled = java.util.Arrays.asList(shuffledKeys);
+        java.util.List<Integer> shuffled = java.util.Arrays.asList(shuffledKeys);
         java.util.Collections.shuffle(shuffled, random);
         LinkedHashMap<Integer, Integer> m = LinkedHashMap.empty();
         for (Integer key : keys) {

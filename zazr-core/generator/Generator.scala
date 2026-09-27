@@ -213,7 +213,7 @@ def generateMainClasses(): Unit = {
                     xs"""
                       return $lambdaArgs -> {
                           try {
-                              final R result = partialFunction.apply($params);
+                              R result = partialFunction.apply($params);
                               return result == null ? ${im.getType("dev.zazr.control.Option")}.<R>none() : ${im.getType("dev.zazr.control.Option")}.some(result);
                           } catch (Throwable t) {
                               if (isFatal(t)) {
@@ -356,9 +356,9 @@ def generateMainClasses(): Unit = {
                             if (isFatal(throwable)) {
                                 return sneakyThrow(throwable);
                             }
-                            final ${fullGenericsTypeF(checked = false, i)} func = recover.apply(throwable);
+                            ${fullGenericsTypeF(checked = false, i)} func = recover.apply(throwable);
                             if (func == null) {
-                                final NullPointerException nullResult = new NullPointerException("$className.recover: recover returned null");
+                                NullPointerException nullResult = new NullPointerException("$className.recover: recover returned null");
                                 nullResult.initCause(throwable);
                                 throw nullResult;
                             }
@@ -531,7 +531,7 @@ def generateMainClasses(): Unit = {
                 """ else xs"""
                   return (t1, t2) -> {
                       ${(1 to i).gen(j => xs"""
-                        final int check$j = t${j}Comp.compare(t1._$j(), t2._$j());
+                        int check$j = t${j}Comp.compare(t1._$j(), t2._$j());
                         if (check$j != 0) {
                             return check$j;
                         }
@@ -546,11 +546,11 @@ def generateMainClasses(): Unit = {
             ${(i > 0).gen(xs"""
               @SuppressWarnings("unchecked")
               private static $comparableGenerics int compareTo($className$untyped o1, $className$untyped o2) {
-                  final $className$resultGenerics t1 = ($className$resultGenerics) o1;
-                  final $className$resultGenerics t2 = ($className$resultGenerics) o2;
+                  $className$resultGenerics t1 = ($className$resultGenerics) o1;
+                  $className$resultGenerics t2 = ($className$resultGenerics) o2;
 
                   ${(1 to i).gen(j => xs"""
-                    final int check$j = t1._$j().compareTo(t2._$j());
+                    int check$j = t1._$j().compareTo(t2._$j());
                     if (check$j != 0) {
                         return check$j;
                     }
@@ -654,7 +654,7 @@ def generateMainClasses(): Unit = {
                */
               public <U $nullableBound> $className<${(1 to i).gen(k => if (j == k) "U" else s"T$k")(using ", ")}> map$j(${im.getType("java.util.function.Function")}<? super T$j, ? extends U> mapper) {
                   Objects.requireNonNull(mapper, "mapper is null");
-                  final U u = mapper.apply(_$j);
+                  U u = mapper.apply(_$j);
                   return Tuple.of(${(1 to i).gen(k => if (j == k) "u" else s"_$k")(using ", ")});
               }
             """)(using "\n\n")}
@@ -811,7 +811,7 @@ def generateMainClasses(): Unit = {
              */
             static <$genericsDecl> Tuple$i<$vectors> unzip$i(Iterable<? extends Tuple$i<$widenedGenerics>> tuples) {
                 $Objects.requireNonNull(tuples, "tuples is null");
-                ${(1 to i).gen(j => s"final $Vector.Builder<T$j> b$j = $Vector.newBuilder();")(using "\n")}
+                ${(1 to i).gen(j => s"$Vector.Builder<T$j> b$j = $Vector.newBuilder();")(using "\n")}
                 for (Tuple$i<$widenedGenerics> t : tuples) {
                     ${(1 to i).gen(j => s"b$j.add(t._$j());")(using "\n")}
                 }
@@ -964,13 +964,13 @@ def generateTestClasses(): Unit = {
                           return null;
                       }
                   }
-                  final Type type = new Type();
+                  Type type = new Type();
                   assertThat($name$i.of(type::methodReference)).isNotNull();
               }
 
               @$test
               public void shouldLiftPartialFunction() {
-                  final $uncheckedSelfType<$intArgTypes, $OptionType<Integer>> lifted = $name$i.lift(($intParams) -> {
+                  $uncheckedSelfType<$intArgTypes, $OptionType<Integer>> lifted = $name$i.lift(($intParams) -> {
                       if (i1 == 0) {
                           return null;
                       }
@@ -990,16 +990,16 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldRethrowFatalThrowableFromLiftTry() {
-                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                  $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
                       $name$i.liftTry(($intParams) -> { throw new OutOfMemoryError("fatal"); });
                   $assertThrows(OutOfMemoryError.class, () -> lifted.apply(${intArgs(1)}));
               }
 
               @$test
               public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
-                  final $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
+                  $uncheckedSelfType<$intArgTypes, $TryType<Integer>> lifted =
                       $name$i.liftTry(($intParams) -> { throw new $nonFatalType("non-fatal"); });
-                  final $TryType<Integer> result = lifted.apply(${intArgs(1)});
+                  $TryType<Integer> result = lifted.apply(${intArgs(1)});
                   assertThat(result.isFailure()).isTrue();
                   assertThat(result.getCause()).isInstanceOf($nonFatalType.class).hasMessage("non-fatal");
               }
@@ -1007,8 +1007,8 @@ def generateTestClasses(): Unit = {
               ${(i == 1).gen(xs"""
                 @$test
                 public void shouldCreateIdentityFunction()${checked.gen(" throws Exception")} {
-                    final $name$i<String, String> identity = $name$i.identity();
-                    final String s = "test";
+                    $name$i<String, String> identity = $name$i.identity();
+                    String s = "test";
                     assertThat(identity.apply(s)).isEqualTo(s);
                 }
               """)}
@@ -1016,7 +1016,7 @@ def generateTestClasses(): Unit = {
               ${(i > 1).gen(xs"""
                 @$test
                 public void shouldPartiallyApply()${checked.gen(" throws Exception")} {
-                    final $name$i<$generics> f = ($functionArgs) -> $concatBody;
+                    $name$i<$generics> f = ($functionArgs) -> $concatBody;
                     ${(1 until i).gen(j => {
                       val partialArgs = (1 to j).gen(k => k.toString)(using ", ")
                       val remainingArgs = (j + 1 to i).gen(k => k.toString)(using ", ")
@@ -1027,21 +1027,21 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldConstant()${checked.gen(" throws Exception")} {
-                  final $name$i<$generics> f = $name$i.constant(6);
+                  $name$i<$generics> f = $name$i.constant(6);
                   $assertThat(f.apply(${(1 to i).gen(j => s"$j")(using ", ")})).isEqualTo(6);
               }
 
               @$test
               public void shouldCurry()${checked.gen(" throws Exception")} {
-                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
-                  final ${curriedType(i, name)} curried = f.curried();
+                  $name$i<$generics> f = ($functionArgs) -> $concatBody;
+                  ${curriedType(i, name)} curried = f.curried();
                   $assertThat(curried${(1 to i).gen(j => s".apply($j)")}).isEqualTo("$digitString");
               }
 
               @$test
               public void shouldTuple()${checked.gen(" throws Exception")} {
-                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
-                  final ${if (checked) s"${name}1" else jdkFunction1}<Tuple$i<${(1 to i).gen(j => "Object")(using ", ")}>, Object> tupled = f.tupled();
+                  $name$i<$generics> f = ($functionArgs) -> $concatBody;
+                  ${if (checked) s"${name}1" else jdkFunction1}<Tuple$i<${(1 to i).gen(j => "Object")(using ", ")}>, Object> tupled = f.tupled();
                   $assertThat(tupled.apply(Tuple.of($digitArgs))).isEqualTo("$digitString");
               }
 
@@ -1074,8 +1074,8 @@ def generateTestClasses(): Unit = {
 
                       @$test
                       public void shouldRecover() {
-                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
-                          final MessageDigest md5 = recover.apply(${toArgList("MD5")});
+                          $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
+                          MessageDigest md5 = recover.apply(${toArgList("MD5")});
                           assertThat(md5).isNotNull();
                           assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
                           assertThat(md5.getDigestLength()).isEqualTo(16);
@@ -1084,12 +1084,12 @@ def generateTestClasses(): Unit = {
 
                       @$test
                       public void shouldRecoverNonNull() {
-                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> null);
-                          final MessageDigest md5 = recover.apply(${toArgList("MD5")});
+                          $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover = digest.recover(throwable -> null);
+                          MessageDigest md5 = recover.apply(${toArgList("MD5")});
                           assertThat(md5).isNotNull();
                           assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
                           assertThat(md5.getDigestLength()).isEqualTo(16);
-                          final ${im.getType("dev.zazr.control.Try")}<MessageDigest> unknown = ${im.getType("dev.zazr.control.Try")}.of(() -> recover.apply(${toArgList("Unknown")}));
+                          ${im.getType("dev.zazr.control.Try")}<MessageDigest> unknown = ${im.getType("dev.zazr.control.Try")}.of(() -> recover.apply(${toArgList("Unknown")}));
                           assertThat(unknown).isNotNull();
                           assertThat(unknown.isFailure()).isTrue();
                           assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
@@ -1099,24 +1099,24 @@ def generateTestClasses(): Unit = {
 
                       @$test
                       public void shouldNotHandFatalThrowableToRecover() {
-                          final $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
-                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                          $name$i$types fatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new OutOfMemoryError("fatal"); };
+                          $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
                               fatal.recover(throwable -> { throw new AssertionError("recover must not see a fatal throwable"); });
                           $assertThrows(OutOfMemoryError.class, () -> recover.apply(${toArgList("MD5")}));
                       }
 
                       @$test
                       public void shouldHandNonFatalThrowableToRecover() {
-                          final $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
-                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
+                          $name$i$types nonFatal = (${(1 to i).gen(j => s"s$j")(using ", ")}) -> { throw new IllegalStateException("non-fatal"); };
+                          $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> recover =
                               nonFatal.recover(throwable -> (${(1 to i).gen(j => s"s$j")(using ", ")}) -> null);
                           assertThat(recover.apply(${toArgList("MD5")})).isNull();
                       }
 
                       @$test
                       public void shouldUncheckedWork() {
-                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
-                          final MessageDigest md5 = unchecked.apply(${toArgList("MD5")});
+                          $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
+                          MessageDigest md5 = unchecked.apply(${toArgList("MD5")});
                           assertThat(md5).isNotNull();
                           assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
                           assertThat(md5.getDigestLength()).isEqualTo(16);
@@ -1125,20 +1125,20 @@ def generateTestClasses(): Unit = {
                       @$test
                       public void shouldUncheckedThrowIllegalState() {
                           $assertThrows(${im.getType("java.security.NoSuchAlgorithmException")}.class, () -> {
-                              final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
+                              $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, MessageDigest> unchecked = digest.unchecked();
                               unchecked.apply(${toArgList("Unknown")}); $comment Look ma, we throw an undeclared checked exception!
                           });
                       }
 
                       @$test
                       public void shouldLiftTryPartialFunction() {
-                          final $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, Try<MessageDigest>> liftTry = $name$i.liftTry(digest);
-                          final ${im.getType("dev.zazr.control.Try")}<MessageDigest> md5 = liftTry.apply(${toArgList("MD5")});
+                          $uncheckedSelfType<${(1 to i).gen(j => "String")(using ", ")}, Try<MessageDigest>> liftTry = $name$i.liftTry(digest);
+                          ${im.getType("dev.zazr.control.Try")}<MessageDigest> md5 = liftTry.apply(${toArgList("MD5")});
                           assertThat(md5.isSuccess()).isTrue();
                           assertThat(md5.get()).isNotNull();
                           assertThat(md5.get().getAlgorithm()).isEqualToIgnoringCase("MD5");
                           assertThat(md5.get().getDigestLength()).isEqualTo(16);
-                          final ${im.getType("dev.zazr.control.Try")}<MessageDigest> unknown = liftTry.apply(${toArgList("Unknown")});
+                          ${im.getType("dev.zazr.control.Try")}<MessageDigest> unknown = liftTry.apply(${toArgList("Unknown")});
                           assertThat(unknown.isFailure()).isTrue();
                           assertThat(unknown.getCause()).isNotNull();
                           assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
@@ -1157,17 +1157,17 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldComposeWithAndThen()${checked.gen(" throws Exception")} {
-                  final $name$i<$generics> f = ($functionArgs) -> $concatBody;
-                  final ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> o + "!";
-                  final $name$i<$generics> composed = f.andThen(after);
+                  $name$i<$generics> f = ($functionArgs) -> $concatBody;
+                  ${if (checked) "CheckedFunction1" else jdkFunction1}<Object, Object> after = o -> o + "!";
+                  $name$i<$generics> composed = f.andThen(after);
                   $assertThat(composed.apply($digitArgs)).isEqualTo("$digitString!");
               }
 
               ${(checked && i == 1).gen(xs"""
                 @$test
                 public void shouldComposeWithBefore() throws Exception {
-                    final $name$i<String, Integer> length = String::length;
-                    final $name$i<Integer, String> repeat = n -> "x".repeat(n);
+                    $name$i<String, Integer> length = String::length;
+                    $name$i<Integer, String> repeat = n -> "x".repeat(n);
                     assertThat(length.compose(repeat).apply(3)).isEqualTo(3);
                 }
               """)}
@@ -1184,8 +1184,8 @@ def generateTestClasses(): Unit = {
 
                   @$test
                   public void shouldCompose$j() ${checked.gen(" throws Exception ")}{
-                      final $name$i<$genArgs, String> concat = ($params) -> $concat;
-                      final $jdkFunction1<String, String> toUpperCase = String::toUpperCase;
+                      $name$i<$genArgs, String> concat = ($params) -> $concat;
+                      $jdkFunction1<String, String> toUpperCase = String::toUpperCase;
                       assertThat(concat.compose$j(toUpperCase).apply($values)).isEqualTo(\"$expected\");
                   }
 
@@ -1197,8 +1197,8 @@ def generateTestClasses(): Unit = {
               ${(i > 0).gen(xs"""
               @$test
               public void shouldNarrow()${checked.gen(" throws Exception")}{
-                  final $name$i<$wideGenericArgs, $wideGenericResult> wideFunction = ($functionArgs) -> String.format("Numbers are: $wideFunctionPattern", $functionArgs);
-                  final $name$i<$narrowGenericArgs, $narrowGenericResult> narrowFunction = $name$i.narrow(wideFunction);
+                  $name$i<$wideGenericArgs, $wideGenericResult> wideFunction = ($functionArgs) -> String.format("Numbers are: $wideFunctionPattern", $functionArgs);
+                  $name$i<$narrowGenericArgs, $narrowGenericResult> narrowFunction = $name$i.narrow(wideFunction);
 
                   $assertThat(narrowFunction.apply($narrowArgs)).isEqualTo("Numbers are: $narrowArgs");
               }
@@ -1222,7 +1222,7 @@ def generateTestClasses(): Unit = {
       (1 to VARARGS).gen(arity => xs"""
         @$test
         public void shouldConstructFrom${arity}Entries${if(builderComparator) "WithBuilderComparator" else ""}${if(keyComparator) "WithKeyComparator" else ""}${mapBuilder.capitalize}() {
-          final $map<Integer, String> map =
+          $map<Integer, String> map =
             $map${if (mapBuilder.isEmpty) "" else s".$mapBuilder"}${if (builderComparator) s"($naturalComparator())" else if (mapBuilder.isEmpty) "" else "()"}
             .of(${if(keyComparator) s"$naturalComparator(), " else ""}${(1 to arity).gen(j => s"""$j, "$j"""")(using ", ")});
           $assertThat(map.size()).isEqualTo($arity);
@@ -1292,20 +1292,20 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldCreateTuple() {
-                  final Tuple$i$generics tuple = createTuple();
+                  Tuple$i$generics tuple = createTuple();
                   $assertThat(tuple).isNotNull();
               }
 
               @$test
               public void shouldGetArity() {
-                  final Tuple$i$generics tuple = createTuple();
+                  Tuple$i$generics tuple = createTuple();
                   $assertThat(tuple.arity()).isEqualTo($i);
               }
 
               ${(i > 0).gen(xs"""
                 @$test
                 public void shouldReturnElements() {
-                    final Tuple$i$intGenerics tuple = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")});
+                    Tuple$i$intGenerics tuple = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")});
                     ${(1 to i).gen(j => s"$assertThat(tuple._$j()).isEqualTo($j);\n")}
                 }
               """)}
@@ -1314,35 +1314,35 @@ def generateTestClasses(): Unit = {
                 xs"""
                   @$test
                   public void shouldUpdate$j() {
-                    final Tuple$i$intGenerics tuple = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")}).update$j(42);
+                    Tuple$i$intGenerics tuple = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")}).update$j(42);
                     ${(1 to i).gen(k => s"$assertThat(tuple._$k()).isEqualTo(${if (j == k) 42 else k});\n")}
                   }
                 """)(using "\n\n")}
 
               @$test
               public void shouldConvertToVector() {
-                  final $vector<?> actual = createIntTuple(${genArgsForComparing(i, 1)}).toVector();
+                  $vector<?> actual = createIntTuple(${genArgsForComparing(i, 1)}).toVector();
                   $assertThat(actual).isEqualTo($vector.of(${genArgsForComparing(i, 1)}));
               }
 
               @$test
               public void shouldCompareEqual() {
-                  final Tuple$i$intGenerics t0 = createIntTuple(${genArgsForComparing(i, 0)});
+                  Tuple$i$intGenerics t0 = createIntTuple(${genArgsForComparing(i, 0)});
                   $assertThat(t0.compareTo(t0)).isZero();
                   $assertThat(intTupleComparator.compare(t0, t0)).isZero();
               }
 
               @$test
               public void shouldThrowWhenComparingToNull() {
-                  final Tuple$i$intGenerics t0 = createIntTuple(${genArgsForComparing(i, 0)});
+                  Tuple$i$intGenerics t0 = createIntTuple(${genArgsForComparing(i, 0)});
                   $assertThrows(NullPointerException.class, () -> t0.compareTo(null));
               }
 
               ${(1 to i).gen(j => xs"""
                 @$test
                 public void shouldCompare${j.ordinal}Arg() {
-                    final Tuple$i$intGenerics t0 = createIntTuple(${genArgsForComparing(i, 0)});
-                    final Tuple$i$intGenerics t$j = createIntTuple(${genArgsForComparing(i, j)});
+                    Tuple$i$intGenerics t0 = createIntTuple(${genArgsForComparing(i, 0)});
+                    Tuple$i$intGenerics t$j = createIntTuple(${genArgsForComparing(i, j)});
                     $assertThat(t0.compareTo(t$j)).isNegative();
                     $assertThat(t$j.compareTo(t0)).isPositive();
                     $assertThat(intTupleComparator.compare(t0, t$j)).isNegative();
@@ -1368,34 +1368,34 @@ def generateTestClasses(): Unit = {
               ${(i > 0).gen(xs"""
                 @$test
                 public void shouldMap() {
-                    final Tuple$i$generics tuple = createTuple();
+                    Tuple$i$generics tuple = createTuple();
                     ${if (i == 1) xs"""
-                      final Tuple$i$generics actual = tuple.map(o -> o);
+                      Tuple$i$generics actual = tuple.map(o -> o);
                       $assertThat(actual).isEqualTo(tuple);
                     """ else xs"""
-                      final Tuple$i$generics actual = tuple.map($functionArgs -> tuple);
+                      Tuple$i$generics actual = tuple.map($functionArgs -> tuple);
                       $assertThat(actual).isEqualTo(tuple);
                     """}
                 }
 
                 @$test
                 public void shouldMapComponents() {
-                  final Tuple$i$generics tuple = createTuple();
-                  ${(1 to i).gen(j => xs"""final ${im.getType("java.util.function.Function")}<Object, Object> f$j = ${im.getType("java.util.function.Function")}.identity();""")(using "\n")}
-                  final Tuple$i$generics actual = tuple.map(${(1 to i).gen(j => s"f$j")(using ", ")});
+                  Tuple$i$generics tuple = createTuple();
+                  ${(1 to i).gen(j => xs"""${im.getType("java.util.function.Function")}<Object, Object> f$j = ${im.getType("java.util.function.Function")}.identity();""")(using "\n")}
+                  Tuple$i$generics actual = tuple.map(${(1 to i).gen(j => s"f$j")(using ", ")});
                   $assertThat(actual).isEqualTo(tuple);
                 }
 
                 @$test
                 public void shouldReturnTuple${i}OfUnzip$i() {
-                  final $list<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> iterable = $list.of(${(1 to i).gen(j => xs"Tuple.of(${(1 to i).gen(k => xs"${k+2*j-1}")(using ", ")})")(using ", ")});
-                  final Tuple$i<${(1 to i).gen(j => xs"$vector<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$vector.of(${(1 to i).gen(k => xs"${2*k+j-1}")(using ", ")})")(using ", ")});
+                  $list<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> iterable = $list.of(${(1 to i).gen(j => xs"Tuple.of(${(1 to i).gen(k => xs"${k+2*j-1}")(using ", ")})")(using ", ")});
+                  Tuple$i<${(1 to i).gen(j => xs"$vector<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$vector.of(${(1 to i).gen(k => xs"${2*k+j-1}")(using ", ")})")(using ", ")});
                   $assertThat(Tuple.unzip$i(iterable)).isEqualTo(expected);
                 }
 
                 @$test
                 public void shouldUnzip${i}Nothing() {
-                  final Tuple$i<${(1 to i).gen(j => xs"$vector<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$vector.empty()")(using ", ")});
+                  Tuple$i<${(1 to i).gen(j => xs"$vector<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$vector.empty()")(using ", ")});
                   $assertThat(Tuple.unzip$i($list.<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> empty())).isEqualTo(expected);
                   $assertThat(Tuple.unzip$i($list.<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> empty())._1()).isSameAs($vector.empty());
                 }
@@ -1410,8 +1410,8 @@ def generateTestClasses(): Unit = {
               ${(i > 1).gen(xs"""
                 @$test
                 public void shouldReturnTuple${i}OfUnzip1() {
-                  final $list<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> iterable = $list.of(Tuple.of(${(1 to i).gen(k => xs"$k")(using ", ")}));
-                  final Tuple$i<${(1 to i).gen(j => xs"$vector<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$vector.of($j)")(using ", ")});
+                  $list<Tuple$i<${(1 to i).gen(j => xs"Integer")(using ", ")}>> iterable = $list.of(Tuple.of(${(1 to i).gen(k => xs"$k")(using ", ")}));
+                  Tuple$i<${(1 to i).gen(j => xs"$vector<Integer>")(using ", ")}> expected = Tuple.of(${(1 to i).gen(j => xs"$vector.of($j)")(using ", ")});
                   $assertThat(Tuple.unzip$i(iterable)).isEqualTo(expected);
                 }
               """)}
@@ -1423,8 +1423,8 @@ def generateTestClasses(): Unit = {
                 xs"""
                   @$test
                   public void shouldMap${j.ordinal}Component() {
-                    final Tuple$i$substitutedResultTypes actual = Tuple.of($ones).map$j(i -> "X");
-                    final Tuple$i$substitutedResultTypes expected = Tuple.of($result);
+                    Tuple$i$substitutedResultTypes actual = Tuple.of($ones).map$j(i -> "X");
+                    Tuple$i$substitutedResultTypes expected = Tuple.of($result);
                     assertThat(actual).isEqualTo(expected);
                   }
                 """
@@ -1432,16 +1432,16 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldApplyTuple() {
-                  final Tuple$i$generics tuple = createTuple();
-                  final Tuple0 actual = tuple.apply($functionArgs -> Tuple0.instance());
+                  Tuple$i$generics tuple = createTuple();
+                  Tuple0 actual = tuple.apply($functionArgs -> Tuple0.instance());
                   assertThat(actual).isEqualTo(Tuple0.instance());
               }
 
               ${(i < N).gen(xs"""
                 @$test
                 public void shouldAppendValue() {
-                    final Tuple${i+1}<${(1 to i+1).gen(j => s"Integer")(using ", ")}> actual = ${ if (i == 0) "Tuple0.instance()" else s"Tuple.of(${(1 to i).gen(j => xs"$j")(using ", ")})"}.append(${i+1});
-                    final Tuple${i+1}<${(1 to i+1).gen(j => s"Integer")(using ", ")}> expected = Tuple.of(${(1 to i+1).gen(j => xs"$j")(using ", ")});
+                    Tuple${i+1}<${(1 to i+1).gen(j => s"Integer")(using ", ")}> actual = ${ if (i == 0) "Tuple0.instance()" else s"Tuple.of(${(1 to i).gen(j => xs"$j")(using ", ")})"}.append(${i+1});
+                    Tuple${i+1}<${(1 to i+1).gen(j => s"Integer")(using ", ")}> expected = Tuple.of(${(1 to i+1).gen(j => xs"$j")(using ", ")});
                     assertThat(actual).isEqualTo(expected);
                 }
               """)}
@@ -1449,30 +1449,30 @@ def generateTestClasses(): Unit = {
               ${(i < N) `gen` (1 to N-i).gen(j => xs"""
                 @$test
                 public void shouldConcatTuple$j() {
-                    final Tuple${i+j}<${(1 to i+j).gen(j => s"Integer")(using ", ")}> actual = ${ if (i == 0) "Tuple0.instance()" else s"Tuple.of(${(1 to i).gen(j => xs"$j")(using ", ")})"}.concat(Tuple.of(${(i+1 to i+j).gen(k => s"$k")(using ", ")}));
-                    final Tuple${i+j}<${(1 to i+j).gen(j => s"Integer")(using ", ")}> expected = Tuple.of(${(1 to i+j).gen(j => xs"$j")(using ", ")});
+                    Tuple${i+j}<${(1 to i+j).gen(j => s"Integer")(using ", ")}> actual = ${ if (i == 0) "Tuple0.instance()" else s"Tuple.of(${(1 to i).gen(j => xs"$j")(using ", ")})"}.concat(Tuple.of(${(i+1 to i+j).gen(k => s"$k")(using ", ")}));
+                    Tuple${i+j}<${(1 to i+j).gen(j => s"Integer")(using ", ")}> expected = Tuple.of(${(1 to i+j).gen(j => xs"$j")(using ", ")});
                     assertThat(actual).isEqualTo(expected);
                 }
               """)(using "\n\n")}
 
               @$test
               public void shouldRecognizeEquality() {
-                  final Tuple$i$generics tuple1 = createTuple();
-                  final Tuple$i$generics tuple2 = createTuple();
+                  Tuple$i$generics tuple1 = createTuple();
+                  Tuple$i$generics tuple2 = createTuple();
                   $assertThat((Object) tuple1).isEqualTo(tuple2);
               }
 
               @$test
               public void shouldRecognizeNonEquality() {
-                  final Tuple$i$generics tuple = createTuple();
-                  final Object other = new Object();
+                  Tuple$i$generics tuple = createTuple();
+                  Object other = new Object();
                   $assertThat(tuple).isNotEqualTo(other);
               }
 
               ${(i > 0).gen(xs"""
                 @$test
                 public void shouldRecognizeNonEqualityPerComponent() {
-                    final Tuple$i<${(1 to i).gen(_ => "String")(using ", ")}> tuple = Tuple.of(${(1 to i).gen(j => "\"" + j + "\"")(using ", ")});
+                    Tuple$i<${(1 to i).gen(_ => "String")(using ", ")}> tuple = Tuple.of(${(1 to i).gen(j => "\"" + j + "\"")(using ", ")});
                     ${(1 to i).gen(j => {
                       val that = "Tuple.of(" + (1 to i).gen(k => if (j == k) "\"X\"" else "\"" + k + "\"")(using ", ") + ")"
                       s"$assertThat(tuple.equals($that)).isFalse();"
@@ -1491,7 +1491,7 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldDeconstructWithRecordPattern() {
-                  final Object o = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")});
+                  Object o = createIntTuple(${(1 to i).gen(j => s"$j")(using ", ")});
                   if (o instanceof Tuple$i(${(1 to i).gen(j => s"var v$j")(using ", ")})) {
                       ${(1 to i).gen(j => s"$assertThat(v$j).isEqualTo($j);\n")}
                   } else {
@@ -1501,8 +1501,8 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldImplementToString() {
-                  final String actual = createTuple().toString();
-                  final String expected = "($nullArgs)";
+                  String actual = createTuple().toString();
+                  String expected = "($nullArgs)";
                   $assertThat(actual).isEqualTo(expected);
               }
 
@@ -1561,7 +1561,7 @@ def generateTestClasses(): Unit = {
         def nullResultAssertion(n: Int): String = {
           val call = s"$typeName.zipWith(${operands(n, success, failure, _ => false)}, (${lambdaParams(n)}) -> null)"
           if (typeName == "Try") xs"""
-            final Try<Object> actual = $call;
+            Try<Object> actual = $call;
             $assertThat(actual.isFailure()).isTrue();
             $assertThat(actual.getCause()).isInstanceOf(NullPointerException.class).hasMessage("Try.zipWith: f returned null");
           """ else xs"""
@@ -1580,8 +1580,8 @@ def generateTestClasses(): Unit = {
 
                 @$test
                 public void shouldZipWith${n}Successes() {
-                    final $AtomicInteger calls = new $AtomicInteger();
-                    final ${valueType.replace("Integer", "String")} actual = $typeName.zipWith(${operands(n, success, failure, _ => false)}, (${lambdaParams(n)}) -> {
+                    $AtomicInteger calls = new $AtomicInteger();
+                    ${valueType.replace("Integer", "String")} actual = $typeName.zipWith(${operands(n, success, failure, _ => false)}, (${lambdaParams(n)}) -> {
                         calls.incrementAndGet();
                         return ${concatenation(n)};
                     });
@@ -1592,7 +1592,7 @@ def generateTestClasses(): Unit = {
                 @$test
                 public void shouldFailWhenOneOf${n}Fails() {
                     ${(1 to n).gen(k => xs"""
-                      final $valueType failing$k = ${failure(k)};
+                      $valueType failing$k = ${failure(k)};
                       ${failureAssertion(s"$typeName.zip(${operands(n, success, j => s"failing$j", _ == k)})", s"failing$k")}
                       ${failureAssertion(s"$typeName.zipWith(${operands(n, success, j => s"failing$j", _ == k)}, ${notCalled(n)})", s"failing$k")}
                     """)(using "\n")}
@@ -1601,7 +1601,7 @@ def generateTestClasses(): Unit = {
                 ${(exactFailureInstance).gen(xs"""
                   @$test
                   public void shouldReturnTheFirstFailureOf${n}InArgumentOrder() {
-                      ${(1 to n).gen(k => s"final $valueType failing$k = ${failure(k)};")(using "\n")}
+                      ${(1 to n).gen(k => s"$valueType failing$k = ${failure(k)};")(using "\n")}
                       ${(1 to n).gen(k => xs"""
                         ${failureAssertion(s"$typeName.zip(${operands(n, success, j => s"failing$j", _ >= k)})", s"failing$k")}
                         ${failureAssertion(s"$typeName.zipWith(${operands(n, success, j => s"failing$j", _ >= k)}, ${notCalled(n)})", s"failing$k")}
@@ -1612,7 +1612,7 @@ def generateTestClasses(): Unit = {
                 ${(typeName == "Try").gen(xs"""
                   @$test
                   public void shouldCaptureWhatTheCombinerOf${n}Throws() {
-                      final RuntimeException boom = new IllegalStateException("boom");
+                      RuntimeException boom = new IllegalStateException("boom");
                       $assertThat(Try.zipWith(${operands(n, success, failure, _ => false)}, (${ignoredParams(n)}) -> {
                           throw boom;
                       })).isEqualTo(Try.failure(boom));
@@ -1620,7 +1620,7 @@ def generateTestClasses(): Unit = {
 
                   @$test
                   public void shouldRethrowAFatalCombinerErrorOf$n() {
-                      final UnknownError fatal = new UnknownError("fatal");
+                      UnknownError fatal = new UnknownError("fatal");
                       $assertThatThrownBy(() -> Try.zipWith(${operands(n, success, failure, _ => false)}, (${ignoredParams(n)}) -> {
                           throw fatal;
                       })).isSameAs(fatal);
@@ -1681,8 +1681,8 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldZipWith${n}Valids() {
-                  final $AtomicInteger calls = new $AtomicInteger();
-                  final Validation<String, String> actual = Validation.zipWith(${all(n)}, (${lambdaParams(n)}) -> {
+                  $AtomicInteger calls = new $AtomicInteger();
+                  Validation<String, String> actual = Validation.zipWith(${all(n)}, (${lambdaParams(n)}) -> {
                       calls.incrementAndGet();
                       return ${concatenation(n)};
                   });
@@ -1708,11 +1708,11 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldConcatenateSeveralErrorsOfOneInvalidOf${n}InArgumentOrder() {
-                  final Validation<String, Integer> first = Validation.invalidAll($NonEmptyVector.of("e1a", "e1b"));
+                  Validation<String, Integer> first = Validation.invalidAll($NonEmptyVector.of("e1a", "e1b"));
                   $assertThat(Validation.zip(${(1 to n).gen(j => if (j == 1) "first" else if (j == n) invalid(j) else valid(j))(using ", ")})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1a", "e1b", "e$n")));
                   $assertThat(Validation.zipWith(${(1 to n).gen(j => if (j == 1) "first" else if (j == n) invalid(j) else valid(j))(using ", ")}, ${notCalled(n)})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1a", "e1b", "e$n")));
                   ${(n >= 3).gen(xs"""
-                    final Validation<String, Integer> middle = Validation.invalidAll($NonEmptyVector.of("e2a", "e2b"));
+                    Validation<String, Integer> middle = Validation.invalidAll($NonEmptyVector.of("e2a", "e2b"));
                     $assertThat(Validation.zip(${(1 to n).gen(j => if (j == 2) "middle" else if (j == 1 || j == n) invalid(j) else valid(j))(using ", ")})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1", "e2a", "e2b", "e$n")));
                     $assertThat(Validation.zipWith(${(1 to n).gen(j => if (j == 2) "middle" else if (j == 1 || j == n) invalid(j) else valid(j))(using ", ")}, ${notCalled(n)})).isEqualTo(Validation.invalidAll($NonEmptyVector.of("e1", "e2a", "e2b", "e$n")));
                   """)}
@@ -1756,7 +1756,7 @@ def generateTestClasses(): Unit = {
 
       def lazies(n: Int): String = (1 to n).gen(j => s"l$j")(using ", ")
       def tracked(n: Int): String = (1 to n).gen(j => xs"""
-        final Lazy<Integer> l$j = Lazy.of(() -> {
+        Lazy<Integer> l$j = Lazy.of(() -> {
             order.add($j);
             return $j;
         });
@@ -1769,10 +1769,10 @@ def generateTestClasses(): Unit = {
             ${arities.gen(n => xs"""
               @$test
               public void shouldNotEvaluateBeforeTheZipOf${n}Is() {
-                  final $List<Integer> order = new $ArrayList<>();
+                  $List<Integer> order = new $ArrayList<>();
                   ${tracked(n)}
-                  final Lazy<${tupleType(n)}> zipped = Lazy.zip(${lazies(n)});
-                  final Lazy<String> combined = Lazy.zipWith(${lazies(n)}, (${lambdaParams(n)}) -> ${concatenation(n)});
+                  Lazy<${tupleType(n)}> zipped = Lazy.zip(${lazies(n)});
+                  Lazy<String> combined = Lazy.zipWith(${lazies(n)}, (${lambdaParams(n)}) -> ${concatenation(n)});
                   $assertThat(zipped.isEvaluated()).isFalse();
                   $assertThat(combined.isEvaluated()).isFalse();
                   ${(1 to n).gen(j => s"$assertThat(l$j.isEvaluated()).isFalse();")(using "\n")}
@@ -1781,9 +1781,9 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldEvaluateTheZipOf${n}InArgumentOrderAndCacheIt() {
-                  final $List<Integer> order = new $ArrayList<>();
+                  $List<Integer> order = new $ArrayList<>();
                   ${tracked(n)}
-                  final Lazy<${tupleType(n)}> zipped = Lazy.zip(${lazies(n)});
+                  Lazy<${tupleType(n)}> zipped = Lazy.zip(${lazies(n)});
                   $assertThat(zipped.get()).isEqualTo(Tuple.of(${ints(n)}));
                   $assertThat(order).containsExactly(${ints(n)});
                   $assertThat(zipped.isEvaluated()).isTrue();
@@ -1794,10 +1794,10 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldEvaluateTheZipWithOf${n}InArgumentOrderAndCacheIt() {
-                  final $List<Integer> order = new $ArrayList<>();
-                  final $AtomicInteger calls = new $AtomicInteger();
+                  $List<Integer> order = new $ArrayList<>();
+                  $AtomicInteger calls = new $AtomicInteger();
                   ${tracked(n)}
-                  final Lazy<String> combined = Lazy.zipWith(${lazies(n)}, (${lambdaParams(n)}) -> {
+                  Lazy<String> combined = Lazy.zipWith(${lazies(n)}, (${lambdaParams(n)}) -> {
                       calls.incrementAndGet();
                       return ${concatenation(n)};
                   });
@@ -1811,7 +1811,7 @@ def generateTestClasses(): Unit = {
 
               @$test
               public void shouldHoldNullFromTheZipWithOf$n() {
-                  final Lazy<Object> combined = Lazy.zipWith(${(1 to n).gen(j => s"Lazy.of(() -> $j)")(using ", ")}, (${ignoredParams(n)}) -> null);
+                  Lazy<Object> combined = Lazy.zipWith(${(1 to n).gen(j => s"Lazy.of(() -> $j)")(using ", ")}, (${ignoredParams(n)}) -> null);
                   $assertThat(combined.get()).isNull();
                   $assertThat(combined.isEvaluated()).isTrue();
               }

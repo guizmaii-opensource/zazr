@@ -52,13 +52,13 @@ public class Euler24Test {
      * of permutations achievable in each position instead of actually doing the permutations.
      */
     private static String lexicographicPermutation(List<String> stringsToPermutate, int ordinal) {
-        final List<String> sx = stringsToPermutate.sorted();
+        List<String> sx = stringsToPermutate.sorted();
         if (sx.size() == 1) {
             return sx.mkString();
         }
-        final int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.size() - 1);
-        final int headCharPosition = ((ordinal + noOfPossiblePermutationsInTail - 1) / noOfPossiblePermutationsInTail);
-        final int ordinalRest = Integer.max(0, ordinal - ((headCharPosition - 1) * noOfPossiblePermutationsInTail));
+        int noOfPossiblePermutationsInTail = memoizedFactorial.apply(sx.size() - 1);
+        int headCharPosition = ((ordinal + noOfPossiblePermutationsInTail - 1) / noOfPossiblePermutationsInTail);
+        int ordinalRest = Integer.max(0, ordinal - ((headCharPosition - 1) * noOfPossiblePermutationsInTail));
         return List.of(sx.get(headCharPosition - 1)).mkString()
                 + lexicographicPermutation(sx.removeAt(headCharPosition - 1), ordinalRest);
     }

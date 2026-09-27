@@ -12,13 +12,13 @@ public class CheckedRunnableTest {
 
     @Test
     public void shouldCreateCheckedRunnableUsingLambda() {
-        final CheckedRunnable runnable = CheckedRunnable.of(() -> {});
+        CheckedRunnable runnable = CheckedRunnable.of(() -> {});
         assertThat(runnable).isNotNull();
     }
 
     @Test
     public void shouldCreateCheckedRunnableUsingMethodReference() {
-        final CheckedRunnable runnable = CheckedRunnable.of(CheckedRunnableTest::run);
+        CheckedRunnable runnable = CheckedRunnable.of(CheckedRunnableTest::run);
         assertThat(runnable).isNotNull();
     }
 
@@ -28,7 +28,7 @@ public class CheckedRunnableTest {
     class UncheckedTests {
         @Test
         public void shouldApplyAnUncheckedFunctionThatDoesNotThrow() {
-            final Runnable runnable = CheckedRunnable.of(() -> {}).unchecked();
+            Runnable runnable = CheckedRunnable.of(() -> {}).unchecked();
             try {
                 runnable.run();
             } catch (Throwable x) {
@@ -38,7 +38,7 @@ public class CheckedRunnableTest {
 
         @Test
         public void shouldApplyAnUncheckedFunctionThatThrows() {
-            final Runnable runnable = CheckedRunnable.of(() -> {
+            Runnable runnable = CheckedRunnable.of(() -> {
                         throw new Error();
                     })
                     .unchecked();

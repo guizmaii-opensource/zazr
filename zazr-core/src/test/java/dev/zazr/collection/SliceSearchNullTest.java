@@ -17,7 +17,7 @@ public class SliceSearchNullTest {
         for (java.util.List<Integer> slice :
                 java.util.List.of(Arrays.asList(1, null), Arrays.asList(null, 1), Arrays.asList(0, 1, null))) {
             for (int size : new int[] {0, 1, 5}) {
-                final Vector<Integer> vector = Vector.range(0, size);
+                Vector<Integer> vector = Vector.range(0, size);
                 assertThatNullPointerException()
                         .isThrownBy(() -> vector.lastIndexOfSlice(slice))
                         .withMessage("Vector: element is null");
@@ -40,7 +40,7 @@ public class SliceSearchNullTest {
                             .isThrownBy(() -> Stream.ofAll(vector).lastIndexOfSlice(slice, end));
                 }
                 if (size > 0) {
-                    final NonEmptyVector<Integer> nev =
+                    NonEmptyVector<Integer> nev =
                             NonEmptyVector.fromIterable(vector).get();
                     assertThatNullPointerException()
                             .isThrownBy(() -> nev.lastIndexOfSlice(slice))
@@ -57,8 +57,8 @@ public class SliceSearchNullTest {
 
     @Test
     public void shouldReadTheSliceOfIndexOfSliceOnlyAsFarAsEachSequenceDocuments() {
-        final java.util.List<Integer> nullAfterMismatch = Arrays.asList(7, null);
-        final java.util.List<Integer> nullFirst = Arrays.asList(null, 1);
+        java.util.List<Integer> nullAfterMismatch = Arrays.asList(7, null);
+        java.util.List<Integer> nullFirst = Arrays.asList(null, 1);
         for (java.util.List<Integer> slice : java.util.List.of(nullAfterMismatch, nullFirst)) {
             // Vector and NonEmptyVector read the whole slice first
             assertThatNullPointerException()

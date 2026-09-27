@@ -39,8 +39,8 @@ class JavaListViewTest {
                 .sorted(java.util.Map.Entry.comparingByKey())
                 .flatMap(view -> IntStream.of(JavaViewContract.SIZES)
                         .mapToObj(n -> DynamicTest.dynamicTest(view.getKey() + " of " + n, () -> {
-                            final java.util.List<Integer> elements = JavaViewContract.pairs(n);
-                            final JavaViewContract contract = JavaViewContract.ordered();
+                            java.util.List<Integer> elements = JavaViewContract.pairs(n);
+                            JavaViewContract contract = JavaViewContract.ordered();
                             contract.list(
                                     view.getKey() + "(" + n + ").asJava()",
                                     view.getValue().apply(elements),
@@ -64,8 +64,8 @@ class JavaListViewTest {
 
         @Test
         void shouldForceNoMoreThanTheReadsNeed() {
-            final AtomicInteger forced = new AtomicInteger();
-            final java.util.List<Integer> view = counted(forced).asJava();
+            AtomicInteger forced = new AtomicInteger();
+            java.util.List<Integer> view = counted(forced).asJava();
             assertThat(forced).hasValue(0);
             assertThat(view.isEmpty()).isFalse();
             assertThat(view.getFirst()).isEqualTo(0);
@@ -74,14 +74,14 @@ class JavaListViewTest {
             assertThat(view.contains(7)).isTrue();
             assertThat(view.indexOf(9)).isEqualTo(9);
             assertThat(forced).hasValue(9);
-            final java.util.Iterator<Integer> iterator = view.iterator();
+            java.util.Iterator<Integer> iterator = view.iterator();
             assertThat(iterator.next()).isEqualTo(0);
             assertThat(iterator.next()).isEqualTo(1);
             assertThat(view.stream().limit(12).toList()).hasSize(12);
             assertThat(forced).hasValue(11);
             assertThat(view.subList(3, 20).get(2)).isEqualTo(5);
             assertThat(forced).hasValue(19);
-            final java.util.ListIterator<Integer> listIterator = view.listIterator(30);
+            java.util.ListIterator<Integer> listIterator = view.listIterator(30);
             assertThat(listIterator.next()).isEqualTo(30);
             assertThat(listIterator.previous()).isEqualTo(30);
             assertThat(listIterator.previous()).isEqualTo(29);
@@ -92,7 +92,7 @@ class JavaListViewTest {
 
         @Test
         void shouldCheckTheSubListBoundsOfAFiniteStreamWithoutTheWholeLength() {
-            final java.util.List<Integer> view = Stream.of(0, 1, 2).asJava();
+            java.util.List<Integer> view = Stream.of(0, 1, 2).asJava();
             assertThatThrownBy(() -> view.subList(0, 4)).isInstanceOf(IndexOutOfBoundsException.class);
             assertThatThrownBy(() -> view.listIterator(4)).isInstanceOf(IndexOutOfBoundsException.class);
             assertThat(view.subList(1, 3)).containsExactly(1, 2);
@@ -101,8 +101,7 @@ class JavaListViewTest {
 
         @Test
         void shouldIterateTheListIteratorOfALinearSequenceForwardInOneWalk() {
-            final java.util.ListIterator<Integer> iterator =
-                    List.of(1, 2, 3).asJava().listIterator(1);
+            java.util.ListIterator<Integer> iterator = List.of(1, 2, 3).asJava().listIterator(1);
             assertThat(iterator.next()).isEqualTo(2);
             assertThat(iterator.next()).isEqualTo(3);
             assertThat(iterator.hasNext()).isFalse();

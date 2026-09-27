@@ -33,17 +33,17 @@ public record Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T
             Comparator<Tuple3<T1, T2, T3>> comparator(
                     Comparator<? super T1> t1Comp, Comparator<? super T2> t2Comp, Comparator<? super T3> t3Comp) {
         return (t1, t2) -> {
-            final int check1 = t1Comp.compare(t1._1(), t2._1());
+            int check1 = t1Comp.compare(t1._1(), t2._1());
             if (check1 != 0) {
                 return check1;
             }
 
-            final int check2 = t2Comp.compare(t1._2(), t2._2());
+            int check2 = t2Comp.compare(t1._2(), t2._2());
             if (check2 != 0) {
                 return check2;
             }
 
-            final int check3 = t3Comp.compare(t1._3(), t2._3());
+            int check3 = t3Comp.compare(t1._3(), t2._3());
             if (check3 != 0) {
                 return check3;
             }
@@ -59,20 +59,20 @@ public record Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T
                     U2 extends Comparable<? super U2>,
                     U3 extends Comparable<? super U3>>
             int compareTo(Tuple3<?, ?, ?> o1, Tuple3<?, ?, ?> o2) {
-        final Tuple3<U1, U2, U3> t1 = (Tuple3<U1, U2, U3>) o1;
-        final Tuple3<U1, U2, U3> t2 = (Tuple3<U1, U2, U3>) o2;
+        Tuple3<U1, U2, U3> t1 = (Tuple3<U1, U2, U3>) o1;
+        Tuple3<U1, U2, U3> t2 = (Tuple3<U1, U2, U3>) o2;
 
-        final int check1 = t1._1().compareTo(t2._1());
+        int check1 = t1._1().compareTo(t2._1());
         if (check1 != 0) {
             return check1;
         }
 
-        final int check2 = t1._2().compareTo(t2._2());
+        int check2 = t1._2().compareTo(t2._2());
         if (check2 != 0) {
             return check2;
         }
 
-        final int check3 = t1._3().compareTo(t2._3());
+        int check3 = t1._3().compareTo(t2._3());
         if (check3 != 0) {
             return check3;
         }
@@ -169,7 +169,7 @@ public record Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T
      */
     public <U extends @Nullable Object> Tuple3<U, T2, T3> map1(Function<? super T1, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_1);
+        U u = mapper.apply(_1);
         return Tuple.of(u, _2, _3);
     }
 
@@ -182,7 +182,7 @@ public record Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T
      */
     public <U extends @Nullable Object> Tuple3<T1, U, T3> map2(Function<? super T2, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_2);
+        U u = mapper.apply(_2);
         return Tuple.of(_1, u, _3);
     }
 
@@ -195,7 +195,7 @@ public record Tuple3<T1 extends @Nullable Object, T2 extends @Nullable Object, T
      */
     public <U extends @Nullable Object> Tuple3<T1, T2, U> map3(Function<? super T3, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final U u = mapper.apply(_3);
+        U u = mapper.apply(_3);
         return Tuple.of(_1, _2, u);
     }
 

@@ -24,8 +24,8 @@ class Check2Test {
 
     @Test
     void passesTheValuesInOrder() {
-        final ArrayList<Object> seen = new ArrayList<>();
-        final CheckResult result =
+        ArrayList<Object> seen = new ArrayList<>();
+        CheckResult result =
                 Check.evaluate(CONFIG, Gen.constant(1), Gen.constant(2), (v1, v2) -> seen.add(Tuple.of(v1, v2)));
         assertThat(result).isEqualTo(new CheckResult.Satisfied(20));
         assertThat(seen).hasSize(20).containsOnly(Tuple.of(1, 2));
@@ -47,7 +47,7 @@ class Check2Test {
 
     @Test
     void checkAllRunsEveryCombinationOnce() {
-        final ArrayList<Object> seen = new ArrayList<>();
+        ArrayList<Object> seen = new ArrayList<>();
         assertThat(Check.evaluateAll(TWO, TWO, (v1, v2) -> seen.add(Tuple.of(v1, v2))))
                 .isEqualTo(new CheckResult.Satisfied(4));
         assertThat(seen).hasSize(4).doesNotHaveDuplicates();
@@ -98,7 +98,7 @@ class Check2Test {
 
     @Test
     void checkReturnsWhenEveryValuePasses() {
-        final ArrayList<Object> seen = new ArrayList<>();
+        ArrayList<Object> seen = new ArrayList<>();
         Check.check(CONFIG, Gen.constant(1), Gen.constant(2), (v1, v2) -> seen.add(Tuple.of(v1, v2)));
         assertThat(seen).hasSize(20);
         Check.check(Gen.constant(1), Gen.constant(2), (v1, v2) -> true);

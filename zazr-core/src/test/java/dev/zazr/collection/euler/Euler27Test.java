@@ -50,7 +50,7 @@ public class Euler27Test {
 
     private static int productOfCoefficientsWithMostConsecutivePrimes(
             int coefficientsLowerBound, int coefficientsUpperBound) {
-        final List<Integer> coefficients = List.rangeClosed(coefficientsLowerBound, coefficientsUpperBound);
+        List<Integer> coefficients = List.rangeClosed(coefficientsLowerBound, coefficientsUpperBound);
         return coefficients
                 .flatMap(a -> coefficients.map(b -> Tuple.of(a, b)))
                 .map(c -> Tuple.of(

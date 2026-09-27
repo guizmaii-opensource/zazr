@@ -31,7 +31,7 @@ public class NonEmptySortedSetTest {
 
     /* (size, set) in the natural and the reverse order */
     static Stream<Arguments> sets() {
-        final ArrayList<Arguments> cases = new ArrayList<>();
+        ArrayList<Arguments> cases = new ArrayList<>();
         for (int n : SIZES) {
             cases.add(Arguments.of(n, TreeSet.range(0, n)));
             cases.add(Arguments.of(n, TreeSet.ofAll(Comparator.reverseOrder(), Vector.range(0, n))));
@@ -44,7 +44,7 @@ public class NonEmptySortedSetTest {
     }
 
     static <A> Iterable<A> once(Iterable<A> elements) {
-        final boolean[] read = {false};
+        boolean[] read = {false};
         return () -> {
             if (read[0]) {
                 throw new IllegalStateException("read twice");
@@ -70,8 +70,8 @@ public class NonEmptySortedSetTest {
                             .compare(1, 2))
                     .isPositive();
             for (int n : SIZES) {
-                final TreeSet<Integer> expected = TreeSet.range(0, n);
-                final Vector<Integer> shuffled = Vector.range(0, n).reverse();
+                TreeSet<Integer> expected = TreeSet.range(0, n);
+                Vector<Integer> shuffled = Vector.range(0, n).reverse();
                 assertThat(NonEmptySortedSet.of(0, shuffled.toArray(Integer[]::new))
                                 .toSortedSet())
                         .isEqualTo(expected);
@@ -108,7 +108,7 @@ public class NonEmptySortedSetTest {
         @Test
         public void shouldWrapWithoutCopyingAndNarrow() {
             for (int n : SIZES) {
-                final TreeSet<Integer> set = TreeSet.ofAll(Comparator.reverseOrder(), Vector.range(0, n));
+                TreeSet<Integer> set = TreeSet.ofAll(Comparator.reverseOrder(), Vector.range(0, n));
                 assertThat(NonEmptySortedSet.fromSortedSet(set).get().toSortedSet())
                         .isSameAs(set);
                 assertThat(NonEmptySortedSet.unsafeFromSortedSet(set).toSortedSet())
@@ -166,7 +166,7 @@ public class NonEmptySortedSetTest {
             assertThatNullPointerException()
                     .isThrownBy(() -> NonEmptySortedSet.unsafeFromSortedSet(null))
                     .withMessage("NonEmptySortedSet.unsafeFromSortedSet: set is null");
-            final NonEmptySortedSet<Integer> ness = NonEmptySortedSet.of(1, 2);
+            NonEmptySortedSet<Integer> ness = NonEmptySortedSet.of(1, 2);
             assertThatNullPointerException()
                     .isThrownBy(() -> ness.add(null))
                     .withMessage("NonEmptySortedSet.add: element is null");
@@ -200,13 +200,13 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldAddUnionAndKeepTheComparator(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness.add(-1).toSortedSet()).isEqualTo(set.add(-1));
             assertThat(ness.add(-1).comparator()).isSameAs(set.comparator());
             assertThat(ness.add(0)).isSameAs(ness);
             assertThat(ness.toSortedSet()).isSameAs(set);
             for (int m : new int[] {0, 1, 33, 1025}) {
-                final TreeSet<Integer> that = TreeSet.range(n / 2, n / 2 + m);
+                TreeSet<Integer> that = TreeSet.range(n / 2, n / 2 + m);
                 assertThat(ness.addAll(once(that)).toSortedSet()).isEqualTo(set.addAll(that));
                 assertThat(ness.union(that).toSortedSet()).isEqualTo(set.union(that));
                 assertThat(ness.union(that.toSet()).head())
@@ -219,7 +219,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldMapAndFlatMap(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness.map(i -> i % 3).toSortedSet()).isEqualTo(set.map(i -> i % 3));
             assertThat(ness.map(i -> 0).size()).isEqualTo(1);
             assertThat(ness.map(Comparator.reverseOrder(), i -> i * 2).toSortedSet())
@@ -247,11 +247,11 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldReplaceAndTap(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness.replace(0, -1).toSortedSet()).isEqualTo(set.replace(0, -1));
             assertThat(ness.replaceAll(0, -1).toSortedSet()).isEqualTo(set.replaceAll(0, -1));
             assertThat(ness.replace(0, n - 1).size()).isEqualTo(Math.max(1, n - 1));
-            final java.util.List<Integer> seen = new java.util.ArrayList<>();
+            java.util.List<Integer> seen = new java.util.ArrayList<>();
             assertThat(ness.tap(seen::add)).isSameAs(ness);
             assertThat(seen).containsExactlyElementsOf(set);
         }
@@ -259,7 +259,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldGroupSlideAndZipIntoNonEmptyResults(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             for (int size : new int[] {1, 2, 32, 33, 2000}) {
                 assertThat(ness.grouped(size).map(NonEmptySortedSet::toSortedSet))
                         .isEqualTo(set.grouped(size));
@@ -274,7 +274,7 @@ public class NonEmptySortedSetTest {
             assertThat(ness.zipWithIndex().head()).isEqualTo(Tuple.of(set.head(), 0));
             for (Function<Integer, Integer> classifier :
                     java.util.List.<Function<Integer, Integer>>of(i -> 0, i -> i % 3, i -> i)) {
-                final NonEmptyMap<Integer, NonEmptySortedSet<Integer>> groups = ness.groupBy(classifier);
+                NonEmptyMap<Integer, NonEmptySortedSet<Integer>> groups = ness.groupBy(classifier);
                 assertThat(groups.mapValues(NonEmptySortedSet::toSortedSet).toMap())
                         .isEqualTo(set.groupBy(classifier));
                 assertThat(groups.values().forAll(group -> group.comparator() == set.comparator()))
@@ -290,7 +290,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldShrinkDownToEmpty(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness.filter(i -> i % 2 == 0)).isEqualTo(set.filter(i -> i % 2 == 0));
             assertThat(ness.filter(i -> false)).isEmpty();
             assertThat(ness.reject(i -> true)).isEmpty();
@@ -318,7 +318,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldTakeAndDropByPosition(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness.tail()).isEqualTo(set.tail());
             assertThat(ness.init()).isEqualTo(set.init());
             for (int k : new int[] {Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE}) {
@@ -327,7 +327,7 @@ public class NonEmptySortedSetTest {
                 assertThat(ness.drop(k)).isEqualTo(set.drop(k));
                 assertThat(ness.dropRight(k)).isEqualTo(set.dropRight(k));
             }
-            final int middle = n / 2;
+            int middle = n / 2;
             assertThat(ness.takeWhile(i -> i != middle)).isEqualTo(set.takeWhile(i -> i != middle));
             assertThat(ness.takeUntil(i -> i == middle)).isEqualTo(set.takeUntil(i -> i == middle));
             assertThat(ness.dropWhile(i -> i != middle)).isEqualTo(set.dropWhile(i -> i != middle));
@@ -341,7 +341,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldReturnHeadLastAndTheNaturalMaxAndMin(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness.head()).isEqualTo(set.head());
             assertThat(ness.last()).isEqualTo(set.last());
             // max and min ignore the comparator, as on TreeSet
@@ -360,7 +360,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldReduceFoldAndQuery(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness.reduce((a, b) -> a)).isEqualTo(set.head());
             assertThat(ness.reduce(Integer::sum)).isEqualTo(set.reduce(Integer::sum));
             assertThat(ness.<String>reduceMap(String::valueOf, (a, b) -> a + "," + b))
@@ -389,7 +389,7 @@ public class NonEmptySortedSetTest {
 
         @Test
         public void shouldTreatNaNAsTreeSetDoes() {
-            final NonEmptySortedSet<Double> doubles = NonEmptySortedSet.of(1.0, Double.NaN, -1.0);
+            NonEmptySortedSet<Double> doubles = NonEmptySortedSet.of(1.0, Double.NaN, -1.0);
             assertThat(doubles.min())
                     .isEqualTo(doubles.toSortedSet().min().get())
                     .isNaN();
@@ -402,7 +402,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldIterateInOrderAndConvert(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             assertThat(ness).containsExactlyElementsOf(set);
             assertThat(ness.spliterator().characteristics())
                     .isEqualTo(set.spliterator().characteristics());
@@ -452,7 +452,7 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldNarrowTailAndInit(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> ness = ness(set);
             if (n == 1) {
                 assertThat(ness.tailNonEmpty()).isEqualTo(Option.none());
                 assertThat(ness.initNonEmpty()).isEqualTo(Option.none());
@@ -467,9 +467,9 @@ public class NonEmptySortedSetTest {
     class NonEmptyGuarantee {
 
         static java.util.Map<String, Function<NonEmptySortedSet<Integer>, java.util.List<Object>>> calls() {
-            final java.util.Map<String, Function<NonEmptySortedSet<Integer>, java.util.List<Object>>> calls =
+            java.util.Map<String, Function<NonEmptySortedSet<Integer>, java.util.List<Object>>> calls =
                     new java.util.HashMap<>();
-            final Comparator<Integer> reverse = Comparator.reverseOrder();
+            Comparator<Integer> reverse = Comparator.reverseOrder();
             // constructors and narrowings
             calls.put(
                     "of(Comparable, Comparable[])",
@@ -608,9 +608,9 @@ public class NonEmptySortedSetTest {
 
         @Test
         public void shouldFlattenNestedNonEmptySortedSets() {
-            final Comparator<NonEmptySortedSet<Integer>> byHead = Comparator.comparing(NonEmptySortedSet::head);
+            Comparator<NonEmptySortedSet<Integer>> byHead = Comparator.comparing(NonEmptySortedSet::head);
             for (int n : SIZES) {
-                final NonEmptySortedSet<NonEmptySortedSet<Integer>> nested =
+                NonEmptySortedSet<NonEmptySortedSet<Integer>> nested =
                         ness(TreeSet.range(0, n)).map(byHead, i -> ness(TreeSet.range(i, i + 3)));
                 assertThat(NonEmptySortedSet.flatten(nested).toSortedSet()).isEqualTo(TreeSet.range(0, n + 2));
                 assertThat(NonEmptySortedSet.flatten(Comparator.reverseOrder(), nested)
@@ -626,8 +626,8 @@ public class NonEmptySortedSetTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedSetTest#sets")
         public void shouldBeEqualToANonEmptySetWithTheSameElements(int n, TreeSet<Integer> set) {
-            final NonEmptySortedSet<Integer> ness = ness(set);
-            final NonEmptySortedSet<Integer> natural =
+            NonEmptySortedSet<Integer> ness = ness(set);
+            NonEmptySortedSet<Integer> natural =
                     NonEmptySortedSet.fromIterable(set.toVector()).get();
             assertThat(ness).isEqualTo(natural);
             assertThat(ness.hashCode()).isEqualTo(natural.hashCode());

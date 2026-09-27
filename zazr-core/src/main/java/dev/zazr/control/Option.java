@@ -82,7 +82,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     static <T extends @Nullable Object> Option<Vector<T>> collectAll(Iterable<? extends Option<? extends T>> values) {
         Objects.requireNonNull(values, "values is null");
-        final Vector.Builder<T> builder = Vector.newBuilder();
+        Vector.Builder<T> builder = Vector.newBuilder();
         for (Option<? extends T> value : values) {
             if (value.isEmpty()) {
                 return Option.none();
@@ -111,9 +111,9 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
             Iterable<? extends T> values, Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final Vector.Builder<U> builder = Vector.newBuilder();
+        Vector.Builder<U> builder = Vector.newBuilder();
         for (T value : values) {
-            final Option<? extends U> mapped =
+            Option<? extends U> mapped =
                     Objects.requireNonNull(mapper.apply(value), "Option.forEach: mapper returned null");
             if (mapped.isEmpty()) {
                 return Option.none();
@@ -150,7 +150,7 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
      */
     static <T extends @Nullable Object> Option<T> none() {
         @SuppressWarnings("unchecked")
-        final None<T> none = (None<T>) None.INSTANCE;
+        None<T> none = (None<T>) None.INSTANCE;
         return none;
     }
 

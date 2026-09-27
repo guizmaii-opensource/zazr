@@ -248,7 +248,7 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     static <L extends @Nullable Object, R extends @Nullable Object> Either<L, Vector<R>> collectAll(
             Iterable<? extends Either<? extends L, ? extends R>> eithers) {
         Objects.requireNonNull(eithers, "eithers is null");
-        final Vector.Builder<R> rightValues = Vector.newBuilder();
+        Vector.Builder<R> rightValues = Vector.newBuilder();
         for (Either<? extends L, ? extends R> either : eithers) {
             if (either.isRight()) {
                 rightValues.add(either.get());
@@ -281,9 +281,9 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
                     Function<? super T, ? extends Either<? extends L, ? extends R>> mapper) {
         Objects.requireNonNull(values, "values is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        final Vector.Builder<R> rightValues = Vector.newBuilder();
+        Vector.Builder<R> rightValues = Vector.newBuilder();
         for (T value : values) {
-            final Either<? extends L, ? extends R> mapped =
+            Either<? extends L, ? extends R> mapped =
                     Objects.requireNonNull(mapper.apply(value), "Either.forEach: mapper returned null");
             if (mapped.isRight()) {
                 rightValues.add(mapped.get());

@@ -178,7 +178,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldKeepOrder() {
-        final List<Integer> actual =
+        List<Integer> actual =
                 LinkedHashSet.<Integer>empty().add(3).add(2).add(1).toList();
         assertThat(actual).isEqualTo(List.of(3, 2, 1));
     }
@@ -187,9 +187,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class StaticNarrowTests {
         @Test
         public void shouldNarrowLinkedHashSet() {
-            final LinkedHashSet<Double> doubles = of(1.0d);
-            final LinkedHashSet<Number> numbers = LinkedHashSet.narrow(doubles);
-            final int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
+            LinkedHashSet<Double> doubles = of(1.0d);
+            LinkedHashSet<Number> numbers = LinkedHashSet.narrow(doubles);
+            int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
             assertThat(actual).isEqualTo(3);
         }
     }
@@ -198,33 +198,33 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class ReplaceTests {
         @Test
         public void shouldReturnSameInstanceIfReplacingNonExistingElement() {
-            final Set<Integer> set = LinkedHashSet.of(1, 2, 3);
-            final Set<Integer> actual = set.replace(4, 0);
+            Set<Integer> set = LinkedHashSet.of(1, 2, 3);
+            Set<Integer> actual = set.replace(4, 0);
             assertThat(actual).isSameAs(set);
         }
 
         @Test
         public void shouldPreserveOrderWhenReplacingExistingElement() {
-            final Set<Integer> set = LinkedHashSet.of(1, 2, 3);
-            final Set<Integer> actual = set.replace(2, 0);
-            final Set<Integer> expected = LinkedHashSet.of(1, 0, 3);
+            Set<Integer> set = LinkedHashSet.of(1, 2, 3);
+            Set<Integer> actual = set.replace(2, 0);
+            Set<Integer> expected = LinkedHashSet.of(1, 0, 3);
             assertThat(actual).isEqualTo(expected);
             Assertions.assertThat(List.ofAll(actual)).isEqualTo(List.ofAll(expected));
         }
 
         @Test
         public void shouldPreserveOrderWhenReplacingExistingElementAndRemoveOtherIfElementAlreadyExists() {
-            final Set<Integer> set = LinkedHashSet.of(1, 2, 3, 4, 5);
-            final Set<Integer> actual = set.replace(2, 4);
-            final Set<Integer> expected = LinkedHashSet.of(1, 4, 3, 5);
+            Set<Integer> set = LinkedHashSet.of(1, 2, 3, 4, 5);
+            Set<Integer> actual = set.replace(2, 4);
+            Set<Integer> expected = LinkedHashSet.of(1, 4, 3, 5);
             assertThat(actual).isEqualTo(expected);
             Assertions.assertThat(List.ofAll(actual)).isEqualTo(List.ofAll(expected));
         }
 
         @Test
         public void shouldReturnSameInstanceWhenReplacingExistingElementWithIdentity() {
-            final Set<Integer> set = LinkedHashSet.of(1, 2, 3);
-            final Set<Integer> actual = set.replace(2, 2);
+            Set<Integer> set = LinkedHashSet.of(1, 2, 3);
+            Set<Integer> actual = set.replace(2, 2);
             assertThat(actual).isSameAs(set);
         }
     }
@@ -233,7 +233,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class TolinkedsetTests {
         @Test
         public void shouldReturnSelfOnConvertToLinkedSet() {
-            final LinkedHashSet<Integer> value = of(1, 2, 3);
+            LinkedHashSet<Integer> value = of(1, 2, 3);
             assertThat(value.toLinkedSet()).isSameAs(value);
         }
     }
@@ -366,7 +366,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).filter(ignore -> true)).isEqualTo(of(1, 2, 3));
         } else {
-            final Set<Integer> t = of(1, 2, 3);
+            Set<Integer> t = of(1, 2, 3);
             assertThat(t.filter(ignore -> true)).isSameAs(t);
         }
     }
@@ -384,7 +384,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
-        final Set<?> empty = empty();
+        Set<?> empty = empty();
         assertThat(empty.filter(v -> true)).isSameAs(empty);
     }
 
@@ -398,7 +398,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).reject(ignore -> false)).isEqualTo(of(1, 2, 3));
         } else {
-            final Set<Integer> t = of(1, 2, 3);
+            Set<Integer> t = of(1, 2, 3);
             assertThat(t.reject(ignore -> false)).isSameAs(t);
         }
     }
@@ -416,7 +416,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldReturnSameInstanceWhenRejectingEmptyTraversable() {
-        final Set<?> empty = empty();
+        Set<?> empty = empty();
         assertThat(empty.reject(v -> true)).isSameAs(empty);
     }
 
@@ -440,8 +440,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectNothingFromEmpty() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Set<Integer> actual = this.<Integer>empty().collect(i -> {
+        AtomicInteger calls = new AtomicInteger();
+        Set<Integer> actual = this.<Integer>empty().collect(i -> {
             calls.incrementAndGet();
             return Option.some(i);
         });
@@ -467,7 +467,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithASwitchInsideTheLambda() {
-        final Set<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+        Set<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
             case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
             default -> Option.none();
         });
@@ -476,7 +476,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallTheCollectMapperOncePerElement() {
-        final AtomicInteger calls = new AtomicInteger();
+        AtomicInteger calls = new AtomicInteger();
         of(1, 2, 3)
                 .collect(i -> {
                     calls.incrementAndGet();
@@ -489,7 +489,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     @TestTemplate
     public void shouldRejectNullOptionFromCollectMapper() {
         // the message names the concrete type, which toString prints before the parenthesis (List, IntMap, HashSet...)
-        final String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
+        String type = of(1).toString().substring(0, of(1).toString().indexOf('('));
         assertThatThrownBy(() -> of(1).collect(i -> null).size())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage(type + ".collect: mapper returned null");
@@ -497,7 +497,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldThrowOnCollectWithNullMapper() {
-        final Function<Integer, Option<Integer>> mapper = null;
+        Function<Integer, Option<Integer>> mapper = null;
         assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
     }
 
@@ -532,16 +532,16 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilGroupByIdentity() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
-        final Map<?, ?> expected =
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(Function.identity());
+        Map<?, ?> expected =
                 LinkedHashMap.empty().put('a', of('a')).put('b', of('b')).put('c', of('c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilGroupByEqual() {
-        final Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
-        final Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
+        Map<?, ?> actual = of('a', 'b', 'c').groupBy(c -> 1);
+        Map<?, ?> expected = LinkedHashMap.empty().put(1, of('a', 'b', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -554,16 +554,16 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNonNilArrangeByIdentity() {
-        final Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
-        final Option<Map<?, ?>> expected =
+        Option<Map<Character, Character>> actual = of('a', 'b', 'c').arrangeBy(Function.identity());
+        Option<Map<?, ?>> expected =
                 Option.some(LinkedHashMap.empty().put('a', 'a').put('b', 'b').put('c', 'c'));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldNonNilArrangeByEqual() {
-        final Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
-        final Option<Map<?, ?>> expected = Option.none();
+        Option<Map<Integer, Character>> actual = of('a', 'b', 'c').arrangeBy(c -> 1);
+        Option<Map<?, ?>> expected = Option.none();
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -717,7 +717,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMaxFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).maxBy(i -> {
                     cnt[0]++;
                     return i;
@@ -876,7 +876,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCallMinFunctionOncePerElement() {
-        final int[] cnt = {0};
+        int[] cnt = {0};
         assertThat(of(1, 2, 3).minBy(i -> {
                     cnt[0]++;
                     return i;
@@ -889,7 +889,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameOther() {
-        final Iterable<Integer> other = of(42);
+        Iterable<Integer> other = of(42);
         assertThat(empty().orElse(other)).isSameAs(other);
     }
 
@@ -900,14 +900,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseOther() {
-        final Set<Integer> src = of(42);
+        Set<Integer> src = of(42);
         assertThat(src.orElse(List.of(1))).isSameAs(src);
     }
 
     @TestTemplate
     public void shouldCaclEmptyOrElseSameSupplier() {
-        final Iterable<Integer> other = of(42);
-        final Supplier<Iterable<Integer>> supplier = () -> other;
+        Iterable<Integer> other = of(42);
+        Supplier<Iterable<Integer>> supplier = () -> other;
         assertThat(empty().orElse(supplier)).isSameAs(other);
     }
 
@@ -918,7 +918,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCaclNonemptyOrElseSupplier() {
-        final Set<Integer> src = of(42);
+        Set<Integer> src = of(42);
         assertThat(src.orElse(() -> List.of(1))).isSameAs(src);
     }
 
@@ -1057,7 +1057,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2).replace(33, 3)).isEqualTo(of(0, 1, 2));
         } else {
-            final Set<Integer> src = of(0, 1, 2);
+            Set<Integer> src = of(0, 1, 2);
             assertThat(src.replace(33, 3)).isSameAs(src);
         }
     }
@@ -1078,7 +1078,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(0, 1, 2, 1).replaceAll(33, 3)).isEqualTo(of(0, 1, 2, 1));
         } else {
-            final Set<Integer> src = of(0, 1, 2, 1);
+            Set<Integer> src = of(0, 1, 2, 1);
             assertThat(src.replaceAll(33, 3)).isSameAs(src);
         }
     }
@@ -1092,8 +1092,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllElementsFromNil() {
-        final Set<Object> empty = empty();
-        final Set<Object> actual = empty.retainAll(of(1, 2, 3));
+        Set<Object> empty = empty();
+        Set<Object> actual = empty.retainAll(of(1, 2, 3));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(empty);
         } else {
@@ -1103,17 +1103,17 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldRetainAllExistingElementsFromNonNil() {
-        final Set<Integer> src = of(1, 2, 3, 2, 1, 3);
-        final Set<Integer> expected = of(1, 2, 2, 1);
-        final Set<Integer> actual = src.retainAll(of(1, 2));
+        Set<Integer> src = of(1, 2, 3, 2, 1, 3);
+        Set<Integer> expected = of(1, 2, 2, 1);
+        Set<Integer> actual = src.retainAll(of(1, 2));
         assertThat(actual).isEqualTo(expected);
     }
 
     @TestTemplate
     public void shouldRetainAllElementsFromNonNil() {
-        final Set<Integer> src = of(1, 2, 1, 2, 2);
-        final Set<Integer> expected = of(1, 2, 1, 2, 2);
-        final Set<Integer> actual = src.retainAll(of(1, 2));
+        Set<Integer> src = of(1, 2, 1, 2, 2);
+        Set<Integer> expected = of(1, 2, 1, 2, 2);
+        Set<Integer> actual = src.retainAll(of(1, 2));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -1123,9 +1123,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldNotRetainAllNonExistingElementsFromNonNil() {
-        final Set<Integer> src = of(1, 2, 3);
-        final Set<Object> expected = empty();
-        final Set<Integer> actual = src.retainAll(of(4, 5));
+        Set<Integer> src = of(1, 2, 3);
+        Set<Object> expected = empty();
+        Set<Integer> actual = src.retainAll(of(4, 5));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(actual).isEqualTo(expected);
         } else {
@@ -1211,23 +1211,23 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTapSingleValuePerformingAnAction() {
-        final int[] effect = {0};
-        final Set<Integer> actual = of(1).tap(i -> effect[0] = i);
+        int[] effect = {0};
+        Set<Integer> actual = of(1).tap(i -> effect[0] = i);
         assertThat(actual).isEqualTo(of(1));
         assertThat(effect[0]).isEqualTo(1);
     }
 
     @TestTemplate
     public void shouldTapEveryElement() {
-        final int[] sum = {0};
-        final Set<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
+        int[] sum = {0};
+        Set<Integer> actual = of(1, 2, 3).tap(i -> sum[0] += i);
         assertThat(actual).isEqualTo(of(1, 2, 3)); // consumes every element in the lazy case
         assertThat(sum[0]).isEqualTo(6);
     }
 
     @TestTemplate
     public void shouldReturnThisOnTapOfEagerCollection() {
-        final Set<Integer> testee = of(1, 2, 3);
+        Set<Integer> testee = of(1, 2, 3);
         if (hasDefiniteSize()) {
             assertThat(testee.tap(i -> {})).isSameAs(testee);
         }
@@ -1252,14 +1252,13 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldCollectWithACollector() {
-        final java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
+        java.util.List<Integer> actual = of(1, 2, 3).collect(java.util.stream.Collectors.toList());
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
     @TestTemplate
     public void shouldCollectWithSupplierAccumulatorAndCombiner() {
-        final ArrayList<Integer> actual =
-                of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
+        ArrayList<Integer> actual = of(1, 2, 3).collect(ArrayList<Integer>::new, ArrayList::add, ArrayList::addAll);
         assertThat(actual).containsExactlyInAnyOrder(1, 2, 3);
     }
 
@@ -1336,14 +1335,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedMapWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(of(9, 5, 1).toSortedMap(comparator, i -> Tuple.of(i, i)))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
 
     @TestTemplate
     public void shouldConvertToSortedMapTwoFunctionsWithComparator() {
-        final Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
+        Comparator<Integer> comparator = ((Comparator<Integer>) Integer::compareTo).reversed();
         assertThat(of(9, 5, 1).toSortedMap(comparator, Function.identity(), Function.identity()))
                 .isEqualTo(TreeMap.of(comparator, 9, 9, 5, 5, 1, 1));
     }
@@ -1356,9 +1355,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToLinkedSet() {
-        final Set<Integer> value = of(3, 7, 1, 15, 0);
-        final Set<Integer> set = value.toLinkedSet();
-        final List<Integer> itemsInOrder = value.toList();
+        Set<Integer> value = of(3, 7, 1, 15, 0);
+        Set<Integer> set = value.toLinkedSet();
+        List<Integer> itemsInOrder = value.toList();
         assertThat(set).isEqualTo(itemsInOrder.foldLeft(LinkedHashSet.empty(), LinkedHashSet::add));
         assertThat(empty().toLinkedSet()).isSameAs(LinkedHashSet.empty());
     }
@@ -1376,7 +1375,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldConvertToSortedSet() {
-        final Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
+        Comparator<Integer> comparator = Comparator.comparingInt(Integer::bitCount);
         assertThat(of(3, 7, 1, 15, 0).toSortedSet(comparator.reversed()))
                 .isEqualTo(TreeSet.of(comparator.reversed(), 0, 1, 3, 7, 15));
     }
@@ -1997,9 +1996,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldNarrowSet() {
-        final Set<Double> doubles = of(1.0d);
-        final Set<Number> numbers = Set.narrow(doubles);
-        final int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
+        Set<Double> doubles = of(1.0d);
+        Set<Number> numbers = Set.narrow(doubles);
+        int actual = numbers.add(new BigDecimal("2.0")).sum().intValue();
         assertThat(actual).isEqualTo(3);
     }
 
@@ -2015,7 +2014,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class AddTests {
         @Test
         public void shouldNotAddAnExistingElementTwice() {
-            final Set<IntMod2> set = of(new IntMod2(2));
+            Set<IntMod2> set = of(new IntMod2(2));
             assertThat(set.add(new IntMod2(4))).isSameAs(set);
         }
     }
@@ -2029,13 +2028,13 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenAddAllEmptyToNonEmpty() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             assertThat(set.addAll(empty())).isSameAs(set);
         }
 
         @Test
         public void shouldReturnSameSetWhenAddAllNonEmptyToEmpty() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             if (set instanceof SortedSet) {
                 assertThat(empty().addAll(set)).isEqualTo(set);
             } else {
@@ -2045,7 +2044,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenAddAllContainedElements() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             assertThat(set.addAll(of(1, 2, 3))).isSameAs(set);
         }
     }
@@ -2061,13 +2060,13 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenEmptyDiffNonEmpty() {
-            final Set<Integer> empty = empty();
+            Set<Integer> empty = empty();
             assertThat(empty.diff(of(1, 2))).isSameAs(empty);
         }
 
         @Test
         public void shouldReturnSameSetWhenNonEmptyDiffEmpty() {
-            final Set<Integer> set = of(1, 2);
+            Set<Integer> set = of(1, 2);
             assertThat(set.diff(empty())).isSameAs(set);
         }
     }
@@ -2104,14 +2103,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenEmptyIntersectNonEmpty() {
-            final Set<Integer> empty = empty();
+            Set<Integer> empty = empty();
             assertThat(empty.intersect(of(1, 2))).isSameAs(empty);
         }
 
         @Test
         public void shouldReturnSameSetWhenNonEmptyIntersectEmpty() {
-            final Set<Integer> set = of(1, 2);
-            final Set<Integer> empty = empty();
+            Set<Integer> set = of(1, 2);
+            Set<Integer> empty = empty();
             if (set instanceof SortedSet) {
                 assertThat(set.intersect(empty)).isEqualTo(empty);
             } else {
@@ -2142,8 +2141,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class PartitionTests {
         @Test
         public void shouldPartitionInOneIteration() {
-            final AtomicInteger count = new AtomicInteger(0);
-            final Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3)
+            AtomicInteger count = new AtomicInteger(0);
+            Tuple2<? extends Set<Integer>, ? extends Set<Integer>> results = of(1, 2, 3)
                     .partition(i -> {
                         count.incrementAndGet();
                         return true;
@@ -2164,13 +2163,13 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnSameSetWhenNonEmptyRemoveAllEmpty() {
-            final Set<Integer> set = of(1, 2, 3);
+            Set<Integer> set = of(1, 2, 3);
             assertThat(set.removeAll(empty())).isSameAs(set);
         }
 
         @Test
         public void shouldReturnSameSetWhenEmptyRemoveAllNonEmpty() {
-            final Set<Integer> empty = empty();
+            Set<Integer> empty = empty();
             assertThat(empty.removeAll(of(1, 2, 3))).isSameAs(empty);
         }
     }
@@ -2186,7 +2185,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameSetWhenEmptyUnionNonEmpty() {
-        final Set<Integer> set = of(1, 2);
+        Set<Integer> set = of(1, 2);
         if (set instanceof SortedSet) {
             assertThat(empty().union(set)).isEqualTo(set);
         } else {
@@ -2196,7 +2195,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldReturnSameSetWhenNonEmptyUnionEmpty() {
-        final Set<Integer> set = of(1, 2);
+        Set<Integer> set = of(1, 2);
         assertThat(set.union(empty())).isSameAs(set);
     }
 
@@ -2264,14 +2263,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
     @Test
     public void shouldConvertNilToJavaArray() {
-        final Integer[] actual = LinkedHashSetTest.this.<Integer>empty().toArray(Integer[]::new);
-        final Integer[] expected = new Integer[] {};
+        Integer[] actual = LinkedHashSetTest.this.<Integer>empty().toArray(Integer[]::new);
+        Integer[] expected = new Integer[] {};
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConvertNonNilToJavaArray() {
-        final Integer[] array = of(1, 2).toArray(Integer[]::new);
+        Integer[] array = of(1, 2).toArray(Integer[]::new);
         assertThat(array).containsExactlyInAnyOrder(1, 2);
     }
 
@@ -2318,9 +2317,9 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCombineEveryElementExactlyOnceWhenReducing() {
-            final Set<Integer> set = of(1, 2, 3, 4, 5);
-            final java.util.List<Integer> seen = new ArrayList<>();
-            final int sum = set.reduce((a, b) -> {
+            Set<Integer> set = of(1, 2, 3, 4, 5);
+            java.util.List<Integer> seen = new ArrayList<>();
+            int sum = set.reduce((a, b) -> {
                 if (seen.isEmpty()) {
                     seen.add(a);
                 }
@@ -2339,8 +2338,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
     class AsJavaTests {
         @Test
         public void shouldViewTheDistinctElementsAsAJavaCollection() {
-            final Set<Integer> set = of(1, 2, 3, 2);
-            final java.util.Collection<Integer> view = set.asJava();
+            Set<Integer> set = of(1, 2, 3, 2);
+            java.util.Collection<Integer> view = set.asJava();
             assertThat(view.size()).isEqualTo(3);
             assertThat(new java.util.HashSet<>(view)).isEqualTo(java.util.Set.of(1, 2, 3));
             assertThat(HashSet.ofAll(view)).isEqualTo(HashSet.of(1, 2, 3));
@@ -2352,7 +2351,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldIterateTheJavaViewInTheSetsOrder() {
-            final Set<Integer> set = of(3, 1, 2);
+            Set<Integer> set = of(3, 1, 2);
             assertThat(List.ofAll(set.asJava())).isEqualTo(set.toList());
         }
     }
@@ -2382,7 +2381,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         private static final int[] WINDOW_STEPS = {1, 2, 3, 70, 71, Integer.MAX_VALUE};
 
         private java.util.List<LinkedHashSet<Integer>> receivers() {
-            final LinkedHashSet<Integer> five = mk(5, 3, 9, 1, 7);
+            LinkedHashSet<Integer> five = mk(5, 3, 9, 1, 7);
             LinkedHashSet<Integer> everyThirdRemoved = mk(Vector.range(0, 70));
             for (int i = 0; i < 70; i += 3) {
                 everyThirdRemoved = everyThirdRemoved.remove(i);
@@ -2392,7 +2391,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             for (int i = 10; i < 45; i++) {
                 atThreshold = atThreshold.remove(i);
             }
-            final java.util.List<Integer> shuffled =
+            java.util.List<Integer> shuffled =
                     new java.util.ArrayList<>(Vector.range(0, 70).asJava());
             java.util.Collections.shuffle(shuffled, new java.util.Random(72));
             return java.util.List.of(
@@ -2435,7 +2434,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             // stays where it is, and a removal takes out exactly that element
             assertEquals(expected.append(1000), actual.add(1000).toVector());
             for (int i = 0; i < expected.size(); i++) {
-                final Integer element = expected.get(i);
+                Integer element = expected.get(i);
                 assertEquals(expected, actual.add(element).toVector());
                 assertEquals(expected.removeAt(i), actual.remove(element).toVector());
             }
@@ -2444,14 +2443,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldTakeAndDropLikeTheSequenceOfTheElements() {
             for (LinkedHashSet<Integer> receiver : receivers()) {
-                final Vector<Integer> elements = receiver.toVector();
-                final int size = receiver.size();
+                Vector<Integer> elements = receiver.toVector();
+                int size = receiver.size();
                 for (int n : counts(size)) {
-                    final int m = clamp(n, size);
-                    final LinkedHashSet<Integer> take = receiver.take(n);
-                    final LinkedHashSet<Integer> takeRight = receiver.takeRight(n);
-                    final LinkedHashSet<Integer> drop = receiver.drop(n);
-                    final LinkedHashSet<Integer> dropRight = receiver.dropRight(n);
+                    int m = clamp(n, size);
+                    LinkedHashSet<Integer> take = receiver.take(n);
+                    LinkedHashSet<Integer> takeRight = receiver.takeRight(n);
+                    LinkedHashSet<Integer> drop = receiver.drop(n);
+                    LinkedHashSet<Integer> dropRight = receiver.dropRight(n);
                     assertValid(receiver, take, elements.take(m));
                     assertValid(receiver, takeRight, elements.takeRight(m));
                     assertValid(receiver, drop, elements.drop(m));
@@ -2472,7 +2471,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldReturnTheFirstAndTheLastElement() {
             for (LinkedHashSet<Integer> receiver : receivers()) {
-                final Vector<Integer> elements = receiver.toVector();
+                Vector<Integer> elements = receiver.toVector();
                 if (elements.isEmpty()) {
                     assertEquals(
                             "head of empty LinkedHashSet",
@@ -2500,7 +2499,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldDropTheFirstOrTheLastElementWithTailAndInit() {
             for (LinkedHashSet<Integer> receiver : receivers()) {
-                final Vector<Integer> elements = receiver.toVector();
+                Vector<Integer> elements = receiver.toVector();
                 if (elements.isEmpty()) {
                     assertEquals(
                             "tail of empty LinkedHashSet",
@@ -2513,12 +2512,12 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                     assertEquals(Option.none(), receiver.tailOption());
                     assertEquals(Option.none(), receiver.initOption());
                 } else {
-                    final LinkedHashSet<Integer> tail = receiver.tail();
-                    final LinkedHashSet<Integer> init = receiver.init();
+                    LinkedHashSet<Integer> tail = receiver.tail();
+                    LinkedHashSet<Integer> init = receiver.init();
                     assertValid(receiver, tail, elements.tail());
                     assertValid(receiver, init, elements.init());
-                    final Option<LinkedHashSet<Integer>> tailOption = receiver.tailOption();
-                    final Option<LinkedHashSet<Integer>> initOption = receiver.initOption();
+                    Option<LinkedHashSet<Integer>> tailOption = receiver.tailOption();
+                    Option<LinkedHashSet<Integer>> initOption = receiver.initOption();
                     assertValid(receiver, tailOption.get(), elements.tail());
                     assertValid(receiver, initOption.get(), elements.init());
                 }
@@ -2527,22 +2526,22 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldTakeAndDropWhileOrUntilAPredicateHolds() {
-            final java.util.List<java.util.function.Predicate<Integer>> predicates =
+            java.util.List<java.util.function.Predicate<Integer>> predicates =
                     java.util.List.of(e -> true, e -> false, e -> e < 5, e -> e >= 5, e -> e % 2 == 1, e -> e != 40);
             for (LinkedHashSet<Integer> receiver : receivers()) {
-                final Vector<Integer> elements = receiver.toVector();
+                Vector<Integer> elements = receiver.toVector();
                 for (java.util.function.Predicate<Integer> predicate : predicates) {
-                    final LinkedHashSet<Integer> takeWhile = receiver.takeWhile(predicate);
-                    final LinkedHashSet<Integer> takeUntil = receiver.takeUntil(predicate);
-                    final LinkedHashSet<Integer> dropWhile = receiver.dropWhile(predicate);
-                    final LinkedHashSet<Integer> dropUntil = receiver.dropUntil(predicate);
+                    LinkedHashSet<Integer> takeWhile = receiver.takeWhile(predicate);
+                    LinkedHashSet<Integer> takeUntil = receiver.takeUntil(predicate);
+                    LinkedHashSet<Integer> dropWhile = receiver.dropWhile(predicate);
+                    LinkedHashSet<Integer> dropUntil = receiver.dropUntil(predicate);
                     assertValid(receiver, takeWhile, elements.takeWhile(predicate));
                     assertValid(receiver, takeUntil, elements.takeUntil(predicate));
                     assertValid(receiver, dropWhile, elements.dropWhile(predicate));
                     assertValid(receiver, dropUntil, elements.dropUntil(predicate));
                 }
                 // the walk stops at the first element that ends the prefix
-                final int[] calls = {0};
+                int[] calls = {0};
                 receiver.takeWhile(e -> {
                     calls[0]++;
                     return false;
@@ -2558,7 +2557,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldZipWithThePosition() {
             for (LinkedHashSet<Integer> receiver : receivers()) {
-                final Vector<Tuple2<Integer, Integer>> zipped = receiver.zipWithIndex();
+                Vector<Tuple2<Integer, Integer>> zipped = receiver.zipWithIndex();
                 assertEquals(receiver.toVector().zipWithIndex(), zipped);
                 for (int i = 0; i < zipped.size(); i++) {
                     assertEquals(i, zipped.get(i)._2());
@@ -2569,20 +2568,20 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldGroupAndSlideLikeTheSequenceOfTheElements() {
             for (LinkedHashSet<Integer> receiver : receivers()) {
-                final Vector<Integer> elements = receiver.toVector();
+                Vector<Integer> elements = receiver.toVector();
                 for (int size : WINDOW_SIZES) {
                     for (int step : WINDOW_STEPS) {
-                        final Vector<LinkedHashSet<Integer>> windows = receiver.sliding(size, step);
-                        final Vector<Vector<Integer>> expected = elements.sliding(size, step);
+                        Vector<LinkedHashSet<Integer>> windows = receiver.sliding(size, step);
+                        Vector<Vector<Integer>> expected = elements.sliding(size, step);
                         assertEquals(expected.size(), windows.size());
                         for (int i = 0; i < windows.size(); i++) {
                             assertValid(receiver, windows.get(i), expected.get(i));
                         }
                     }
-                    final Vector<LinkedHashSet<Integer>> groups = receiver.grouped(size);
+                    Vector<LinkedHashSet<Integer>> groups = receiver.grouped(size);
                     assertEquals(elements.grouped(size), groups.map(LinkedHashSet::toVector));
                     groups.forEach(group -> assertValid(receiver, group, group.toVector()));
-                    final Vector<LinkedHashSet<Integer>> windows = receiver.sliding(size);
+                    Vector<LinkedHashSet<Integer>> windows = receiver.sliding(size);
                     assertEquals(elements.sliding(size), windows.map(LinkedHashSet::toVector));
                     windows.forEach(window -> assertValid(receiver, window, window.toVector()));
                 }
@@ -2644,14 +2643,14 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldSlideByCallingTheClassifierOncePerElement() {
             for (LinkedHashSet<Integer> receiver : receivers()) {
-                final Vector<Integer> elements = receiver.toVector();
-                final java.util.List<Integer> seen = new java.util.ArrayList<>();
-                final Vector<LinkedHashSet<Integer>> runs = receiver.slideBy(e -> {
+                Vector<Integer> elements = receiver.toVector();
+                java.util.List<Integer> seen = new java.util.ArrayList<>();
+                Vector<LinkedHashSet<Integer>> runs = receiver.slideBy(e -> {
                     seen.add(e);
                     return e / 3;
                 });
                 assertEquals(new java.util.ArrayList<>(elements.asJava()), seen);
-                final Vector<Vector<Integer>> expected = elements.slideBy(e -> e / 3);
+                Vector<Vector<Integer>> expected = elements.slideBy(e -> e / 3);
                 assertEquals(expected.size(), runs.size());
                 for (int i = 0; i < runs.size(); i++) {
                     assertValid(receiver, runs.get(i), expected.get(i));
@@ -2725,7 +2724,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                             .getDeclaredMethod("zipWithIndex")
                             .getGenericReturnType()
                             .getTypeName());
-            final java.util.Set<String> declared = new java.util.HashSet<>();
+            java.util.Set<String> declared = new java.util.HashSet<>();
             for (java.lang.reflect.Method method : LinkedHashSet.class.getDeclaredMethods()) {
                 declared.add(method.getName());
             }
@@ -2734,7 +2733,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeepTheInsertionOrderAfterReAddingAnExistingElement() {
-            final LinkedHashSet<Integer> set = mk(3, 1, 2).add(3).add(1);
+            LinkedHashSet<Integer> set = mk(3, 1, 2).add(3).add(1);
             assertEquals(3, set.head());
             assertEquals(2, set.last());
             assertEquals(Vector.of(3, 1), set.take(2).toVector());
@@ -2748,11 +2747,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         public void shouldCoverEveryRepresentationOfTheInsertionOrder() throws Exception {
             // offset > 0, markers of removed elements in the middle, and as many markers as elements (one more
             // rebuilds)
-            final java.util.List<LinkedHashSet<Integer>> receivers = receivers();
-            final java.util.Set<String> shapes = new java.util.HashSet<>();
+            java.util.List<LinkedHashSet<Integer>> receivers = receivers();
+            java.util.Set<String> shapes = new java.util.HashSet<>();
             for (LinkedHashSet<Integer> receiver : receivers) {
-                final int offset = representation(receiver, "offset");
-                final int tombstones = representation(receiver, "tombstones");
+                int offset = representation(receiver, "offset");
+                int tombstones = representation(receiver, "tombstones");
                 if (offset > 0) {
                     shapes.add(tombstones > 0 ? "offset and markers" : "offset");
                 }
@@ -2768,13 +2767,13 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         }
 
         private int representation(LinkedHashSet<Integer> receiver, String field) throws Exception {
-            final java.lang.reflect.Field declared = LinkedHashMap.class.getDeclaredField(field);
+            java.lang.reflect.Field declared = LinkedHashMap.class.getDeclaredField(field);
             declared.setAccessible(true);
             return (int) declared.get(mapOf(receiver));
         }
 
         private LinkedHashMap<?, ?> mapOf(LinkedHashSet<Integer> set) throws Exception {
-            final java.lang.reflect.Field map = LinkedHashSet.class.getDeclaredField("map");
+            java.lang.reflect.Field map = LinkedHashSet.class.getDeclaredField("map");
             map.setAccessible(true);
             return (LinkedHashMap<?, ?>) map.get(set);
         }
@@ -2806,11 +2805,10 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldPartitionMapLikePartitionAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
-                final Tuple2<LinkedHashSet<String>, LinkedHashSet<Integer>> actual =
+                LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
+                Tuple2<LinkedHashSet<String>, LinkedHashSet<Integer>> actual =
                         source.partitionMap(i -> i % 3 == 0 ? Either.left("e" + i) : Either.right(i));
-                final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> expected =
-                        source.partition(i -> i % 3 == 0);
+                Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> expected = source.partition(i -> i % 3 == 0);
                 assertThat(actual._1()).isEqualTo(expected._1().map(i -> "e" + i));
                 assertThat(actual._2()).isEqualTo(expected._2());
                 assertThat(actual._1().size() + actual._2().size()).isEqualTo(n);
@@ -2823,7 +2821,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeepEqualValuesOnceOnEachSide() {
-            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual =
+            Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual =
                     LinkedHashSet.range(0, 33).partitionMap(i -> i % 2 == 0 ? Either.left(i % 5) : Either.right(i % 3));
             assertThat(actual).isEqualTo(Tuple.of(LinkedHashSet.of(0, 1, 2, 3, 4), LinkedHashSet.of(0, 1, 2)));
             assertThat(actual._1().size()).isEqualTo(5);
@@ -2833,8 +2831,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldCallTheFunctionOncePerElementInIterationOrder() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
-                final java.util.List<Integer> seen = new ArrayList<>();
+                LinkedHashSet<Integer> source = LinkedHashSet.range(0, n);
+                java.util.List<Integer> seen = new ArrayList<>();
                 source.partitionMap(i -> {
                     seen.add(i);
                     return i % 2 == 0 ? Either.left(i) : Either.right(i);
@@ -2845,7 +2843,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldReturnTheEmptyLinkedHashSetForAnEmptySide() {
-            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> none =
+            Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> none =
                     LinkedHashSet.<Integer>empty().partitionMap(Either::left);
             assertSame(LinkedHashSet.empty(), none._1());
             assertSame(LinkedHashSet.empty(), none._2());
@@ -2867,7 +2865,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                     .isThrownBy(() -> LinkedHashSet.of(1).partitionMap(null))
                     .withMessage("f is null");
             for (int n : new int[] {1, 32, 33}) {
-                final int last = n - 1;
+                int last = n - 1;
                 assertThatNullPointerException()
                         .isThrownBy(() -> LinkedHashSet.range(0, n)
                                 .partitionMap(i -> i == last ? null : Either.<Integer, Integer>left(i)))
@@ -2882,7 +2880,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldFlattenAtEveryBoundary() {
             for (int n : new int[] {0, 1, 32, 33}) {
-                final LinkedHashSet<Integer> inner = LinkedHashSet.range(0, n);
+                LinkedHashSet<Integer> inner = LinkedHashSet.range(0, n);
                 assertThat(LinkedHashSet.flatten(List.of(inner))).isEqualTo(inner);
                 assertThat(LinkedHashSet.flatten(List.of(inner, inner))).isEqualTo(inner);
                 assertThat(LinkedHashSet.flatten(List.of(LinkedHashSet.range(0, n / 2), LinkedHashSet.range(n / 2, n))))
@@ -2911,8 +2909,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldWidenTheElementType() {
-            final LinkedHashSet<Number> numbers =
-                    LinkedHashSet.flatten(List.of(LinkedHashSet.of(1), LinkedHashSet.of(2.0)));
+            LinkedHashSet<Number> numbers = LinkedHashSet.flatten(List.of(LinkedHashSet.of(1), LinkedHashSet.of(2.0)));
             assertThat(numbers).isEqualTo(LinkedHashSet.<Number>of(1, 2.0));
         }
 
@@ -2941,7 +2938,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldKeepTheIterationOrderOnEachSide() {
-            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<String>> actual = LinkedHashSet.of(5, 2, 8, 1, 9, 4)
+            Tuple2<LinkedHashSet<Integer>, LinkedHashSet<String>> actual = LinkedHashSet.of(5, 2, 8, 1, 9, 4)
                     .partitionMap(i -> i % 2 == 0 ? Either.left(i) : Either.right("o" + i));
             assertThat(actual._1().toVector()).isEqualTo(Vector.of(2, 8, 4));
             assertThat(actual._2().toVector()).isEqualTo(Vector.of("o5", "o1", "o9"));
@@ -2950,7 +2947,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         @Test
         public void shouldKeepEqualValuesAtTheirFirstPosition() {
             // 3 -> 0, 1 -> 1, 4 -> 1, 6 -> 0, 2 -> 2: each value keeps the position of its first occurrence
-            final Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual =
+            Tuple2<LinkedHashSet<Integer>, LinkedHashSet<Integer>> actual =
                     LinkedHashSet.of(3, 1, 4, 6, 2).partitionMap(i -> Either.left(i % 3));
             assertThat(actual._1().toVector()).isEqualTo(Vector.of(0, 1, 2));
             assertThat(actual._1().toVector())
@@ -2960,7 +2957,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldFlattenInOrderOfFirstOccurrence() {
-            final LinkedHashSet<Integer> flat =
+            LinkedHashSet<Integer> flat =
                     LinkedHashSet.flatten(List.of(List.of(3, 1), List.of(2, 3), List.of(), List.of(1, 4)));
             assertThat(flat.toVector()).isEqualTo(Vector.of(3, 1, 2, 4));
             assertThat(LinkedHashSet.flatten(List.of(

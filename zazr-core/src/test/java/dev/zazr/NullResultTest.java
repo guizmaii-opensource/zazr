@@ -82,7 +82,7 @@ public class NullResultTest {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static java.util.List<Case> cases() {
-        final java.util.List<Case> cases = new ArrayList<>();
+        java.util.List<Case> cases = new ArrayList<>();
 
         // -- Option
         cases.add(throwing(
@@ -166,7 +166,7 @@ public class NullResultTest {
                 () -> Either.left(1).toTry(x -> null)));
 
         // -- Try: the methods that run the function under Try return the exception as a Failure
-        final Try<Integer> failed = Try.failure(new IllegalStateException("failed"));
+        Try<Integer> failed = Try.failure(new IllegalStateException("failed"));
         cases.add(failure("Try.catchAll", "Try.catchAll: f returned null", () -> failed.catchAll(e -> null)));
         cases.add(failure(
                 "Try.catchAllWith(java.util.function.Function)",
@@ -275,7 +275,7 @@ public class NullResultTest {
                 () -> Tuple.of(1, 2, 3, 4, 5, 6, 7, 8).map((a, b, c, d, e, f, g, h) -> null)));
 
         // -- checked functions: recover returning null fails the composed function, with the throwable as the cause
-        final IOException io = new IOException("io");
+        IOException io = new IOException("io");
         cases.add(throwing(
                 "CheckedFunction1.recover",
                 "CheckedFunction1.recover: recover returned null",
@@ -1176,7 +1176,7 @@ public class NullResultTest {
         return cases().stream()
                 .map(c -> DynamicTest.dynamicTest(c.method() + " -> " + c.message(), () -> {
                     if (c.failure()) {
-                        final Try<?> result = ((Supplier<Try<?>>) c.call()).get();
+                        Try<?> result = ((Supplier<Try<?>>) c.call()).get();
                         assertThat(result.isFailure()).as(c.method()).isTrue();
                         assertThat(result.getCause())
                                 .as(c.method())
@@ -1195,12 +1195,12 @@ public class NullResultTest {
     @Test
     public void shouldHaveARowForEveryMethodTakingAFunctionThatReturnsAZazrType()
             throws IOException, URISyntaxException {
-        final java.util.Set<String> covered = new java.util.TreeSet<>();
+        java.util.Set<String> covered = new java.util.TreeSet<>();
         for (Case c : cases()) {
             covered.add(c.method());
         }
-        final java.util.Set<String> found = methodsTakingAFunctionReturningAZazrType();
-        final java.util.Set<String> missing = new java.util.TreeSet<>(found);
+        java.util.Set<String> found = methodsTakingAFunctionReturningAZazrType();
+        java.util.Set<String> missing = new java.util.TreeSet<>(found);
         missing.removeAll(covered);
         missing.removeIf(signature -> EXCLUDED.containsKey(signature.substring(0, signature.indexOf('('))));
         assertThat(missing)
@@ -1215,7 +1215,7 @@ public class NullResultTest {
 
     @Test
     public void shouldReportTheSameFailureWhenALazyResultIsForcedAgain() {
-        final Stream<Object> flatMapped = Stream.of(1, 2).flatMap(x -> x == 2 ? null : List.of(x));
+        Stream<Object> flatMapped = Stream.of(1, 2).flatMap(x -> x == 2 ? null : List.of(x));
         assertThat(flatMapped.head()).isEqualTo(1);
         assertThatNullPointerException()
                 .isThrownBy(flatMapped::size)
@@ -1225,10 +1225,10 @@ public class NullResultTest {
                 .withMessage("Stream.flatMap: mapper returned null");
 
         // a stateful supplier: forcing again must not ask it for the value after the null and drop the rejected one
-        final java.util.Iterator<Option<Integer>> supplied = java.util.Arrays.asList(
+        java.util.Iterator<Option<Integer>> supplied = java.util.Arrays.asList(
                         Option.some(1), null, Option.some(3), Option.<Integer>none())
                 .iterator();
-        final Stream<Integer> iterated = Stream.iterate(supplied::next);
+        Stream<Integer> iterated = Stream.iterate(supplied::next);
         assertThatNullPointerException()
                 .isThrownBy(iterated::toVector)
                 .withMessage("Stream.iterate: supplier returned null");
@@ -1238,8 +1238,8 @@ public class NullResultTest {
         assertThat(iterated.head()).isEqualTo(1);
 
         // stateful functions that return null once: the failure is remembered, the function is not called again
-        final java.util.concurrent.atomic.AtomicInteger unfoldCalls = new java.util.concurrent.atomic.AtomicInteger();
-        final Stream<Integer> unfolded = Stream.unfoldRight(
+        java.util.concurrent.atomic.AtomicInteger unfoldCalls = new java.util.concurrent.atomic.AtomicInteger();
+        Stream<Integer> unfolded = Stream.unfoldRight(
                 0,
                 x -> x > 4
                         ? Option.none()
@@ -1250,8 +1250,8 @@ public class NullResultTest {
                     .withMessage("Stream.unfoldRight: f returned null");
         }
         assertThat(unfoldCalls.get()).isEqualTo(1);
-        final java.util.concurrent.atomic.AtomicInteger appendCalls = new java.util.concurrent.atomic.AtomicInteger();
-        final Stream<Integer> appended =
+        java.util.concurrent.atomic.AtomicInteger appendCalls = new java.util.concurrent.atomic.AtomicInteger();
+        Stream<Integer> appended =
                 Stream.of(1, 2).appendSelf(self -> appendCalls.getAndIncrement() == 0 ? null : Stream.of(9));
         for (int i = 0; i < 3; i++) {
             assertThatNullPointerException()
@@ -1260,7 +1260,7 @@ public class NullResultTest {
         }
         assertThat(appendCalls.get()).isEqualTo(1);
 
-        final Stream<Integer> consed = Stream.cons(1, () -> null);
+        Stream<Integer> consed = Stream.cons(1, () -> null);
         assertThat(consed.head()).isEqualTo(1);
         assertThatNullPointerException()
                 .isThrownBy(consed::tail)
@@ -1269,25 +1269,25 @@ public class NullResultTest {
                 .isThrownBy(consed::tail)
                 .withMessage("Stream.cons: tailSupplier returned null");
 
-        final Lazy<Object> lazy = Lazy.of(() -> 1).flatMap(x -> null);
+        Lazy<Object> lazy = Lazy.of(() -> 1).flatMap(x -> null);
         assertThatNullPointerException().isThrownBy(lazy::get).withMessage("Lazy.flatMap: mapper returned null");
         assertThatNullPointerException().isThrownBy(lazy::get).withMessage("Lazy.flatMap: mapper returned null");
     }
 
     @Test
     public void shouldKeepTheReceiverUnchangedAfterANullResult() {
-        final Vector<Integer> vector = Vector.of(1, 2, 3);
+        Vector<Integer> vector = Vector.of(1, 2, 3);
         assertThatNullPointerException().isThrownBy(() -> vector.flatMap(x -> x == 3 ? null : List.of(x)));
         assertThat(vector).containsExactly(1, 2, 3);
-        final HashMap<Integer, String> map = HashMap.of(1, "a", 2, "b");
+        HashMap<Integer, String> map = HashMap.of(1, "a", 2, "b");
         assertThatNullPointerException().isThrownBy(() -> map.map((k, v) -> k == 2 ? null : Tuple.of(k, v)));
         assertThat(map).containsExactlyInAnyOrder(Tuple.of(1, "a"), Tuple.of(2, "b"));
     }
 
     @Test
     public void shouldKeepTheCauseWhenRecoverReturnsNull() {
-        final IOException io = new IOException("io");
-        final CheckedFunction1<Integer, Integer> failing = a -> {
+        IOException io = new IOException("io");
+        CheckedFunction1<Integer, Integer> failing = a -> {
             throw io;
         };
         assertThatNullPointerException()
@@ -1299,15 +1299,15 @@ public class NullResultTest {
 
     private static java.util.Set<String> methodsTakingAFunctionReturningAZazrType()
             throws IOException, URISyntaxException {
-        final Path root = Path.of(
+        Path root = Path.of(
                 Option.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        final java.util.List<Class<?>> types = new ArrayList<>();
+        java.util.List<Class<?>> types = new ArrayList<>();
         for (String pkg : java.util.List.of("dev/zazr", "dev/zazr/collection", "dev/zazr/control")) {
             try (java.util.stream.Stream<Path> files = Files.list(root.resolve(pkg))) {
                 for (Path file : files.toList()) {
-                    final String name = file.getFileName().toString();
+                    String name = file.getFileName().toString();
                     if (name.endsWith(".class") && !name.contains("$") && !name.equals("package-info.class")) {
-                        final Class<?> type = loadClass(
+                        Class<?> type = loadClass(
                                 pkg.replace('/', '.') + "." + name.substring(0, name.length() - ".class".length()));
                         if (Modifier.isPublic(type.getModifiers())) {
                             types.add(type);
@@ -1318,7 +1318,7 @@ public class NullResultTest {
         }
         assertThat(types).as("the exported types").contains(Option.class, Vector.class, Tuple2.class);
         // an interface another exported type implements (Traversable, Set, Map, ...) is covered through that type
-        final java.util.Set<Class<?>> supertypes = new java.util.HashSet<>();
+        java.util.Set<Class<?>> supertypes = new java.util.HashSet<>();
         for (Class<?> type : types) {
             for (Class<?> other : types) {
                 if (other != type && type.isInterface() && type.isAssignableFrom(other)) {
@@ -1326,10 +1326,10 @@ public class NullResultTest {
                 }
             }
         }
-        final java.util.Set<String> found = new java.util.TreeSet<>();
+        java.util.Set<String> found = new java.util.TreeSet<>();
         for (Class<?> type : types) {
             for (Method method : type.getMethods()) {
-                final boolean isStatic = Modifier.isStatic(method.getModifiers());
+                boolean isStatic = Modifier.isStatic(method.getModifiers());
                 if (method.isBridge()
                         || method.isSynthetic()
                         || method.getDeclaringClass() == Object.class
@@ -1353,7 +1353,7 @@ public class NullResultTest {
      * even where a Zazr type and a JDK type share a simple name ({@code Stream}, {@code List}, {@code Map}).
      */
     private static String signature(Class<?> type, Method method) {
-        final java.util.StringJoiner parameters = new java.util.StringJoiner(", ", "(", ")");
+        java.util.StringJoiner parameters = new java.util.StringJoiner(", ", "(", ")");
         for (Class<?> parameter : method.getParameterTypes()) {
             parameters.add(parameter.getTypeName());
         }
@@ -1387,14 +1387,14 @@ public class NullResultTest {
         }
         Type result = abstractMethod.getGenericReturnType();
         if (result instanceof TypeVariable<?> variable && abstractMethod.getDeclaringClass() == raw) {
-            final TypeVariable<?>[] variables = raw.getTypeParameters();
+            TypeVariable<?>[] variables = raw.getTypeParameters();
             for (int i = 0; i < variables.length; i++) {
                 if (variables[i].getName().equals(variable.getName())) {
                     result = parameterized.getActualTypeArguments()[i];
                 }
             }
         }
-        final Class<?> resultClass = rawClassOf(result);
+        Class<?> resultClass = rawClassOf(result);
         return resultClass != null
                 && (resultClass.getName().startsWith("dev.zazr.")
                         || resultClass == Iterable.class

@@ -54,10 +54,10 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     public static <K extends @Nullable Object, V extends @Nullable Object>
             Collector<Tuple2<K, V>, Builder<K, V>, HashMap<K, V>> collector() {
-        final Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
-        final BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
-        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
-        final Function<Builder<K, V>, HashMap<K, V>> finisher = Builder::result;
+        Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
+        BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
+        BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        Function<Builder<K, V>, HashMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -93,11 +93,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
                     Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
-        final BiConsumer<Builder<K, V>, T> accumulator =
+        Supplier<Builder<K, V>> supplier = HashMap::newBuilder;
+        BiConsumer<Builder<K, V>, T> accumulator =
                 (builder, t) -> builder.put(keyMapper.apply(t), valueMapper.apply(t));
-        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
-        final Function<Builder<K, V>, HashMap<K, V>> finisher = Builder::result;
+        BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        Function<Builder<K, V>, HashMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -170,7 +170,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         if (JavaConverters.underlying(map) instanceof HashMap<?, ?> underlying) {
             return (HashMap<K, V>) underlying;
         }
-        final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
+        HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (java.util.Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             putChecked(builder, entry.getKey(), entry.getValue());
         }
@@ -529,7 +529,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(
             java.util.Map.Entry<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
+        HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
             putChecked(builder, entry.getKey(), entry.getValue());
@@ -549,7 +549,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     public static <K extends @Nullable Object, V extends @Nullable Object> HashMap<K, V> ofEntries(
             Tuple2<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
+        HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
             putChecked(builder, entry._1(), entry._2());
@@ -575,7 +575,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         } else if (JavaConverters.underlying(entries) instanceof HashMap<?, ?> underlying) {
             return (HashMap<K, V>) underlying;
         } else {
-            final HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
+            HashMapBuilder<K, V> builder = new HashMapBuilder<>("HashMap.Builder");
             for (Tuple2<? extends K, ? extends V> entry : entries) {
                 Objects.requireNonNull(entry, "HashMap.ofEntries: entry is null");
                 putChecked(builder, entry._1(), entry._2());
@@ -589,7 +589,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
             Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Iterator<Tuple2<K2, V2>> entries =
+        Iterator<Tuple2<K2, V2>> entries =
                 Iterator.ofAll(this).map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
         return HashMap.ofEntries(entries);
     }
@@ -725,7 +725,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
 
     // the entries for which the predicate answers `keep`, filtered node by node; this map when that is all of them
     private HashMap<K, V> filtered(BiPredicate<? super K, ? super V> predicate, boolean keep) {
-        final BitmapIndexedMapNode<K, V> result = trie.filter(predicate, keep);
+        BitmapIndexedMapNode<K, V> result = trie.filter(predicate, keep);
         return (result == trie && result.size() != 0) ? this : wrap(result);
     }
 
@@ -761,12 +761,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @SuppressWarnings("unchecked")
     @Override
     public Option<V> get(K key) {
-        final V value = trie.getOrElse(key, (V) Maps.ABSENT);
+        V value = trie.getOrElse(key, (V) Maps.ABSENT);
         return value == Maps.ABSENT ? Option.none() : Option.some(value);
     }
 
     Option<Tuple2<K, V>> getEntry(K key) {
-        final Tuple2<K, V> entry = trie.getEntry(key);
+        Tuple2<K, V> entry = trie.getEntry(key);
         return entry == null ? Option.none() : Option.some(entry);
     }
 
@@ -821,7 +821,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
             BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return foldLeft(HashMap.empty(), (acc, entry) -> {
-            final Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(
+            Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(
                     mapper.apply(entry._1(), entry._2()), "HashMap.collect: mapper returned null");
             return collected.isDefined() ? acc.put(collected.get()) : acc;
         });
@@ -874,7 +874,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(that, "that is null");
         if (that instanceof HashMap<?, ?> other && !isEmpty() && !other.isEmpty()) {
             // the entries of this map win: they are the right side of the concatenation
-            final BitmapIndexedMapNode<K, V> result = ((HashMap<K, V>) other).trie.concat(trie, 0);
+            BitmapIndexedMapNode<K, V> result = ((HashMap<K, V>) other).trie.concat(trie, 0);
             // the same size: every key of `that` was a key of this map, whose entries win
             return result.size() == trie.size() ? this : new HashMap<>(result);
         }
@@ -934,7 +934,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> put(K key, V value) {
-        final BitmapIndexedMapNode<K, V> result = putChecked(trie, key, value);
+        BitmapIndexedMapNode<K, V> result = putChecked(trie, key, value);
         return result == trie ? this : new HashMap<>(result);
     }
 
@@ -967,7 +967,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public HashMap<K, V> remove(K key) {
-        final BitmapIndexedMapNode<K, V> result = trie.removed(key);
+        BitmapIndexedMapNode<K, V> result = trie.removed(key);
         return result == trie ? this : wrap(result);
     }
 
@@ -1074,7 +1074,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     // the same keys, each value replaced by f(key, value); this map when every value is the same object
     @SuppressWarnings("unchecked")
     private <V2 extends @Nullable Object> HashMap<K, V2> transformed(BiFunction<? super K, ? super V, ? extends V2> f) {
-        final BitmapIndexedMapNode<K, V2> result = trie.transform(f);
+        BitmapIndexedMapNode<K, V2> result = trie.transform(f);
         return result == (Object) trie ? (HashMap<K, V2>) this : new HashMap<>(result);
     }
 

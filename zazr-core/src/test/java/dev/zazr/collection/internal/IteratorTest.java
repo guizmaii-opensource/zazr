@@ -136,7 +136,7 @@ class IteratorTest {
 
     @Test
     public void shouldFullyIterateNonNil() {
-        final Iterator<Integer> iterator = of(1, 2, 3);
+        Iterator<Integer> iterator = of(1, 2, 3);
         int actual;
         for (int i = 1; i <= 3; i++) {
             actual = iterator.next();
@@ -152,7 +152,7 @@ class IteratorTest {
 
     @Test
     public void shouldThrowWhenCallingNextTooOftenOnNonEmptyIterator() {
-        final Iterator<Integer> iterator = of(1);
+        Iterator<Integer> iterator = of(1);
         assertThatThrownBy(() -> {
                     iterator.next();
                     iterator.next();
@@ -171,7 +171,7 @@ class IteratorTest {
 
         @Test
         public void shouldReturnTheSameInstanceWhenTheIterableIsAnIterator() {
-            final Iterator<Integer> iterator = of(1, 2);
+            Iterator<Integer> iterator = of(1, 2);
             assertThatIterator(Iterator.ofAll((Iterable<Integer>) iterator)).isSameAs(iterator);
             assertThatIterator(Iterator.ofAll((java.util.Iterator<Integer>) iterator))
                     .isSameAs(iterator);
@@ -303,7 +303,7 @@ class IteratorTest {
 
     @Test
     public void shouldTabulateTheSeqCallingTheFunctionInTheRightOrder() {
-        final java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(java.util.List.of(0, 1, 2));
+        java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(java.util.List.of(0, 1, 2));
         assertThat(list(Iterator.tabulate(3, i -> ints.remove()))).isEqualTo(List.of(0, 1, 2));
     }
 
@@ -326,7 +326,7 @@ class IteratorTest {
 
         @Test
         public void shouldFillTheSeqCallingTheSupplierInTheRightOrder() {
-            final java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(java.util.List.of(0, 1));
+            java.util.LinkedList<Integer> ints = new java.util.LinkedList<>(java.util.List.of(0, 1));
             assertThat(list(Iterator.fill(2, ints::remove))).isEqualTo(List.of(0, 1));
         }
 
@@ -366,13 +366,13 @@ class IteratorTest {
     class StaticConcatTests {
         @Test
         public void shouldConcatEmptyIterableIterable() {
-            final Iterable<Iterable<Integer>> empty = List.empty();
+            Iterable<Iterable<Integer>> empty = List.empty();
             assertThatIterator(concat(empty)).isSameAs(Iterator.empty());
         }
 
         @Test
         public void shouldConcatNonEmptyIterableIterable() {
-            final Iterable<Iterable<Integer>> itIt = List.of(List.of(1, 2), List.of(3));
+            Iterable<Iterable<Integer>> itIt = List.of(List.of(1, 2), List.of(3));
             assertThat(list(concat(itIt))).isEqualTo(List.of(1, 2, 3));
         }
 
@@ -407,13 +407,13 @@ class IteratorTest {
     class ConcatTests {
         @Test
         public void shouldConcatThisNonEmptyWithEmpty() {
-            final Iterator<Integer> it = Iterator.of(1);
+            Iterator<Integer> it = Iterator.of(1);
             assertThatIterator(it.concat(Iterator.<Integer>empty())).isSameAs(it);
         }
 
         @Test
         public void shouldConcatThisEmptyWithNonEmpty() {
-            final Iterator<Integer> it = Iterator.of(1);
+            Iterator<Integer> it = Iterator.of(1);
             assertThatIterator(Iterator.<Integer>empty().concat(it)).isSameAs(it);
         }
 
@@ -753,20 +753,20 @@ class IteratorTest {
 
     @Test
     public void shouldComputeDistinctByOfEmptyTraversableUsingComparator() {
-        final Comparator<Integer> comparator = comparingInt(i -> i);
+        Comparator<Integer> comparator = comparingInt(i -> i);
         assertThat(list(Iterator.<Integer>empty().distinctBy(comparator))).isEmpty();
     }
 
     @Test
     public void shouldReturnSameInstanceWhenDistinctByComparatorEmptyTraversable() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.distinctBy(Comparators.naturalComparator())).isSameAs(empty);
     }
 
     @Test
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingComparator() {
-        final Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
-        final Iterator<String> distinct =
+        Comparator<String> comparator = comparingInt(s -> (s.charAt(1)));
+        Iterator<String> distinct =
                 of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(comparator).map(s -> s.substring(1));
         assertThat(list(distinct)).isEqualTo(List.of("a", "b", "c"));
     }
@@ -778,14 +778,14 @@ class IteratorTest {
 
     @Test
     public void shouldReturnSameInstanceWhenDistinctByFunctionEmptyTraversable() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.distinctBy(Function.identity())).isSameAs(empty);
     }
 
     @Test
     public void shouldComputeDistinctByOfNonEmptyTraversableUsingKeyExtractor() {
-        final Function<String, Character> function = c -> c.charAt(1);
-        final Iterator<String> distinct =
+        Function<String, Character> function = c -> c.charAt(1);
+        Iterator<String> distinct =
                 of("1a", "2a", "3a", "3b", "4b", "5c").distinctBy(function).map(s -> s.substring(1));
         assertThat(list(distinct)).isEqualTo(List.of("a", "b", "c"));
     }
@@ -844,26 +844,26 @@ class IteratorTest {
 
     @Test
     public void shouldReturnSameInstanceWhenDropZeroCount() {
-        final Iterator<Integer> t = of(1, 2, 3);
+        Iterator<Integer> t = of(1, 2, 3);
         assertThatIterator(t.drop(0)).isSameAs(t);
     }
 
     @Test
     public void shouldReturnSameInstanceWhenDropNegativeCount() {
-        final Iterator<Integer> t = of(1, 2, 3);
+        Iterator<Integer> t = of(1, 2, 3);
         assertThatIterator(t.drop(-1)).isSameAs(t);
     }
 
     @Test
     public void shouldReturnSameInstanceWhenEmptyDropOne() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.drop(1)).isSameAs(empty);
     }
 
     @Test
     public void shouldDropLazily() {
-        final AtomicInteger pulled = new AtomicInteger();
-        final Iterator<Integer> dropped = Iterator.iterate(1, i -> {
+        AtomicInteger pulled = new AtomicInteger();
+        Iterator<Integer> dropped = Iterator.iterate(1, i -> {
                     pulled.incrementAndGet();
                     return i + 1;
                 })
@@ -896,19 +896,19 @@ class IteratorTest {
 
     @Test
     public void shouldReturnSameInstanceWhenDropRightZeroCount() {
-        final Iterator<Integer> t = of(1, 2, 3);
+        Iterator<Integer> t = of(1, 2, 3);
         assertThatIterator(t.dropRight(0)).isSameAs(t);
     }
 
     @Test
     public void shouldReturnSameInstanceWhenDropRightNegativeCount() {
-        final Iterator<Integer> t = of(1, 2, 3);
+        Iterator<Integer> t = of(1, 2, 3);
         assertThatIterator(t.dropRight(-1)).isSameAs(t);
     }
 
     @Test
     public void shouldReturnSameInstanceWhenEmptyDropRightOne() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.dropRight(1)).isSameAs(empty);
     }
 
@@ -916,7 +916,7 @@ class IteratorTest {
 
     @Test
     public void shouldDropWhileNoneOnNil() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.dropWhile(ignored -> true)).isSameAs(empty);
     }
 
@@ -942,7 +942,7 @@ class IteratorTest {
 
     @Test
     public void shouldReturnSameInstanceWhenEmptyDropWhile() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.dropWhile(ignored -> true)).isSameAs(empty);
     }
 
@@ -969,14 +969,14 @@ class IteratorTest {
 
     @Test
     public void shouldReturnSameInstanceWhenFilteringEmptyTraversable() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.filter(v -> true)).isSameAs(empty);
     }
 
     @Test
     public void shouldFilterLazilyAndTestEachElementOnce() {
-        final AtomicInteger tests = new AtomicInteger();
-        final Iterator<Integer> filtered = of(1, 2, 3, 4).filter(i -> {
+        AtomicInteger tests = new AtomicInteger();
+        Iterator<Integer> filtered = of(1, 2, 3, 4).filter(i -> {
             tests.incrementAndGet();
             return i % 2 == 0;
         });
@@ -1032,8 +1032,8 @@ class IteratorTest {
 
     @Test
     public void shouldMapLazily() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Iterator<Integer> mapped = of(1, 2, 3).map(i -> {
+        AtomicInteger calls = new AtomicInteger();
+        Iterator<Integer> mapped = of(1, 2, 3).map(i -> {
             calls.incrementAndGet();
             return i * 2;
         });
@@ -1053,8 +1053,8 @@ class IteratorTest {
 
     @Test
     public void shouldCollectNothingFromEmpty() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Iterator<Integer> actual = Iterator.<Integer>empty().collect(i -> {
+        AtomicInteger calls = new AtomicInteger();
+        Iterator<Integer> actual = Iterator.<Integer>empty().collect(i -> {
             calls.incrementAndGet();
             return Option.some(i);
         });
@@ -1080,7 +1080,7 @@ class IteratorTest {
 
     @Test
     public void shouldCollectWithASwitchInsideTheLambda() {
-        final Iterator<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
+        Iterator<Integer> actual = of(1, 2, 3).collect(i -> switch (i) {
             case Integer odd when odd % 2 == 1 -> Option.some(odd * 10);
             default -> Option.none();
         });
@@ -1089,7 +1089,7 @@ class IteratorTest {
 
     @Test
     public void shouldCallTheCollectMapperOncePerElement() {
-        final AtomicInteger calls = new AtomicInteger();
+        AtomicInteger calls = new AtomicInteger();
         list(of(1, 2, 3).collect(i -> {
             calls.incrementAndGet();
             return i == 2 ? Option.none() : Option.some(i);
@@ -1106,7 +1106,7 @@ class IteratorTest {
 
     @Test
     public void shouldThrowOnCollectWithNullMapper() {
-        final Function<Integer, Option<Integer>> mapper = null;
+        Function<Integer, Option<Integer>> mapper = null;
         assertThrows(NullPointerException.class, () -> of(1).collect(mapper));
     }
 
@@ -1115,8 +1115,8 @@ class IteratorTest {
 
         @Test
         public void shouldNotCallTheCollectMapperBeforeTheFirstElementIsRequested() {
-            final AtomicInteger calls = new AtomicInteger();
-            final Iterator<Integer> actual = Iterator.of(1, 2, 3).collect(i -> {
+            AtomicInteger calls = new AtomicInteger();
+            Iterator<Integer> actual = Iterator.of(1, 2, 3).collect(i -> {
                 calls.incrementAndGet();
                 return Option.some(i);
             });
@@ -1128,8 +1128,8 @@ class IteratorTest {
 
         @Test
         public void shouldCallTheCollectMapperOncePerElementAcrossHasNextCalls() {
-            final AtomicInteger calls = new AtomicInteger();
-            final Iterator<Integer> actual = Iterator.of(1, 2, 3, 4).collect(i -> {
+            AtomicInteger calls = new AtomicInteger();
+            Iterator<Integer> actual = Iterator.of(1, 2, 3, 4).collect(i -> {
                 calls.incrementAndGet();
                 return i % 2 == 0 ? Option.some(i) : Option.none();
             });
@@ -1172,7 +1172,7 @@ class IteratorTest {
 
     @Test
     public void shouldTakeFromAnInfiniteSourceWithoutPullingPastTheCount() {
-        final AtomicInteger pulled = new AtomicInteger();
+        AtomicInteger pulled = new AtomicInteger();
         assertThat(list(Iterator.continually(pulled::incrementAndGet).take(3))).isEqualTo(List.of(1, 2, 3));
         assertThat(pulled.get()).isEqualTo(3);
     }
@@ -1223,15 +1223,14 @@ class IteratorTest {
 
     @Test
     public void shouldReturnSameInstanceWhenEmptyTakeWhile() {
-        final Iterator<?> empty = empty();
+        Iterator<?> empty = empty();
         assertThatIterator(empty.takeWhile(ignored -> false)).isSameAs(empty);
     }
 
     @Test
     public void shouldNotPullPastTheFirstRejectedElementOnTakeWhile() {
-        final AtomicInteger pulled = new AtomicInteger();
-        final Iterator<Integer> taken =
-                Iterator.continually(pulled::incrementAndGet).takeWhile(i -> i < 3);
+        AtomicInteger pulled = new AtomicInteger();
+        Iterator<Integer> taken = Iterator.continually(pulled::incrementAndGet).takeWhile(i -> i < 3);
         assertThat(list(taken)).isEqualTo(List.of(1, 2));
         assertThat(pulled.get()).isEqualTo(3);
     }
@@ -1377,16 +1376,16 @@ class IteratorTest {
 
     @Test
     public void shouldScanLeftWithNonComparable() {
-        final List<NonComparable> actual = list(of(new NonComparable("a"))
+        List<NonComparable> actual = list(of(new NonComparable("a"))
                 .scanLeft(new NonComparable("x"), (u1, u2) -> new NonComparable(u1.value + u2.value)));
-        final List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
+        List<NonComparable> expected = List.of("x", "xa").map(NonComparable::new);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldScanLeftLazily() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Iterator<Integer> scanned = Iterator.from(1).scanLeft(0, (acc, i) -> {
+        AtomicInteger calls = new AtomicInteger();
+        Iterator<Integer> scanned = Iterator.from(1).scanLeft(0, (acc, i) -> {
             calls.incrementAndGet();
             return acc + i;
         });
@@ -1447,8 +1446,8 @@ class IteratorTest {
 
     @Test
     public void shouldSlideByClassifierOneRunAtATime() {
-        final AtomicInteger pulled = new AtomicInteger();
-        final Iterator<Vector<Integer>> runs =
+        AtomicInteger pulled = new AtomicInteger();
+        Iterator<Vector<Integer>> runs =
                 Iterator.continually(pulled::incrementAndGet).slideBy(i -> (i - 1) / 2);
         assertThat(pulled.get()).isEqualTo(0);
         assertThat(runs.next()).isEqualTo(Vector.of(1, 2));
@@ -1507,8 +1506,8 @@ class IteratorTest {
 
     @Test
     public void shouldSlideAnInfiniteSourceOneWindowAtATime() {
-        final AtomicInteger pulled = new AtomicInteger();
-        final Iterator<Vector<Integer>> windows =
+        AtomicInteger pulled = new AtomicInteger();
+        Iterator<Vector<Integer>> windows =
                 Iterator.continually(pulled::incrementAndGet).sliding(2);
         assertThat(pulled.get()).isEqualTo(2);
         assertThat(windows.next()).isEqualTo(Vector.of(1, 2));
@@ -1586,7 +1585,7 @@ class IteratorTest {
 
     @Test
     public void shouldThrowOnNextWhenTheWindowsAreExhausted() {
-        final Iterator<Vector<Integer>> windows = of(1, 2).sliding(2);
+        Iterator<Vector<Integer>> windows = of(1, 2).sliding(2);
         windows.next();
         assertThat(windows.hasNext()).isFalse();
         assertThrows(NoSuchElementException.class, windows::next);
@@ -1596,7 +1595,7 @@ class IteratorTest {
 
     @Test
     public void shouldSpanNil() {
-        final Tuple2<Iterator<Integer>, Iterator<Integer>> actual =
+        Tuple2<Iterator<Integer>, Iterator<Integer>> actual =
                 Iterator.<Integer>empty().span(i -> i < 2);
         assertThatIterator(actual._1()).isSameAs(empty());
         assertThatIterator(actual._2()).isSameAs(empty());
@@ -1604,20 +1603,17 @@ class IteratorTest {
 
     @Test
     public void shouldSpanNonNil() {
-        final Tuple2<Iterator<Integer>, Iterator<Integer>> actual =
-                of(0, 1, 2, 3).span(i -> i < 2);
+        Tuple2<Iterator<Integer>, Iterator<Integer>> actual = of(0, 1, 2, 3).span(i -> i < 2);
         assertThat(list(actual._1())).isEqualTo(List.of(0, 1));
         assertThat(list(actual._2())).isEqualTo(List.of(2, 3));
     }
 
     @Test
     public void shouldSpanAndNotTruncate() {
-        final Tuple2<Iterator<Integer>, Iterator<Integer>> odd =
-                of(1, 1, 2, 2, 3, 3).span(x -> x % 2 == 1);
+        Tuple2<Iterator<Integer>, Iterator<Integer>> odd = of(1, 1, 2, 2, 3, 3).span(x -> x % 2 == 1);
         assertThat(list(odd._1())).isEqualTo(List.of(1, 1));
         assertThat(list(odd._2())).isEqualTo(List.of(2, 2, 3, 3));
-        final Tuple2<Iterator<Integer>, Iterator<Integer>> ones =
-                of(1, 1, 2, 2, 4, 4).span(x -> x == 1);
+        Tuple2<Iterator<Integer>, Iterator<Integer>> ones = of(1, 1, 2, 2, 4, 4).span(x -> x == 1);
         assertThat(list(ones._1())).isEqualTo(List.of(1, 1));
         assertThat(list(ones._2())).isEqualTo(List.of(2, 2, 4, 4));
     }
@@ -1668,7 +1664,7 @@ class IteratorTest {
 
     @Test
     public void shouldConsumeTheElementsOnFoldLeft() {
-        final Iterator<Integer> iterator = of(1, 2, 3);
+        Iterator<Integer> iterator = of(1, 2, 3);
         assertThat(iterator.foldLeft(0, Integer::sum)).isEqualTo(6);
         assertThat(iterator.hasNext()).isFalse();
     }
@@ -1685,7 +1681,7 @@ class IteratorTest {
 
     @Test
     public void shouldFindTheFirstMatchAndStopThere() {
-        final Iterator<Integer> iterator = of(1, 2, 3, 4);
+        Iterator<Integer> iterator = of(1, 2, 3, 4);
         assertThat(iterator.find(i -> i % 2 == 0)).isEqualTo(Option.some(2));
         assertThat(iterator.next()).isEqualTo(3);
         assertThat(of(1, 2, 3).find(i -> i > 5)).isEqualTo(Option.none());
@@ -1704,7 +1700,7 @@ class IteratorTest {
 
     @Test
     public void shouldGiveTheHeadAsAnOptionAndConsumeIt() {
-        final Iterator<Integer> iterator = of(1, 2);
+        Iterator<Integer> iterator = of(1, 2);
         assertThat(iterator.headOption()).isEqualTo(Option.some(1));
         assertThat(iterator.headOption()).isEqualTo(Option.some(2));
         assertThat(iterator.headOption()).isEqualTo(Option.none());
@@ -1749,9 +1745,8 @@ class IteratorTest {
 
     @Test
     public void shouldConvertToStreamLazily() {
-        final AtomicInteger pulled = new AtomicInteger();
-        final Stream<Integer> stream =
-                Iterator.continually(pulled::incrementAndGet).toStream();
+        AtomicInteger pulled = new AtomicInteger();
+        Stream<Integer> stream = Iterator.continually(pulled::incrementAndGet).toStream();
         assertThat(pulled.get()).isEqualTo(1);
         assertThat(stream.take(3)).isEqualTo(Stream.of(1, 2, 3));
     }
@@ -1760,7 +1755,7 @@ class IteratorTest {
 
     @Test
     public void shouldBeItsOwnIterator() {
-        final Iterator<Integer> iterator = of(1, 2, 3);
+        Iterator<Integer> iterator = of(1, 2, 3);
         assertThatIterator(iterator.iterator()).isSameAs(iterator);
         int sum = 0;
         for (int i : iterator) {
@@ -1772,7 +1767,7 @@ class IteratorTest {
 
     @Test
     public void shouldNotSupportRemove() {
-        final Iterator<Integer> iterator = of(1, 2, 3);
+        Iterator<Integer> iterator = of(1, 2, 3);
         iterator.next();
         assertThrows(UnsupportedOperationException.class, iterator::remove);
     }
@@ -1862,8 +1857,8 @@ class IteratorTest {
     }
 
     private <T> void multipleHasNext(Supplier<Iterator<T>> it, int maxLen) {
-        final Iterator<T> testee1 = it.get();
-        final Iterator<T> testee2 = it.get();
+        Iterator<T> testee1 = it.get();
+        Iterator<T> testee2 = it.get();
         // ask 2 times
         assertThat(testee2.hasNext()).isTrue();
         assertThat(testee2.hasNext()).isTrue();
@@ -1887,20 +1882,20 @@ class IteratorTest {
 
         @Test
         public void shouldReturnValueOnNextWhenIteratorOfOneElementAndNextWasNotCalled() {
-            final Iterator<Object> iterator = Iterator.of(1);
+            Iterator<Object> iterator = Iterator.of(1);
             assertThatIterator(iterator.next()).isSameAs(1);
         }
 
         @Test
         public void shouldThrowOnNextWhenIteratorOfOneElementAndNextWasCalled() {
-            final Iterator<Object> iterator = Iterator.of(1);
+            Iterator<Object> iterator = Iterator.of(1);
             iterator.next();
             assertThatThrownBy(iterator::next).isInstanceOf(NoSuchElementException.class);
         }
 
         @Test
         public void shouldThrowOnNextWhenACombinatorIsExhausted() {
-            final Iterator<Integer> mapped = Iterator.of(1).map(i -> i);
+            Iterator<Integer> mapped = Iterator.of(1).map(i -> i);
             mapped.next();
             assertThatThrownBy(mapped::next)
                     .isInstanceOf(NoSuchElementException.class)
@@ -1913,7 +1908,7 @@ class IteratorTest {
     @Test
     public void shouldNotDeadlockOnConcurrentClassInitialization() {
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
-            final ExecutorService executorService = Executors.newFixedThreadPool(2);
+            ExecutorService executorService = Executors.newFixedThreadPool(2);
             executorService.execute(new ClassInitializer("dev.zazr.collection.internal.Iterator"));
             executorService.execute(new ClassInitializer("dev.zazr.collection.internal.AbstractIterator"));
             executorService.shutdown();
@@ -1955,7 +1950,7 @@ class IteratorTest {
 
     @Test
     public void shouldPrintAnExhaustedIteratorAsEmpty() {
-        final Iterator<String> iterator = of("a");
+        Iterator<String> iterator = of("a");
         iterator.next();
         assertThat(iterator.toString()).isEqualTo("Iterator()");
     }
@@ -2074,7 +2069,7 @@ class IteratorTest {
 
     @Test
     public void shouldRejectNullElementOfAWrappedJavaIterator() {
-        final java.util.List<Integer> withNull = new java.util.ArrayList<>();
+        java.util.List<Integer> withNull = new java.util.ArrayList<>();
         withNull.add(null);
         assertThatNullPointerException()
                 .isThrownBy(() -> Iterator.ofAll(withNull.iterator()).next())
@@ -2153,7 +2148,7 @@ class IteratorTest {
             if (obj == this) {
                 return true;
             } else if (obj instanceof NonComparable) {
-                final NonComparable that = (NonComparable) obj;
+                NonComparable that = (NonComparable) obj;
                 return Objects.equals(this.value, that.value);
             } else {
                 return false;

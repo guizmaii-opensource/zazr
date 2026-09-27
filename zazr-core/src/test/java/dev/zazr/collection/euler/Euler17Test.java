@@ -63,8 +63,8 @@ public class Euler17Test {
                         "twentyone")
                 .zipWithIndex()
                 .forEach(t -> {
-                    final int number = t._2() + 1;
-                    final String numberAsString = t._1();
+                    int number = t._2() + 1;
+                    String numberAsString = t._1();
                     assertThat(numberAsString).hasSize(solution.letterCount(number));
                 });
 
@@ -163,8 +163,8 @@ public class Euler17Test {
         private static String asText(int number) {
             return LENGTHS.toList()
                     .foldRight(Tuple.of(Vector.<String>empty(), number), (magnitudeAndText, lengthsAndRemainder) -> {
-                        final int magnitude = magnitudeAndText._1();
-                        final int remainder = lengthsAndRemainder._2();
+                        int magnitude = magnitudeAndText._1();
+                        int remainder = lengthsAndRemainder._2();
 
                         return ((remainder >= magnitude) && (remainder > 0))
                                 ? asText(magnitude, magnitudeAndText._2(), lengthsAndRemainder._1(), remainder)

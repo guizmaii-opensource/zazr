@@ -105,7 +105,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldMatchWithInstanceofPattern() {
-            final Option<String> some = Option.some("x");
+            Option<String> some = Option.some("x");
             assertThat(some instanceof Some(var value) && value.equals("x")).isTrue();
             assertThat(some instanceof None<?>).isFalse();
             assertThat(Option.none() instanceof None()).isTrue();
@@ -157,7 +157,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldMatchWithInstanceofPattern() {
-            final Either<String, Integer> right = Either.right(1);
+            Either<String, Integer> right = Either.right(1);
             assertThat(right instanceof Right(var value) && value == 1).isTrue();
             assertThat(right instanceof Left<?, ?>).isFalse();
         }
@@ -204,7 +204,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldMatchWithInstanceofPattern() {
-            final Try<Integer> failure = Try.failure(new IllegalStateException("bad"));
+            Try<Integer> failure = Try.failure(new IllegalStateException("bad"));
             assertThat(failure instanceof Failure(var cause) && cause instanceof IllegalStateException)
                     .isTrue();
             assertThat(failure instanceof Success<?>).isFalse();
@@ -233,7 +233,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldEqualFailuresOnlyOnTheSameCause() {
-            final RuntimeException cause = new RuntimeException("same");
+            RuntimeException cause = new RuntimeException("same");
             assertThat(new Failure<>(cause)).isEqualTo(Try.failure(cause)).hasSameHashCodeAs(Try.failure(cause));
             assertThat(new Failure<>(cause).cause()).isSameAs(cause);
             // same class, same message, same stack shape: still two exceptions
@@ -269,7 +269,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldMatchWithInstanceofPattern() {
-            final Validation<String, Integer> valid = Validation.valid(1);
+            Validation<String, Integer> valid = Validation.valid(1);
             assertThat(valid instanceof Valid(var value) && value == 1).isTrue();
             assertThat(valid instanceof Invalid<?, ?>).isFalse();
         }
@@ -335,7 +335,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldMatchWithInstanceofPattern() {
-            final List<Integer> list = List.of(1, 2);
+            List<Integer> list = List.of(1, 2);
             assertThat(list instanceof Cons(var head, var tail) && head == 1 && tail.equals(List.of(2)))
                     .isTrue();
             assertThat(List.empty() instanceof Nil()).isTrue();
@@ -353,7 +353,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldBuildFromRecordConstructorsAndWalkLength() {
-            final List<Integer> list = new Cons<>(1, new Cons<>(2, new Cons<>(3, Nil.instance())));
+            List<Integer> list = new Cons<>(1, new Cons<>(2, new Cons<>(3, Nil.instance())));
             assertThat(list).isEqualTo(List.of(1, 2, 3)).hasSameHashCodeAs(List.of(1, 2, 3));
             assertThat(list.size()).isEqualTo(3);
             assertThat(list.tail().size()).isEqualTo(2);
@@ -402,7 +402,7 @@ public class SealedTypesTest {
         @Test
         public void shouldHoldNullInLazy() {
             // Lazy is a value, not a container (design 3.11): it holds null and offers no conversion but get()
-            final Lazy<Object> lazy = Lazy.of(() -> null);
+            Lazy<Object> lazy = Lazy.of(() -> null);
             assertThat(lazy.get()).isNull();
             assertThat(lazy.map(x -> x).get()).isNull();
             assertThatThrownBy(() -> Option.some(lazy.get())).isInstanceOf(NullPointerException.class);
@@ -434,7 +434,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldDeconstructNestedTuples() {
-            final Tuple2<Tuple2<Integer, Integer>, Option<String>> nested = Tuple.of(Tuple.of(1, 2), Option.some("s"));
+            Tuple2<Tuple2<Integer, Integer>, Option<String>> nested = Tuple.of(Tuple.of(1, 2), Option.some("s"));
             if (nested instanceof Tuple2(Tuple2(var a, var b), Some(var s))) {
                 assertThat(a + b).isEqualTo(3);
                 assertThat(s).isEqualTo("s");
@@ -455,7 +455,7 @@ public class SealedTypesTest {
 
         @Test
         public void shouldAllowNullComponents() {
-            final Tuple2<Object, Object> nulls = Tuple.of(null, null);
+            Tuple2<Object, Object> nulls = Tuple.of(null, null);
             assertThat(nulls._1()).isNull();
             assertThat(nulls).isEqualTo(new Tuple2<>(null, null)).hasToString("(null, null)");
         }

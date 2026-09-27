@@ -49,7 +49,7 @@ class HashSetLawsTest extends SetLawsSuite<HashSet<?>, HashSet<Integer>> {
 
     @Test
     void setLawsWithCollidingHashCodes() {
-        final CollectionSubject<Collider, HashSet<Collider>> colliders = new CollectionSubject<>(
+        CollectionSubject<Collider, HashSet<Collider>> colliders = new CollectionSubject<>(
                 Gen.hashSet(Values.integers().map(Collider::new)),
                 HashSet::ofAll,
                 HashSet::size,

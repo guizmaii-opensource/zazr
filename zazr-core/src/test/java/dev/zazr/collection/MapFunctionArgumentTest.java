@@ -68,10 +68,9 @@ public class MapFunctionArgumentTest {
 
     @Test
     public void shouldRejectEachNullArgumentOfCollect() {
-        final java.util.function.Supplier<java.util.List<Object>> supplier = java.util.ArrayList::new;
-        final java.util.function.BiConsumer<java.util.List<Object>, Object> accumulator = java.util.List::add;
-        final java.util.function.BiConsumer<java.util.List<Object>, java.util.List<Object>> combiner =
-                java.util.List::addAll;
+        java.util.function.Supplier<java.util.List<Object>> supplier = java.util.ArrayList::new;
+        java.util.function.BiConsumer<java.util.List<Object>, Object> accumulator = java.util.List::add;
+        java.util.function.BiConsumer<java.util.List<Object>, java.util.List<Object>> combiner = java.util.List::addAll;
         for (Map<Integer, String> map : maps()) {
             assertThatNullPointerException()
                     .as(map.toString())
@@ -90,8 +89,8 @@ public class MapFunctionArgumentTest {
 
     @Test
     public void shouldRejectANullSupplierInOrElseOnEveryOtherCollection() {
-        final Supplier<Iterable<Integer>> none = null;
-        final java.util.List<ThrowingCallable> calls = java.util.List.of(
+        Supplier<Iterable<Integer>> none = null;
+        java.util.List<ThrowingCallable> calls = java.util.List.of(
                 () -> Vector.<Integer>empty().orElse(none), () -> Vector.of(1).orElse(none),
                 () -> List.<Integer>empty().orElse(none), () -> List.of(1).orElse(none),
                 () -> Queue.<Integer>empty().orElse(none), () -> Queue.of(1).orElse(none),

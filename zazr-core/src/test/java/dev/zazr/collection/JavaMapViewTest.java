@@ -38,7 +38,7 @@ class JavaMapViewTest {
     java.util.stream.Stream<DynamicTest> shouldReadAHashMapLikeAJavaHashMap() {
         return IntStream.of(JavaViewContract.SIZES)
                 .mapToObj(n -> DynamicTest.dynamicTest("HashMap of " + n, () -> {
-                    final java.util.List<Integer> keys = JavaViewContract.evens(n);
+                    java.util.List<Integer> keys = JavaViewContract.evens(n);
                     JavaViewContract.unordered()
                             .map(
                                     "HashMap(" + n + ").asJavaMap()",
@@ -53,7 +53,7 @@ class JavaMapViewTest {
     java.util.stream.Stream<DynamicTest> shouldReadALinkedHashMapLikeAJavaLinkedHashMap() {
         return IntStream.of(JavaViewContract.SIZES)
                 .mapToObj(n -> DynamicTest.dynamicTest("LinkedHashMap of " + n, () -> {
-                    final java.util.List<Integer> keys = shuffled(JavaViewContract.evens(n));
+                    java.util.List<Integer> keys = shuffled(JavaViewContract.evens(n));
                     JavaViewContract.ordered()
                             .sequencedMap(
                                     "LinkedHashMap(" + n + ").asJavaMap()",
@@ -69,10 +69,9 @@ class JavaMapViewTest {
     java.util.stream.Stream<DynamicTest> shouldReadALinkedHashMapWithRemovedAndReplacedKeysLikeAJavaLinkedHashMap() {
         return IntStream.of(JavaViewContract.SIZES)
                 .mapToObj(n -> DynamicTest.dynamicTest("LinkedHashMap of " + n + " minus every third", () -> {
-                    final java.util.List<Integer> keys = shuffled(JavaViewContract.evens(n));
+                    java.util.List<Integer> keys = shuffled(JavaViewContract.evens(n));
                     LinkedHashMap<Integer, String> map = LinkedHashMap.ofEntries(entries(keys));
-                    final java.util.LinkedHashMap<Integer, String> reference =
-                            fill(new java.util.LinkedHashMap<>(), keys);
+                    java.util.LinkedHashMap<Integer, String> reference = fill(new java.util.LinkedHashMap<>(), keys);
                     for (int i = 0; i < keys.size(); i += 3) {
                         map = map.remove(keys.get(i));
                         reference.remove(keys.get(i));
@@ -97,12 +96,12 @@ class JavaMapViewTest {
         return JavaViewContract.comparators().stream()
                 .flatMap(comparator -> IntStream.of(JavaViewContract.SIZES)
                         .mapToObj(n -> DynamicTest.dynamicTest("TreeMap of " + n + " by " + name(comparator), () -> {
-                            final java.util.List<Integer> keys = shuffled(JavaViewContract.evens(n));
-                            final java.util.TreeMap<Integer, String> reference = fill(
+                            java.util.List<Integer> keys = shuffled(JavaViewContract.evens(n));
+                            java.util.TreeMap<Integer, String> reference = fill(
                                     new java.util.TreeMap<>(
                                             comparator == Comparator.<Integer>naturalOrder() ? null : comparator),
                                     keys);
-                            final TreeMap<Integer, String> map = comparator == Comparator.<Integer>naturalOrder()
+                            TreeMap<Integer, String> map = comparator == Comparator.<Integer>naturalOrder()
                                     ? TreeMap.ofEntries(entries(keys))
                                     : TreeMap.ofEntries(comparator, entries(keys));
                             JavaViewContract.ordered()
@@ -119,7 +118,7 @@ class JavaMapViewTest {
 
     @TestFactory
     java.util.stream.Stream<DynamicTest> shouldReadTheEntriesOfAMapLikeAnArrayListOfThem() {
-        final java.util.Map<String, Function<java.util.List<Tuple2<Integer, String>>, Map<Integer, String>>> maps =
+        java.util.Map<String, Function<java.util.List<Tuple2<Integer, String>>, Map<Integer, String>>> maps =
                 new java.util.LinkedHashMap<>();
         maps.put("HashMap", HashMap::ofEntries);
         maps.put("LinkedHashMap", LinkedHashMap::ofEntries);
@@ -127,20 +126,20 @@ class JavaMapViewTest {
         return maps.entrySet().stream()
                 .flatMap(map -> IntStream.of(JavaViewContract.SIZES)
                         .mapToObj(n -> DynamicTest.dynamicTest(map.getKey() + ".asJava() of " + n, () -> {
-                            final Map<Integer, String> zazr =
+                            Map<Integer, String> zazr =
                                     map.getValue().apply(entries(shuffled(JavaViewContract.evens(n))));
-                            final java.util.List<Tuple2<Integer, String>> reference = new java.util.ArrayList<>();
+                            java.util.List<Tuple2<Integer, String>> reference = new java.util.ArrayList<>();
                             for (Tuple2<Integer, String> entry : zazr) {
                                 reference.add(entry);
                             }
-                            final java.util.List<Object> probes = new java.util.ArrayList<>();
+                            java.util.List<Object> probes = new java.util.ArrayList<>();
                             for (Object key : JavaViewContract.keyProbes(n)) {
                                 probes.add(Tuple.of(key, "v" + key));
                                 probes.add(Tuple.of(key, "other"));
                             }
                             probes.add(null);
                             probes.add(JavaViewContract.FOREIGN);
-                            final JavaViewContract contract = map.getKey().equals("HashMap")
+                            JavaViewContract contract = map.getKey().equals("HashMap")
                                     ? JavaViewContract.unordered()
                                     : JavaViewContract.ordered();
                             contract.collection(
@@ -154,7 +153,7 @@ class JavaMapViewTest {
                 HashMap.of(1, "a").asJavaMap(),
                 LinkedHashMap.of(1, "a").asJavaMap(),
                 TreeMap.of(1, "a").asJavaMap())) {
-            final java.util.Map.Entry<Integer, String> entry =
+            java.util.Map.Entry<Integer, String> entry =
                     view.entrySet().iterator().next();
             assertThat(entry).isEqualTo(java.util.Map.entry(1, "a"));
             assertThat(entry.hashCode()).isEqualTo(java.util.Map.entry(1, "a").hashCode());
@@ -191,19 +190,18 @@ class JavaMapViewTest {
 
     @Test
     void shouldLookEntriesUpInsteadOfWalkingThem() {
-        final int n = 1_000;
-        final int[] calls = new int[1];
-        final java.util.List<Tuple2<Key, Integer>> entries = new java.util.ArrayList<>();
+        int n = 1_000;
+        int[] calls = new int[1];
+        java.util.List<Tuple2<Key, Integer>> entries = new java.util.ArrayList<>();
         for (int i = 0; i < n; i++) {
             entries.add(Tuple.of(new Key(i, calls), i));
         }
-        final java.util.Map<String, Map<Key, Integer>> maps = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Map<Key, Integer>> maps = new java.util.LinkedHashMap<>();
         maps.put("HashMap", HashMap.ofEntries(entries));
         maps.put("LinkedHashMap", LinkedHashMap.ofEntries(entries));
         maps.put("TreeMap", TreeMap.ofEntries(entries));
         for (java.util.Map.Entry<String, Map<Key, Integer>> map : maps.entrySet()) {
-            final java.util.Collection<Tuple2<Key, Integer>> view =
-                    map.getValue().asJava();
+            java.util.Collection<Tuple2<Key, Integer>> view = map.getValue().asJava();
             for (int i : new int[] {0, n / 2, n - 1}) {
                 calls[0] = 0;
                 assertThat(view.contains(Tuple.of(new Key(i, calls), i)))
@@ -223,12 +221,12 @@ class JavaMapViewTest {
         // the rule: the key is looked up as the map matches keys (a TreeMap by its comparator), then the values are
         // compared with equals; anything that is not a Tuple2, or a key the map's order cannot compare, is false.
         // java.util.TreeMap.entrySet().contains follows the same rule, and so does a java.util.HashMap for the others.
-        final java.util.Map<String, Map<Integer, String>> maps = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Map<Integer, String>> maps = new java.util.LinkedHashMap<>();
         maps.put("HashMap", HashMap.of(1, "a", 2, "b"));
         maps.put("LinkedHashMap", LinkedHashMap.of(1, "a", 2, "b"));
         maps.put("TreeMap", TreeMap.of(1, "a", 2, "b"));
         maps.put("TreeMap(reverse)", TreeMap.of(Comparator.<Integer>reverseOrder(), 1, "a", 2, "b"));
-        final java.util.List<Object> probes = java.util.Arrays.asList(
+        java.util.List<Object> probes = java.util.Arrays.asList(
                 Tuple.of(1, "a"),
                 Tuple.of(2, "b"),
                 Tuple.of(1, "b"),
@@ -242,11 +240,11 @@ class JavaMapViewTest {
                 java.util.Map.entry(1, "a"),
                 Tuple.of(1));
         for (java.util.Map.Entry<String, Map<Integer, String>> map : maps.entrySet()) {
-            final java.util.Map<Integer, String> reference = map.getKey().startsWith("TreeMap")
+            java.util.Map<Integer, String> reference = map.getKey().startsWith("TreeMap")
                     ? new java.util.TreeMap<>(map.getValue().asJavaMap())
                     : new java.util.HashMap<>(map.getValue().asJavaMap());
             for (Object probe : probes) {
-                final boolean expected = probe instanceof Tuple2<?, ?> t
+                boolean expected = probe instanceof Tuple2<?, ?> t
                         && lookup(reference, t._1())
                         && java.util.Objects.equals(reference.get(t._1()), t._2());
                 assertThat(map.getValue().asJava().contains(probe))
@@ -267,8 +265,8 @@ class JavaMapViewTest {
 
     @Test
     void shouldMatchTheKeyByTheComparatorOfATreeMap() {
-        final TreeMap<String, Integer> map = TreeMap.of(String.CASE_INSENSITIVE_ORDER, "a", 1, "B", 2);
-        final java.util.TreeMap<String, Integer> reference = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        TreeMap<String, Integer> map = TreeMap.of(String.CASE_INSENSITIVE_ORDER, "a", 1, "B", 2);
+        java.util.TreeMap<String, Integer> reference = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         reference.put("a", 1);
         reference.put("B", 2);
         for (Tuple2<String, Integer> probe :

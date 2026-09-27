@@ -35,7 +35,7 @@ public class NonEmptySortedMapTest {
 
     /* (size, map) in the natural and the reverse order of the keys */
     static Stream<Arguments> maps() {
-        final ArrayList<Arguments> cases = new ArrayList<>();
+        ArrayList<Arguments> cases = new ArrayList<>();
         for (int n : SIZES) {
             cases.add(Arguments.of(n, TreeMap.ofEntries(entries(0, n))));
             cases.add(Arguments.of(n, TreeMap.ofEntries(Comparator.<Integer>reverseOrder(), entries(0, n))));
@@ -48,7 +48,7 @@ public class NonEmptySortedMapTest {
     }
 
     static <A> Iterable<A> once(Iterable<A> elements) {
-        final boolean[] read = {false};
+        boolean[] read = {false};
         return () -> {
             if (read[0]) {
                 throw new IllegalStateException("read twice");
@@ -64,7 +64,7 @@ public class NonEmptySortedMapTest {
         @Test
         @SuppressWarnings("unchecked")
         public void shouldBuildInNaturalOrderOrByAComparator() {
-            final Comparator<Integer> reverse = Comparator.reverseOrder();
+            Comparator<Integer> reverse = Comparator.reverseOrder();
             assertThat(NonEmptySortedMap.single(1, "a").toSortedMap()).isEqualTo(TreeMap.of(1, "a"));
             assertThat(NonEmptySortedMap.single(reverse, 1, "a").comparator().compare(1, 2))
                     .isPositive();
@@ -75,8 +75,8 @@ public class NonEmptySortedMapTest {
                             .head())
                     .isEqualTo(Tuple.of(2, "b"));
             for (int n : SIZES) {
-                final TreeMap<Integer, String> expected = TreeMap.ofEntries(entries(0, n));
-                final Vector<Tuple2<Integer, String>> tail = entries(1, n).reverse();
+                TreeMap<Integer, String> expected = TreeMap.ofEntries(entries(0, n));
+                Vector<Tuple2<Integer, String>> tail = entries(1, n).reverse();
                 assertThat(NonEmptySortedMap.of(Tuple.of(0, "v0"), tail.toArray(Tuple2[]::new))
                                 .toSortedMap())
                         .isEqualTo(expected);
@@ -118,8 +118,7 @@ public class NonEmptySortedMapTest {
         @Test
         public void shouldWrapWithoutCopyingAndNarrow() {
             for (int n : SIZES) {
-                final TreeMap<Integer, String> map =
-                        TreeMap.ofEntries(Comparator.<Integer>reverseOrder(), entries(0, n));
+                TreeMap<Integer, String> map = TreeMap.ofEntries(Comparator.<Integer>reverseOrder(), entries(0, n));
                 assertThat(NonEmptySortedMap.fromSortedMap(map).get().toSortedMap())
                         .isSameAs(map);
                 assertThat(NonEmptySortedMap.unsafeFromSortedMap(map).toSortedMap())
@@ -181,7 +180,7 @@ public class NonEmptySortedMapTest {
             assertThatNullPointerException()
                     .isThrownBy(() -> NonEmptySortedMap.unsafeFromSortedMap(null))
                     .withMessage("NonEmptySortedMap.unsafeFromSortedMap: map is null");
-            final NonEmptySortedMap<Integer, String> nesm = NonEmptySortedMap.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
+            NonEmptySortedMap<Integer, String> nesm = NonEmptySortedMap.of(Tuple.of(1, "a"), Tuple.of(2, "b"));
             assertThatNullPointerException()
                     .isThrownBy(() -> nesm.put(null, "a"))
                     .withMessage("NonEmptySortedMap.put: key is null");
@@ -214,7 +213,7 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldPutMergeAndComputeKeepingTheComparator(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
             assertThat(nesm.put(-1, "x").toSortedMap()).isEqualTo(map.put(-1, "x"));
             assertThat(nesm.put(-1, "x").comparator()).isSameAs(map.comparator());
             assertThat(nesm.put(Tuple.of(-1, "x")).toSortedMap()).isEqualTo(map.put(Tuple.of(-1, "x")));
@@ -222,7 +221,7 @@ public class NonEmptySortedMapTest {
             assertThat(nesm.put(Tuple.of(0, "x"), String::concat).toSortedMap())
                     .isEqualTo(map.put(Tuple.of(0, "x"), String::concat));
             assertThat(nesm.toSortedMap()).isSameAs(map);
-            final HashMap<Integer, String> that =
+            HashMap<Integer, String> that =
                     HashMap.ofEntries(Vector.range(n / 2, n / 2 + 40).map(i -> Tuple.of(i, "w" + i)));
             assertThat(nesm.merge(that).toSortedMap()).isEqualTo(map.merge(that));
             assertThat(nesm.merge(that, String::concat).toSortedMap()).isEqualTo(map.merge(that, String::concat));
@@ -236,8 +235,8 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldMapWithOrWithoutAComparator(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
-            final Comparator<Integer> reverse = Comparator.reverseOrder();
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            Comparator<Integer> reverse = Comparator.reverseOrder();
             assertThat(nesm.map((k, v) -> Tuple.of(-k, v)).toSortedMap()).isEqualTo(map.map((k, v) -> Tuple.of(-k, v)));
             assertThat(nesm.map(reverse, (k, v) -> Tuple.of(-k, v)).toSortedMap())
                     .isEqualTo(map.map(reverse, (k, v) -> Tuple.of(-k, v)));
@@ -268,7 +267,7 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldReplaceAndTap(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
             assertThat(nesm.replace(Tuple.of(0, "v0"), Tuple.of(-1, "x")).toSortedMap())
                     .isEqualTo(map.replace(Tuple.of(0, "v0"), Tuple.of(-1, "x")));
             assertThat(nesm.replace(Tuple.of(0, "v0"), Tuple.of(n - 1, "x")).size())
@@ -278,7 +277,7 @@ public class NonEmptySortedMapTest {
             assertThat(nesm.replace(0, "v0", "x").toSortedMap()).isEqualTo(map.replace(0, "v0", "x"));
             assertThat(nesm.replaceAll((k, v) -> v + k).toSortedMap()).isEqualTo(map.replaceAll((k, v) -> v + k));
             assertThat(nesm.replaceValue(0, "x").toSortedMap()).isEqualTo(map.replaceValue(0, "x"));
-            final java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
+            java.util.List<Tuple2<Integer, String>> seen = new java.util.ArrayList<>();
             assertThat(nesm.tap(seen::add)).isSameAs(nesm);
             assertThat(seen).containsExactlyElementsOf(map);
         }
@@ -286,7 +285,7 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldReturnNonEmptyKeysValuesAndGroups(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
             assertThat(nesm.keySet().toSortedSet()).isEqualTo(map.keySet());
             assertThat(nesm.keySet().comparator()).isSameAs(map.comparator());
             assertThat(nesm.keySet().head()).isEqualTo(map.head()._1());
@@ -305,7 +304,7 @@ public class NonEmptySortedMapTest {
             for (Function<Tuple2<Integer, String>, Integer> classifier :
                     java.util.List.<Function<Tuple2<Integer, String>, Integer>>of(
                             t -> 0, t -> t._1() % 3, Tuple2::_1)) {
-                final NonEmptyMap<Integer, NonEmptySortedMap<Integer, String>> groups = nesm.groupBy(classifier);
+                NonEmptyMap<Integer, NonEmptySortedMap<Integer, String>> groups = nesm.groupBy(classifier);
                 assertThat(groups.mapValues(NonEmptySortedMap::toSortedMap).toMap())
                         .isEqualTo(map.groupBy(classifier));
                 assertThat(groups.values().forAll(group -> group.comparator() == map.comparator()))
@@ -320,8 +319,8 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldShrinkDownToEmpty(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
-            final Comparator<Integer> reverse = Comparator.reverseOrder();
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            Comparator<Integer> reverse = Comparator.reverseOrder();
             assertThat(nesm.filter((k, v) -> k % 2 == 0)).isEqualTo(map.filter((k, v) -> k % 2 == 0));
             assertThat(nesm.filter(t -> t._1() % 2 == 0)).isEqualTo(map.filter(t -> t._1() % 2 == 0));
             assertThat(nesm.filter((k, v) -> false)).isEmpty();
@@ -355,7 +354,7 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldTakeAndDropByPosition(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
             assertThat(nesm.tail()).isEqualTo(map.tail());
             assertThat(nesm.init()).isEqualTo(map.init());
             for (int k : new int[] {Integer.MIN_VALUE, -1, 0, 1, n - 1, n, n + 1, Integer.MAX_VALUE}) {
@@ -364,7 +363,7 @@ public class NonEmptySortedMapTest {
                 assertThat(nesm.drop(k)).isEqualTo(map.drop(k));
                 assertThat(nesm.dropRight(k)).isEqualTo(map.dropRight(k));
             }
-            final int middle = n / 2;
+            int middle = n / 2;
             assertThat(nesm.takeWhile(t -> t._1() != middle)).isEqualTo(map.takeWhile(t -> t._1() != middle));
             assertThat(nesm.takeUntil(t -> t._1() == middle)).isEqualTo(map.takeUntil(t -> t._1() == middle));
             assertThat(nesm.dropWhile(t -> t._1() != middle)).isEqualTo(map.dropWhile(t -> t._1() != middle));
@@ -378,7 +377,7 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldReturnHeadLastAndTheNaturalMaxAndMin(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
             assertThat(nesm.head()).isEqualTo(map.head());
             assertThat(nesm.last()).isEqualTo(map.last());
             // max and min ignore the comparator, as on TreeMap
@@ -404,7 +403,7 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldQueryIterateAndConvert(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
             assertThat(nesm.size()).isEqualTo(n);
             assertThat(nesm.get(0)).isEqualTo(Option.some("v0"));
             assertThat(nesm.getOrElse(-1, "d")).isEqualTo("d");
@@ -419,7 +418,7 @@ public class NonEmptySortedMapTest {
             assertThat(nesm.find(t -> t._1() % 2 == 0)).isEqualTo(map.find(t -> t._1() % 2 == 0));
             assertThat(nesm.foldLeft("", (s, t) -> s + t._1())).isEqualTo(map.foldLeft("", (s, t) -> s + t._1()));
             assertThat(nesm.arrangeBy(Tuple2::_2)).isEqualTo(map.arrangeBy(Tuple2::_2));
-            final java.util.List<Integer> keys = new java.util.ArrayList<>();
+            java.util.List<Integer> keys = new java.util.ArrayList<>();
             nesm.forEach((k, v) -> keys.add(k));
             assertThat(keys).containsExactlyElementsOf(map.keySet());
             assertThat(nesm).containsExactlyElementsOf(map);
@@ -438,7 +437,7 @@ public class NonEmptySortedMapTest {
                     .containsExactlyElementsOf(map);
             assertThat(nesm.toArray()).isEqualTo(map.toArray());
             @SuppressWarnings("unchecked")
-            final Tuple2<Integer, String>[] array = nesm.toArray(Tuple2[]::new);
+            Tuple2<Integer, String>[] array = nesm.toArray(Tuple2[]::new);
             assertThat(array).containsExactlyElementsOf(map);
             assertThat(nesm.toVector()).isEqualTo(map.toVector());
             assertThat(nesm.toList()).isEqualTo(map.toList());
@@ -473,7 +472,7 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldNarrowTailAndInit(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
             if (n == 1) {
                 assertThat(nesm.tailNonEmpty()).isEqualTo(Option.none());
                 assertThat(nesm.initNonEmpty()).isEqualTo(Option.none());
@@ -488,9 +487,9 @@ public class NonEmptySortedMapTest {
     class NonEmptyGuarantee {
 
         static java.util.Map<String, Function<NonEmptySortedMap<Integer, String>, java.util.List<Object>>> calls() {
-            final java.util.Map<String, Function<NonEmptySortedMap<Integer, String>, java.util.List<Object>>> calls =
+            java.util.Map<String, Function<NonEmptySortedMap<Integer, String>, java.util.List<Object>>> calls =
                     new java.util.HashMap<>();
-            final Comparator<Integer> reverse = Comparator.reverseOrder();
+            Comparator<Integer> reverse = Comparator.reverseOrder();
             // constructors and narrowings
             calls.put("single(Comparable, Object)", m -> java.util.List.of(NonEmptySortedMap.single(0, "a")));
             calls.put(
@@ -657,8 +656,8 @@ public class NonEmptySortedMapTest {
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
         public void shouldBeEqualToANonEmptyMapWithTheSameEntries(int n, TreeMap<Integer, String> map) {
-            final NonEmptySortedMap<Integer, String> nesm = nesm(map);
-            final NonEmptySortedMap<Integer, String> natural =
+            NonEmptySortedMap<Integer, String> nesm = nesm(map);
+            NonEmptySortedMap<Integer, String> natural =
                     NonEmptySortedMap.fromIterable(map.toVector()).get();
             assertThat(nesm).isEqualTo(natural);
             assertThat(nesm.hashCode()).isEqualTo(natural.hashCode());

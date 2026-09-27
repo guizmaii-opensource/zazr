@@ -147,7 +147,7 @@ public interface Function7<
                             partialFunction) {
         return (t1, t2, t3, t4, t5, t6, t7) -> {
             try {
-                final R result = partialFunction.apply(t1, t2, t3, t4, t5, t6, t7);
+                R result = partialFunction.apply(t1, t2, t3, t4, t5, t6, t7);
                 return result == null ? Option.<R>none() : Option.some(result);
             } catch (Throwable t) {
                 if (isFatal(t)) {

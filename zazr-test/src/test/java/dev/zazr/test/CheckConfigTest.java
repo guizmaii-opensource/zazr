@@ -14,7 +14,7 @@ class CheckConfigTest {
 
     @Test
     void defaultsAreTheDocumentedOnes() {
-        final CheckConfig config = from(Map.of());
+        CheckConfig config = from(Map.of());
         assertThat(config.samples()).isEqualTo(200).isEqualTo(CheckConfig.DEFAULT_SAMPLES);
         assertThat(config.size()).isEqualTo(100).isEqualTo(CheckConfig.DEFAULT_SIZE);
         assertThat(config.maxDiscards()).isEqualTo(1000).isEqualTo(CheckConfig.DEFAULT_MAX_DISCARDS);
@@ -22,7 +22,7 @@ class CheckConfigTest {
 
     @Test
     void defaultsDrawAFreshSeedEachTime() {
-        final java.util.Set<Long> seeds = new java.util.HashSet<>();
+        java.util.Set<Long> seeds = new java.util.HashSet<>();
         for (int i = 0; i < 20; i++) {
             seeds.add(from(Map.of()).seed());
         }
@@ -31,7 +31,7 @@ class CheckConfigTest {
 
     @Test
     void systemPropertiesReplaceTheDefaults() {
-        final CheckConfig config = from(Map.of(
+        CheckConfig config = from(Map.of(
                 CheckConfig.SAMPLES_PROPERTY, "7",
                 CheckConfig.SIZE_PROPERTY, " 3 ",
                 CheckConfig.SEED_PROPERTY, "-42",
@@ -82,14 +82,14 @@ class CheckConfigTest {
     @Test
     void readsTheSystemProperties() {
         // the system properties are not set by the build, so the defaults come back
-        final CheckConfig config = CheckConfig.defaults();
+        CheckConfig config = CheckConfig.defaults();
         assertThat(config.samples()).isEqualTo(Integer.getInteger(CheckConfig.SAMPLES_PROPERTY, 200));
         assertThat(config.size()).isEqualTo(Integer.getInteger(CheckConfig.SIZE_PROPERTY, 100));
     }
 
     @Test
     void withersReplaceOneComponent() {
-        final CheckConfig config = new CheckConfig(1, 2, 3L, 4);
+        CheckConfig config = new CheckConfig(1, 2, 3L, 4);
         assertThat(config.withSamples(10)).isEqualTo(new CheckConfig(10, 2, 3L, 4));
         assertThat(config.withSize(20)).isEqualTo(new CheckConfig(1, 20, 3L, 4));
         assertThat(config.withSeed(30L)).isEqualTo(new CheckConfig(1, 2, 30L, 4));
@@ -115,7 +115,7 @@ class CheckConfigTest {
         assertThatThrownBy(() -> new CheckConfig(0, 0, 0L, -1))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("maxDiscards");
-        final CheckConfig config = new CheckConfig(1, 1, 1L, 1);
+        CheckConfig config = new CheckConfig(1, 1, 1L, 1);
         assertThatThrownBy(() -> config.withSamples(-1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> config.withSize(-1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> config.withMaxDiscards(-1)).isInstanceOf(IllegalArgumentException.class);

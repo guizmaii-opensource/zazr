@@ -73,7 +73,7 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
                     || !java.util.Arrays.equals(x.hashes, y.hashes)) {
                 return false;
             }
-            final int payload = 2 * Integer.bitCount(x.dataMap);
+            int payload = 2 * Integer.bitCount(x.dataMap);
             for (int i = 0; i < payload; i++) {
                 if (!java.util.Objects.equals(x.content[i], y.content[i])) {
                     return false;
@@ -90,7 +90,7 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
                 return false;
             }
             for (int i = 0; i < x.content.length; i += 2) {
-                final int j = y.indexOf(x.content[i]);
+                int j = y.indexOf(x.content[i]);
                 if (j < 0 || !java.util.Objects.equals(x.content[i + 1], y.content[2 * j + 1])) {
                     return false;
                 }
@@ -108,11 +108,11 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     /// Calls `action` with the key and the value of every entry of this subtree, in iteration order: the entries of a
     /// node before those of its children.
     public final void forEach(BiConsumer<? super K, ? super V> action) {
-        final int payload = payloadArity();
+        int payload = payloadArity();
         for (int i = 0; i < payload; i++) {
             action.accept(getKey(i), getValue(i));
         }
-        final int children = nodeArity();
+        int children = nodeArity();
         for (int i = 0; i < children; i++) {
             getNode(i).forEach(action);
         }
@@ -146,7 +146,7 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
 
         @Override
         protected T getNext() {
-            final int cursor = currentValueCursor++;
+            int cursor = currentValueCursor++;
             return f.apply(currentValueNode.getKey(cursor), currentValueNode.getValue(cursor));
         }
     }

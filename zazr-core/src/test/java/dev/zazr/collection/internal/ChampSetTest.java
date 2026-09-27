@@ -32,7 +32,7 @@ public class ChampSetTest {
 
     // keys of mixed hashes 0 to size - 1: the first 32 fill the root, the first 1024 two levels
     private static java.util.List<Key> keys(int size) {
-        final java.util.List<Key> result = new ArrayList<>(size);
+        java.util.List<Key> result = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             result.add(new Key(i, 0));
         }
@@ -62,7 +62,7 @@ public class ChampSetTest {
     };
 
     private static Key randomKey(Random random) {
-        final int hash = switch (random.nextInt(4)) {
+        int hash = switch (random.nextInt(4)) {
             case 0 -> HOT_HASHES[random.nextInt(HOT_HASHES.length)];
             case 1 -> random.nextInt(64);
             case 2 -> random.nextInt(64) << (5 * (1 + random.nextInt(5)));
@@ -81,7 +81,7 @@ public class ChampSetTest {
     }
 
     private static <T> BitmapIndexedSetNode<T> built(java.util.List<T> elements) {
-        final HashSetBuilder<T> builder = new HashSetBuilder<>("test");
+        HashSetBuilder<T> builder = new HashSetBuilder<>("test");
         for (T element : elements) {
             builder.checkOpen();
             builder.add(element);
@@ -91,7 +91,7 @@ public class ChampSetTest {
     }
 
     private static java.util.List<Integer> ids(int size) {
-        final java.util.List<Integer> values = new ArrayList<>(size);
+        java.util.List<Integer> values = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             values.add(i);
         }
@@ -99,7 +99,7 @@ public class ChampSetTest {
     }
 
     private static <T> java.util.List<T> elements(SetNode<T> trie) {
-        final java.util.List<T> result = new ArrayList<>();
+        java.util.List<T> result = new ArrayList<>();
         trie.iterator().forEachRemaining(result::add);
         return result;
     }
@@ -107,7 +107,7 @@ public class ChampSetTest {
     // asserts that the trie holds exactly the elements of the model, by the identity of the kept element objects
     private static void assertHolds(BitmapIndexedSetNode<Key> trie, java.util.Map<Key, Key> model) {
         assertThat(trie.size()).isEqualTo(model.size());
-        final java.util.Map<Key, Key> actual = new java.util.HashMap<>();
+        java.util.Map<Key, Key> actual = new java.util.HashMap<>();
         for (Key element : elements(trie)) {
             assertThat(actual.put(element, element)).as("each element once").isNull();
         }
@@ -120,7 +120,7 @@ public class ChampSetTest {
 
     private static void assertCanonical(BitmapIndexedSetNode<Key> trie) {
         assertValid(trie);
-        final java.util.List<Key> all = elements(trie);
+        java.util.List<Key> all = elements(trie);
         Collections.reverse(all);
         assertSameShape(persistent(all), trie, false);
     }
@@ -138,7 +138,7 @@ public class ChampSetTest {
         assertThat(trie.contains(2)).isFalse();
         assertThat(trie.contains(65)).isFalse();
         assertThat(trie.contains(null)).isFalse();
-        final BitmapIndexedSetNode<Key> colliding =
+        BitmapIndexedSetNode<Key> colliding =
                 SetNode.<Key>empty().updated(new Key(7, 0), true).updated(new Key(7, 1), true);
         assertThat(colliding.contains(new Key(7, 1))).isTrue();
         assertThat(colliding.contains(new Key(7, 2))).isFalse();
@@ -148,7 +148,7 @@ public class ChampSetTest {
     @Test
     public void shouldHoldUpTo32ElementsInlineInTheRootAndPushTheThirtyThirdDown() {
         for (int size : new int[] {0, 1, 2, 31, 32, 33}) {
-            final BitmapIndexedSetNode<Key> trie = persistent(keys(size));
+            BitmapIndexedSetNode<Key> trie = persistent(keys(size));
             assertValid(trie);
             if (size <= 32) {
                 assertThat(trie.nodeMap).isZero();
@@ -160,7 +160,7 @@ public class ChampSetTest {
             }
         }
         for (int size : new int[] {1023, 1024, 1025}) {
-            final BitmapIndexedSetNode<Key> trie = persistent(keys(size));
+            BitmapIndexedSetNode<Key> trie = persistent(keys(size));
             assertValid(trie);
             assertThat(trie.nodeMap).isEqualTo(-1);
             assertThat(((BitmapIndexedSetNode<Key>) trie.getNode(0)).nodeMap).isEqualTo(size == 1025 ? 1 : 0);
@@ -169,22 +169,21 @@ public class ChampSetTest {
 
     @Test
     public void shouldPutElementsOfOneHashInACollisionNodeAndPullTheLastOneBackUp() {
-        final BitmapIndexedSetNode<Key> trie =
-                persistent(java.util.List.of(new Key(5, 0), new Key(5, 1), new Key(5, 2)));
+        BitmapIndexedSetNode<Key> trie = persistent(java.util.List.of(new Key(5, 0), new Key(5, 1), new Key(5, 2)));
         assertValid(trie);
         SetNode<Key> node = trie;
         for (int level = 0; level < 7; level++) {
             node = node.getNode(0);
         }
         assertThat(node).isInstanceOf(HashCollisionSetNode.class);
-        final BitmapIndexedSetNode<Key> one = trie.removed(new Key(5, 0)).removed(new Key(5, 2));
+        BitmapIndexedSetNode<Key> one = trie.removed(new Key(5, 0)).removed(new Key(5, 2));
         assertValid(one);
         assertThat(one.nodeMap).isZero();
         assertThat(one.dataMap).isEqualTo(1 << 5);
         // a root that keeps other elements inlines the survivor of a deep chain
-        final BitmapIndexedSetNode<Key> mixed =
+        BitmapIndexedSetNode<Key> mixed =
                 persistent(java.util.List.of(new Key(0, 0), new Key(1 << 30, 0), new Key(7, 0)));
-        final BitmapIndexedSetNode<Key> after = mixed.removed(new Key(1 << 30, 0));
+        BitmapIndexedSetNode<Key> after = mixed.removed(new Key(1 << 30, 0));
         assertCanonical(after);
         assertThat(after.nodeMap).isZero();
     }
@@ -194,8 +193,8 @@ public class ChampSetTest {
     @Test
     public void shouldReplaceAnEqualElementOnlyWhenAsked() {
         for (boolean colliding : new boolean[] {false, true}) {
-            final Key first = new Key(3, 0);
-            final Key second = new Key(3, 0);
+            Key first = new Key(3, 0);
+            Key second = new Key(3, 0);
             BitmapIndexedSetNode<Key> trie = SetNode.empty();
             if (colliding) {
                 trie = trie.updated(new Key(3, 1), true);
@@ -203,7 +202,7 @@ public class ChampSetTest {
             trie = trie.updated(first, true);
             assertThat(trie.updated(first, true)).isSameAs(trie);
             assertThat(trie.updated(second, false)).isSameAs(trie);
-            final BitmapIndexedSetNode<Key> replaced = trie.updated(second, true);
+            BitmapIndexedSetNode<Key> replaced = trie.updated(second, true);
             assertValid(replaced);
             assertThat(elements(replaced)).anySatisfy(e -> assertThat(e).isSameAs(second));
             assertThat(elements(replaced)).noneSatisfy(e -> assertThat(e).isSameAs(first));
@@ -215,17 +214,17 @@ public class ChampSetTest {
     @Test
     public void shouldMatchAModelAndStayCanonicalOnRandomAdditionsAndRemovals() {
         for (long seed = 0; seed < 20; seed++) {
-            final Random random = new Random(SEED + seed);
-            final java.util.Map<Key, Key> model = new java.util.HashMap<>();
-            final java.util.List<BitmapIndexedSetNode<Key>> versions = new ArrayList<>();
-            final java.util.List<java.util.Map<Key, Key>> versionModels = new ArrayList<>();
+            Random random = new Random(SEED + seed);
+            java.util.Map<Key, Key> model = new java.util.HashMap<>();
+            java.util.List<BitmapIndexedSetNode<Key>> versions = new ArrayList<>();
+            java.util.List<java.util.Map<Key, Key>> versionModels = new ArrayList<>();
             BitmapIndexedSetNode<Key> trie = SetNode.empty();
-            final int steps = random.nextInt(4) == 0 ? random.nextInt(60) : random.nextInt(2500);
+            int steps = random.nextInt(4) == 0 ? random.nextInt(60) : random.nextInt(2500);
             for (int step = 0; step < steps; step++) {
-                final Key key = randomKey(random);
-                final int op = random.nextInt(4);
+                Key key = randomKey(random);
+                int op = random.nextInt(4);
                 if (op == 0) {
-                    final BitmapIndexedSetNode<Key> after = trie.removed(key);
+                    BitmapIndexedSetNode<Key> after = trie.removed(key);
                     if (model.remove(key) == null) {
                         assertThat(after).isSameAs(trie);
                     }
@@ -236,7 +235,7 @@ public class ChampSetTest {
                     }
                 } else if (op == 1) {
                     // an addition that keeps an equal element already there
-                    final BitmapIndexedSetNode<Key> after = trie.updated(key, false);
+                    BitmapIndexedSetNode<Key> after = trie.updated(key, false);
                     if (model.putIfAbsent(key, key) != null) {
                         assertThat(after).isSameAs(trie);
                     }
@@ -256,7 +255,7 @@ public class ChampSetTest {
                 assertValid(versions.get(i));
                 assertHolds(versions.get(i), versionModels.get(i));
             }
-            final java.util.List<Key> keys = new ArrayList<>(model.keySet());
+            java.util.List<Key> keys = new ArrayList<>(model.keySet());
             Collections.shuffle(keys, random);
             for (Key key : keys) {
                 trie = trie.removed(new Key(key.hash(), key.id()));
@@ -273,8 +272,8 @@ public class ChampSetTest {
         assertThat(elements(persistent(java.util.List.of(new Key(0, 0), new Key(32, 0), new Key(1, 0), new Key(2, 0)))))
                 .containsExactly(new Key(1, 0), new Key(2, 0), new Key(0, 0), new Key(32, 0));
         for (int size : SIZES) {
-            final java.util.Iterator<Integer> it = persistent(ids(size)).iterator();
-            final java.util.Set<Integer> seen = new java.util.HashSet<>();
+            java.util.Iterator<Integer> it = persistent(ids(size)).iterator();
+            java.util.Set<Integer> seen = new java.util.HashSet<>();
             while (it.hasNext()) {
                 assertThat(seen.add(it.next())).isTrue();
             }
@@ -288,27 +287,27 @@ public class ChampSetTest {
     @Test
     public void shouldBuildTheTrieOfSuccessiveAdditionsAtEveryBoundaryAndOnRandomElements() {
         for (int size : SIZES) {
-            final java.util.List<Key> placed = keys(size);
+            java.util.List<Key> placed = keys(size);
             assertSameShape(persistent(placed), built(placed), true);
-            final java.util.List<Integer> elements = ids(size);
-            final BitmapIndexedSetNode<Integer> built = built(elements);
+            java.util.List<Integer> elements = ids(size);
+            BitmapIndexedSetNode<Integer> built = built(elements);
             assertValid(built);
             assertSameShape(persistent(elements), built, true);
         }
-        final Random random = new Random(SEED);
+        Random random = new Random(SEED);
         for (int round = 0; round < 150; round++) {
-            final int size = random.nextInt(3000);
-            final int hashRange = 1 + random.nextInt(round % 3 == 0 ? 50 : Integer.MAX_VALUE);
-            final int idRange = 1 + random.nextInt(4);
-            final java.util.List<Key> elements = new ArrayList<>(size);
-            final java.util.Map<Key, Key> model = new java.util.HashMap<>();
+            int size = random.nextInt(3000);
+            int hashRange = 1 + random.nextInt(round % 3 == 0 ? 50 : Integer.MAX_VALUE);
+            int idRange = 1 + random.nextInt(4);
+            java.util.List<Key> elements = new ArrayList<>(size);
+            java.util.Map<Key, Key> model = new java.util.HashMap<>();
             for (int i = 0; i < size; i++) {
-                final int hash = random.nextBoolean() ? random.nextInt(hashRange) : -random.nextInt(hashRange);
-                final Key key = new Key(hash, random.nextInt(idRange));
+                int hash = random.nextBoolean() ? random.nextInt(hashRange) : -random.nextInt(hashRange);
+                Key key = new Key(hash, random.nextInt(idRange));
                 elements.add(key);
                 model.putIfAbsent(key, key);
             }
-            final BitmapIndexedSetNode<Key> built = built(elements);
+            BitmapIndexedSetNode<Key> built = built(elements);
             assertValid(built);
             assertSameShape(persistent(elements), built, true);
             // the first of equal elements is kept
@@ -319,8 +318,8 @@ public class ChampSetTest {
     @Test
     public void shouldOwnEveryNodeItCreatesAndNeverChangeTheReturnedTrie() {
         for (int size : SIZES) {
-            final BitmapIndexedSetNode<Integer> built = built(ids(size));
-            final Set<Object> owners = Collections.newSetFromMap(new IdentityHashMap<>());
+            BitmapIndexedSetNode<Integer> built = built(ids(size));
+            Set<Object> owners = Collections.newSetFromMap(new IdentityHashMap<>());
             internalNodes(built).forEach(node -> owners.add(((BitmapIndexedSetNode<?>) node).owner));
             if (size == 0) {
                 assertThat(built).isSameAs(SetNode.empty());
@@ -331,8 +330,8 @@ public class ChampSetTest {
         internalNodes(persistent(ids(1025)))
                 .forEach(node ->
                         assertThat(((BitmapIndexedSetNode<?>) node).owner).isNull());
-        final BitmapIndexedSetNode<Integer> built = built(ids(1025));
-        final String before = describe(built);
+        BitmapIndexedSetNode<Integer> built = built(ids(1025));
+        String before = describe(built);
         BitmapIndexedSetNode<Integer> updated = built;
         for (int i = 0; i < 2000; i += 3) {
             updated = updated.updated(i + 5000, true).removed(i + 1);
@@ -342,21 +341,21 @@ public class ChampSetTest {
 
     @Test
     public void shouldAdoptATrieAndCopyItsNodesOnFirstWrite() {
-        final Random random = new Random(SEED);
+        Random random = new Random(SEED);
         for (int size : new int[] {1, 2, 31, 32, 33, 1023, 1024, 1025, 32768}) {
-            final java.util.List<Integer> elements = ids(size);
-            final BitmapIndexedSetNode<Integer> source = persistent(elements);
-            final String sourceBefore = describe(source);
-            final Set<Object> sourceNodes = internalNodes(source);
-            final HashSetBuilder<Integer> builder = new HashSetBuilder<>("test");
+            java.util.List<Integer> elements = ids(size);
+            BitmapIndexedSetNode<Integer> source = persistent(elements);
+            String sourceBefore = describe(source);
+            Set<Object> sourceNodes = internalNodes(source);
+            HashSetBuilder<Integer> builder = new HashSetBuilder<>("test");
             builder.addAll(source);
-            final java.util.List<Integer> more = new ArrayList<>(elements);
+            java.util.List<Integer> more = new ArrayList<>(elements);
             for (int i = 0; i < 50; i++) {
-                final Integer element = random.nextInt(size * 2 + 1);
+                Integer element = random.nextInt(size * 2 + 1);
                 builder.add(element);
                 more.add(element);
             }
-            final BitmapIndexedSetNode<Integer> built = builder.result();
+            BitmapIndexedSetNode<Integer> built = builder.result();
             assertThat(describe(source)).isEqualTo(sourceBefore);
             assertValid(built);
             assertSameShape(persistent(more), built, true);
@@ -373,8 +372,8 @@ public class ChampSetTest {
             }
         }
         // nothing added after the adoption: the adopted trie itself
-        final BitmapIndexedSetNode<Integer> source = persistent(ids(100));
-        final HashSetBuilder<Integer> builder = new HashSetBuilder<>("test");
+        BitmapIndexedSetNode<Integer> source = persistent(ids(100));
+        HashSetBuilder<Integer> builder = new HashSetBuilder<>("test");
         builder.addAll(source);
         builder.addAll(SetNode.empty());
         assertThat(builder.result()).isSameAs(source);
@@ -383,15 +382,15 @@ public class ChampSetTest {
     @Test
     public void shouldNeverChangeAnAdoptedTrieBuiltByPersistentOperations() {
         for (long seed = 1; seed <= 12; seed++) {
-            final Random random = new Random(SEED + seed);
-            final java.util.List<BitmapIndexedSetNode<Key>> pool = new ArrayList<>();
-            final java.util.List<java.util.Map<Key, Key>> poolContents = new ArrayList<>();
+            Random random = new Random(SEED + seed);
+            java.util.List<BitmapIndexedSetNode<Key>> pool = new ArrayList<>();
+            java.util.List<java.util.Map<Key, Key>> poolContents = new ArrayList<>();
             for (int i = 0; i < 4; i++) {
                 BitmapIndexedSetNode<Key> trie = SetNode.empty();
-                final java.util.Map<Key, Key> model = new java.util.HashMap<>();
-                final int size = random.nextInt(4) == 0 ? random.nextInt(40) : random.nextInt(1500);
+                java.util.Map<Key, Key> model = new java.util.HashMap<>();
+                int size = random.nextInt(4) == 0 ? random.nextInt(40) : random.nextInt(1500);
                 for (int j = 0; j < size; j++) {
-                    final Key key = randomKey(random);
+                    Key key = randomKey(random);
                     trie = trie.updated(key, true);
                     model.put(key, key);
                 }
@@ -405,35 +404,35 @@ public class ChampSetTest {
                 poolContents.add(model);
             }
             for (int step = 0; step < 25; step++) {
-                final java.util.List<String> snapshots =
+                java.util.List<String> snapshots =
                         pool.stream().map(ChampValidity::describe).toList();
-                final int from = random.nextInt(pool.size());
-                final HashSetBuilder<Key> left = new HashSetBuilder<>("test");
-                final HashSetBuilder<Key> right = new HashSetBuilder<>("test");
+                int from = random.nextInt(pool.size());
+                HashSetBuilder<Key> left = new HashSetBuilder<>("test");
+                HashSetBuilder<Key> right = new HashSetBuilder<>("test");
                 left.addAll(pool.get(from));
                 right.addAll(pool.get(from));
-                final java.util.Map<Key, Key> leftModel = new java.util.HashMap<>(poolContents.get(from));
-                final java.util.Map<Key, Key> rightModel = new java.util.HashMap<>(poolContents.get(from));
-                final java.util.List<Key> sourceKeys = new ArrayList<>(leftModel.keySet());
-                final int adds = random.nextInt(4) == 0 ? random.nextInt(5) : random.nextInt(600);
+                java.util.Map<Key, Key> leftModel = new java.util.HashMap<>(poolContents.get(from));
+                java.util.Map<Key, Key> rightModel = new java.util.HashMap<>(poolContents.get(from));
+                java.util.List<Key> sourceKeys = new ArrayList<>(leftModel.keySet());
+                int adds = random.nextInt(4) == 0 ? random.nextInt(5) : random.nextInt(600);
                 for (int i = 0; i < adds; i++) {
-                    final Key key = (!sourceKeys.isEmpty() && random.nextBoolean())
+                    Key key = (!sourceKeys.isEmpty() && random.nextBoolean())
                             ? sourceKeys.get(random.nextInt(sourceKeys.size()))
                             : randomKey(random);
-                    final Key equal = new Key(key.hash(), key.id());
+                    Key equal = new Key(key.hash(), key.id());
                     left.add(equal);
                     leftModel.putIfAbsent(equal, equal);
-                    final Key other = randomKey(random);
+                    Key other = randomKey(random);
                     right.add(other);
                     rightModel.putIfAbsent(other, other);
                 }
                 if (random.nextInt(3) == 0) {
-                    final int second = random.nextInt(pool.size());
+                    int second = random.nextInt(pool.size());
                     left.addAll(pool.get(second));
                     poolContents.get(second).forEach(leftModel::putIfAbsent);
                 }
-                final BitmapIndexedSetNode<Key> l = left.result();
-                final BitmapIndexedSetNode<Key> r = right.result();
+                BitmapIndexedSetNode<Key> l = left.result();
+                BitmapIndexedSetNode<Key> r = right.result();
                 for (int i = 0; i < pool.size(); i++) {
                     assertThat(describe(pool.get(i)))
                             .as("seed %s, step %s, trie %s", seed, step, i)
@@ -445,7 +444,7 @@ public class ChampSetTest {
                 assertHolds(l, leftModel);
                 assertHolds(r, rightModel);
                 BitmapIndexedSetNode<Key> derived = l;
-                final java.util.Map<Key, Key> derivedModel = new java.util.HashMap<>(leftModel);
+                java.util.Map<Key, Key> derivedModel = new java.util.HashMap<>(leftModel);
                 for (Key key : new ArrayList<>(derivedModel.keySet())) {
                     if (random.nextInt(3) == 0) {
                         derived = derived.removed(key);
@@ -453,7 +452,7 @@ public class ChampSetTest {
                     }
                 }
                 for (int i = 0; i < 20; i++) {
-                    final Key key = randomKey(random);
+                    Key key = randomKey(random);
                     derived = derived.updated(key, true);
                     derivedModel.put(key, key);
                 }
@@ -464,7 +463,7 @@ public class ChampSetTest {
                 pool.add(derived);
                 poolContents.add(derivedModel);
                 while (pool.size() > 8) {
-                    final int drop = random.nextInt(pool.size());
+                    int drop = random.nextInt(pool.size());
                     pool.remove(drop);
                     poolContents.remove(drop);
                 }
@@ -474,9 +473,9 @@ public class ChampSetTest {
 
     @Test
     public void shouldRefuseAnyUseAfterResultAndBuildTheEmptyTrie() {
-        final HashSetBuilder<Integer> builder = new HashSetBuilder<>("Some.Builder");
+        HashSetBuilder<Integer> builder = new HashSetBuilder<>("Some.Builder");
         builder.add(1);
-        final BitmapIndexedSetNode<Integer> built = builder.result();
+        BitmapIndexedSetNode<Integer> built = builder.result();
         assertThatThrownBy(builder::checkOpen)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("result() has already been called on this Some.Builder");

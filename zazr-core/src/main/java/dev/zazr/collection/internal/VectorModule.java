@@ -21,11 +21,11 @@ public interface VectorModule {
 
         public static <T extends @Nullable Object> int indexOfSlice(
                 Vector<T> source, Iterable<? extends T> slice, int from) {
-            final Vector<? extends T> _slice = Vector.ofAll(slice);
+            Vector<? extends T> _slice = Vector.ofAll(slice);
             if (source.isEmpty()) {
                 return from == 0 && _slice.isEmpty() ? 0 : -1;
             }
-            final int maxIndex = source.size() - _slice.size();
+            int maxIndex = source.size() - _slice.size();
             return findSlice(source, _slice, Math.max(from, 0), maxIndex);
         }
 
@@ -34,16 +34,16 @@ public interface VectorModule {
             if (end < 0) {
                 return -1;
             }
-            final Vector<? extends T> _slice = Vector.ofAll(slice);
+            Vector<? extends T> _slice = Vector.ofAll(slice);
             if (source.isEmpty()) {
                 return _slice.isEmpty() ? 0 : -1;
             } else if (_slice.isEmpty()) {
-                final int len = source.size();
+                int len = source.size();
                 return len < end ? len : end;
             }
             int index = 0;
             int result = -1;
-            final int maxIndex = source.size() - _slice.size();
+            int maxIndex = source.size() - _slice.size();
             while (index <= maxIndex) {
                 int indexOfSlice = findSlice(source, _slice, index, maxIndex);
                 if (indexOfSlice < 0) {
@@ -78,8 +78,8 @@ public interface VectorModule {
             int low = 0;
             int high = vector.size() - 1;
             while (low <= high) {
-                final int mid = (low + high) >>> 1;
-                final int cmp = comparison.applyAsInt(mid);
+                int mid = (low + high) >>> 1;
+                int cmp = comparison.applyAsInt(mid);
                 if (cmp < 0) {
                     low = mid + 1;
                 } else if (cmp > 0) {

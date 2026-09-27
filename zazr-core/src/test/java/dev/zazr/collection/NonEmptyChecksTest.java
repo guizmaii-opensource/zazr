@@ -15,7 +15,7 @@ public class NonEmptyChecksTest {
 
     @Test
     public void shouldCatchAnEmptyWrapperOfEveryTypeNestedAnywhere() {
-        final java.util.List<Object> hollows = java.util.List.of(
+        java.util.List<Object> hollows = java.util.List.of(
                 NonEmptyChecks.hollow(NonEmptyVector.class, Vector.empty()),
                 NonEmptyChecks.hollow(NonEmptySet.class, HashSet.empty()),
                 NonEmptyChecks.hollow(NonEmptySortedSet.class, TreeSet.<Integer>empty()),

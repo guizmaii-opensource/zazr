@@ -49,15 +49,15 @@ public class LinkedHashRepeatedKeyTest {
     /// Random inputs with repeated keys; with `sharedValues`, the values come from a small pool, so that equal keys
     /// often carry the identical value object.
     private static java.util.List<java.util.List<Tuple2<Key, String>>> inputs(boolean sharedValues) {
-        final Random random = new Random(42);
-        final String[] pool = {new String("x"), new String("y")};
-        final java.util.List<java.util.List<Tuple2<Key, String>>> inputs = new ArrayList<>();
+        Random random = new Random(42);
+        String[] pool = {new String("x"), new String("y")};
+        java.util.List<java.util.List<Tuple2<Key, String>>> inputs = new ArrayList<>();
         for (int size : SIZES) {
             for (int ids : DISTINCT_IDS) {
                 for (int round = 0; round < 3; round++) {
-                    final java.util.List<Tuple2<Key, String>> entries = new ArrayList<>();
+                    java.util.List<Tuple2<Key, String>> entries = new ArrayList<>();
                     for (int i = 0; i < size; i++) {
-                        final String value = sharedValues ? pool[random.nextInt(pool.length)] : new String("v" + i);
+                        String value = sharedValues ? pool[random.nextInt(pool.length)] : new String("v" + i);
                         entries.add(Tuple.of(new Key(random.nextInt(ids), "t" + i), value));
                     }
                     inputs.add(entries);
@@ -68,13 +68,13 @@ public class LinkedHashRepeatedKeyTest {
     }
 
     private static java.util.List<java.util.List<Tuple2<Key, String>>> allInputs() {
-        final java.util.List<java.util.List<Tuple2<Key, String>>> all = new ArrayList<>(inputs(false));
+        java.util.List<java.util.List<Tuple2<Key, String>>> all = new ArrayList<>(inputs(false));
         all.addAll(inputs(true));
         return all;
     }
 
     private static java.util.List<Key> keys(java.util.List<Tuple2<Key, String>> entries) {
-        final java.util.List<Key> keys = new ArrayList<>();
+        java.util.List<Key> keys = new ArrayList<>();
         entries.forEach(entry -> keys.add(entry._1()));
         return keys;
     }
@@ -88,7 +88,7 @@ public class LinkedHashRepeatedKeyTest {
     }
 
     private static <T> java.util.List<T> javaList(Iterable<T> elements) {
-        final java.util.List<T> result = new ArrayList<>();
+        java.util.List<T> result = new ArrayList<>();
         elements.forEach(result::add);
         return result;
     }
@@ -99,7 +99,7 @@ public class LinkedHashRepeatedKeyTest {
 
     /// An iterable that can be iterated once.
     private static <T> Iterable<T> oneShot(java.util.List<T> elements) {
-        final boolean[] used = {false};
+        boolean[] used = {false};
         return () -> {
             assertThat(used[0]).as("iterated twice").isFalse();
             used[0] = true;
@@ -111,8 +111,8 @@ public class LinkedHashRepeatedKeyTest {
 
     private static void assertSameMap(
             String what, LinkedHashMap<Key, String> actual, LinkedHashMap<Key, String> expected) {
-        final List<Tuple2<Key, String>> actualEntries = actual.toList();
-        final List<Tuple2<Key, String>> expectedEntries = expected.toList();
+        List<Tuple2<Key, String>> actualEntries = actual.toList();
+        List<Tuple2<Key, String>> expectedEntries = expected.toList();
         assertThat(actualEntries).as(what).isEqualTo(expectedEntries);
         for (int i = 0; i < expectedEntries.size(); i++) {
             assertThat(actualEntries.get(i)._1())
@@ -148,7 +148,7 @@ public class LinkedHashRepeatedKeyTest {
                     .as(what + ": drop " + n)
                     .isEqualTo(expected.drop(n).toList());
         }
-        final Key fresh = new Key(-1, "fresh");
+        Key fresh = new Key(-1, "fresh");
         assertThat(actual.put(fresh, "f").toList())
                 .as(what + ": put")
                 .isEqualTo(expected.put(fresh, "f").toList());
@@ -188,7 +188,7 @@ public class LinkedHashRepeatedKeyTest {
 
     @SuppressWarnings("unchecked")
     private static java.util.Map.Entry<Key, String>[] javaEntries(java.util.List<Tuple2<Key, String>> entries) {
-        final java.util.Map.Entry<Key, String>[] array = new java.util.Map.Entry[entries.size()];
+        java.util.Map.Entry<Key, String>[] array = new java.util.Map.Entry[entries.size()];
         for (int i = 0; i < array.length; i++) {
             array[i] = java.util.Map.entry(entries.get(i)._1(), entries.get(i)._2());
         }
@@ -198,8 +198,8 @@ public class LinkedHashRepeatedKeyTest {
     @Test
     public void mapFactoriesAgreeWithSuccessivePuts() {
         for (java.util.List<Tuple2<Key, String>> entries : allInputs()) {
-            final LinkedHashMap<Key, String> expected = puts(entries);
-            final String input = entries.toString();
+            LinkedHashMap<Key, String> expected = puts(entries);
+            String input = entries.toString();
             assertSameMap("ofEntries(Tuple2...) " + input, LinkedHashMap.ofEntries(array(entries)), expected);
             assertSameMap("ofEntries(Map.Entry...) " + input, LinkedHashMap.ofEntries(javaEntries(entries)), expected);
             assertSameMap("ofEntries(java.util.List) " + input, LinkedHashMap.ofEntries(entries), expected);
@@ -216,7 +216,7 @@ public class LinkedHashRepeatedKeyTest {
                             .collect(LinkedHashMap.<Key, String, Tuple2<Key, String>>collector(Tuple2::_1, Tuple2::_2)),
                     expected);
             assertSameMap("tabulate " + input, LinkedHashMap.tabulate(entries.size(), entries::get), expected);
-            final java.util.Iterator<Tuple2<Key, String>> supplied = entries.iterator();
+            java.util.Iterator<Tuple2<Key, String>> supplied = entries.iterator();
             assertSameMap("fill " + input, LinkedHashMap.fill(entries.size(), supplied::next), expected);
             assertSameMap(
                     "ofAll(Stream, entryMapper) " + input,
@@ -239,11 +239,11 @@ public class LinkedHashRepeatedKeyTest {
 
     @Test
     public void mapFixedArityFactoriesAgreeWithSuccessivePuts() {
-        final Random random = new Random(7);
+        Random random = new Random(7);
         for (int arity = 1; arity <= 10; arity++) {
             for (int ids = 1; ids <= arity; ids++) {
                 for (int round = 0; round < 5; round++) {
-                    final java.util.List<Tuple2<Key, String>> entries = new ArrayList<>();
+                    java.util.List<Tuple2<Key, String>> entries = new ArrayList<>();
                     for (int i = 0; i < arity; i++) {
                         entries.add(Tuple.of(new Key(random.nextInt(ids), "t" + i), new String("v" + i)));
                     }
@@ -296,10 +296,9 @@ public class LinkedHashRepeatedKeyTest {
 
     @Test
     public void mapSingletonFactoriesAgreeWithPut() {
-        final Key key = new Key(1, "a");
-        final String value = new String("v");
-        final LinkedHashMap<Key, String> expected =
-                LinkedHashMap.<Key, String>empty().put(key, value);
+        Key key = new Key(1, "a");
+        String value = new String("v");
+        LinkedHashMap<Key, String> expected = LinkedHashMap.<Key, String>empty().put(key, value);
         assertSameMap("of(key, value)", LinkedHashMap.of(key, value), expected);
         assertSameMap("of(entry)", LinkedHashMap.of(Tuple.of(key, value)), expected);
     }
@@ -307,16 +306,16 @@ public class LinkedHashRepeatedKeyTest {
     /// Bulk operations that can map several entries to one key agree with putting the mapped entries one by one.
     @Test
     public void mapBulkOperationsAgreeWithSuccessivePuts() {
-        final Function<Key, Key> collapse = key -> new Key(key.id / 2, key.tag + "'");
+        Function<Key, Key> collapse = key -> new Key(key.id / 2, key.tag + "'");
         for (java.util.List<Tuple2<Key, String>> entries : allInputs()) {
-            final LinkedHashMap<Key, String> source = puts(entries);
-            final String input = entries.toString();
+            LinkedHashMap<Key, String> source = puts(entries);
+            String input = entries.toString();
             // the mapped keys are created once, so that the reference and the operation see the same objects
-            final java.util.Map<Key, Key> mappedKeys = new java.util.IdentityHashMap<>();
+            java.util.Map<Key, Key> mappedKeys = new java.util.IdentityHashMap<>();
             source.forEach(entry -> mappedKeys.put(entry._1(), collapse.apply(entry._1())));
-            final java.util.List<Tuple2<Key, String>> mapped = new ArrayList<>();
+            java.util.List<Tuple2<Key, String>> mapped = new ArrayList<>();
             source.forEach(entry -> mapped.add(Tuple.of(mappedKeys.get(entry._1()), entry._2())));
-            final LinkedHashMap<Key, String> expected = puts(mapped);
+            LinkedHashMap<Key, String> expected = puts(mapped);
 
             assertSameMap("mapBoth " + input, source.mapBoth(mappedKeys::get, Function.identity()), expected);
             assertSameMap("mapKeys " + input, source.mapKeys(mappedKeys::get), expected);
@@ -340,11 +339,11 @@ public class LinkedHashRepeatedKeyTest {
 
     @Test
     public void mapMergeAgreesWithSuccessivePuts() {
-        final java.util.List<java.util.List<Tuple2<Key, String>>> inputs = allInputs();
+        java.util.List<java.util.List<Tuple2<Key, String>>> inputs = allInputs();
         for (int i = 0; i + 1 < inputs.size(); i += 2) {
-            final LinkedHashMap<Key, String> left = puts(inputs.get(i));
-            final LinkedHashMap<Key, String> right = puts(inputs.get(i + 1));
-            final String input = left + " " + right;
+            LinkedHashMap<Key, String> left = puts(inputs.get(i));
+            LinkedHashMap<Key, String> right = puts(inputs.get(i + 1));
+            String input = left + " " + right;
 
             LinkedHashMap<Key, String> kept = left;
             for (Tuple2<Key, String> entry : right) {
@@ -369,10 +368,10 @@ public class LinkedHashRepeatedKeyTest {
     /// `put` on an existing key keeps its position and takes the given key object, in every view of the key.
     @Test
     public void putOfAnEqualKeyReplacesTheKeyObjectInPlace() {
-        final Key first = new Key(1, "first");
-        final Key second = new Key(1, "second");
-        final Key other = new Key(2, "other");
-        final LinkedHashMap<Key, String> map = LinkedHashMap.<Key, String>empty()
+        Key first = new Key(1, "first");
+        Key second = new Key(1, "second");
+        Key other = new Key(2, "other");
+        LinkedHashMap<Key, String> map = LinkedHashMap.<Key, String>empty()
                 .put(first, "a")
                 .put(other, "b")
                 .put(second, "c");
@@ -393,11 +392,11 @@ public class LinkedHashRepeatedKeyTest {
     @Test
     public void mapBuilderAgreesWithSuccessivePuts() {
         for (java.util.List<Tuple2<Key, String>> entries : allInputs()) {
-            final LinkedHashMap<Key, String> expected = puts(entries);
-            final String input = entries.toString();
-            final LinkedHashMap.Builder<Key, String> byKeyValue = LinkedHashMap.newBuilder();
-            final LinkedHashMap.Builder<Key, String> byEntry = LinkedHashMap.newBuilder();
-            final LinkedHashMap.Builder<Key, String> byPutAll = LinkedHashMap.newBuilder();
+            LinkedHashMap<Key, String> expected = puts(entries);
+            String input = entries.toString();
+            LinkedHashMap.Builder<Key, String> byKeyValue = LinkedHashMap.newBuilder();
+            LinkedHashMap.Builder<Key, String> byEntry = LinkedHashMap.newBuilder();
+            LinkedHashMap.Builder<Key, String> byPutAll = LinkedHashMap.newBuilder();
             for (Tuple2<Key, String> entry : entries) {
                 byKeyValue.put(entry._1(), entry._2());
                 byEntry.put(entry);
@@ -414,10 +413,10 @@ public class LinkedHashRepeatedKeyTest {
                     expected);
 
             for (int split = 0; split <= entries.size(); split += Math.max(1, entries.size() / 4)) {
-                final java.util.List<Tuple2<Key, String>> prefix = entries.subList(0, split);
-                final java.util.List<Tuple2<Key, String>> suffix = entries.subList(split, entries.size());
-                final LinkedHashMap<Key, String> prefixMap = puts(prefix);
-                final java.util.List<Tuple2<Key, String>> prefixBefore = javaList(prefixMap);
+                java.util.List<Tuple2<Key, String>> prefix = entries.subList(0, split);
+                java.util.List<Tuple2<Key, String>> suffix = entries.subList(split, entries.size());
+                LinkedHashMap<Key, String> prefixMap = puts(prefix);
+                java.util.List<Tuple2<Key, String>> prefixBefore = javaList(prefixMap);
                 // adopted, then extended
                 assertSameMap(
                         "builder adopting at " + split + " " + input,
@@ -434,7 +433,7 @@ public class LinkedHashRepeatedKeyTest {
                                 .result(),
                         expected);
                 // a map put into a builder that is not empty is put entry by entry
-                final LinkedHashMap<Key, String> suffixMap = puts(suffix);
+                LinkedHashMap<Key, String> suffixMap = puts(suffix);
                 LinkedHashMap<Key, String> both = prefixMap;
                 for (Tuple2<Key, String> entry : suffixMap) {
                     both = both.put(entry._1(), entry._2());
@@ -458,7 +457,7 @@ public class LinkedHashRepeatedKeyTest {
 
             // an adopted map with removals: the builder extends it as successive puts would, markers and all
             if (!expected.isEmpty()) {
-                final java.util.List<Tuple2<Key, String>> kept = javaList(expected);
+                java.util.List<Tuple2<Key, String>> kept = javaList(expected);
                 LinkedHashMap<Key, String> removed = expected.remove(kept.get(0)._1());
                 if (kept.size() > 2) {
                     removed = removed.remove(kept.get(kept.size() / 2)._1());
@@ -483,9 +482,9 @@ public class LinkedHashRepeatedKeyTest {
     @Test
     public void setFactoriesAgreeWithSuccessiveAdds() {
         for (java.util.List<Tuple2<Key, String>> entries : inputs(false)) {
-            final java.util.List<Key> elements = keys(entries);
-            final LinkedHashSet<Key> expected = adds(elements);
-            final String input = elements.toString();
+            java.util.List<Key> elements = keys(entries);
+            LinkedHashSet<Key> expected = adds(elements);
+            String input = elements.toString();
             assertSameSet("of(T...) " + input, LinkedHashSet.of(elements.toArray(new Key[0])), expected);
             assertSameSet("ofAll(java.util.List) " + input, LinkedHashSet.ofAll(elements), expected);
             assertSameSet("ofAll(List) " + input, LinkedHashSet.ofAll(List.ofAll(elements)), expected);
@@ -497,9 +496,9 @@ public class LinkedHashRepeatedKeyTest {
                     elements.parallelStream().collect(LinkedHashSet.collector()),
                     expected);
             assertSameSet("tabulate " + input, LinkedHashSet.tabulate(elements.size(), elements::get), expected);
-            final java.util.Iterator<Key> supplied = elements.iterator();
+            java.util.Iterator<Key> supplied = elements.iterator();
             assertSameSet("fill " + input, LinkedHashSet.fill(elements.size(), supplied::next), expected);
-            final int half = elements.size() / 2;
+            int half = elements.size() / 2;
             assertSameSet(
                     "flatten " + input,
                     LinkedHashSet.flatten(
@@ -514,30 +513,30 @@ public class LinkedHashRepeatedKeyTest {
     @Test
     public void setBulkOperationsAgreeWithSuccessiveAdds() {
         for (java.util.List<Tuple2<Key, String>> entries : inputs(false)) {
-            final java.util.List<Key> elements = keys(entries);
-            final LinkedHashSet<Key> expected = adds(elements);
-            final String input = elements.toString();
+            java.util.List<Key> elements = keys(entries);
+            LinkedHashSet<Key> expected = adds(elements);
+            String input = elements.toString();
             for (int split = 0; split <= elements.size(); split += Math.max(1, elements.size() / 4)) {
-                final LinkedHashSet<Key> prefix = adds(elements.subList(0, split));
-                final java.util.List<Key> suffix = elements.subList(split, elements.size());
+                LinkedHashSet<Key> prefix = adds(elements.subList(0, split));
+                java.util.List<Key> suffix = elements.subList(split, elements.size());
                 assertSameSet("addAll at " + split + " " + input, prefix.addAll(suffix), expected);
                 assertSameSet("addAll(one-shot) at " + split + " " + input, prefix.addAll(oneShot(suffix)), expected);
-                final LinkedHashSet<Key> suffixSet = adds(suffix);
+                LinkedHashSet<Key> suffixSet = adds(suffix);
                 assertSameSet("union at " + split + " " + input, prefix.union(suffixSet), addEach(prefix, suffixSet));
             }
             // every element again, as other objects: nothing changes, not even the objects
-            final java.util.List<Key> copies = new ArrayList<>();
+            java.util.List<Key> copies = new ArrayList<>();
             elements.forEach(element -> copies.add(new Key(element.id, element.tag + "'")));
             assertSameSet("addAll of copies " + input, expected.addAll(copies), expected);
             assertSameSet("union of copies " + input, expected.union(LinkedHashSet.ofAll(copies)), expected);
             assertSameSet(
                     "addAll into empty " + input, LinkedHashSet.<Key>empty().addAll(elements), expected);
 
-            final java.util.Map<Key, Key> mappedKeys = new java.util.IdentityHashMap<>();
+            java.util.Map<Key, Key> mappedKeys = new java.util.IdentityHashMap<>();
             expected.forEach(element -> mappedKeys.put(element, new Key(element.id / 2, element.tag + "'")));
-            final java.util.List<Key> mapped = new ArrayList<>();
+            java.util.List<Key> mapped = new ArrayList<>();
             expected.forEach(element -> mapped.add(mappedKeys.get(element)));
-            final LinkedHashSet<Key> expectedMapped = adds(mapped);
+            LinkedHashSet<Key> expectedMapped = adds(mapped);
             assertSameSet("map " + input, expected.map(mappedKeys::get), expectedMapped);
             assertSameSet(
                     "collect " + input,
@@ -545,10 +544,10 @@ public class LinkedHashRepeatedKeyTest {
                     expectedMapped);
             assertSameSet(
                     "flatMap " + input, expected.flatMap(element -> List.of(mappedKeys.get(element))), expectedMapped);
-            final Tuple2<LinkedHashSet<Key>, LinkedHashSet<Key>> partitioned = expected.partitionMap(element ->
+            Tuple2<LinkedHashSet<Key>, LinkedHashSet<Key>> partitioned = expected.partitionMap(element ->
                     element.id % 2 == 0 ? Either.left(mappedKeys.get(element)) : Either.right(mappedKeys.get(element)));
-            final java.util.List<Key> lefts = new ArrayList<>();
-            final java.util.List<Key> rights = new ArrayList<>();
+            java.util.List<Key> lefts = new ArrayList<>();
+            java.util.List<Key> rights = new ArrayList<>();
             expected.forEach(element -> (element.id % 2 == 0 ? lefts : rights).add(mappedKeys.get(element)));
             assertSameSet("partitionMap left " + input, partitioned._1(), adds(lefts));
             assertSameSet("partitionMap right " + input, partitioned._2(), adds(rights));
@@ -560,11 +559,11 @@ public class LinkedHashRepeatedKeyTest {
     @Test
     public void setBuilderAgreesWithSuccessiveAdds() {
         for (java.util.List<Tuple2<Key, String>> entries : inputs(false)) {
-            final java.util.List<Key> elements = keys(entries);
-            final LinkedHashSet<Key> expected = adds(elements);
-            final String input = elements.toString();
-            final LinkedHashSet.Builder<Key> byElement = LinkedHashSet.newBuilder();
-            final LinkedHashSet.Builder<Key> byAddAll = LinkedHashSet.newBuilder();
+            java.util.List<Key> elements = keys(entries);
+            LinkedHashSet<Key> expected = adds(elements);
+            String input = elements.toString();
+            LinkedHashSet.Builder<Key> byElement = LinkedHashSet.newBuilder();
+            LinkedHashSet.Builder<Key> byAddAll = LinkedHashSet.newBuilder();
             for (Key element : elements) {
                 byElement.add(element);
                 byAddAll.addAll(java.util.List.of(element));
@@ -577,10 +576,10 @@ public class LinkedHashRepeatedKeyTest {
                     expected);
 
             for (int split = 0; split <= elements.size(); split += Math.max(1, elements.size() / 4)) {
-                final java.util.List<Key> prefix = elements.subList(0, split);
-                final java.util.List<Key> suffix = elements.subList(split, elements.size());
-                final LinkedHashSet<Key> prefixSet = adds(prefix);
-                final java.util.List<Key> prefixBefore = javaList(prefixSet);
+                java.util.List<Key> prefix = elements.subList(0, split);
+                java.util.List<Key> suffix = elements.subList(split, elements.size());
+                LinkedHashSet<Key> prefixSet = adds(prefix);
+                java.util.List<Key> prefixBefore = javaList(prefixSet);
                 assertSameSet(
                         "builder adopting at " + split + " " + input,
                         LinkedHashSet.<Key>newBuilder()
@@ -595,7 +594,7 @@ public class LinkedHashRepeatedKeyTest {
                                 .addAll(suffix)
                                 .result(),
                         expected);
-                final LinkedHashSet<Key> suffixSet = adds(suffix);
+                LinkedHashSet<Key> suffixSet = adds(suffix);
                 assertSameSet(
                         "builder addAll(set) after elements at " + split + " " + input,
                         LinkedHashSet.<Key>newBuilder()
@@ -614,7 +613,7 @@ public class LinkedHashRepeatedKeyTest {
             }
 
             // every element again, as other objects: the first objects stay, and an adopted set comes back as it is
-            final java.util.List<Key> copies = new ArrayList<>();
+            java.util.List<Key> copies = new ArrayList<>();
             elements.forEach(element -> copies.add(new Key(element.id, element.tag + "'")));
             assertSameSet(
                     "builder add of copies " + input,
@@ -630,7 +629,7 @@ public class LinkedHashRepeatedKeyTest {
                     .isSameAs(expected);
 
             if (!expected.isEmpty()) {
-                final java.util.List<Key> kept = javaList(expected);
+                java.util.List<Key> kept = javaList(expected);
                 LinkedHashSet<Key> removed = expected.remove(kept.get(0));
                 if (kept.size() > 2) {
                     removed = removed.remove(kept.get(kept.size() / 2));

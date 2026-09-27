@@ -87,10 +87,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object>
             Collector<Tuple2<K, V>, Builder<K, V>, LinkedHashMap<K, V>> collector() {
-        final Supplier<Builder<K, V>> supplier = LinkedHashMap::newBuilder;
-        final BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
-        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
-        final Function<Builder<K, V>, LinkedHashMap<K, V>> finisher = Builder::result;
+        Supplier<Builder<K, V>> supplier = LinkedHashMap::newBuilder;
+        BiConsumer<Builder<K, V>, Tuple2<K, V>> accumulator = Builder::put;
+        BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        Function<Builder<K, V>, LinkedHashMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -126,11 +126,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
                     Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends V> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Supplier<Builder<K, V>> supplier = LinkedHashMap::newBuilder;
-        final BiConsumer<Builder<K, V>, T> accumulator =
+        Supplier<Builder<K, V>> supplier = LinkedHashMap::newBuilder;
+        BiConsumer<Builder<K, V>, T> accumulator =
                 (builder, t) -> builder.put(keyMapper.apply(t), valueMapper.apply(t));
-        final BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
-        final Function<Builder<K, V>, LinkedHashMap<K, V>> finisher = Builder::result;
+        BinaryOperator<Builder<K, V>> combiner = (left, right) -> left.putAll(right.result());
+        Function<Builder<K, V>, LinkedHashMap<K, V>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -179,7 +179,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             Tuple2<? extends K, ? extends V> entry) {
         Objects.requireNonNull(entry, "entry is null");
-        final Builder<K, V> builder = new Builder<>(1);
+        Builder<K, V> builder = new Builder<>(1);
         builder.putChecked((Tuple2<K, V>) entry);
         return builder.result();
     }
@@ -200,7 +200,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (JavaConverters.underlying(map) instanceof LinkedHashMap<?, ?> underlying) {
             return (LinkedHashMap<K, V>) underlying;
         }
-        final Builder<K, V> builder = new Builder<>(map.size());
+        Builder<K, V> builder = new Builder<>(map.size());
         for (java.util.Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
             builder.putChecked(entry.getKey(), entry.getValue());
         }
@@ -253,7 +253,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return A new Map containing the given entry
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(K key, V value) {
-        final Builder<K, V> builder = new Builder<>(1);
+        Builder<K, V> builder = new Builder<>(1);
         builder.putChecked(key, value);
         return builder.result();
     }
@@ -271,7 +271,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             K k1, V v1, K k2, V v2) {
-        final Builder<K, V> builder = new Builder<>(2);
+        Builder<K, V> builder = new Builder<>(2);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         return builder.result();
@@ -292,7 +292,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             K k1, V v1, K k2, V v2, K k3, V v3) {
-        final Builder<K, V> builder = new Builder<>(3);
+        Builder<K, V> builder = new Builder<>(3);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -316,7 +316,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
-        final Builder<K, V> builder = new Builder<>(4);
+        Builder<K, V> builder = new Builder<>(4);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -343,7 +343,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
-        final Builder<K, V> builder = new Builder<>(5);
+        Builder<K, V> builder = new Builder<>(5);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -373,7 +373,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
-        final Builder<K, V> builder = new Builder<>(6);
+        Builder<K, V> builder = new Builder<>(6);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -406,7 +406,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
-        final Builder<K, V> builder = new Builder<>(7);
+        Builder<K, V> builder = new Builder<>(7);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -442,7 +442,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> of(
             K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
-        final Builder<K, V> builder = new Builder<>(8);
+        Builder<K, V> builder = new Builder<>(8);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -498,7 +498,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             V v8,
             K k9,
             V v9) {
-        final Builder<K, V> builder = new Builder<>(9);
+        Builder<K, V> builder = new Builder<>(9);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -559,7 +559,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             V v9,
             K k10,
             V v10) {
-        final Builder<K, V> builder = new Builder<>(10);
+        Builder<K, V> builder = new Builder<>(10);
         builder.putChecked(k1, v1);
         builder.putChecked(k2, v2);
         builder.putChecked(k3, v3);
@@ -626,7 +626,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofEntries(
             java.util.Map.Entry<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final Builder<K, V> builder = new Builder<>(entries.length);
+        Builder<K, V> builder = new Builder<>(entries.length);
         for (java.util.Map.Entry<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
             builder.putChecked(entry.getKey(), entry.getValue());
@@ -646,7 +646,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> ofEntries(
             Tuple2<? extends K, ? extends V>... entries) {
         Objects.requireNonNull(entries, "entries is null");
-        final Builder<K, V> builder = new Builder<>(entries.length);
+        Builder<K, V> builder = new Builder<>(entries.length);
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
             builder.putChecked((Tuple2<K, V>) entry);
@@ -672,7 +672,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         } else if (JavaConverters.underlying(entries) instanceof LinkedHashMap<?, ?> underlying) {
             return (LinkedHashMap<K, V>) underlying;
         } else {
-            final Builder<K, V> builder =
+            Builder<K, V> builder =
                     new Builder<>(entries instanceof java.util.Collection<?> collection ? collection.size() : 10);
             for (Tuple2<? extends K, ? extends V> entry : entries) {
                 Objects.requireNonNull(entry, "LinkedHashMap.ofEntries: entry is null");
@@ -687,7 +687,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             Function<? super K, ? extends K2> keyMapper, Function<? super V, ? extends V2> valueMapper) {
         Objects.requireNonNull(keyMapper, "keyMapper is null");
         Objects.requireNonNull(valueMapper, "valueMapper is null");
-        final Iterator<Tuple2<K2, V2>> entries =
+        Iterator<Tuple2<K2, V2>> entries =
                 Iterator.ofAll(this).map(entry -> Tuple.of(keyMapper.apply(entry._1()), valueMapper.apply(entry._2())));
         return LinkedHashMap.ofEntries(entries);
     }
@@ -802,7 +802,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public Option<V> get(K key) {
-        final Slot<K, V> slot = slotOrNull(key);
+        Slot<K, V> slot = slotOrNull(key);
         return slot == null ? Option.none() : Option.some(slot.entry()._2());
     }
 
@@ -813,7 +813,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public V getOrElse(K key, V defaultValue) {
-        final Slot<K, V> slot = slotOrNull(key);
+        Slot<K, V> slot = slotOrNull(key);
         return slot == null ? defaultValue : slot.entry()._2();
     }
 
@@ -842,7 +842,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
-        final java.util.Iterator<K> slots = list.iterator();
+        java.util.Iterator<K> slots = list.iterator();
         return new AbstractIterator<Tuple2<K, V>>() {
             private @Nullable K nextKey;
             private boolean nextKeyDefined;
@@ -850,7 +850,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             @Override
             public boolean hasNext() {
                 while (!nextKeyDefined && slots.hasNext()) {
-                    final K key = slots.next();
+                    K key = slots.next();
                     if (key != TOMBSTONE) {
                         nextKey = key;
                         nextKeyDefined = true;
@@ -906,7 +906,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             @Override
             public boolean hasNext() {
                 while (next == null && index >= 0) {
-                    final K key = list.get(index--);
+                    K key = list.get(index--);
                     if (key != TOMBSTONE) {
                         next = entryAt(key);
                     }
@@ -918,7 +918,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             // AbstractIterator only calls getNext() after hasNext() returned true, which set next
             @SuppressWarnings("NullAway")
             protected Tuple2<K, V> getNext() {
-                final Tuple2<K, V> entry = next;
+                Tuple2<K, V> entry = next;
                 next = null;
                 return entry;
             }
@@ -941,7 +941,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             BiFunction<? super K, ? super V, ? extends Option<? extends Tuple2<K2, V2>>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return foldLeft(LinkedHashMap.empty(), (acc, entry) -> {
-            final Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(
+            Option<? extends Tuple2<K2, V2>> collected = Objects.requireNonNull(
                     mapper.apply(entry._1(), entry._2()), "LinkedHashMap.collect: mapper returned null");
             return collected.isDefined() ? acc.put(collected.get()) : acc;
         });
@@ -1048,10 +1048,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public LinkedHashMap<K, V> put(K key, V value) {
         Objects.requireNonNull(key, "LinkedHashMap: key is null");
         Objects.requireNonNull(value, "LinkedHashMap: value is null");
-        final Slot<K, V> existing = slotOrNull(key);
+        Slot<K, V> existing = slotOrNull(key);
         if (existing != null) {
             // the insertion order holds the key object of the entry, which the positional operations read
-            final Vector<K> newList = existing.entry()._1() == key ? list : list.update(existing.index() - offset, key);
+            Vector<K> newList = existing.entry()._1() == key ? list : list.update(existing.index() - offset, key);
             return new LinkedHashMap<>(
                     newList, map.put(key, new Slot<>(Tuple.of(key, value), existing.index())), offset, tombstones);
         } else {
@@ -1111,16 +1111,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public LinkedHashMap<K, V> remove(K key) {
-        final Slot<K, V> existing = slotOrNull(key);
+        Slot<K, V> existing = slotOrNull(key);
         if (existing == null) {
             return this;
         }
-        final HashMap<K, Slot<K, V>> newMap = map.remove(key);
+        HashMap<K, Slot<K, V>> newMap = map.remove(key);
         if (newMap.isEmpty()) {
             return empty();
         }
-        final K tombstone = tombstone();
-        final Vector<K> newList = list.update(existing.index() - offset, tombstone);
+        K tombstone = tombstone();
+        Vector<K> newList = list.update(existing.index() - offset, tombstone);
         return normalized(newList, newMap, offset, tombstones + 1);
     }
 
@@ -1145,8 +1145,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public LinkedHashMap<K, V> removeAll(Iterable<? extends K> keys) {
         Objects.requireNonNull(keys, "keys is null");
-        final HashSet<K> toRemove = HashSet.ofAll(keys);
-        final HashMap<K, Slot<K, V>> newMap = map.filter(t -> !toRemove.contains(t._1()));
+        HashSet<K> toRemove = HashSet.ofAll(keys);
+        HashMap<K, Slot<K, V>> newMap = map.filter(t -> !toRemove.contains(t._1()));
         return newMap.size() == map.size() ? this : reindex(list, newMap);
     }
 
@@ -1195,19 +1195,19 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         HashMap<K, Slot<K, V>> newMap = map;
         int newTombstones = tombstones;
 
-        final K newKey = newElement._1();
+        K newKey = newElement._1();
 
         // If current key and new key are equal, the key keeps its position,
         // otherwise we need to remove an already present newKey from the order manually.
         if (!Objects.equals(currentKey, newKey) && newMap.containsKey(newKey)) {
-            final Slot<K, V> obsolete = newMap.get(newKey).get();
-            final K tombstone = tombstone();
+            Slot<K, V> obsolete = newMap.get(newKey).get();
+            K tombstone = tombstone();
             newList = newList.update(obsolete.index() - offset, tombstone);
             newMap = newMap.remove(newKey);
             newTombstones++;
         }
 
-        final Slot<K, V> currentSlot = newMap.get(currentKey).get();
+        Slot<K, V> currentSlot = newMap.get(currentKey).get();
         newList = newList.update(currentSlot.index() - offset, newKey);
         newMap = newMap.remove(currentKey).put(newKey, new Slot<>(newElement, currentSlot.index()));
 
@@ -1287,7 +1287,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (isEmpty()) {
             return Vector.empty();
         }
-        final Vector.Builder<V> builder = Vector.newBuilder(size());
+        Vector.Builder<V> builder = Vector.newBuilder(size());
         for (K key : list) {
             if (key != TOMBSTONE) {
                 builder.add(entryAt(key)._2());
@@ -1531,7 +1531,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return the pairs (entry, position), in order
      */
     public Vector<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
-        final Vector.Builder<Tuple2<Tuple2<K, V>, Integer>> builder = Vector.newBuilder(size());
+        Vector.Builder<Tuple2<Tuple2<K, V>, Integer>> builder = Vector.newBuilder(size());
         int index = 0;
         for (K key : list) {
             if (key != TOMBSTONE) {
@@ -1605,13 +1605,13 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     // sliding(size, step), each window wrapped by `wrap`; LinkedHashSet passes its own wrapper
     <R extends @Nullable Object> Vector<R> windows(int size, int step, Function<LinkedHashMap<K, V>, R> wrap) {
         Collections.checkWindow(size, step);
-        final int length = size();
+        int length = size();
         if (length == 0) {
             return Vector.empty();
         }
         // without markers, every rank is its own index into the insertion order, so each window is found in O(1)
-        final LinkedHashMap<K, V> compact = compacted();
-        final Vector.Builder<R> builder = Vector.newBuilder();
+        LinkedHashMap<K, V> compact = compacted();
+        Vector.Builder<R> builder = Vector.newBuilder();
         // past the first, a window is produced only while it holds at least one entry the previous one did not
         for (long start = 0; start < length && (start == 0 || start - step + size < length); start += step) {
             builder.add(wrap.apply(compact.slice((int) start, (int) Math.min(start + size, length))));
@@ -1640,15 +1640,15 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (isEmpty()) {
             return Vector.empty();
         }
-        final Function<Object, ?> classify = (Function<Object, ?>) classifier;
-        final LinkedHashMap<K, V> compact = compacted();
-        final Vector.Builder<R> builder = Vector.newBuilder();
-        final Vector<K> keys = compact.list;
-        final int length = keys.size();
+        Function<Object, ?> classify = (Function<Object, ?>) classifier;
+        LinkedHashMap<K, V> compact = compacted();
+        Vector.Builder<R> builder = Vector.newBuilder();
+        Vector<K> keys = compact.list;
+        int length = keys.size();
         Object key = classify.apply(byKey ? keys.get(0) : compact.entryAt(keys.get(0)));
         int start = 0;
         for (int index = 1; index < length; index++) {
-            final Object next = classify.apply(byKey ? keys.get(index) : compact.entryAt(keys.get(index)));
+            Object next = classify.apply(byKey ? keys.get(index) : compact.entryAt(keys.get(index)));
             if (!Objects.equals(key, next)) {
                 builder.add(wrap.apply(compact.slice(start, index)));
                 start = index;
@@ -1701,7 +1701,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     // the keys paired with their position in insertion order: LinkedHashSet's zipWithIndex, with no entry looked up
     Vector<Tuple2<K, Integer>> zipKeysWithIndex() {
-        final Vector.Builder<Tuple2<K, Integer>> builder = Vector.newBuilder(size());
+        Vector.Builder<Tuple2<K, Integer>> builder = Vector.newBuilder(size());
         int index = 0;
         for (K key : list) {
             if (key != TOMBSTONE) {
@@ -1721,7 +1721,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (tombstones == 0) {
             return rank;
         }
-        final int size = size();
+        int size = size();
         if (rank < size - rank) {
             int live = -1;
             for (int i = 0; ; i++) {
@@ -1748,23 +1748,23 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * Complexity: O(n); O(min(k, n - k)) for k kept entries when nothing has been removed, as {@link #take(int)}.
      */
     LinkedHashMap<K, V> slice(int from, int until) {
-        final int size = size();
-        final int start = Math.max(from, 0);
-        final int end = Math.min(until, size);
+        int size = size();
+        int start = Math.max(from, 0);
+        int end = Math.min(until, size);
         if (start >= end) {
             return empty();
         } else if (start == 0 && end == size) {
             return this;
         }
-        final int lo = indexOfRank(start);
-        final int hi = indexOfRank(end - 1) + 1;
-        final int kept = end - start;
-        final Vector<K> newList = list.slice(lo, hi);
+        int lo = indexOfRank(start);
+        int hi = indexOfRank(end - 1) + 1;
+        int kept = end - start;
+        Vector<K> newList = list.slice(lo, hi);
         HashMap<K, Slot<K, V>> newMap;
         if (kept <= size - kept) {
             newMap = HashMap.empty();
             for (int i = lo; i < hi; i++) {
-                final K key = list.get(i);
+                K key = list.get(i);
                 if (key != TOMBSTONE) {
                     newMap = newMap.put(key, slotAt(key));
                 }
@@ -1772,14 +1772,14 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         } else {
             newMap = map;
             for (int i = 0; i < lo; i++) {
-                final K key = list.get(i);
+                K key = list.get(i);
                 if (key != TOMBSTONE) {
                     newMap = newMap.remove(key);
                 }
             }
-            final int listSize = list.size();
+            int listSize = list.size();
             for (int i = hi; i < listSize; i++) {
-                final K key = list.get(i);
+                K key = list.get(i);
                 if (key != TOMBSTONE) {
                     newMap = newMap.remove(key);
                 }
@@ -1817,7 +1817,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> normalized(
             Vector<K> list, HashMap<K, Slot<K, V>> map, int offset, int tombstones) {
         // the markers at both ends are found by reading, then cut off with one slice: no Vector per marker
-        final int size = list.size();
+        int size = list.size();
         int lo = 0;
         while (list.get(lo) == TOMBSTONE) {
             lo++;
@@ -1842,7 +1842,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (survivors.isEmpty()) {
             return empty();
         }
-        final ArrayList<K> liveKeys = new ArrayList<>(survivors.size());
+        ArrayList<K> liveKeys = new ArrayList<>(survivors.size());
         for (K key : list) {
             if (key != TOMBSTONE && survivors.containsKey(key)) {
                 liveKeys.add(key);
@@ -1975,7 +1975,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         public LinkedHashMap<K, V> result() {
             checkOpen();
             done = true;
-            final LinkedHashMap<K, V> result;
+            LinkedHashMap<K, V> result;
             if (adopted != null) {
                 result = adopted;
             } else if (slots.isEmpty()) {
@@ -2006,8 +2006,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         @SuppressWarnings("NullAway")
         private void putEntry(Tuple2<K, V> entry) {
             unadopt();
-            final K key = entry._1();
-            final @Nullable Slot<K, V> existing = slots.getOrElse(key, null);
+            K key = entry._1();
+            @Nullable Slot<K, V> existing = slots.getOrElse(key, null);
             if (existing == null) {
                 slots = slots.put(key, new Slot<>(entry, offset + keys.size()));
                 keys.add(key);
@@ -2043,7 +2043,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         // the adopted map becomes the builder's content, which successive puts then extend exactly as they would extend
         // the map: the same insertion order with its markers, the same positions, the same hash map
         private void unadopt() {
-            final LinkedHashMap<K, V> map = adopted;
+            LinkedHashMap<K, V> map = adopted;
             if (map == null) {
                 return;
             }

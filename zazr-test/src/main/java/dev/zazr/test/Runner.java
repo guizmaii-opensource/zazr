@@ -16,7 +16,7 @@ final class Runner {
      * the configured size for the last one.
      */
     static int size(CheckConfig config, int done) {
-        final int samples = config.samples();
+        int samples = config.samples();
         if (samples <= 1) {
             return config.size();
         }
@@ -33,14 +33,14 @@ final class Runner {
      * @throws IllegalStateException if the discard budget is exceeded before a sample
      */
     static <A> void passes(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
-        final int samples = config.samples();
-        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
-        final int[] delivered = {0};
+        int samples = config.samples();
+        Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
+        int[] delivered = {0};
         long emptyInARow = 0;
         while (delivered[0] < samples) {
-            final int before = delivered[0];
-            final int gaveUp = sampling.filtersGaveUp;
-            final boolean more = gen.run(sampling, sampling.grow(size(config, before), emptyInARow), value -> {
+            int before = delivered[0];
+            int gaveUp = sampling.filtersGaveUp;
+            boolean more = gen.run(sampling, sampling.grow(size(config, before), emptyInARow), value -> {
                 delivered[0]++;
                 sampling.delivered();
                 return sink.accept(value) && delivered[0] < samples;
@@ -63,8 +63,8 @@ final class Runner {
      *                               so a value is missing
      */
     static <A> void onePass(CheckConfig config, Gen<A> gen, Gen.Sink<? super A> sink) {
-        final Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
-        final boolean ended = gen.run(sampling, config.size(), value -> {
+        Sampling sampling = new Sampling(config.seed(), config.maxDiscards(), config.size());
+        boolean ended = gen.run(sampling, config.size(), value -> {
             sampling.discards = 0;
             return sink.accept(value);
         });
@@ -79,9 +79,9 @@ final class Runner {
      */
     static <T extends Tuple> CheckResult check(
             CheckConfig config, Gen<T> gen, CheckedFunction1<? super T, Boolean> body, boolean all) {
-        final long seed = config.seed();
-        final State state = new State();
-        final Gen.Sink<T> sink = sample -> {
+        long seed = config.seed();
+        State state = new State();
+        Gen.Sink<T> sink = sample -> {
             state.samples++;
             state.failure = evaluate(state.samples, seed, sample, body);
             return state.failure == null;
@@ -108,7 +108,7 @@ final class Runner {
     private static <T extends Tuple> CheckResult evaluate(
             int sampleNumber, long seed, T sample, CheckedFunction1<? super T, Boolean> body) {
         try {
-            final Boolean holds = body.apply(sample);
+            Boolean holds = body.apply(sample);
             if (holds == null) {
                 return new CheckResult.Erroneous(
                         sampleNumber, seed, new NullPointerException("the check returned null"), Option.some(sample));

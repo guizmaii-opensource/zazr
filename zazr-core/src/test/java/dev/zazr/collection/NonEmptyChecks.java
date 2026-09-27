@@ -28,7 +28,7 @@ final class NonEmptyChecks {
 
     /* the signature of a method as the tables key it: name(SimpleParameterType, ...) */
     static String signature(Method method) {
-        final StringJoiner joiner = new StringJoiner(", ", method.getName() + "(", ")");
+        StringJoiner joiner = new StringJoiner(", ", method.getName() + "(", ")");
         for (Class<?> parameter : method.getParameterTypes()) {
             joiner.add(parameter.getSimpleName());
         }
@@ -37,9 +37,9 @@ final class NonEmptyChecks {
 
     /* the signatures of the public methods of type whose result is or holds one of the non-empty types */
     static java.util.Set<String> holding(Class<?> type) {
-        final java.util.Set<String> holding = new TreeSet<>();
+        java.util.Set<String> holding = new TreeSet<>();
         for (Method method : type.getMethods()) {
-            final String returned = method.getGenericReturnType().getTypeName();
+            String returned = method.getGenericReturnType().getTypeName();
             for (Class<?> nonEmpty : NON_EMPTY_TYPES) {
                 if (returned.contains(nonEmpty.getName())) {
                     holding.add(signature(method));
@@ -92,7 +92,7 @@ final class NonEmptyChecks {
     /* a wrapper holding an empty collection, made through the private constructor, which the API never does */
     static Object hollow(Class<?> type, Object empty) {
         try {
-            final java.lang.reflect.Constructor<?> constructor = type.getDeclaredConstructors()[0];
+            java.lang.reflect.Constructor<?> constructor = type.getDeclaredConstructors()[0];
             constructor.setAccessible(true);
             return constructor.newInstance(empty);
         } catch (ReflectiveOperationException e) {
@@ -102,7 +102,7 @@ final class NonEmptyChecks {
 
     /* the signatures, name(SimpleParameterType, ...), of the public instance methods of type */
     static java.util.Set<String> publicInstanceMethodSignatures(Class<?> type) {
-        final java.util.Set<String> signatures = new TreeSet<>();
+        java.util.Set<String> signatures = new TreeSet<>();
         for (Method method : type.getMethods()) {
             if (!Modifier.isStatic(method.getModifiers())
                     && !method.isSynthetic()
@@ -116,7 +116,7 @@ final class NonEmptyChecks {
 
     /* the public instance methods of plain, overload by overload, that wrapper does not have */
     static java.util.Set<String> missing(Class<?> plain, Class<?> wrapper) {
-        final java.util.Set<String> missing = new TreeSet<>(publicInstanceMethodSignatures(plain));
+        java.util.Set<String> missing = new TreeSet<>(publicInstanceMethodSignatures(plain));
         missing.removeAll(publicInstanceMethodSignatures(wrapper));
         return missing;
     }

@@ -86,23 +86,23 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
     @Override
     @Nullable
     T find(T element, int hash, int shift) {
-        final int index = (this.hash == hash) ? indexOf(element) : -1;
+        int index = (this.hash == hash) ? indexOf(element) : -1;
         return index >= 0 ? getPayload(index) : null;
     }
 
     @Override
     SetNode<T> updated(T element, int hash, int shift, boolean replace) {
-        final int index = indexOf(element);
+        int index = indexOf(element);
         if (index >= 0) {
             if (replace && content[index] != element) {
-                final Object[] dst = content.clone();
+                Object[] dst = content.clone();
                 dst[index] = element;
                 return new HashCollisionSetNode<>(this.hash, dst);
             } else {
                 return this;
             }
         } else {
-            final Object[] dst = Arrays.copyOf(content, content.length + 1);
+            Object[] dst = Arrays.copyOf(content, content.length + 1);
             dst[content.length] = element;
             return new HashCollisionSetNode<>(this.hash, dst);
         }
@@ -110,7 +110,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
 
     @Override
     SetNode<T> removed(T element, int hash, int shift) {
-        final int index = (this.hash == hash) ? indexOf(element) : -1;
+        int index = (this.hash == hash) ? indexOf(element) : -1;
         if (index < 0) {
             return this;
         } else if (content.length == 2) {
@@ -124,7 +124,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
                     1,
                     this.hash);
         } else {
-            final Object[] dst = new Object[content.length - 1];
+            Object[] dst = new Object[content.length - 1];
             System.arraycopy(content, 0, dst, 0, index);
             System.arraycopy(content, index + 1, dst, index, content.length - index - 1);
             return new HashCollisionSetNode<>(this.hash, dst);
@@ -139,7 +139,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
     // `that` is a collision node too: two nodes at the same place below the last level hold elements of one hash
     @Override
     SetNode<T> concat(SetNode<T> that, int shift) {
-        final HashCollisionSetNode<T> right = (HashCollisionSetNode<T>) that;
+        HashCollisionSetNode<T> right = (HashCollisionSetNode<T>) that;
         if (right == this) {
             return this;
         }
@@ -158,7 +158,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
 
     @Override
     SetNode<T> filter(Predicate<? super T> predicate, boolean keep) {
-        final Object[] kept = new Object[content.length];
+        Object[] kept = new Object[content.length];
         int length = 0;
         for (int i = 0; i < content.length; i++) {
             if (predicate.test(getPayload(i)) == keep) {
@@ -170,7 +170,7 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
 
     @Override
     SetNode<T> diff(SetNode<T> that, int shift) {
-        final Object[] kept = new Object[content.length];
+        Object[] kept = new Object[content.length];
         int length = 0;
         for (int i = 0; i < content.length; i++) {
             if (!that.contains(getPayload(i), hash, shift)) {

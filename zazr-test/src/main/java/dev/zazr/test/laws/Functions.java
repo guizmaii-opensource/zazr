@@ -43,8 +43,8 @@ final class Functions {
 
         @Override
         public Object apply(Object x) {
-            final int n = x instanceof Integer i ? i : Objects.hashCode(x);
-            final int affine = a * n + b;
+            int n = x instanceof Integer i ? i : Objects.hashCode(x);
+            int affine = a * n + b;
             return m == 0 ? affine : Math.floorMod(affine, m);
         }
 
@@ -59,7 +59,7 @@ final class Functions {
 
         @Override
         public F apply(Object x) {
-            final long drawSeed = mix(seed + GOLDEN_GAMMA * Objects.hashCode(x));
+            long drawSeed = mix(seed + GOLDEN_GAMMA * Objects.hashCode(x));
             return gen.runCollectN(1, new CheckConfig(1, size, drawSeed, CheckConfig.DEFAULT_MAX_DISCARDS))
                     .head();
         }

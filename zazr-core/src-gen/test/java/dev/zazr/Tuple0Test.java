@@ -15,123 +15,121 @@ public class Tuple0Test {
 
     @Test
     public void shouldCreateTuple() {
-        final Tuple0 tuple = createTuple();
+        Tuple0 tuple = createTuple();
         assertThat(tuple).isNotNull();
     }
 
     @Test
     public void shouldGetArity() {
-        final Tuple0 tuple = createTuple();
+        Tuple0 tuple = createTuple();
         assertThat(tuple.arity()).isEqualTo(0);
     }
 
     @Test
     public void shouldConvertToVector() {
-        final Vector<?> actual = createIntTuple().toVector();
+        Vector<?> actual = createIntTuple().toVector();
         assertThat(actual).isEqualTo(Vector.of());
     }
 
     @Test
     public void shouldCompareEqual() {
-        final Tuple0 t0 = createIntTuple();
+        Tuple0 t0 = createIntTuple();
         assertThat(t0.compareTo(t0)).isZero();
         assertThat(intTupleComparator.compare(t0, t0)).isZero();
     }
 
     @Test
     public void shouldThrowWhenComparingToNull() {
-        final Tuple0 t0 = createIntTuple();
+        Tuple0 t0 = createIntTuple();
         assertThrows(NullPointerException.class, () -> t0.compareTo(null));
     }
 
     @Test
     public void shouldApplyTuple() {
-        final Tuple0 tuple = createTuple();
-        final Tuple0 actual = tuple.apply(() -> Tuple0.instance());
+        Tuple0 tuple = createTuple();
+        Tuple0 actual = tuple.apply(() -> Tuple0.instance());
         assertThat(actual).isEqualTo(Tuple0.instance());
     }
 
     @Test
     public void shouldAppendValue() {
-        final Tuple1<Integer> actual = Tuple0.instance().append(1);
-        final Tuple1<Integer> expected = Tuple.of(1);
+        Tuple1<Integer> actual = Tuple0.instance().append(1);
+        Tuple1<Integer> expected = Tuple.of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple1() {
-        final Tuple1<Integer> actual = Tuple0.instance().concat(Tuple.of(1));
-        final Tuple1<Integer> expected = Tuple.of(1);
+        Tuple1<Integer> actual = Tuple0.instance().concat(Tuple.of(1));
+        Tuple1<Integer> expected = Tuple.of(1);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple2() {
-        final Tuple2<Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2));
-        final Tuple2<Integer, Integer> expected = Tuple.of(1, 2);
+        Tuple2<Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2));
+        Tuple2<Integer, Integer> expected = Tuple.of(1, 2);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple3() {
-        final Tuple3<Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3));
-        final Tuple3<Integer, Integer, Integer> expected = Tuple.of(1, 2, 3);
+        Tuple3<Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3));
+        Tuple3<Integer, Integer, Integer> expected = Tuple.of(1, 2, 3);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple4() {
-        final Tuple4<Integer, Integer, Integer, Integer> actual =
-                Tuple0.instance().concat(Tuple.of(1, 2, 3, 4));
-        final Tuple4<Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4);
+        Tuple4<Integer, Integer, Integer, Integer> actual = Tuple0.instance().concat(Tuple.of(1, 2, 3, 4));
+        Tuple4<Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple5() {
-        final Tuple5<Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple5<Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5));
-        final Tuple5<Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5);
+        Tuple5<Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple6() {
-        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6));
-        final Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6);
+        Tuple6<Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple7() {
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6, 7));
-        final Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
-                Tuple.of(1, 2, 3, 4, 5, 6, 7);
+        Tuple7<Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected = Tuple.of(1, 2, 3, 4, 5, 6, 7);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldConcatTuple8() {
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
+        Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> actual =
                 Tuple0.instance().concat(Tuple.of(1, 2, 3, 4, 5, 6, 7, 8));
-        final Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
+        Tuple8<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> expected =
                 Tuple.of(1, 2, 3, 4, 5, 6, 7, 8);
         assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     public void shouldRecognizeEquality() {
-        final Tuple0 tuple1 = createTuple();
-        final Tuple0 tuple2 = createTuple();
+        Tuple0 tuple1 = createTuple();
+        Tuple0 tuple2 = createTuple();
         assertThat((Object) tuple1).isEqualTo(tuple2);
     }
 
     @Test
     public void shouldRecognizeNonEquality() {
-        final Tuple0 tuple = createTuple();
-        final Object other = new Object();
+        Tuple0 tuple = createTuple();
+        Object other = new Object();
         assertThat(tuple).isNotEqualTo(other);
     }
 
@@ -142,7 +140,7 @@ public class Tuple0Test {
 
     @Test
     public void shouldDeconstructWithRecordPattern() {
-        final Object o = createIntTuple();
+        Object o = createIntTuple();
         if (o instanceof Tuple0()) {
 
         } else {
@@ -152,8 +150,8 @@ public class Tuple0Test {
 
     @Test
     public void shouldImplementToString() {
-        final String actual = createTuple().toString();
-        final String expected = "()";
+        String actual = createTuple().toString();
+        String expected = "()";
         assertThat(actual).isEqualTo(expected);
     }
 

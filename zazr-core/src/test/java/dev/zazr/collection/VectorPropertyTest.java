@@ -20,49 +20,49 @@ public class VectorPropertyTest {
     @Test
     public void shouldCreateAndGet() {
         for (int i = 0; i < 500; i++) {
-            final dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, i);
-            final Vector<Integer> actual = Vector.ofAll(expected);
+            dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, i);
+            Vector<Integer> actual = Vector.ofAll(expected);
             for (int j = 0; j < actual.size(); j++) {
                 assertThat(expected.get(j)).isEqualTo(actual.get(j));
             }
 
             /* boolean */
-            final dev.zazr.collection.List<Boolean> expectedBoolean = expected.map(v -> v > 0);
-            final Vector<Boolean> actualBoolean = Vector.ofAll(booleans(expectedBoolean));
+            dev.zazr.collection.List<Boolean> expectedBoolean = expected.map(v -> v > 0);
+            Vector<Boolean> actualBoolean = Vector.ofAll(booleans(expectedBoolean));
             assertAreEqual(expectedBoolean, actualBoolean);
 
             /* byte */
-            final dev.zazr.collection.List<Byte> expectedByte = expected.map(Integer::byteValue);
-            final Vector<Byte> actualByte = Vector.ofAll(bytes(expectedByte));
+            dev.zazr.collection.List<Byte> expectedByte = expected.map(Integer::byteValue);
+            Vector<Byte> actualByte = Vector.ofAll(bytes(expectedByte));
             assertAreEqual(expectedByte, actualByte);
 
             /* char */
-            final dev.zazr.collection.List<Character> expectedChar = expected.map(v -> (char) v.intValue());
-            final Vector<Character> actualChar = Vector.ofAll(chars(expectedChar));
+            dev.zazr.collection.List<Character> expectedChar = expected.map(v -> (char) v.intValue());
+            Vector<Character> actualChar = Vector.ofAll(chars(expectedChar));
             assertAreEqual(expectedChar, actualChar);
 
             /* double */
-            final dev.zazr.collection.List<Double> expectedDouble = expected.map(Integer::doubleValue);
-            final Vector<Double> actualDouble = Vector.ofAll(doubles(expectedDouble));
+            dev.zazr.collection.List<Double> expectedDouble = expected.map(Integer::doubleValue);
+            Vector<Double> actualDouble = Vector.ofAll(doubles(expectedDouble));
             assertAreEqual(expectedDouble, actualDouble);
 
             /* float */
-            final dev.zazr.collection.List<Float> expectedFloat = expected.map(Integer::floatValue);
-            final Vector<Float> actualFloat = Vector.ofAll(floats(expectedFloat));
+            dev.zazr.collection.List<Float> expectedFloat = expected.map(Integer::floatValue);
+            Vector<Float> actualFloat = Vector.ofAll(floats(expectedFloat));
             assertAreEqual(expectedFloat, actualFloat);
 
             /* int */
-            final Vector<Integer> actualInt = Vector.ofAll(ints(expected));
+            Vector<Integer> actualInt = Vector.ofAll(ints(expected));
             assertAreEqual(expected, actualInt);
 
             /* long */
-            final dev.zazr.collection.List<Long> expectedLong = expected.map(Integer::longValue);
-            final Vector<Long> actualLong = Vector.ofAll(longs(expectedLong));
+            dev.zazr.collection.List<Long> expectedLong = expected.map(Integer::longValue);
+            Vector<Long> actualLong = Vector.ofAll(longs(expectedLong));
             assertAreEqual(expectedLong, actualLong);
 
             /* short */
-            final dev.zazr.collection.List<Short> expectedShort = expected.map(Integer::shortValue);
-            final Vector<Short> actualShort = Vector.ofAll(shorts(expectedShort));
+            dev.zazr.collection.List<Short> expectedShort = expected.map(Integer::shortValue);
+            Vector<Short> actualShort = Vector.ofAll(shorts(expectedShort));
             assertAreEqual(expectedShort, actualShort);
         }
     }
@@ -71,8 +71,8 @@ public class VectorPropertyTest {
     public void shouldIterate() {
         for (byte depth = 0; depth <= 2; depth++) {
             for (int i = 0; i < 5000; i++) {
-                final dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, i);
-                final Vector<Integer> actual = Vector.ofAll(expected);
+                dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, i);
+                Vector<Integer> actual = Vector.ofAll(expected);
                 assertAreEqual(actual, expected);
             }
         }
@@ -121,10 +121,10 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldUpdate() {
-        final Function<Integer, Integer> mapper = i -> i + 1;
+        Function<Integer, Integer> mapper = i -> i + 1;
 
         for (byte depth = 0; depth <= 2; depth++) {
-            final int length = 10_000;
+            int length = 10_000;
 
             for (int drop = 0; drop <= (WIDTH + 1); drop++) {
                 dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, length);
@@ -134,7 +134,7 @@ public class VectorPropertyTest {
                 actual = assertAreEqual(actual, drop, Vector::drop, expected);
 
                 for (int i = 0; i < actual.size(); i++) {
-                    final Integer newValue = mapper.apply(actual.get(i));
+                    Integer newValue = mapper.apply(actual.get(i));
                     actual = actual.update(i, newValue);
                 }
 
@@ -145,12 +145,12 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldDrop() {
-        final dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, 2_000);
-        final Vector<Integer> actual = Vector.ofAll(expected);
+        dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, 2_000);
+        Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
         for (int i = 0; i <= expected.size(); i++) {
-            final dev.zazr.collection.List<Integer> expectedDrop = expected.drop(i);
+            dev.zazr.collection.List<Integer> expectedDrop = expected.drop(i);
 
             assertAreEqual(actual, i, Vector::drop, expectedDrop);
             assertAreEqual(actualSingleDrop, null, (a, p) -> a, expectedDrop);
@@ -161,12 +161,12 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldDropRight() {
-        final dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, 2_000);
-        final Vector<Integer> actual = Vector.ofAll(expected);
+        dev.zazr.collection.List<Integer> expected = dev.zazr.collection.List.range(0, 2_000);
+        Vector<Integer> actual = Vector.ofAll(expected);
 
         Vector<Integer> actualSingleDrop = actual;
         for (int i = 0; i <= expected.size(); i++) {
-            final dev.zazr.collection.List<Integer> expectedDrop = expected.dropRight(i);
+            dev.zazr.collection.List<Integer> expectedDrop = expected.dropRight(i);
 
             assertAreEqual(actual, i, Vector::dropRight, expectedDrop);
             assertAreEqual(actualSingleDrop, null, (a, p) -> a, expectedDrop);
@@ -190,7 +190,7 @@ public class VectorPropertyTest {
 
     @Test
     public void shouldBehaveLikeArray() {
-        final Random random = new Random(13579);
+        Random random = new Random(13579);
 
         for (int i = 1; i < 10; i++) {
             dev.zazr.collection.List<Object> expected = dev.zazr.collection.List.empty();
@@ -210,7 +210,7 @@ public class VectorPropertyTest {
                 }
 
                 if (percent(random) < 50) {
-                    final Object value = randomValue(random);
+                    Object value = randomValue(random);
                     expected = expected.append(value);
                     actual = assertAreEqual(actual, value, Vector::append, expected);
                     history = history.append(Tuple.of(expected, actual));
@@ -227,7 +227,7 @@ public class VectorPropertyTest {
                 }
 
                 if (percent(random) < 50) {
-                    final Object value = randomValue(random);
+                    Object value = randomValue(random);
                     expected = expected.prepend(value);
                     actual = assertAreEqual(actual, value, Vector::prepend, expected);
                     history = history.append(Tuple.of(expected, actual));
@@ -242,14 +242,14 @@ public class VectorPropertyTest {
                 }
 
                 if (percent(random) < 30) {
-                    final int n = random.nextInt(expected.size() + 1);
+                    int n = random.nextInt(expected.size() + 1);
                     expected = expected.drop(n);
                     actual = assertAreEqual(actual, n, Vector::drop, expected);
                     history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 10) {
-                    final int index = random.nextInt(expected.size() + 1);
+                    int index = random.nextInt(expected.size() + 1);
                     Iterable<Object> values = randomValues(random, random.nextInt(2 * WIDTH));
                     expected = expected.insertAll(index, values);
 
@@ -259,7 +259,7 @@ public class VectorPropertyTest {
                 }
 
                 if (percent(random) < 30) {
-                    final int n = random.nextInt(expected.size() + 1);
+                    int n = random.nextInt(expected.size() + 1);
                     expected = expected.take(n);
                     actual = assertAreEqual(actual, n, Vector::take, expected);
                     history = history.append(Tuple.of(expected, actual));
@@ -274,15 +274,15 @@ public class VectorPropertyTest {
                 }
 
                 if (!expected.isEmpty()) {
-                    final int index = random.nextInt(expected.size());
+                    int index = random.nextInt(expected.size());
                     assertThat(actual.get(index)).isEqualTo(expected.get(index));
                     history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 50) {
                     if (!expected.isEmpty()) {
-                        final int index = random.nextInt(expected.size());
-                        final Object value = randomValue(random);
+                        int index = random.nextInt(expected.size());
+                        Object value = randomValue(random);
                         expected = expected.update(index, value);
                         actual = assertAreEqual(actual, null, (a, p) -> a.update(index, value), expected);
                         history = history.append(Tuple.of(expected, actual));
@@ -290,14 +290,14 @@ public class VectorPropertyTest {
                 }
 
                 if (percent(random) < 20) {
-                    final Function<Object, Object> mapper = val -> (val instanceof Integer) ? ((Integer) val + 1) : val;
+                    Function<Object, Object> mapper = val -> (val instanceof Integer) ? ((Integer) val + 1) : val;
                     expected = expected.map(mapper);
                     actual = assertAreEqual(actual, null, (a, p) -> a.map(mapper), expected);
                     history = history.append(Tuple.of(expected, actual));
                 }
 
                 if (percent(random) < 30) {
-                    final Predicate<Object> filter = val -> (String.valueOf(val).length() % 10) == 0;
+                    Predicate<Object> filter = val -> (String.valueOf(val).length() % 10) == 0;
                     expected = expected.filter(filter);
                     actual = assertAreEqual(actual, null, (a, p) -> a.filter(filter), expected);
                     history = history.append(Tuple.of(expected, actual));
@@ -306,8 +306,8 @@ public class VectorPropertyTest {
                 if (percent(random) < 30) {
                     for (int k = 0; k < 2; k++) {
                         if (!expected.isEmpty()) {
-                            final int to = random.nextInt(expected.size());
-                            final int from = random.nextInt(to + 1);
+                            int to = random.nextInt(expected.size());
+                            int from = random.nextInt(to + 1);
                             expected = expected.slice(from, to);
                             actual = assertAreEqual(actual, null, (a, p) -> a.slice(from, to), expected);
                             history = history.append(Tuple.of(expected, actual));
@@ -325,8 +325,8 @@ public class VectorPropertyTest {
     }
 
     private Iterable<Object> randomValues(Random random, int count) {
-        final Vector<Object> values = Vector.range(0, count).map(v -> randomValue(random));
-        final int percent = percent(random);
+        Vector<Object> values = Vector.range(0, count).map(v -> randomValue(random));
+        int percent = percent(random);
         if (percent < 30) {
             return new java.util.ArrayList<>(values.asJava()); /* not Traversable */
         } else {
@@ -335,7 +335,7 @@ public class VectorPropertyTest {
     }
 
     private Object randomValue(Random random) {
-        final int percent = percent(random);
+        int percent = percent(random);
         if (percent < 10) {
             return "String";
         } else {
@@ -345,19 +345,19 @@ public class VectorPropertyTest {
 
     private static <T extends Traversable<?>, P> T assertAreEqual(
             T previousActual, P param, BiFunction<T, P, T> actualProvider, Traversable<?> expected) {
-        final T actual = actualProvider.apply(previousActual, param);
+        T actual = actualProvider.apply(previousActual, param);
         assertAreEqual(expected, actual);
         return actual; // makes debugging a lot easier, as the frame can be dropped and rerun on AssertError
     }
 
     private static void assertAreEqual(Traversable<?> expected, Traversable<?> actual) {
-        final java.util.List<?> actualList = new java.util.ArrayList<>(actual.asJava());
-        final java.util.List<?> expectedList = new java.util.ArrayList<>(expected.asJava());
+        java.util.List<?> actualList = new java.util.ArrayList<>(actual.asJava());
+        java.util.List<?> expectedList = new java.util.ArrayList<>(expected.asJava());
         assertThat(actualList).isEqualTo(expectedList); // a lot faster than `hasSameElementsAs`
     }
 
     private static boolean[] booleans(dev.zazr.collection.List<?> values) {
-        final boolean[] array = new boolean[values.size()];
+        boolean[] array = new boolean[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Boolean) value;
@@ -366,7 +366,7 @@ public class VectorPropertyTest {
     }
 
     private static byte[] bytes(dev.zazr.collection.List<?> values) {
-        final byte[] array = new byte[values.size()];
+        byte[] array = new byte[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Byte) value;
@@ -375,7 +375,7 @@ public class VectorPropertyTest {
     }
 
     private static char[] chars(dev.zazr.collection.List<?> values) {
-        final char[] array = new char[values.size()];
+        char[] array = new char[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Character) value;
@@ -384,7 +384,7 @@ public class VectorPropertyTest {
     }
 
     private static double[] doubles(dev.zazr.collection.List<?> values) {
-        final double[] array = new double[values.size()];
+        double[] array = new double[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Double) value;
@@ -393,7 +393,7 @@ public class VectorPropertyTest {
     }
 
     private static float[] floats(dev.zazr.collection.List<?> values) {
-        final float[] array = new float[values.size()];
+        float[] array = new float[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Float) value;
@@ -402,7 +402,7 @@ public class VectorPropertyTest {
     }
 
     private static int[] ints(dev.zazr.collection.List<?> values) {
-        final int[] array = new int[values.size()];
+        int[] array = new int[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Integer) value;
@@ -411,7 +411,7 @@ public class VectorPropertyTest {
     }
 
     private static long[] longs(dev.zazr.collection.List<?> values) {
-        final long[] array = new long[values.size()];
+        long[] array = new long[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Long) value;
@@ -420,7 +420,7 @@ public class VectorPropertyTest {
     }
 
     private static short[] shorts(dev.zazr.collection.List<?> values) {
-        final short[] array = new short[values.size()];
+        short[] array = new short[values.size()];
         int i = 0;
         for (Object value : values) {
             array[i++] = (Short) value;

@@ -25,13 +25,13 @@ public class CheckedFunction2Test {
                 return null;
             }
         }
-        final Type type = new Type();
+        Type type = new Type();
         assertThat(CheckedFunction2.of(type::methodReference)).isNotNull();
     }
 
     @Test
     public void shouldLiftPartialFunction() {
-        final BiFunction<Integer, Integer, Option<Integer>> lifted = CheckedFunction2.lift((i1, i2) -> {
+        BiFunction<Integer, Integer, Option<Integer>> lifted = CheckedFunction2.lift((i1, i2) -> {
             if (i1 == 0) {
                 return null;
             }
@@ -51,7 +51,7 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldRethrowFatalThrowableFromLiftTry() {
-        final BiFunction<Integer, Integer, Try<Integer>> lifted = CheckedFunction2.liftTry((i1, i2) -> {
+        BiFunction<Integer, Integer, Try<Integer>> lifted = CheckedFunction2.liftTry((i1, i2) -> {
             throw new OutOfMemoryError("fatal");
         });
         assertThrows(OutOfMemoryError.class, () -> lifted.apply(1, 1));
@@ -59,37 +59,37 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
-        final BiFunction<Integer, Integer, Try<Integer>> lifted = CheckedFunction2.liftTry((i1, i2) -> {
+        BiFunction<Integer, Integer, Try<Integer>> lifted = CheckedFunction2.liftTry((i1, i2) -> {
             throw new Exception("non-fatal");
         });
-        final Try<Integer> result = lifted.apply(1, 1);
+        Try<Integer> result = lifted.apply(1, 1);
         assertThat(result.isFailure()).isTrue();
         assertThat(result.getCause()).isInstanceOf(Exception.class).hasMessage("non-fatal");
     }
 
     @Test
     public void shouldPartiallyApply() throws Exception {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
+        CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
         assertThat(f.apply(1).apply(2)).isEqualTo("12");
     }
 
     @Test
     public void shouldConstant() throws Exception {
-        final CheckedFunction2<Object, Object, Object> f = CheckedFunction2.constant(6);
+        CheckedFunction2<Object, Object, Object> f = CheckedFunction2.constant(6);
         assertThat(f.apply(1, 2)).isEqualTo(6);
     }
 
     @Test
     public void shouldCurry() throws Exception {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
-        final Function<Object, CheckedFunction1<Object, Object>> curried = f.curried();
+        CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
+        Function<Object, CheckedFunction1<Object, Object>> curried = f.curried();
         assertThat(curried.apply(1).apply(2)).isEqualTo("12");
     }
 
     @Test
     public void shouldTuple() throws Exception {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
-        final CheckedFunction1<Tuple2<Object, Object>, Object> tupled = f.tupled();
+        CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
+        CheckedFunction1<Tuple2<Object, Object>, Object> tupled = f.tupled();
         assertThat(tupled.apply(Tuple.of(1, 2))).isEqualTo("12");
     }
 
@@ -98,8 +98,8 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldRecover() {
-        final BiFunction<String, String, MessageDigest> recover = digest.recover(throwable -> (s1, s2) -> null);
-        final MessageDigest md5 = recover.apply("M", "D5");
+        BiFunction<String, String, MessageDigest> recover = digest.recover(throwable -> (s1, s2) -> null);
+        MessageDigest md5 = recover.apply("M", "D5");
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
         assertThat(md5.getDigestLength()).isEqualTo(16);
@@ -108,12 +108,12 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldRecoverNonNull() {
-        final BiFunction<String, String, MessageDigest> recover = digest.recover(throwable -> null);
-        final MessageDigest md5 = recover.apply("M", "D5");
+        BiFunction<String, String, MessageDigest> recover = digest.recover(throwable -> null);
+        MessageDigest md5 = recover.apply("M", "D5");
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
         assertThat(md5.getDigestLength()).isEqualTo(16);
-        final Try<MessageDigest> unknown = Try.of(() -> recover.apply("U", "nknown"));
+        Try<MessageDigest> unknown = Try.of(() -> recover.apply("U", "nknown"));
         assertThat(unknown).isNotNull();
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull().isInstanceOf(NullPointerException.class);
@@ -125,10 +125,10 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldNotHandFatalThrowableToRecover() {
-        final CheckedFunction2<String, String, MessageDigest> fatal = (s1, s2) -> {
+        CheckedFunction2<String, String, MessageDigest> fatal = (s1, s2) -> {
             throw new OutOfMemoryError("fatal");
         };
-        final BiFunction<String, String, MessageDigest> recover = fatal.recover(throwable -> {
+        BiFunction<String, String, MessageDigest> recover = fatal.recover(throwable -> {
             throw new AssertionError("recover must not see a fatal throwable");
         });
         assertThrows(OutOfMemoryError.class, () -> recover.apply("M", "D5"));
@@ -136,17 +136,17 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldHandNonFatalThrowableToRecover() {
-        final CheckedFunction2<String, String, MessageDigest> nonFatal = (s1, s2) -> {
+        CheckedFunction2<String, String, MessageDigest> nonFatal = (s1, s2) -> {
             throw new IllegalStateException("non-fatal");
         };
-        final BiFunction<String, String, MessageDigest> recover = nonFatal.recover(throwable -> (s1, s2) -> null);
+        BiFunction<String, String, MessageDigest> recover = nonFatal.recover(throwable -> (s1, s2) -> null);
         assertThat(recover.apply("M", "D5")).isNull();
     }
 
     @Test
     public void shouldUncheckedWork() {
-        final BiFunction<String, String, MessageDigest> unchecked = digest.unchecked();
-        final MessageDigest md5 = unchecked.apply("M", "D5");
+        BiFunction<String, String, MessageDigest> unchecked = digest.unchecked();
+        MessageDigest md5 = unchecked.apply("M", "D5");
         assertThat(md5).isNotNull();
         assertThat(md5.getAlgorithm()).isEqualToIgnoringCase("MD5");
         assertThat(md5.getDigestLength()).isEqualTo(16);
@@ -155,20 +155,20 @@ public class CheckedFunction2Test {
     @Test
     public void shouldUncheckedThrowIllegalState() {
         assertThrows(NoSuchAlgorithmException.class, () -> {
-            final BiFunction<String, String, MessageDigest> unchecked = digest.unchecked();
+            BiFunction<String, String, MessageDigest> unchecked = digest.unchecked();
             unchecked.apply("U", "nknown"); // Look ma, we throw an undeclared checked exception!
         });
     }
 
     @Test
     public void shouldLiftTryPartialFunction() {
-        final BiFunction<String, String, Try<MessageDigest>> liftTry = CheckedFunction2.liftTry(digest);
-        final Try<MessageDigest> md5 = liftTry.apply("M", "D5");
+        BiFunction<String, String, Try<MessageDigest>> liftTry = CheckedFunction2.liftTry(digest);
+        Try<MessageDigest> md5 = liftTry.apply("M", "D5");
         assertThat(md5.isSuccess()).isTrue();
         assertThat(md5.get()).isNotNull();
         assertThat(md5.get().getAlgorithm()).isEqualToIgnoringCase("MD5");
         assertThat(md5.get().getDigestLength()).isEqualTo(16);
-        final Try<MessageDigest> unknown = liftTry.apply("U", "nknown");
+        Try<MessageDigest> unknown = liftTry.apply("U", "nknown");
         assertThat(unknown.isFailure()).isTrue();
         assertThat(unknown.getCause()).isNotNull();
         assertThat(unknown.getCause().getMessage()).isEqualToIgnoringCase("Unknown MessageDigest not available");
@@ -185,9 +185,9 @@ public class CheckedFunction2Test {
 
     @Test
     public void shouldComposeWithAndThen() throws Exception {
-        final CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
-        final CheckedFunction1<Object, Object> after = o -> o + "!";
-        final CheckedFunction2<Object, Object, Object> composed = f.andThen(after);
+        CheckedFunction2<Object, Object, Object> f = (o1, o2) -> "" + o1 + o2;
+        CheckedFunction1<Object, Object> after = o -> o + "!";
+        CheckedFunction2<Object, Object, Object> composed = f.andThen(after);
         assertThat(composed.apply(1, 2)).isEqualTo("12!");
     }
 
@@ -196,24 +196,24 @@ public class CheckedFunction2Test {
 
         @Test
         public void shouldCompose1() throws Exception {
-            final CheckedFunction2<String, String, String> concat = (String s1, String s2) -> s1 + s2;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            CheckedFunction2<String, String, String> concat = (String s1, String s2) -> s1 + s2;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose1(toUpperCase).apply("xx", "s2")).isEqualTo("XXs2");
         }
 
         @Test
         public void shouldCompose2() throws Exception {
-            final CheckedFunction2<String, String, String> concat = (String s1, String s2) -> s1 + s2;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            CheckedFunction2<String, String, String> concat = (String s1, String s2) -> s1 + s2;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose2(toUpperCase).apply("s1", "xx")).isEqualTo("s1XX");
         }
     }
 
     @Test
     public void shouldNarrow() throws Exception {
-        final CheckedFunction2<Number, Number, String> wideFunction =
+        CheckedFunction2<Number, Number, String> wideFunction =
                 (o1, o2) -> String.format("Numbers are: %s, %s", o1, o2);
-        final CheckedFunction2<Integer, Integer, CharSequence> narrowFunction = CheckedFunction2.narrow(wideFunction);
+        CheckedFunction2<Integer, Integer, CharSequence> narrowFunction = CheckedFunction2.narrow(wideFunction);
 
         assertThat(narrowFunction.apply(1, 2)).isEqualTo("Numbers are: 1, 2");
     }

@@ -73,12 +73,12 @@ public final class BuilderLaws {
         return Law.of(
                 "builderResultEqualsOfAll",
                 (elements, config) -> Check.evaluate(config, elements, Values.integers(), (xs, hint) -> {
-                    final Vector<Object> expected = Vector.ofAll(xs);
-                    final Vector.Builder<Object> oneByOne = Vector.newBuilder();
+                    Vector<Object> expected = Vector.ofAll(xs);
+                    Vector.Builder<Object> oneByOne = Vector.newBuilder();
                     xs.forEach(oneByOne::add);
-                    final Vector.Builder<Object> hinted = Vector.newBuilder(Math.abs(hint));
+                    Vector.Builder<Object> hinted = Vector.newBuilder(Math.abs(hint));
                     xs.forEach(hinted::add);
-                    final Vector<Object> all = Vector.newBuilder().addAll(xs).result();
+                    Vector<Object> all = Vector.newBuilder().addAll(xs).result();
                     return Results.equal(oneByOne.result(), expected)
                             && Results.equal(hinted.result(), expected)
                             && Results.equal(all, expected)
@@ -98,10 +98,10 @@ public final class BuilderLaws {
         return Law.of(
                 "collectorResultEqualsOfAll",
                 (subject, config) -> Check.evaluate(config, subject.elements(), xs -> {
-                    final ArrayList<T> list = CollectionLaws.elements(xs);
-                    final F expected = subject.ofAll().apply(list);
-                    final F sequential = list.stream().collect(subject.collector());
-                    final F parallel = list.parallelStream().collect(subject.collector());
+                    ArrayList<T> list = CollectionLaws.elements(xs);
+                    F expected = subject.ofAll().apply(list);
+                    F sequential = list.stream().collect(subject.collector());
+                    F parallel = list.parallelStream().collect(subject.collector());
                     return Results.equal(sequential, expected)
                             && Results.equal(parallel, expected)
                             && subject.order()
@@ -112,7 +112,7 @@ public final class BuilderLaws {
     }
 
     private static ArrayList<Object> elements(Iterable<?> xs) {
-        final ArrayList<Object> elements = new ArrayList<>();
+        ArrayList<Object> elements = new ArrayList<>();
         xs.forEach(elements::add);
         return elements;
     }

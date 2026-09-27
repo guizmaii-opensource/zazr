@@ -23,13 +23,13 @@ public class Function6Test {
                 return null;
             }
         }
-        final Type type = new Type();
+        Type type = new Type();
         assertThat(Function6.of(type::methodReference)).isNotNull();
     }
 
     @Test
     public void shouldLiftPartialFunction() {
-        final Function6<Integer, Integer, Integer, Integer, Integer, Integer, Option<Integer>> lifted =
+        Function6<Integer, Integer, Integer, Integer, Integer, Integer, Option<Integer>> lifted =
                 Function6.lift((i1, i2, i3, i4, i5, i6) -> {
                     if (i1 == 0) {
                         return null;
@@ -50,7 +50,7 @@ public class Function6Test {
 
     @Test
     public void shouldRethrowFatalThrowableFromLiftTry() {
-        final Function6<Integer, Integer, Integer, Integer, Integer, Integer, Try<Integer>> lifted =
+        Function6<Integer, Integer, Integer, Integer, Integer, Integer, Try<Integer>> lifted =
                 Function6.liftTry((i1, i2, i3, i4, i5, i6) -> {
                     throw new OutOfMemoryError("fatal");
                 });
@@ -59,18 +59,18 @@ public class Function6Test {
 
     @Test
     public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
-        final Function6<Integer, Integer, Integer, Integer, Integer, Integer, Try<Integer>> lifted =
+        Function6<Integer, Integer, Integer, Integer, Integer, Integer, Try<Integer>> lifted =
                 Function6.liftTry((i1, i2, i3, i4, i5, i6) -> {
                     throw new IllegalStateException("non-fatal");
                 });
-        final Try<Integer> result = lifted.apply(1, 1, 1, 1, 1, 1);
+        Try<Integer> result = lifted.apply(1, 1, 1, 1, 1, 1);
         assertThat(result.isFailure()).isTrue();
         assertThat(result.getCause()).isInstanceOf(IllegalStateException.class).hasMessage("non-fatal");
     }
 
     @Test
     public void shouldPartiallyApply() {
-        final Function6<Object, Object, Object, Object, Object, Object, Object> f =
+        Function6<Object, Object, Object, Object, Object, Object, Object> f =
                 (o1, o2, o3, o4, o5, o6) -> "" + o1 + o2 + o3 + o4 + o5 + o6;
         assertThat(f.apply(1).apply(2, 3, 4, 5, 6)).isEqualTo("123456");
         assertThat(f.apply(1, 2).apply(3, 4, 5, 6)).isEqualTo("123456");
@@ -81,15 +81,15 @@ public class Function6Test {
 
     @Test
     public void shouldConstant() {
-        final Function6<Object, Object, Object, Object, Object, Object, Object> f = Function6.constant(6);
+        Function6<Object, Object, Object, Object, Object, Object, Object> f = Function6.constant(6);
         assertThat(f.apply(1, 2, 3, 4, 5, 6)).isEqualTo(6);
     }
 
     @Test
     public void shouldCurry() {
-        final Function6<Object, Object, Object, Object, Object, Object, Object> f =
+        Function6<Object, Object, Object, Object, Object, Object, Object> f =
                 (o1, o2, o3, o4, o5, o6) -> "" + o1 + o2 + o3 + o4 + o5 + o6;
-        final Function<
+        Function<
                         Object,
                         Function<
                                 Object, Function<Object, Function<Object, Function<Object, Function<Object, Object>>>>>>
@@ -100,9 +100,9 @@ public class Function6Test {
 
     @Test
     public void shouldTuple() {
-        final Function6<Object, Object, Object, Object, Object, Object, Object> f =
+        Function6<Object, Object, Object, Object, Object, Object, Object> f =
                 (o1, o2, o3, o4, o5, o6) -> "" + o1 + o2 + o3 + o4 + o5 + o6;
-        final Function<Tuple6<Object, Object, Object, Object, Object, Object>, Object> tupled = f.tupled();
+        Function<Tuple6<Object, Object, Object, Object, Object, Object>, Object> tupled = f.tupled();
         assertThat(tupled.apply(Tuple.of(1, 2, 3, 4, 5, 6))).isEqualTo("123456");
     }
 
@@ -136,10 +136,10 @@ public class Function6Test {
 
     @Test
     public void shouldComposeWithAndThen() {
-        final Function6<Object, Object, Object, Object, Object, Object, Object> f =
+        Function6<Object, Object, Object, Object, Object, Object, Object> f =
                 (o1, o2, o3, o4, o5, o6) -> "" + o1 + o2 + o3 + o4 + o5 + o6;
-        final Function<Object, Object> after = o -> o + "!";
-        final Function6<Object, Object, Object, Object, Object, Object, Object> composed = f.andThen(after);
+        Function<Object, Object> after = o -> o + "!";
+        Function6<Object, Object, Object, Object, Object, Object, Object> composed = f.andThen(after);
         assertThat(composed.apply(1, 2, 3, 4, 5, 6)).isEqualTo("123456!");
     }
 
@@ -148,54 +148,54 @@ public class Function6Test {
 
         @Test
         public void shouldCompose1() {
-            final Function6<String, String, String, String, String, String, String> concat =
+            Function6<String, String, String, String, String, String, String> concat =
                     (String s1, String s2, String s3, String s4, String s5, String s6) -> s1 + s2 + s3 + s4 + s5 + s6;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose1(toUpperCase).apply("xx", "s2", "s3", "s4", "s5", "s6"))
                     .isEqualTo("XXs2s3s4s5s6");
         }
 
         @Test
         public void shouldCompose2() {
-            final Function6<String, String, String, String, String, String, String> concat =
+            Function6<String, String, String, String, String, String, String> concat =
                     (String s1, String s2, String s3, String s4, String s5, String s6) -> s1 + s2 + s3 + s4 + s5 + s6;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose2(toUpperCase).apply("s1", "xx", "s3", "s4", "s5", "s6"))
                     .isEqualTo("s1XXs3s4s5s6");
         }
 
         @Test
         public void shouldCompose3() {
-            final Function6<String, String, String, String, String, String, String> concat =
+            Function6<String, String, String, String, String, String, String> concat =
                     (String s1, String s2, String s3, String s4, String s5, String s6) -> s1 + s2 + s3 + s4 + s5 + s6;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose3(toUpperCase).apply("s1", "s2", "xx", "s4", "s5", "s6"))
                     .isEqualTo("s1s2XXs4s5s6");
         }
 
         @Test
         public void shouldCompose4() {
-            final Function6<String, String, String, String, String, String, String> concat =
+            Function6<String, String, String, String, String, String, String> concat =
                     (String s1, String s2, String s3, String s4, String s5, String s6) -> s1 + s2 + s3 + s4 + s5 + s6;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose4(toUpperCase).apply("s1", "s2", "s3", "xx", "s5", "s6"))
                     .isEqualTo("s1s2s3XXs5s6");
         }
 
         @Test
         public void shouldCompose5() {
-            final Function6<String, String, String, String, String, String, String> concat =
+            Function6<String, String, String, String, String, String, String> concat =
                     (String s1, String s2, String s3, String s4, String s5, String s6) -> s1 + s2 + s3 + s4 + s5 + s6;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose5(toUpperCase).apply("s1", "s2", "s3", "s4", "xx", "s6"))
                     .isEqualTo("s1s2s3s4XXs6");
         }
 
         @Test
         public void shouldCompose6() {
-            final Function6<String, String, String, String, String, String, String> concat =
+            Function6<String, String, String, String, String, String, String> concat =
                     (String s1, String s2, String s3, String s4, String s5, String s6) -> s1 + s2 + s3 + s4 + s5 + s6;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose6(toUpperCase).apply("s1", "s2", "s3", "s4", "s5", "xx"))
                     .isEqualTo("s1s2s3s4s5XX");
         }
@@ -203,10 +203,9 @@ public class Function6Test {
 
     @Test
     public void shouldNarrow() {
-        final Function6<Number, Number, Number, Number, Number, Number, String> wideFunction =
-                (o1, o2, o3, o4, o5, o6) ->
-                        String.format("Numbers are: %s, %s, %s, %s, %s, %s", o1, o2, o3, o4, o5, o6);
-        final Function6<Integer, Integer, Integer, Integer, Integer, Integer, CharSequence> narrowFunction =
+        Function6<Number, Number, Number, Number, Number, Number, String> wideFunction = (o1, o2, o3, o4, o5, o6) ->
+                String.format("Numbers are: %s, %s, %s, %s, %s, %s", o1, o2, o3, o4, o5, o6);
+        Function6<Integer, Integer, Integer, Integer, Integer, Integer, CharSequence> narrowFunction =
                 Function6.narrow(wideFunction);
 
         assertThat(narrowFunction.apply(1, 2, 3, 4, 5, 6)).isEqualTo("Numbers are: 1, 2, 3, 4, 5, 6");

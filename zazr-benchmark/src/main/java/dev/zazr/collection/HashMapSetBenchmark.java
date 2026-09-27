@@ -50,15 +50,15 @@ public class HashMapSetBenchmark {
 
     @Setup(Level.Trial)
     public void setup() {
-        final Random random = new Random(42);
-        final java.util.LinkedHashSet<Integer> keys = new java.util.LinkedHashSet<>();
+        Random random = new Random(42);
+        java.util.LinkedHashSet<Integer> keys = new java.util.LinkedHashSet<>();
         while (keys.size() < 2 * size) {
             keys.add(random.nextInt());
         }
-        final ArrayList<Integer> all = new ArrayList<>(keys);
+        ArrayList<Integer> all = new ArrayList<>(keys);
         present = all.subList(0, size).toArray(new Integer[0]);
         absent = all.subList(size, 2 * size).toArray(new Integer[0]);
-        final ArrayList<Integer> presentList = new ArrayList<>(java.util.List.of(present));
+        ArrayList<Integer> presentList = new ArrayList<>(java.util.List.of(present));
         HashMap<Integer, Integer> m = HashMap.empty();
         HashSet<Integer> s = HashSet.empty();
         for (Integer key : presentList) {
@@ -80,7 +80,7 @@ public class HashMapSetBenchmark {
         HashSet<Integer> os = HashSet.empty();
         HashSet<Integer> hs = HashSet.empty();
         for (int i = 0; i < size; i++) {
-            final Integer key = (i % 2 == 0) ? present[i] : absent[i];
+            Integer key = (i % 2 == 0) ? present[i] : absent[i];
             om = om.put(key, -key);
             os = os.add(key);
             if (i < size / 2) {

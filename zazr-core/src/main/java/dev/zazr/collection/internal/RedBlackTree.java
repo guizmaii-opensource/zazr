@@ -35,7 +35,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
     static <T extends @Nullable Object> RedBlackTree<T> of(Comparator<? super T> comparator, T value) {
         Objects.requireNonNull(comparator, "comparator is null");
         Objects.requireNonNull(value, "TreeSet: element is null");
-        final Empty<T> empty = new Empty<>(comparator);
+        Empty<T> empty = new Empty<>(comparator);
         return new Node<>(BLACK, 1, empty, value, empty, empty);
     }
 
@@ -45,8 +45,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         Objects.requireNonNull(values, "values is null");
         // sort-then-build, keeping the last of equal values as successive insertions would; `values` is copied, never
         // reordered
-        final RedBlackTreeBuilder<T> builder =
-                new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder", values.length, false);
+        RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder", values.length, false);
         for (T value : values) {
             builder.add(Objects.requireNonNull(value, "TreeSet: element is null"));
         }
@@ -63,7 +62,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
             return (RedBlackTree<T>) values;
         } else {
             // sort-then-build: one array and one node per distinct element, instead of a rebalancing insert per element
-            final RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder");
+            RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(comparator, "TreeSet.Builder");
             for (T value : values) {
                 builder.add(Objects.requireNonNull(value, "TreeSet: element is null"));
             }
@@ -119,7 +118,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
      * @return A RedBlackTree without the given value.
      */
     default RedBlackTree<T> delete(T value) {
-        final RedBlackTree<T> tree = Node.delete(this, value)._1();
+        RedBlackTree<T> tree = Node.delete(this, value)._1();
         return Node.color(tree, BLACK);
     }
 
@@ -128,8 +127,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         if (isEmpty() || tree.isEmpty()) {
             return this;
         } else {
-            final Node<T> that = (Node<T>) tree;
-            final Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
+            Node<T> that = (Node<T>) tree;
+            Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
             return Node.merge(split._1().difference(that.left), split._2().difference(that.right));
         }
     }
@@ -160,8 +159,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         } else if (tree.isEmpty()) {
             return tree;
         } else {
-            final Node<T> that = (Node<T>) tree;
-            final Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
+            Node<T> that = (Node<T>) tree;
+            Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
             if (contains(that.value)) {
                 return Node.join(
                         split._1().intersection(that.left),
@@ -234,11 +233,11 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         if (tree.isEmpty()) {
             return this;
         } else {
-            final Node<T> that = (Node<T>) tree;
+            Node<T> that = (Node<T>) tree;
             if (isEmpty()) {
                 return that.color(BLACK);
             } else {
-                final Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
+                Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
                 return Node.join(
                         split._1().union(that.left), that.value, split._2().union(that.right));
             }
@@ -277,7 +276,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         if (isEmpty()) {
             return Iterator.empty();
         } else {
-            final Node<T> that = (Node<T>) this;
+            Node<T> that = (Node<T>) this;
             return new AbstractIterator<T>() {
 
                 // The path of nodes whose value is still to be returned, the next one on top. A red-black tree is at
@@ -299,7 +298,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
                 @SuppressWarnings({"unchecked", "NullAway"})
                 @Override
                 public T getNext() {
-                    final Node<T> node = (Node<T>) stack[--depth];
+                    Node<T> node = (Node<T>) stack[--depth];
                     stack[depth] = null;
                     if (!node.right.isEmpty()) {
                         pushLeftChildren((Node<T>) node.right);
@@ -310,7 +309,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
                 private void pushLeftChildren(Node<T> that) {
                     RedBlackTree<T> tree = that;
                     while (!tree.isEmpty()) {
-                        final Node<T> node = (Node<T>) tree;
+                        Node<T> node = (Node<T>) tree;
                         if (depth == stack.length) {
                             stack = Arrays.copyOf(stack, depth * 2);
                         }

@@ -22,8 +22,8 @@ final class LawChecks {
     /// otherwise one derived from the name; {@link #SAMPLES} samples unless {@value CheckConfig#SAMPLES_PROPERTY}
     /// is set; the rest from {@link CheckConfig#defaults()}.
     static CheckConfig config(String name) {
-        final CheckConfig defaults = CheckConfig.defaults();
-        final CheckConfig seeded =
+        CheckConfig defaults = CheckConfig.defaults();
+        CheckConfig seeded =
                 System.getProperty(CheckConfig.SEED_PROPERTY) == null ? defaults.withSeed(seed(name)) : defaults;
         return System.getProperty(CheckConfig.SAMPLES_PROPERTY) == null ? seeded.withSamples(SAMPLES) : seeded;
     }
@@ -40,7 +40,7 @@ final class LawChecks {
 
     /// Checks every law of a set, each with its own configuration, and reports every failing law.
     static <S> void check(Laws<S> laws, S subject) {
-        final Vector<LawResult> failures = laws.laws()
+        Vector<LawResult> failures = laws.laws()
                 .map(law -> new LawResult(law.name(), law.check(subject, config(law.name()))))
                 .filter(result -> !result.isSatisfied());
         if (!failures.isEmpty()) {

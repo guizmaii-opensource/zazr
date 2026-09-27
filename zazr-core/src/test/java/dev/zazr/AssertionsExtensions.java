@@ -22,7 +22,7 @@ public final class AssertionsExtensions {
         @SuppressWarnings("deprecation")
         public void isNotInstantiable() {
             try {
-                final Constructor<?> cons = clazz.getDeclaredConstructor();
+                Constructor<?> cons = clazz.getDeclaredConstructor();
                 Assertions.assertThat(cons.isAccessible()).isFalse();
             } catch (NoSuchMethodException e) {
                 throw new AssertionError("no default constructor found");

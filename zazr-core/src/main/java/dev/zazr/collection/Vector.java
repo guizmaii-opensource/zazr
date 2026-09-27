@@ -60,7 +60,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /* the elements of an iterable that can be traversed again, as a tree: a Vector's own, or a new one. Concatenating
      * two trees works by whole arrays, which an iterable of any other kind would not allow */
     private static <T extends @Nullable Object> RadixVector<T> sizedTree(Iterable<? extends T> iterable) {
-        final RadixVector<T> tree = treeOf(iterable);
+        RadixVector<T> tree = treeOf(iterable);
         return (tree != null) ? tree : Vector.<T>ofAll(iterable).trie;
     }
 
@@ -95,10 +95,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return A {@link Vector} Collector.
      */
     public static <T extends @Nullable Object> Collector<T, Builder<T>, Vector<T>> collector() {
-        final Supplier<Builder<T>> supplier = Vector::newBuilder;
-        final BiConsumer<Builder<T>, T> accumulator = Builder::add;
-        final BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
-        final Function<Builder<T>, Vector<T>> finisher = Builder::result;
+        Supplier<Builder<T>> supplier = Vector::newBuilder;
+        BiConsumer<Builder<T>, T> accumulator = Builder::add;
+        BinaryOperator<Builder<T>> combiner = (left, right) -> left.addAll(right.result());
+        Function<Builder<T>, Vector<T>> finisher = Builder::result;
         return Collector.of(supplier, accumulator, combiner, finisher);
     }
 
@@ -182,7 +182,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static <T extends @Nullable Object> Vector<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        final Builder<T> builder = newBuilder(Math.max(n, 0));
+        Builder<T> builder = newBuilder(Math.max(n, 0));
         builder.addTabulated(n, f);
         return builder.result();
     }
@@ -198,7 +198,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static <T extends @Nullable Object> Vector<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        final Builder<T> builder = newBuilder(Math.max(n, 0));
+        Builder<T> builder = newBuilder(Math.max(n, 0));
         builder.addTabulated(n, i -> s.get());
         return builder.result();
     }
@@ -212,7 +212,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return A Vector of size {@code n}, where each element is the given {@code element}.
      */
     public static <T extends @Nullable Object> Vector<T> fill(int n, T element) {
-        final Builder<T> builder = newBuilder(Math.max(n, 0));
+        Builder<T> builder = newBuilder(Math.max(n, 0));
         builder.addRepeated(n, element);
         return builder.result();
     }
@@ -258,7 +258,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static <T extends @Nullable Object> Vector<T> ofAll(java.util.stream.Stream<? extends T> javaStream) {
         Objects.requireNonNull(javaStream, "javaStream is null");
-        final Builder<T> builder = newBuilder();
+        Builder<T> builder = newBuilder();
         javaStream.forEachOrdered(builder::add);
         return builder.result();
     }
@@ -272,7 +272,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Boolean> ofAll(boolean... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Boolean> builder = newBuilder();
+        Builder<Boolean> builder = newBuilder();
         for (boolean element : elements) {
             builder.add(element);
         }
@@ -288,7 +288,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Byte> ofAll(byte... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Byte> builder = newBuilder();
+        Builder<Byte> builder = newBuilder();
         for (byte element : elements) {
             builder.add(element);
         }
@@ -304,7 +304,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Character> ofAll(char... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Character> builder = newBuilder();
+        Builder<Character> builder = newBuilder();
         for (char element : elements) {
             builder.add(element);
         }
@@ -320,7 +320,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Double> ofAll(double... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Double> builder = newBuilder();
+        Builder<Double> builder = newBuilder();
         for (double element : elements) {
             builder.add(element);
         }
@@ -336,7 +336,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Float> ofAll(float... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Float> builder = newBuilder();
+        Builder<Float> builder = newBuilder();
         for (float element : elements) {
             builder.add(element);
         }
@@ -352,7 +352,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Integer> ofAll(int... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Integer> builder = newBuilder();
+        Builder<Integer> builder = newBuilder();
         for (int element : elements) {
             builder.add(element);
         }
@@ -368,7 +368,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Long> ofAll(long... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Long> builder = newBuilder();
+        Builder<Long> builder = newBuilder();
         for (long element : elements) {
             builder.add(element);
         }
@@ -384,7 +384,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static Vector<Short> ofAll(short... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        final Builder<Short> builder = newBuilder();
+        Builder<Short> builder = newBuilder();
         for (short element : elements) {
             builder.add(element);
         }
@@ -841,7 +841,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static <T extends @Nullable Object> Vector<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        final Builder<T> builder = newBuilder();
+        Builder<T> builder = newBuilder();
         for (Iterable<? extends T> inner : nested) {
             builder.addAll(inner);
         }
@@ -885,10 +885,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (!dev.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
             // a one-shot source (an Iterator, typically wrapping a java.util.stream) is read exactly once: built with
             // the builder, which also answers whether there is anything to append, then appended array by array
-            final Vector<T> elements = ofAll(iterable);
+            Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : appendAll(elements);
         }
-        final RadixVector<T> suffix = sizedTree(iterable);
+        RadixVector<T> suffix = sizedTree(iterable);
         return suffix.isEmpty() ? this : new Vector<>(trie.appendedAll(suffix));
     }
 
@@ -974,7 +974,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
+        java.util.Set<T> seen = new java.util.TreeSet<>(comparator);
         return filter(seen::add);
     }
 
@@ -993,7 +993,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <U extends @Nullable Object> Vector<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        final java.util.Set<U> seen = new java.util.HashSet<>(size());
+        java.util.Set<U> seen = new java.util.HashSet<>(size());
         return filter(t -> seen.add(keyExtractor.apply(t)));
     }
 
@@ -1024,10 +1024,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
         // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key
         // computed once
-        final java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
-        final java.util.HashSet<U> duplicated = new java.util.HashSet<>();
+        java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
+        java.util.HashSet<U> duplicated = new java.util.HashSet<>();
         for (T element : this) {
-            final U key = keyExtractor.apply(element);
+            U key = keyExtractor.apply(element);
             if (first.putIfAbsent(key, element) != null) {
                 duplicated.add(key);
             }
@@ -1035,7 +1035,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (duplicated.isEmpty()) {
             return empty();
         }
-        final Builder<T> builder = newBuilder(duplicated.size());
+        Builder<T> builder = newBuilder(duplicated.size());
         for (java.util.Map.Entry<U, T> entry : first.entrySet()) {
             if (duplicated.contains(entry.getKey())) {
                 builder.add(entry.getValue());
@@ -1099,7 +1099,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> dropUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int length = size();
+        int length = size();
         for (int i = 0; i < length; i++) {
             if (predicate.test(get(i))) {
                 return drop(i);
@@ -1186,8 +1186,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public boolean endsWith(Iterable<? extends T> that) {
         Objects.requireNonNull(that, "that is null");
-        final Vector<? extends T> suffix = ofAll(that);
-        final int suffixLength = suffix.size();
+        Vector<? extends T> suffix = ofAll(that);
+        int suffixLength = suffix.size();
         int i = size() - suffixLength;
         if (i < 0) {
             return false;
@@ -1202,7 +1202,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     public Vector<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final java.util.Iterator<T> elements = trie.iterator();
+        java.util.Iterator<T> elements = trie.iterator();
         int kept = 0;
         while (elements.hasNext() && predicate.test(elements.next())) {
             kept++;
@@ -1211,9 +1211,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return this;
         }
         // the elements before the first rejected one are a prefix of this Vector: the builder starts from its arrays
-        final VectorBuilder<T> builder = RadixVector.<T>newBuilder().addAll(trie.take(kept));
+        VectorBuilder<T> builder = RadixVector.<T>newBuilder().addAll(trie.take(kept));
         while (elements.hasNext()) {
-            final T element = elements.next();
+            T element = elements.next();
             if (predicate.test(element)) {
                 builder.add(element);
             }
@@ -1228,7 +1228,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     public <U extends @Nullable Object> Vector<U> flatMap(Function<? super T, ? extends Iterable<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        final Builder<U> builder = newBuilder();
+        Builder<U> builder = newBuilder();
         trie.forEach(element ->
                 builder.addAll(Objects.requireNonNull(mapper.apply(element), "Vector.flatMap: mapper returned null")));
         return builder.result();
@@ -1439,7 +1439,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public int indexWhere(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int length = size();
+        int length = size();
         for (int i = Math.max(from, 0); i < length; i++) {
             if (predicate.test(get(i))) {
                 return i;
@@ -1539,8 +1539,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public Vector<T> insertAll(int index, Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if ((index >= 0) && (index <= size())) {
-            final Vector<T> begin = take(index).appendAll(elements);
-            final Vector<T> end = drop(index);
+            Vector<T> begin = take(index).appendAll(elements);
+            Vector<T> end = drop(index);
             return (begin.size() > end.size()) ? begin.appendAll(end) : end.prependAll(begin);
         } else {
             throw new IndexOutOfBoundsException("insert(" + index + ", e) on Vector of length " + size());
@@ -1789,9 +1789,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <U extends @Nullable Object> Vector<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // one pass over the leaves straight into the builder, like flatMap: no intermediate collection
-        final Builder<U> builder = newBuilder();
+        Builder<U> builder = newBuilder();
         trie.forEach(element -> {
-            final Option<? extends U> collected =
+            Option<? extends U> collected =
                     Objects.requireNonNull(mapper.apply(element), "Vector.collect: mapper returned null");
             if (collected.isDefined()) {
                 builder.add(collected.get());
@@ -1846,7 +1846,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws NullPointerException if {@code element} is null and padding is needed
      */
     public Vector<T> padTo(int length, T element) {
-        final int actualLength = size();
+        int actualLength = size();
         return (length <= actualLength)
                 ? this
                 : appendAll(Iterator.continually(element).take(length - actualLength));
@@ -1866,7 +1866,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (length <= size()) {
             return this;
         } else {
-            final Iterator<T> prefix = Iterator.continually(element).take(length - size());
+            Iterator<T> prefix = Iterator.continually(element).take(length - size());
             return prependAll(prefix);
         }
     }
@@ -1891,7 +1891,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
         // the end of the replaced range, saturated: from + replaced can overflow an int
 
-        final int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
+        int end = (int) Math.min((long) from + replaced, Integer.MAX_VALUE);
 
         return take(from).appendAll(that).appendAll(drop(end));
     }
@@ -1907,9 +1907,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Tuple2<Vector<T>, Vector<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final ArrayList<T> left = new ArrayList<>(), right = new ArrayList<>();
+        ArrayList<T> left = new ArrayList<>(), right = new ArrayList<>();
         for (int i = 0; i < size(); i++) {
-            final T t = get(i);
+            T t = get(i);
             (predicate.test(t) ? left : right).add(t);
         }
         return Tuple.of(ofAll(left), ofAll(right));
@@ -1930,8 +1930,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <L extends @Nullable Object, R extends @Nullable Object> Tuple2<Vector<L>, Vector<R>> partitionMap(
             Function<? super T, ? extends Either<? extends L, ? extends R>> f) {
         Objects.requireNonNull(f, "f is null");
-        final Builder<L> lefts = newBuilder();
-        final Builder<R> rights = newBuilder();
+        Builder<L> lefts = newBuilder();
+        Builder<R> rights = newBuilder();
         for (T element : this) {
             switch (Objects.requireNonNull(f.apply(element), "Vector.partitionMap: f returned null")) {
                 case Either.Left(var left) -> lefts.add(left);
@@ -2017,10 +2017,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (!dev.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
             // a one-shot source is read exactly once: built first, which also answers whether there is anything to
             // prepend
-            final Vector<T> elements = ofAll(iterable);
+            Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : prependAll(elements);
         }
-        final RadixVector<T> prefix = sizedTree(iterable);
+        RadixVector<T> prefix = sizedTree(iterable);
         return prefix.isEmpty() ? this : new Vector<>(trie.prependedAll(prefix));
     }
 
@@ -2091,8 +2091,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> removeAt(int index) {
         if (isValid(index)) {
-            final Vector<T> begin = take(index);
-            final Vector<T> end = drop(index + 1);
+            Vector<T> begin = take(index);
+            Vector<T> end = drop(index + 1);
             return (begin.size() > end.size()) ? begin.appendAll(end) : end.prependAll(begin);
         } else {
             throw new IndexOutOfBoundsException("removeAt(" + index + ")");
@@ -2235,7 +2235,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : drop(k).appendAll(take(k));
     }
 
@@ -2253,7 +2253,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return this;
         }
-        final int k = Math.floorMod(n, size());
+        int k = Math.floorMod(n, size());
         return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
     }
 
@@ -2354,8 +2354,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public int segmentLength(Predicate<? super T> predicate, int from) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int len = size();
-        final int start = Math.max(from, 0);
+        int len = size();
+        int start = Math.max(from, 0);
         int i = start;
         while (i < len && predicate.test(get(i))) {
             i++;
@@ -2403,7 +2403,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return this;
         } else {
             @SuppressWarnings("unchecked")
-            final T[] list = (T[]) toArray();
+            T[] list = (T[]) toArray();
             Arrays.sort(list);
             return Vector.of(list);
         }
@@ -2424,7 +2424,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return this;
         }
         @SuppressWarnings("unchecked")
-        final T[] array = (T[]) toArray();
+        T[] array = (T[]) toArray();
         Arrays.sort(array, comparator);
         return Vector.of(array);
     }
@@ -2502,7 +2502,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Tuple2<Vector<T>, Vector<T>> splitAt(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final Vector<T> init = takeWhile(predicate.negate());
+        Vector<T> init = takeWhile(predicate.negate());
         return Tuple.of(init, drop(init.size()));
     }
 
@@ -2519,7 +2519,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public Tuple2<Vector<T>, Vector<T>> splitAtInclusive(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         for (int i = 0; i < size(); i++) {
-            final T value = get(i);
+            T value = get(i);
             if (predicate.test(value)) {
                 return (i == (size() - 1)) ? Tuple.of(this, empty()) : Tuple.of(take(i + 1), drop(i + 1));
             }
@@ -2557,11 +2557,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (offset < 0) {
             return false;
         }
-        final int thisLength = size();
+        int thisLength = size();
         if (that instanceof Vector<?> vector) {
             @SuppressWarnings("unchecked")
-            final Vector<? extends T> thatVector = (Vector<? extends T>) vector;
-            final int thatLength = thatVector.size();
+            Vector<? extends T> thatVector = (Vector<? extends T>) vector;
+            int thatLength = thatVector.size();
             if (thatLength == 0) {
                 return true; // an empty prefix starts anywhere, even past the end
             }
@@ -2576,7 +2576,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return true;
         }
         int i = offset;
-        final java.util.Iterator<? extends T> thatElements = that.iterator();
+        java.util.Iterator<? extends T> thatElements = that.iterator();
         while (i < thisLength && thatElements.hasNext()) {
             if (!Objects.equals(get(i), thatElements.next())) {
                 return false;
@@ -2677,7 +2677,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> takeUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        final int length = size();
+        int length = size();
         for (int i = 0; i < length; i++) {
             if (predicate.test(get(i))) {
                 return take(i);
@@ -2764,10 +2764,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Vector<T1>, Vector<T2>> unzip(
             Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Builder<T1> xs = newBuilder(size());
-        final Builder<T2> ys = newBuilder(size());
+        Builder<T1> xs = newBuilder(size());
+        Builder<T2> ys = newBuilder(size());
         for (T element : this) {
-            final Tuple2<? extends T1, ? extends T2> t =
+            Tuple2<? extends T1, ? extends T2> t =
                     Objects.requireNonNull(unzipper.apply(element), "Vector.unzip: unzipper returned null");
             xs.add(t._1());
             ys.add(t._2());
@@ -2791,11 +2791,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             Tuple3<Vector<T1>, Vector<T2>, Vector<T3>> unzip3(
                     Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        final Builder<T1> xs = newBuilder(size());
-        final Builder<T2> ys = newBuilder(size());
-        final Builder<T3> zs = newBuilder(size());
+        Builder<T1> xs = newBuilder(size());
+        Builder<T2> ys = newBuilder(size());
+        Builder<T3> zs = newBuilder(size());
         for (T element : this) {
-            final Tuple3<? extends T1, ? extends T2, ? extends T3> t =
+            Tuple3<? extends T1, ? extends T2, ? extends T3> t =
                     Objects.requireNonNull(unzipper.apply(element), "Vector.unzip3: unzipper returned null");
             xs.add(t._1());
             ys.add(t._2());
@@ -3020,7 +3020,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         public Builder<T> addAll(Iterable<? extends T> elements) {
             builder.checkOpen();
             Objects.requireNonNull(elements, "elements is null");
-            final RadixVector<T> tree = treeOf(elements);
+            RadixVector<T> tree = treeOf(elements);
             builder.addAll((tree == null) ? elements : tree);
             return this;
         }
@@ -3056,7 +3056,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             builder.checkOpen();
             Objects.requireNonNull(element, "Vector.fill: element is null");
             if (n > 0) {
-                final Object[] leaf = new Object[Math.min(n, WIDTH)];
+                Object[] leaf = new Object[Math.min(n, WIDTH)];
                 Arrays.fill(leaf, element);
                 for (int remaining = n; remaining > 0; remaining -= leaf.length) {
                     builder.addArray(leaf, 0, Math.min(remaining, leaf.length));
@@ -3117,11 +3117,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<Vector<T>> sliding(int size, int step) {
         dev.zazr.collection.internal.Collections.checkWindow(size, step);
-        final int length = size();
+        int length = size();
         if (length == 0) {
             return empty();
         }
-        final Builder<Vector<T>> builder = newBuilder();
+        Builder<Vector<T>> builder = newBuilder();
         // past the first, a window is produced only while it holds at least one element the previous one did not
         for (long start = 0; start < length && (start == 0 || start - step + size < length); start += step) {
             builder.add(slice((int) start, (int) Math.min(start + size, length)));
@@ -3148,13 +3148,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (isEmpty()) {
             return empty();
         }
-        final Builder<Vector<T>> builder = newBuilder();
-        final java.util.Iterator<T> iterator = iterator();
+        Builder<Vector<T>> builder = newBuilder();
+        java.util.Iterator<T> iterator = iterator();
         Object key = classifier.apply(iterator.next());
         int start = 0;
         int index = 1;
         while (iterator.hasNext()) {
-            final Object next = classifier.apply(iterator.next());
+            Object next = classifier.apply(iterator.next());
             if (!Objects.equals(key, next)) {
                 builder.add(slice(start, index));
                 start = index;
@@ -3210,7 +3210,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <U extends @Nullable Object> Vector<Tuple2<T, U>> crossProduct(Iterable<? extends U> that) {
         Objects.requireNonNull(that, "that is null");
-        final Vector<U> other = Vector.ofAll(that);
+        Vector<U> other = Vector.ofAll(that);
         return flatMap(a -> other.map(b -> Tuple.of(a, b)));
     }
 
@@ -3589,7 +3589,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toMap(
             Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = HashMap::ofEntries;
         return TraversableModule.toMap(this, HashMap.empty(), ofAll, f, "Vector.toMap: f returned null");
     }
 
@@ -3623,7 +3623,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <K extends @Nullable Object, V extends @Nullable Object> Map<K, V> toLinkedMap(
             Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, Map<K, V>> ofAll = LinkedHashMap::ofEntries;
         return TraversableModule.toMap(this, LinkedHashMap.empty(), ofAll, f, "Vector.toLinkedMap: f returned null");
     }
 
@@ -3694,7 +3694,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <K extends @Nullable Object, V extends @Nullable Object> SortedMap<K, V> toSortedMap(
             Comparator<? super K> comparator, Function<? super T, ? extends Tuple2<? extends K, ? extends V>> f) {
         Objects.requireNonNull(comparator, "comparator is null");
-        final Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll =
+        Function<Iterable<Tuple2<? extends K, ? extends V>>, SortedMap<K, V>> ofAll =
                 t -> TreeMap.ofEntries(comparator, t);
         return TraversableModule.toMap(
                 this, TreeMap.empty(comparator), ofAll, f, "Vector.toSortedMap: f returned null");

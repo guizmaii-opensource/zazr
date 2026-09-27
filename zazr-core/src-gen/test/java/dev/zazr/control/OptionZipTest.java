@@ -20,8 +20,8 @@ public class OptionZipTest {
 
     @Test
     public void shouldZipWith2Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Option<String> actual = Option.zipWith(Option.some(1), Option.some(2), (a1, a2) -> {
+        AtomicInteger calls = new AtomicInteger();
+        Option<String> actual = Option.zipWith(Option.some(1), Option.some(2), (a1, a2) -> {
             calls.incrementAndGet();
             return "" + a1 + a2;
         });
@@ -31,13 +31,13 @@ public class OptionZipTest {
 
     @Test
     public void shouldFailWhenOneOf2Fails() {
-        final Option<Integer> failing1 = Option.<Integer>none();
+        Option<Integer> failing1 = Option.<Integer>none();
         assertThat(Option.zip(failing1, Option.some(2))).isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(failing1, Option.some(2), (_, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing2 = Option.<Integer>none();
+        Option<Integer> failing2 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), failing2)).isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(Option.some(1), failing2, (_, _) -> {
                     throw new AssertionError("must not be called");
@@ -83,8 +83,8 @@ public class OptionZipTest {
 
     @Test
     public void shouldZipWith3Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Option<String> actual = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a1, a2, a3) -> {
+        AtomicInteger calls = new AtomicInteger();
+        Option<String> actual = Option.zipWith(Option.some(1), Option.some(2), Option.some(3), (a1, a2, a3) -> {
             calls.incrementAndGet();
             return "" + a1 + a2 + a3;
         });
@@ -94,19 +94,19 @@ public class OptionZipTest {
 
     @Test
     public void shouldFailWhenOneOf3Fails() {
-        final Option<Integer> failing1 = Option.<Integer>none();
+        Option<Integer> failing1 = Option.<Integer>none();
         assertThat(Option.zip(failing1, Option.some(2), Option.some(3))).isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(failing1, Option.some(2), Option.some(3), (_, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing2 = Option.<Integer>none();
+        Option<Integer> failing2 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), failing2, Option.some(3))).isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(Option.some(1), failing2, Option.some(3), (_, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing3 = Option.<Integer>none();
+        Option<Integer> failing3 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), failing3)).isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(Option.some(1), Option.some(2), failing3, (_, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -160,8 +160,8 @@ public class OptionZipTest {
 
     @Test
     public void shouldZipWith4Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Option<String> actual =
+        AtomicInteger calls = new AtomicInteger();
+        Option<String> actual =
                 Option.zipWith(Option.some(1), Option.some(2), Option.some(3), Option.some(4), (a1, a2, a3, a4) -> {
                     calls.incrementAndGet();
                     return "" + a1 + a2 + a3 + a4;
@@ -172,28 +172,28 @@ public class OptionZipTest {
 
     @Test
     public void shouldFailWhenOneOf4Fails() {
-        final Option<Integer> failing1 = Option.<Integer>none();
+        Option<Integer> failing1 = Option.<Integer>none();
         assertThat(Option.zip(failing1, Option.some(2), Option.some(3), Option.some(4)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(failing1, Option.some(2), Option.some(3), Option.some(4), (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing2 = Option.<Integer>none();
+        Option<Integer> failing2 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), failing2, Option.some(3), Option.some(4)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(Option.some(1), failing2, Option.some(3), Option.some(4), (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing3 = Option.<Integer>none();
+        Option<Integer> failing3 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), failing3, Option.some(4)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(Option.some(1), Option.some(2), failing3, Option.some(4), (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing4 = Option.<Integer>none();
+        Option<Integer> failing4 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), Option.some(3), failing4))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(Option.some(1), Option.some(2), Option.some(3), failing4, (_, _, _, _) -> {
@@ -257,8 +257,8 @@ public class OptionZipTest {
 
     @Test
     public void shouldZipWith5Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Option<String> actual = Option.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Option<String> actual = Option.zipWith(
                 Option.some(1),
                 Option.some(2),
                 Option.some(3),
@@ -274,7 +274,7 @@ public class OptionZipTest {
 
     @Test
     public void shouldFailWhenOneOf5Fails() {
-        final Option<Integer> failing1 = Option.<Integer>none();
+        Option<Integer> failing1 = Option.<Integer>none();
         assertThat(Option.zip(failing1, Option.some(2), Option.some(3), Option.some(4), Option.some(5)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -282,7 +282,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing2 = Option.<Integer>none();
+        Option<Integer> failing2 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), failing2, Option.some(3), Option.some(4), Option.some(5)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -290,7 +290,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing3 = Option.<Integer>none();
+        Option<Integer> failing3 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), failing3, Option.some(4), Option.some(5)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -298,7 +298,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing4 = Option.<Integer>none();
+        Option<Integer> failing4 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), Option.some(3), failing4, Option.some(5)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -306,7 +306,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing5 = Option.<Integer>none();
+        Option<Integer> failing5 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), Option.some(3), Option.some(4), failing5))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -391,8 +391,8 @@ public class OptionZipTest {
 
     @Test
     public void shouldZipWith6Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Option<String> actual = Option.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Option<String> actual = Option.zipWith(
                 Option.some(1),
                 Option.some(2),
                 Option.some(3),
@@ -409,7 +409,7 @@ public class OptionZipTest {
 
     @Test
     public void shouldFailWhenOneOf6Fails() {
-        final Option<Integer> failing1 = Option.<Integer>none();
+        Option<Integer> failing1 = Option.<Integer>none();
         assertThat(Option.zip(failing1, Option.some(2), Option.some(3), Option.some(4), Option.some(5), Option.some(6)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -423,7 +423,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing2 = Option.<Integer>none();
+        Option<Integer> failing2 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), failing2, Option.some(3), Option.some(4), Option.some(5), Option.some(6)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -437,7 +437,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing3 = Option.<Integer>none();
+        Option<Integer> failing3 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), failing3, Option.some(4), Option.some(5), Option.some(6)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -451,7 +451,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing4 = Option.<Integer>none();
+        Option<Integer> failing4 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), Option.some(3), failing4, Option.some(5), Option.some(6)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -465,7 +465,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing5 = Option.<Integer>none();
+        Option<Integer> failing5 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), Option.some(3), Option.some(4), failing5, Option.some(6)))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -479,7 +479,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing6 = Option.<Integer>none();
+        Option<Integer> failing6 = Option.<Integer>none();
         assertThat(Option.zip(Option.some(1), Option.some(2), Option.some(3), Option.some(4), Option.some(5), failing6))
                 .isEqualTo(Option.<Integer>none());
         assertThat(Option.zipWith(
@@ -634,8 +634,8 @@ public class OptionZipTest {
 
     @Test
     public void shouldZipWith7Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Option<String> actual = Option.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Option<String> actual = Option.zipWith(
                 Option.some(1),
                 Option.some(2),
                 Option.some(3),
@@ -653,7 +653,7 @@ public class OptionZipTest {
 
     @Test
     public void shouldFailWhenOneOf7Fails() {
-        final Option<Integer> failing1 = Option.<Integer>none();
+        Option<Integer> failing1 = Option.<Integer>none();
         assertThat(Option.zip(
                         failing1,
                         Option.some(2),
@@ -675,7 +675,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing2 = Option.<Integer>none();
+        Option<Integer> failing2 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         failing2,
@@ -697,7 +697,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing3 = Option.<Integer>none();
+        Option<Integer> failing3 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -719,7 +719,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing4 = Option.<Integer>none();
+        Option<Integer> failing4 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -741,7 +741,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing5 = Option.<Integer>none();
+        Option<Integer> failing5 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -763,7 +763,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing6 = Option.<Integer>none();
+        Option<Integer> failing6 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -785,7 +785,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing7 = Option.<Integer>none();
+        Option<Integer> failing7 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -1016,8 +1016,8 @@ public class OptionZipTest {
 
     @Test
     public void shouldZipWith8Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Option<String> actual = Option.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Option<String> actual = Option.zipWith(
                 Option.some(1),
                 Option.some(2),
                 Option.some(3),
@@ -1036,7 +1036,7 @@ public class OptionZipTest {
 
     @Test
     public void shouldFailWhenOneOf8Fails() {
-        final Option<Integer> failing1 = Option.<Integer>none();
+        Option<Integer> failing1 = Option.<Integer>none();
         assertThat(Option.zip(
                         failing1,
                         Option.some(2),
@@ -1060,7 +1060,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing2 = Option.<Integer>none();
+        Option<Integer> failing2 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         failing2,
@@ -1084,7 +1084,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing3 = Option.<Integer>none();
+        Option<Integer> failing3 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -1108,7 +1108,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing4 = Option.<Integer>none();
+        Option<Integer> failing4 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -1132,7 +1132,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing5 = Option.<Integer>none();
+        Option<Integer> failing5 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -1156,7 +1156,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing6 = Option.<Integer>none();
+        Option<Integer> failing6 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -1180,7 +1180,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing7 = Option.<Integer>none();
+        Option<Integer> failing7 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),
@@ -1204,7 +1204,7 @@ public class OptionZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isEqualTo(Option.<Integer>none());
-        final Option<Integer> failing8 = Option.<Integer>none();
+        Option<Integer> failing8 = Option.<Integer>none();
         assertThat(Option.zip(
                         Option.some(1),
                         Option.some(2),

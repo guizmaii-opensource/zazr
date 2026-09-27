@@ -25,7 +25,7 @@ public class Euler02Test {
         assertThat(sumOfEvenFibonacciValuesNotExceeding(4_000_000)).isEqualTo(4_613_732);
     }
 
-    private static long sumOfEvenFibonacciValuesNotExceeding(final int max) {
+    private static long sumOfEvenFibonacciValuesNotExceeding(int max) {
         return Utils.fibonacci()
                 .map(BigInteger::longValue)
                 .takeWhile(f -> f <= max)

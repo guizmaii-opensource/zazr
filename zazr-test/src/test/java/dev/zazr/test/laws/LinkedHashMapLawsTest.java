@@ -50,7 +50,7 @@ class LinkedHashMapLawsTest extends MapLawsSuite<LinkedHashMap<?, ?>, LinkedHash
 
     @Test
     void mapLawsWithCollidingHashCodes() {
-        final CollectionSubject<Tuple2<Collider, Integer>, LinkedHashMap<Collider, Integer>> colliders =
+        CollectionSubject<Tuple2<Collider, Integer>, LinkedHashMap<Collider, Integer>> colliders =
                 new CollectionSubject<>(
                         Gen.linkedHashMap(Values.integers().map(Collider::new), Values.integers()),
                         LinkedHashMap::ofEntries,
@@ -70,7 +70,7 @@ class LinkedHashMapLawsTest extends MapLawsSuite<LinkedHashMap<?, ?>, LinkedHash
     /// Successive `put`s follow the order of `ofEntries`: a repeated key stays at its first occurrence.
     @Test
     void putKeepsTheFirstPositionOfARepeatedKey() {
-        final CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> putOneByOne =
+        CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> putOneByOne =
                 new CollectionSubject<>(
                         Gen.linkedHashMap(Values.integers(), Values.integers()),
                         entries -> {

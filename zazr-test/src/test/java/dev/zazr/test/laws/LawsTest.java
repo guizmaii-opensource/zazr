@@ -65,9 +65,9 @@ class LawsTest {
 
     @Test
     void failingLawReportsItsCounterexampleAndExplanation() {
-        final CheckResult result = MapLaws.<Vector<?>>mapIdentity().check(BROKEN_MAP, SMALL);
+        CheckResult result = MapLaws.<Vector<?>>mapIdentity().check(BROKEN_MAP, SMALL);
         assertThat(result).isInstanceOf(CheckResult.Falsified.class);
-        final CheckResult.Falsified falsified = (CheckResult.Falsified) result;
+        CheckResult.Falsified falsified = (CheckResult.Falsified) result;
         assertThat(falsified.seed()).isEqualTo(SMALL.seed());
         assertThat(falsified.counterexample().toString()).startsWith("(Vector(");
         assertThat(result.message().get()).startsWith("left = Vector(");
@@ -75,7 +75,7 @@ class LawsTest {
 
     @Test
     void lawResultsCarryTheLawName() {
-        final Vector<LawResult> results = MapLaws.<Vector<?>>all().check(BROKEN_MAP, SMALL);
+        Vector<LawResult> results = MapLaws.<Vector<?>>all().check(BROKEN_MAP, SMALL);
         assertThat(results.map(LawResult::name)).containsExactly("mapIdentity", "mapComposition");
         assertThat(results.map(LawResult::isSatisfied)).containsExactly(false, false);
         assertThat(results.head().result())
@@ -84,7 +84,7 @@ class LawsTest {
 
     @Test
     void assertSatisfiedListsEveryFailingLaw() {
-        final Laws<MapSubject<Vector<?>>> laws = MapLaws.all();
+        Laws<MapSubject<Vector<?>>> laws = MapLaws.all();
         assertThatThrownBy(() -> laws.assertSatisfied(BROKEN_MAP, SMALL))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageStartingWith("2 law(s) failed:\nmapIdentity: falsified at sample ")
@@ -96,10 +96,10 @@ class LawsTest {
 
     @Test
     void theReportedSeedReplaysTheFailure() {
-        final CheckResult.Falsified first = (CheckResult.Falsified)
+        CheckResult.Falsified first = (CheckResult.Falsified)
                 MapLaws.<Vector<?>>mapIdentity().check(BROKEN_MAP, LawChecks.config("mapIdentity"));
         assertThat(first.seed()).isEqualTo(LawChecks.seed("mapIdentity"));
-        final CheckResult replayed = MapLaws.<Vector<?>>mapIdentity()
+        CheckResult replayed = MapLaws.<Vector<?>>mapIdentity()
                 .check(
                         BROKEN_MAP,
                         CheckConfig.defaults().withSamples(LawChecks.SAMPLES).withSeed(first.seed()));
@@ -124,7 +124,7 @@ class LawsTest {
 
     @Test
     void lawSetsComposeInOrder() {
-        final Laws<ZipSubject<Vector<?>>> laws = MapLaws.<Vector<?>>all().and(ZipLaws.<Vector<?>>zip());
+        Laws<ZipSubject<Vector<?>>> laws = MapLaws.<Vector<?>>all().and(ZipLaws.<Vector<?>>zip());
         assertThat(laws.laws().map(Law::name)).containsExactly("mapIdentity", "mapComposition", "zipAssociativity");
         assertThat(laws.check(BROKEN_ZIP, SMALL).map(LawResult::isSatisfied)).containsExactly(true, true, false);
         assertThat(MapLaws.<Vector<?>>mapIdentity()
@@ -152,7 +152,7 @@ class LawsTest {
 
     @Test
     void erroneousLawIsReported() {
-        final Law<String> throwing = Law.of(
+        Law<String> throwing = Law.of(
                 "throwing",
                 (subject, config) -> Check.evaluate(config, Values.integers(), i -> {
                     throw new IllegalStateException("boom");
@@ -161,7 +161,7 @@ class LawsTest {
                 .hasMessageStartingWith("1 law(s) failed:\nthrowing: erroneous at sample 1 with (0): ")
                 .hasMessageContaining("boom")
                 .hasMessageEndingWith("(seed 1, replay with -Dzazr.check.seed=1)");
-        final Law<String> generating = Law.of(
+        Law<String> generating = Law.of(
                 "generating",
                 (subject, config) -> Check.evaluate(
                         config,
@@ -193,7 +193,7 @@ class LawsTest {
     private static final CheckConfig MUTANTS = new CheckConfig(500, 20, 3, 1000);
 
     private static <S> void assertFalsified(Law<? super S> law, S subject) {
-        final CheckResult result = law.check(subject, MUTANTS);
+        CheckResult result = law.check(subject, MUTANTS);
         assertThat(result.isFalsified())
                 .as(law.name() + " catches the defect: " + result)
                 .isTrue();
@@ -219,7 +219,7 @@ class LawsTest {
 
         @Override
         public Vector<?> flatMap(Vector<?> fa, Function<Object, Vector<?>> f) {
-            final Vector<?> result = fa.flatMap(f);
+            Vector<?> result = fa.flatMap(f);
             return result.isEmpty() ? result : result.dropRight(1);
         }
     };
@@ -298,7 +298,7 @@ class LawsTest {
 
     @Test
     void collectionLawsCatchBrokenContracts() {
-        final Gen<Vector<Integer>> vectors = Gen.vector(Values.integers());
+        Gen<Vector<Integer>> vectors = Gen.vector(Values.integers());
         assertFalsified(
                 CollectionLaws.<Integer, Vector<Integer>>sizeEqualsIterationCount(),
                 new CollectionSubject<>(vectors, Vector::ofAll, v -> v.size() + 1, Vector::toList, true));
@@ -340,7 +340,7 @@ class LawsTest {
 
     @Test
     void collectorLawCatchesABrokenCollector() {
-        final Collector<Integer, ArrayList<Integer>, Vector<Integer>> reversing = Collector.of(
+        Collector<Integer, ArrayList<Integer>, Vector<Integer>> reversing = Collector.of(
                 ArrayList::new,
                 ArrayList::add,
                 (left, right) -> {
@@ -383,16 +383,16 @@ class LawsTest {
 
     @Test
     void modelLawCatchesATooCoarseEquals() {
-        final Gen<FirstOnly> firstOnly =
+        Gen<FirstOnly> firstOnly =
                 Gen.tuple2(Values.integers(), Values.integers()).map(t -> new FirstOnly(t._1(), t._2()));
-        final EqualitySubject<FirstOnly> firstOnlySubject = new EqualitySubject<>(
+        EqualitySubject<FirstOnly> firstOnlySubject = new EqualitySubject<>(
                 firstOnly, x -> new FirstOnly(x.a(), x.b()), x -> java.util.List.of(x.a(), x.b()));
-        final Gen<AllEqual> allEqual =
+        Gen<AllEqual> allEqual =
                 Gen.tuple2(Values.integers(), Values.integers()).map(t -> new AllEqual(t._1(), t._2()));
-        final EqualitySubject<AllEqual> allEqualSubject =
+        EqualitySubject<AllEqual> allEqualSubject =
                 new EqualitySubject<>(allEqual, x -> new AllEqual(x.a(), x.b()), x -> java.util.List.of(x.a(), x.b()));
         // both pass the hash-code law: nothing there requires different values to be unequal
-        final CheckConfig thorough = new CheckConfig(1000, 100, 3, 1000);
+        CheckConfig thorough = new CheckConfig(1000, 100, 3, 1000);
         assertThat(EqualityLaws.<FirstOnly>equalsHashCodeConsistency()
                         .check(firstOnlySubject, thorough)
                         .isSatisfied())
@@ -407,16 +407,16 @@ class LawsTest {
 
     @Test
     void iterationOrderLawCatchesALostOrder() {
-        final Gen<LinkedHashSet<Integer>> linked = Gen.linkedHashSet(Values.integers());
-        final CollectionSubject<Integer, LinkedHashSet<Integer>> reversedLinked = new CollectionSubject<>(
+        Gen<LinkedHashSet<Integer>> linked = Gen.linkedHashSet(Values.integers());
+        CollectionSubject<Integer, LinkedHashSet<Integer>> reversedLinked = new CollectionSubject<>(
                 linked,
                 xs -> LinkedHashSet.ofAll(Vector.ofAll(xs).reverse()),
                 LinkedHashSet::size,
                 LinkedHashSet::toList,
                 false,
                 Option.some(IterationOrder.firstOccurrence()));
-        final Gen<TreeSet<Integer>> sorted = Gen.treeSet(Values.integers());
-        final CollectionSubject<Integer, TreeSet<Integer>> unsortedTree = new CollectionSubject<>(
+        Gen<TreeSet<Integer>> sorted = Gen.treeSet(Values.integers());
+        CollectionSubject<Integer, TreeSet<Integer>> unsortedTree = new CollectionSubject<>(
                 sorted,
                 xs -> TreeSet.ofAll(Comparator.<Integer>reverseOrder(), xs),
                 TreeSet::size,
@@ -424,7 +424,7 @@ class LawsTest {
                 false,
                 Option.some(IterationOrder.sorted(Comparator.<Integer>naturalOrder())));
         // every other collection law is satisfied by both: they compare sets as sets
-        final CheckConfig config = new CheckConfig(200, 100, 3, 1000);
+        CheckConfig config = new CheckConfig(200, 100, 3, 1000);
         assertThat(CollectionLaws.<Integer, LinkedHashSet<Integer>>set()
                         .check(reversedLinked, config)
                         .map(LawResult::isSatisfied))
@@ -436,7 +436,7 @@ class LawsTest {
         assertFalsified(CollectionLaws.<Integer, LinkedHashSet<Integer>>iterationOrder(), reversedLinked);
         assertFalsified(CollectionLaws.<Integer, TreeSet<Integer>>iterationOrder(), unsortedTree);
 
-        final Collector<Integer, ?, LinkedHashSet<Integer>> reversing = Collectors.collectingAndThen(
+        Collector<Integer, ?, LinkedHashSet<Integer>> reversing = Collectors.collectingAndThen(
                 Collectors.toList(),
                 list -> LinkedHashSet.ofAll(Vector.ofAll(list).reverse()));
         assertFalsified(
@@ -451,7 +451,7 @@ class LawsTest {
     /// A map that moves a repeated key to its last occurrence breaks the order of the insertion-ordered maps.
     @Test
     void iterationOrderLawCatchesARepeatedKeyMovedToItsLastOccurrence() {
-        final CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> lastOccurrence =
+        CollectionSubject<Tuple2<Integer, Integer>, LinkedHashMap<Integer, Integer>> lastOccurrence =
                 new CollectionSubject<>(
                         Gen.linkedHashMap(Values.integers(), Values.integers()),
                         entries -> {
@@ -472,10 +472,10 @@ class LawsTest {
 
     @Test
     void generatedFunctionsDependOnTheirArgument() {
-        final Gen<Function<Object, Option<?>>> functions =
+        Gen<Function<Object, Option<?>>> functions =
                 Functions.to(Gen.option(Values.integers()).map(o -> (Option<?>) o), 8);
         int varying = 0;
-        for (final Function<Object, Option<?>> f : functions.runCollectN(1000, new CheckConfig(1000, 100, 11, 1000))) {
+        for (Function<Object, Option<?>> f : functions.runCollectN(1000, new CheckConfig(1000, 100, 11, 1000))) {
             boolean some = false;
             boolean none = false;
             for (int x = -8; x <= 8; x++) {

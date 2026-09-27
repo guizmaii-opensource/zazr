@@ -134,7 +134,7 @@ public final class TreeViews {
         /** The comparator a view reports: {@code null} for the natural order, reversed for a descending view. */
         @Nullable
         Comparator<? super K> comparator(boolean descending) {
-            final Comparator<? super K> ascending = natural ? null : comparator;
+            Comparator<? super K> ascending = natural ? null : comparator;
             return descending ? Collections.reverseOrder(ascending) : ascending;
         }
 
@@ -142,7 +142,7 @@ public final class TreeViews {
 
         private boolean tooLow(@Nullable Object key) {
             if (!fromStart) {
-                final int c = compare(key, lo);
+                int c = compare(key, lo);
                 return c < 0 || (c == 0 && !loInclusive);
             }
             return false;
@@ -150,7 +150,7 @@ public final class TreeViews {
 
         private boolean tooHigh(@Nullable Object key) {
             if (!toEnd) {
-                final int c = compare(key, hi);
+                int c = compare(key, hi);
                 return c > 0 || (c == 0 && !hiInclusive);
             }
             return false;
@@ -235,7 +235,7 @@ public final class TreeViews {
             RedBlackTree<E> t = tree;
             E result = null;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c == 0 && !strict) {
                     return node.value;
                 } else if (c < 0) {
@@ -253,7 +253,7 @@ public final class TreeViews {
             RedBlackTree<E> t = tree;
             E result = null;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c == 0 && !strict) {
                     return node.value;
                 } else if (c > 0) {
@@ -271,7 +271,7 @@ public final class TreeViews {
             RedBlackTree<E> t = tree;
             int rank = 0;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c < 0 || (c == 0 && !inclusive)) {
                     t = node.left;
                 } else {
@@ -286,13 +286,13 @@ public final class TreeViews {
 
         @Nullable
         E lowest() {
-            final E e = fromStart ? treeFirst() : treeCeiling(lo, !loInclusive);
+            E e = fromStart ? treeFirst() : treeCeiling(lo, !loInclusive);
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
         @Nullable
         E highest() {
-            final E e = toEnd ? treeLast() : treeFloor(hi, !hiInclusive);
+            E e = toEnd ? treeLast() : treeFloor(hi, !hiInclusive);
             return e == null || tooLow(key(e)) ? null : e;
         }
 
@@ -301,7 +301,7 @@ public final class TreeViews {
             if (tooLow(key)) {
                 return lowest();
             }
-            final E e = treeCeiling(key, false);
+            E e = treeCeiling(key, false);
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
@@ -310,7 +310,7 @@ public final class TreeViews {
             if (tooLow(key)) {
                 return lowest();
             }
-            final E e = treeCeiling(key, true);
+            E e = treeCeiling(key, true);
             return e == null || tooHigh(key(e)) ? null : e;
         }
 
@@ -319,7 +319,7 @@ public final class TreeViews {
             if (tooHigh(key)) {
                 return highest();
             }
-            final E e = treeFloor(key, false);
+            E e = treeFloor(key, false);
             return e == null || tooLow(key(e)) ? null : e;
         }
 
@@ -328,7 +328,7 @@ public final class TreeViews {
             if (tooHigh(key)) {
                 return highest();
             }
-            final E e = treeFloor(key, true);
+            E e = treeFloor(key, true);
             return e == null || tooLow(key(e)) ? null : e;
         }
 
@@ -350,7 +350,7 @@ public final class TreeViews {
             }
             RedBlackTree<E> t = tree;
             while (t instanceof Node<E> node) {
-                final int c = compare(key, key(node.value));
+                int c = compare(key, key(node.value));
                 if (c == 0) {
                     return node.value;
                 }
@@ -363,8 +363,8 @@ public final class TreeViews {
             if (fromStart && toEnd) {
                 return tree.size();
             }
-            final int upper = toEnd ? tree.size() : rank(hi, hiInclusive);
-            final int lower = fromStart ? 0 : rank(lo, !loInclusive);
+            int upper = toEnd ? tree.size() : rank(hi, hiInclusive);
+            int lower = fromStart ? 0 : rank(lo, !loInclusive);
             return Math.max(0, upper - lower);
         }
 
@@ -381,7 +381,7 @@ public final class TreeViews {
             if (!entries) {
                 return (X) element;
             }
-            final Tuple2<K, ?> entry = (Tuple2<K, ?>) element;
+            Tuple2<K, ?> entry = (Tuple2<K, ?>) element;
             return (X)
                     switch (part) {
                         case KEY -> entry._1();
@@ -413,7 +413,7 @@ public final class TreeViews {
             this.descending = descending;
             this.part = part;
             // a red-black tree of n nodes is at most 2 * log2(n + 1) high
-            final int size = range.tree.size();
+            int size = range.tree.size();
             this.stack = (Node<E>[]) new Node<?>[2 * (Integer.SIZE - Integer.numberOfLeadingZeros(size)) + 2];
             RedBlackTree<E> t = range.tree;
             while (t instanceof Node<E> node) {
@@ -449,14 +449,14 @@ public final class TreeViews {
                 next = null;
                 return;
             }
-            final Node<E> node = stack[--depth];
+            Node<E> node = stack[--depth];
             stack[depth] = null;
             RedBlackTree<E> t = descending ? node.left : node.right;
             while (t instanceof Node<E> child) {
                 push(child);
                 t = descending ? child.right : child.left;
             }
-            final E value = node.value;
+            E value = node.value;
             if (descending ? range.tooLow(range.key(value)) : range.tooHigh(range.key(value))) {
                 next = null;
                 depth = 0;
@@ -472,7 +472,7 @@ public final class TreeViews {
 
         @Override
         public X next() {
-            final E element = next;
+            E element = next;
             if (element == null) {
                 throw new NoSuchElementException();
             }
@@ -660,7 +660,7 @@ public final class TreeViews {
         @Override
         @Nullable
         Object lookup(@Nullable Object key) {
-            final Tuple2<K, V> entry = range.find(key);
+            Tuple2<K, V> entry = range.find(key);
             return entry == null ? ABSENT : entry._2();
         }
 

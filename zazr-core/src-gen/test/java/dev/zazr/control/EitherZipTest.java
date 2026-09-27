@@ -21,8 +21,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldZipWith2Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Either<String, String> actual =
+        AtomicInteger calls = new AtomicInteger();
+        Either<String, String> actual =
                 Either.zipWith(Either.<String, Integer>right(1), Either.<String, Integer>right(2), (a1, a2) -> {
                     calls.incrementAndGet();
                     return "" + a1 + a2;
@@ -33,13 +33,13 @@ public class EitherZipTest {
 
     @Test
     public void shouldFailWhenOneOf2Fails() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
         assertThat(Either.zip(failing1, Either.<String, Integer>right(2))).isSameAs(failing1);
         assertThat(Either.zipWith(failing1, Either.<String, Integer>right(2), (_, _) -> {
                     throw new AssertionError("must not be called");
                 }))
                 .isSameAs(failing1);
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(Either.<String, Integer>right(1), failing2)).isSameAs(failing2);
         assertThat(Either.zipWith(Either.<String, Integer>right(1), failing2, (_, _) -> {
                     throw new AssertionError("must not be called");
@@ -49,8 +49,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf2InArgumentOrder() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(failing1, failing2)).isSameAs(failing1);
         assertThat(Either.zipWith(failing1, failing2, (_, _) -> {
                     throw new AssertionError("must not be called");
@@ -106,8 +106,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldZipWith3Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Either<String, String> actual = Either.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Either<String, String> actual = Either.zipWith(
                 Either.<String, Integer>right(1),
                 Either.<String, Integer>right(2),
                 Either.<String, Integer>right(3),
@@ -121,7 +121,7 @@ public class EitherZipTest {
 
     @Test
     public void shouldFailWhenOneOf3Fails() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
         assertThat(Either.zip(failing1, Either.<String, Integer>right(2), Either.<String, Integer>right(3)))
                 .isSameAs(failing1);
         assertThat(Either.zipWith(
@@ -129,7 +129,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(Either.<String, Integer>right(1), failing2, Either.<String, Integer>right(3)))
                 .isSameAs(failing2);
         assertThat(Either.zipWith(
@@ -137,7 +137,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
         assertThat(Either.zip(Either.<String, Integer>right(1), Either.<String, Integer>right(2), failing3))
                 .isSameAs(failing3);
         assertThat(Either.zipWith(
@@ -149,9 +149,9 @@ public class EitherZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf3InArgumentOrder() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
         assertThat(Either.zip(failing1, failing2, failing3)).isSameAs(failing1);
         assertThat(Either.zipWith(failing1, failing2, failing3, (_, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -233,8 +233,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldZipWith4Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Either<String, String> actual = Either.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Either<String, String> actual = Either.zipWith(
                 Either.<String, Integer>right(1),
                 Either.<String, Integer>right(2),
                 Either.<String, Integer>right(3),
@@ -249,7 +249,7 @@ public class EitherZipTest {
 
     @Test
     public void shouldFailWhenOneOf4Fails() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
         assertThat(Either.zip(
                         failing1,
                         Either.<String, Integer>right(2),
@@ -265,7 +265,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         failing2,
@@ -281,7 +281,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -297,7 +297,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -317,10 +317,10 @@ public class EitherZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf4InArgumentOrder() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
         assertThat(Either.zip(failing1, failing2, failing3, failing4)).isSameAs(failing1);
         assertThat(Either.zipWith(failing1, failing2, failing3, failing4, (_, _, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -465,8 +465,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldZipWith5Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Either<String, String> actual = Either.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Either<String, String> actual = Either.zipWith(
                 Either.<String, Integer>right(1),
                 Either.<String, Integer>right(2),
                 Either.<String, Integer>right(3),
@@ -482,7 +482,7 @@ public class EitherZipTest {
 
     @Test
     public void shouldFailWhenOneOf5Fails() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
         assertThat(Either.zip(
                         failing1,
                         Either.<String, Integer>right(2),
@@ -500,7 +500,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         failing2,
@@ -518,7 +518,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -536,7 +536,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -554,7 +554,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -576,11 +576,11 @@ public class EitherZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf5InArgumentOrder() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
         assertThat(Either.zip(failing1, failing2, failing3, failing4, failing5)).isSameAs(failing1);
         assertThat(Either.zipWith(failing1, failing2, failing3, failing4, failing5, (_, _, _, _, _) -> {
                     throw new AssertionError("must not be called");
@@ -781,8 +781,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldZipWith6Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Either<String, String> actual = Either.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Either<String, String> actual = Either.zipWith(
                 Either.<String, Integer>right(1),
                 Either.<String, Integer>right(2),
                 Either.<String, Integer>right(3),
@@ -799,7 +799,7 @@ public class EitherZipTest {
 
     @Test
     public void shouldFailWhenOneOf6Fails() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
         assertThat(Either.zip(
                         failing1,
                         Either.<String, Integer>right(2),
@@ -819,7 +819,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         failing2,
@@ -839,7 +839,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -859,7 +859,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -879,7 +879,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -899,7 +899,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing5);
-        final Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
+        Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -923,12 +923,12 @@ public class EitherZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf6InArgumentOrder() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
-        final Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
         assertThat(Either.zip(failing1, failing2, failing3, failing4, failing5, failing6))
                 .isSameAs(failing1);
         assertThat(Either.zipWith(failing1, failing2, failing3, failing4, failing5, failing6, (_, _, _, _, _, _) -> {
@@ -1195,8 +1195,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldZipWith7Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Either<String, String> actual = Either.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Either<String, String> actual = Either.zipWith(
                 Either.<String, Integer>right(1),
                 Either.<String, Integer>right(2),
                 Either.<String, Integer>right(3),
@@ -1214,7 +1214,7 @@ public class EitherZipTest {
 
     @Test
     public void shouldFailWhenOneOf7Fails() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
         assertThat(Either.zip(
                         failing1,
                         Either.<String, Integer>right(2),
@@ -1236,7 +1236,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         failing2,
@@ -1258,7 +1258,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1280,7 +1280,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1302,7 +1302,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1324,7 +1324,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing5);
-        final Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
+        Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1346,7 +1346,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing6);
-        final Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
+        Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1372,13 +1372,13 @@ public class EitherZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf7InArgumentOrder() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
-        final Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
-        final Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
+        Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
         assertThat(Either.zip(failing1, failing2, failing3, failing4, failing5, failing6, failing7))
                 .isSameAs(failing1);
         assertThat(Either.zipWith(
@@ -1715,8 +1715,8 @@ public class EitherZipTest {
 
     @Test
     public void shouldZipWith8Successes() {
-        final AtomicInteger calls = new AtomicInteger();
-        final Either<String, String> actual = Either.zipWith(
+        AtomicInteger calls = new AtomicInteger();
+        Either<String, String> actual = Either.zipWith(
                 Either.<String, Integer>right(1),
                 Either.<String, Integer>right(2),
                 Either.<String, Integer>right(3),
@@ -1735,7 +1735,7 @@ public class EitherZipTest {
 
     @Test
     public void shouldFailWhenOneOf8Fails() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
         assertThat(Either.zip(
                         failing1,
                         Either.<String, Integer>right(2),
@@ -1759,7 +1759,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing1);
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         failing2,
@@ -1783,7 +1783,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing2);
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1807,7 +1807,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing3);
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1831,7 +1831,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing4);
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1855,7 +1855,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing5);
-        final Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
+        Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1879,7 +1879,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing6);
-        final Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
+        Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1903,7 +1903,7 @@ public class EitherZipTest {
                             throw new AssertionError("must not be called");
                         }))
                 .isSameAs(failing7);
-        final Either<String, Integer> failing8 = Either.<String, Integer>left("e8");
+        Either<String, Integer> failing8 = Either.<String, Integer>left("e8");
         assertThat(Either.zip(
                         Either.<String, Integer>right(1),
                         Either.<String, Integer>right(2),
@@ -1931,14 +1931,14 @@ public class EitherZipTest {
 
     @Test
     public void shouldReturnTheFirstFailureOf8InArgumentOrder() {
-        final Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
-        final Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
-        final Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
-        final Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
-        final Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
-        final Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
-        final Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
-        final Either<String, Integer> failing8 = Either.<String, Integer>left("e8");
+        Either<String, Integer> failing1 = Either.<String, Integer>left("e1");
+        Either<String, Integer> failing2 = Either.<String, Integer>left("e2");
+        Either<String, Integer> failing3 = Either.<String, Integer>left("e3");
+        Either<String, Integer> failing4 = Either.<String, Integer>left("e4");
+        Either<String, Integer> failing5 = Either.<String, Integer>left("e5");
+        Either<String, Integer> failing6 = Either.<String, Integer>left("e6");
+        Either<String, Integer> failing7 = Either.<String, Integer>left("e7");
+        Either<String, Integer> failing8 = Either.<String, Integer>left("e8");
         assertThat(Either.zip(failing1, failing2, failing3, failing4, failing5, failing6, failing7, failing8))
                 .isSameAs(failing1);
         assertThat(Either.zipWith(

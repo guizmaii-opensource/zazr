@@ -47,7 +47,7 @@ final class ChampValidity {
     /// - a collision node holds at least two distinct keys, all of its hash;
     /// - the cached sizes and hash sums are the recomputed ones.
     static int assertValid(BitmapIndexedMapNode<?, ?> root) {
-        final int size = assertValidMap(root, 0, 0, 0);
+        int size = assertValidMap(root, 0, 0, 0);
         assertThat(root.size()).isEqualTo(size);
         return size;
     }
@@ -56,18 +56,18 @@ final class ChampValidity {
         if (node instanceof BitmapIndexedMapNode<?, ?> n) {
             assertThat(shift).as("bitmap node above the last level").isLessThan(ChampNode.HASH_CODE_LENGTH);
             assertThat(n.dataMap & n.nodeMap).as("disjoint bitmaps").isZero();
-            final int payload = Integer.bitCount(n.dataMap);
-            final int children = Integer.bitCount(n.nodeMap);
+            int payload = Integer.bitCount(n.dataMap);
+            int children = Integer.bitCount(n.nodeMap);
             assertThat(n.content.length).isEqualTo(2 * payload + children);
             assertThat(n.hashes.length).isEqualTo(payload);
             int size = 0;
             int hashSum = 0;
             int bits = n.dataMap;
             for (int i = 0; i < payload; i++) {
-                final int fragment = Integer.numberOfTrailingZeros(bits);
+                int fragment = Integer.numberOfTrailingZeros(bits);
                 bits &= bits - 1;
-                final Object key = n.content[2 * i];
-                final Object value = n.content[2 * i + 1];
+                Object key = n.content[2 * i];
+                Object value = n.content[2 * i + 1];
                 assertThat(key).isNotNull().isNotInstanceOf(MapNode.class);
                 assertThat(value).isNotNull().isNotInstanceOf(MapNode.class);
                 assertThat(n.hashes[i]).isEqualTo(Objects.hashCode(key));
@@ -82,18 +82,18 @@ final class ChampValidity {
             }
             bits = n.nodeMap;
             for (int i = 0; i < children; i++) {
-                final int fragment = Integer.numberOfTrailingZeros(bits);
+                int fragment = Integer.numberOfTrailingZeros(bits);
                 bits &= bits - 1;
-                final Object child = n.content[n.content.length - 1 - i];
+                Object child = n.content[n.content.length - 1 - i];
                 assertThat(child).isInstanceOf(MapNode.class);
-                final MapNode<?, ?> c = (MapNode<?, ?>) child;
-                final int childShift = shift + ChampNode.BIT_PARTITION_SIZE;
+                MapNode<?, ?> c = (MapNode<?, ?>) child;
+                int childShift = shift + ChampNode.BIT_PARTITION_SIZE;
                 if (childShift < ChampNode.HASH_CODE_LENGTH) {
                     assertThat(c).isInstanceOf(BitmapIndexedMapNode.class);
                 } else {
                     assertThat(c).isInstanceOf(HashCollisionMapNode.class);
                 }
-                final int childSize = assertValidMap(
+                int childSize = assertValidMap(
                         c, childShift, path | (fragment << shift), pathMask | (ChampNode.BIT_PARTITION_MASK << shift));
                 assertThat(childSize).as("a child holds at least two entries").isGreaterThanOrEqualTo(2);
                 size += childSize;
@@ -103,14 +103,14 @@ final class ChampValidity {
             assertThat(n.keyHashSum).isEqualTo(hashSum);
             return size;
         } else {
-            final HashCollisionMapNode<?, ?> n = (HashCollisionMapNode<?, ?>) node;
+            HashCollisionMapNode<?, ?> n = (HashCollisionMapNode<?, ?>) node;
             assertThat(n.content.length % 2).isZero();
-            final int size = n.content.length / 2;
+            int size = n.content.length / 2;
             assertThat(size).isGreaterThanOrEqualTo(2);
             assertThat(ChampNode.improve(n.hash))
                     .as("collision node under its path")
                     .isEqualTo(path);
-            final java.util.Set<Object> keys = new java.util.HashSet<>();
+            java.util.Set<Object> keys = new java.util.HashSet<>();
             for (int i = 0; i < size; i++) {
                 assertThat(n.content[2 * i]).isNotNull();
                 assertThat(n.content[2 * i + 1]).isNotNull();
@@ -129,14 +129,14 @@ final class ChampValidity {
     static void assertSameShape(MapNode<?, ?> expected, MapNode<?, ?> actual, boolean collisionOrder) {
         assertThat(actual.getClass()).isEqualTo(expected.getClass());
         if (expected instanceof BitmapIndexedMapNode<?, ?> e) {
-            final BitmapIndexedMapNode<?, ?> a = (BitmapIndexedMapNode<?, ?>) actual;
+            BitmapIndexedMapNode<?, ?> a = (BitmapIndexedMapNode<?, ?>) actual;
             assertThat(a.dataMap).isEqualTo(e.dataMap);
             assertThat(a.nodeMap).isEqualTo(e.nodeMap);
             assertThat(a.size).isEqualTo(e.size);
             assertThat(a.keyHashSum).isEqualTo(e.keyHashSum);
             assertThat(a.hashes).isEqualTo(e.hashes);
             assertThat(a.content.length).isEqualTo(e.content.length);
-            final int payload = 2 * Integer.bitCount(e.dataMap);
+            int payload = 2 * Integer.bitCount(e.dataMap);
             for (int i = 0; i < payload; i++) {
                 assertThat(a.content[i]).isSameAs(e.content[i]);
             }
@@ -144,8 +144,8 @@ final class ChampValidity {
                 assertSameShape((MapNode<?, ?>) e.content[i], (MapNode<?, ?>) a.content[i], collisionOrder);
             }
         } else {
-            final HashCollisionMapNode<?, ?> e = (HashCollisionMapNode<?, ?>) expected;
-            final HashCollisionMapNode<?, ?> a = (HashCollisionMapNode<?, ?>) actual;
+            HashCollisionMapNode<?, ?> e = (HashCollisionMapNode<?, ?>) expected;
+            HashCollisionMapNode<?, ?> a = (HashCollisionMapNode<?, ?>) actual;
             assertThat(a.hash).isEqualTo(e.hash);
             assertThat(a.content.length).isEqualTo(e.content.length);
             if (collisionOrder) {
@@ -154,7 +154,7 @@ final class ChampValidity {
                 }
             } else {
                 for (int i = 0; i < e.content.length; i += 2) {
-                    final int j = 2 * a.indexOf(e.content[i]);
+                    int j = 2 * a.indexOf(e.content[i]);
                     assertThat(j).isNotNegative();
                     assertThat(a.content[j]).isSameAs(e.content[i]);
                     assertThat(a.content[j + 1]).isSameAs(e.content[i + 1]);
@@ -165,7 +165,7 @@ final class ChampValidity {
 
     /// The bitmap nodes of a map trie, by identity.
     static Set<Object> internalNodes(MapNode<?, ?> node) {
-        final Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());
         collectMapNodes(node, result);
         return result;
     }
@@ -182,7 +182,7 @@ final class ChampValidity {
     /// A description of every node of a map trie, by identity, with its fields and the identity of its arrays and
     /// entries: equal descriptions taken before and after an operation mean that nothing reachable was changed.
     static String describe(MapNode<?, ?> node) {
-        final StringBuilder out = new StringBuilder();
+        StringBuilder out = new StringBuilder();
         describeMap(node, out);
         return out.toString();
     }
@@ -204,7 +204,7 @@ final class ChampValidity {
                     .append(System.identityHashCode(n.hashes))
                     .append(java.util.Arrays.toString(n.hashes))
                     .append('(');
-            final int payload = 2 * Integer.bitCount(n.dataMap);
+            int payload = 2 * Integer.bitCount(n.dataMap);
             for (int i = 0; i < n.content.length; i++) {
                 if (i < payload) {
                     out.append(System.identityHashCode(n.content[i]));
@@ -215,7 +215,7 @@ final class ChampValidity {
             }
             out.append(")]");
         } else {
-            final HashCollisionMapNode<?, ?> n = (HashCollisionMapNode<?, ?>) node;
+            HashCollisionMapNode<?, ?> n = (HashCollisionMapNode<?, ?>) node;
             out.append("[c@").append(System.identityHashCode(n.content)).append('(');
             for (Object o : n.content) {
                 out.append(System.identityHashCode(o)).append(' ');
@@ -226,7 +226,7 @@ final class ChampValidity {
 
     /// The entries of a map trie, key and value objects, in iteration order.
     static java.util.List<Object[]> entries(MapNode<?, ?> root) {
-        final java.util.List<Object[]> result = new ArrayList<>();
+        java.util.List<Object[]> result = new ArrayList<>();
         root.iterator((k, v) -> new Object[] {k, v}).forEachRemaining(result::add);
         return result;
     }
@@ -236,7 +236,7 @@ final class ChampValidity {
     /// Asserts every invariant of a set trie, as [#assertValid(BitmapIndexedMapNode)] does for a map, and returns its
     /// size.
     static int assertValid(BitmapIndexedSetNode<?> root) {
-        final int size = assertValidSet(root, 0, 0, 0);
+        int size = assertValidSet(root, 0, 0, 0);
         assertThat(root.size()).isEqualTo(size);
         return size;
     }
@@ -245,17 +245,17 @@ final class ChampValidity {
         if (node instanceof BitmapIndexedSetNode<?> n) {
             assertThat(shift).as("bitmap node above the last level").isLessThan(ChampNode.HASH_CODE_LENGTH);
             assertThat(n.dataMap & n.nodeMap).as("disjoint bitmaps").isZero();
-            final int payload = Integer.bitCount(n.dataMap);
-            final int children = Integer.bitCount(n.nodeMap);
+            int payload = Integer.bitCount(n.dataMap);
+            int children = Integer.bitCount(n.nodeMap);
             assertThat(n.content.length).isEqualTo(payload + children);
             assertThat(n.hashes.length).isEqualTo(payload);
             int size = 0;
             int hashSum = 0;
             int bits = n.dataMap;
             for (int i = 0; i < payload; i++) {
-                final int fragment = Integer.numberOfTrailingZeros(bits);
+                int fragment = Integer.numberOfTrailingZeros(bits);
                 bits &= bits - 1;
-                final Object element = n.content[i];
+                Object element = n.content[i];
                 assertThat(element).isNotNull().isNotInstanceOf(SetNode.class);
                 assertThat(n.hashes[i]).isEqualTo(Objects.hashCode(element));
                 assertThat(ChampNode.maskFrom(n.hashes[i], shift))
@@ -269,18 +269,18 @@ final class ChampValidity {
             }
             bits = n.nodeMap;
             for (int i = 0; i < children; i++) {
-                final int fragment = Integer.numberOfTrailingZeros(bits);
+                int fragment = Integer.numberOfTrailingZeros(bits);
                 bits &= bits - 1;
-                final Object child = n.content[n.content.length - 1 - i];
+                Object child = n.content[n.content.length - 1 - i];
                 assertThat(child).isInstanceOf(SetNode.class);
-                final SetNode<?> c = (SetNode<?>) child;
-                final int childShift = shift + ChampNode.BIT_PARTITION_SIZE;
+                SetNode<?> c = (SetNode<?>) child;
+                int childShift = shift + ChampNode.BIT_PARTITION_SIZE;
                 if (childShift < ChampNode.HASH_CODE_LENGTH) {
                     assertThat(c).isInstanceOf(BitmapIndexedSetNode.class);
                 } else {
                     assertThat(c).isInstanceOf(HashCollisionSetNode.class);
                 }
-                final int childSize = assertValidSet(
+                int childSize = assertValidSet(
                         c, childShift, path | (fragment << shift), pathMask | (ChampNode.BIT_PARTITION_MASK << shift));
                 assertThat(childSize).as("a child holds at least two elements").isGreaterThanOrEqualTo(2);
                 size += childSize;
@@ -290,12 +290,12 @@ final class ChampValidity {
             assertThat(n.keyHashSum).isEqualTo(hashSum);
             return size;
         } else {
-            final HashCollisionSetNode<?> n = (HashCollisionSetNode<?>) node;
+            HashCollisionSetNode<?> n = (HashCollisionSetNode<?>) node;
             assertThat(n.content.length).isGreaterThanOrEqualTo(2);
             assertThat(ChampNode.improve(n.hash))
                     .as("collision node under its path")
                     .isEqualTo(path);
-            final java.util.Set<Object> elements = new java.util.HashSet<>();
+            java.util.Set<Object> elements = new java.util.HashSet<>();
             for (Object element : n.content) {
                 assertThat(element).isNotNull();
                 assertThat(Objects.hashCode(element)).isEqualTo(n.hash);
@@ -313,14 +313,14 @@ final class ChampValidity {
     static void assertSameShape(SetNode<?> expected, SetNode<?> actual, boolean collisionOrder) {
         assertThat(actual.getClass()).isEqualTo(expected.getClass());
         if (expected instanceof BitmapIndexedSetNode<?> e) {
-            final BitmapIndexedSetNode<?> a = (BitmapIndexedSetNode<?>) actual;
+            BitmapIndexedSetNode<?> a = (BitmapIndexedSetNode<?>) actual;
             assertThat(a.dataMap).isEqualTo(e.dataMap);
             assertThat(a.nodeMap).isEqualTo(e.nodeMap);
             assertThat(a.size).isEqualTo(e.size);
             assertThat(a.keyHashSum).isEqualTo(e.keyHashSum);
             assertThat(a.hashes).isEqualTo(e.hashes);
             assertThat(a.content.length).isEqualTo(e.content.length);
-            final int payload = Integer.bitCount(e.dataMap);
+            int payload = Integer.bitCount(e.dataMap);
             for (int i = 0; i < payload; i++) {
                 assertThat(a.content[i]).isSameAs(e.content[i]);
             }
@@ -328,8 +328,8 @@ final class ChampValidity {
                 assertSameShape((SetNode<?>) e.content[i], (SetNode<?>) a.content[i], collisionOrder);
             }
         } else {
-            final HashCollisionSetNode<?> e = (HashCollisionSetNode<?>) expected;
-            final HashCollisionSetNode<?> a = (HashCollisionSetNode<?>) actual;
+            HashCollisionSetNode<?> e = (HashCollisionSetNode<?>) expected;
+            HashCollisionSetNode<?> a = (HashCollisionSetNode<?>) actual;
             assertThat(a.hash).isEqualTo(e.hash);
             assertThat(a.content.length).isEqualTo(e.content.length);
             for (int i = 0; i < e.content.length; i++) {
@@ -344,7 +344,7 @@ final class ChampValidity {
 
     /// The bitmap nodes of a set trie, by identity.
     static Set<Object> internalNodes(SetNode<?> node) {
-        final Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());
         collectSetNodes(node, result);
         return result;
     }
@@ -360,7 +360,7 @@ final class ChampValidity {
 
     /// A description of every node of a set trie, as [#describe(MapNode)] gives for a map.
     static String describe(SetNode<?> node) {
-        final StringBuilder out = new StringBuilder();
+        StringBuilder out = new StringBuilder();
         describeSet(node, out);
         return out.toString();
     }
@@ -382,7 +382,7 @@ final class ChampValidity {
                     .append(System.identityHashCode(n.hashes))
                     .append(java.util.Arrays.toString(n.hashes))
                     .append('(');
-            final int payload = Integer.bitCount(n.dataMap);
+            int payload = Integer.bitCount(n.dataMap);
             for (int i = 0; i < n.content.length; i++) {
                 if (i < payload) {
                     out.append(System.identityHashCode(n.content[i]));
@@ -393,7 +393,7 @@ final class ChampValidity {
             }
             out.append(")]");
         } else {
-            final HashCollisionSetNode<?> n = (HashCollisionSetNode<?>) node;
+            HashCollisionSetNode<?> n = (HashCollisionSetNode<?>) node;
             out.append("[c@").append(System.identityHashCode(n.content)).append('(');
             for (Object o : n.content) {
                 out.append(System.identityHashCode(o)).append(' ');

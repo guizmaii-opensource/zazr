@@ -23,13 +23,13 @@ public class Function3Test {
                 return null;
             }
         }
-        final Type type = new Type();
+        Type type = new Type();
         assertThat(Function3.of(type::methodReference)).isNotNull();
     }
 
     @Test
     public void shouldLiftPartialFunction() {
-        final Function3<Integer, Integer, Integer, Option<Integer>> lifted = Function3.lift((i1, i2, i3) -> {
+        Function3<Integer, Integer, Integer, Option<Integer>> lifted = Function3.lift((i1, i2, i3) -> {
             if (i1 == 0) {
                 return null;
             }
@@ -49,7 +49,7 @@ public class Function3Test {
 
     @Test
     public void shouldRethrowFatalThrowableFromLiftTry() {
-        final Function3<Integer, Integer, Integer, Try<Integer>> lifted = Function3.liftTry((i1, i2, i3) -> {
+        Function3<Integer, Integer, Integer, Try<Integer>> lifted = Function3.liftTry((i1, i2, i3) -> {
             throw new OutOfMemoryError("fatal");
         });
         assertThrows(OutOfMemoryError.class, () -> lifted.apply(1, 1, 1));
@@ -57,38 +57,38 @@ public class Function3Test {
 
     @Test
     public void shouldReturnFailureFromLiftTryOnNonFatalThrowable() {
-        final Function3<Integer, Integer, Integer, Try<Integer>> lifted = Function3.liftTry((i1, i2, i3) -> {
+        Function3<Integer, Integer, Integer, Try<Integer>> lifted = Function3.liftTry((i1, i2, i3) -> {
             throw new IllegalStateException("non-fatal");
         });
-        final Try<Integer> result = lifted.apply(1, 1, 1);
+        Try<Integer> result = lifted.apply(1, 1, 1);
         assertThat(result.isFailure()).isTrue();
         assertThat(result.getCause()).isInstanceOf(IllegalStateException.class).hasMessage("non-fatal");
     }
 
     @Test
     public void shouldPartiallyApply() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
+        Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
         assertThat(f.apply(1).apply(2, 3)).isEqualTo("123");
         assertThat(f.apply(1, 2).apply(3)).isEqualTo("123");
     }
 
     @Test
     public void shouldConstant() {
-        final Function3<Object, Object, Object, Object> f = Function3.constant(6);
+        Function3<Object, Object, Object, Object> f = Function3.constant(6);
         assertThat(f.apply(1, 2, 3)).isEqualTo(6);
     }
 
     @Test
     public void shouldCurry() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
-        final Function<Object, Function<Object, Function<Object, Object>>> curried = f.curried();
+        Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
+        Function<Object, Function<Object, Function<Object, Object>>> curried = f.curried();
         assertThat(curried.apply(1).apply(2).apply(3)).isEqualTo("123");
     }
 
     @Test
     public void shouldTuple() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
-        final Function<Tuple3<Object, Object, Object>, Object> tupled = f.tupled();
+        Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
+        Function<Tuple3<Object, Object, Object>, Object> tupled = f.tupled();
         assertThat(tupled.apply(Tuple.of(1, 2, 3))).isEqualTo("123");
     }
 
@@ -120,9 +120,9 @@ public class Function3Test {
 
     @Test
     public void shouldComposeWithAndThen() {
-        final Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
-        final Function<Object, Object> after = o -> o + "!";
-        final Function3<Object, Object, Object, Object> composed = f.andThen(after);
+        Function3<Object, Object, Object, Object> f = (o1, o2, o3) -> "" + o1 + o2 + o3;
+        Function<Object, Object> after = o -> o + "!";
+        Function3<Object, Object, Object, Object> composed = f.andThen(after);
         assertThat(composed.apply(1, 2, 3)).isEqualTo("123!");
     }
 
@@ -131,31 +131,31 @@ public class Function3Test {
 
         @Test
         public void shouldCompose1() {
-            final Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose1(toUpperCase).apply("xx", "s2", "s3")).isEqualTo("XXs2s3");
         }
 
         @Test
         public void shouldCompose2() {
-            final Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose2(toUpperCase).apply("s1", "xx", "s3")).isEqualTo("s1XXs3");
         }
 
         @Test
         public void shouldCompose3() {
-            final Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
-            final Function<String, String> toUpperCase = String::toUpperCase;
+            Function3<String, String, String, String> concat = (String s1, String s2, String s3) -> s1 + s2 + s3;
+            Function<String, String> toUpperCase = String::toUpperCase;
             assertThat(concat.compose3(toUpperCase).apply("s1", "s2", "xx")).isEqualTo("s1s2XX");
         }
     }
 
     @Test
     public void shouldNarrow() {
-        final Function3<Number, Number, Number, String> wideFunction =
+        Function3<Number, Number, Number, String> wideFunction =
                 (o1, o2, o3) -> String.format("Numbers are: %s, %s, %s", o1, o2, o3);
-        final Function3<Integer, Integer, Integer, CharSequence> narrowFunction = Function3.narrow(wideFunction);
+        Function3<Integer, Integer, Integer, CharSequence> narrowFunction = Function3.narrow(wideFunction);
 
         assertThat(narrowFunction.apply(1, 2, 3)).isEqualTo("Numbers are: 1, 2, 3");
     }

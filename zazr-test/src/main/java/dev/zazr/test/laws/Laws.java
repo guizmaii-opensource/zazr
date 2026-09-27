@@ -66,7 +66,7 @@ public final class Laws<S> {
         }
         for (Law<?> law : other.laws) {
             @SuppressWarnings("unchecked")
-            final Law<? super T> checked = (Law<? super T>) law;
+            Law<? super T> checked = (Law<? super T>) law;
             all = all.append(checked);
         }
         return new Laws<>(all);
@@ -120,7 +120,7 @@ public final class Laws<S> {
      * @throws NullPointerException if an argument is null
      */
     public void assertSatisfied(S subject, CheckConfig config) {
-        final Vector<LawResult> failures = check(subject, config).filter(result -> !result.isSatisfied());
+        Vector<LawResult> failures = check(subject, config).filter(result -> !result.isSatisfied());
         if (!failures.isEmpty()) {
             throw new AssertionError(
                     failures.map(LawResult::describe).mkString(failures.size() + " law(s) failed:\n", "\n", ""));
