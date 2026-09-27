@@ -537,8 +537,8 @@ public class SkillFunctionalJavaExamplesTest {
         static String summary(Option<Payment> payment) {
             return switch (payment) {
                 case Some(Card(var number)) when number.startsWith("4") -> "Visa card";
-                case Some(Card(_)) -> "other card";
-                case Some(Transfer(_)) -> "bank transfer";
+                case Some(Card(var _)) -> "other card";
+                case Some(Transfer(var _)) -> "bank transfer";
                 case None() -> "not paid yet";
             };
         }

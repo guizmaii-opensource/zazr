@@ -30,7 +30,9 @@ public class Euler34Test {
     }
 
     private static int sumOfOfAllNumbersWhichAreEqualToSumOfDigitFactorial() {
-        return Stream.rangeClosed(3, 2_540_160) // 9! * 7 = 2 540 160 is a seven digit number, as is 9! * 8, therefore 9! * 7 is the definitive upper limit we have to investigate.
+        // 9! * 7 = 2 540 160 is a seven digit number, as is 9! * 8, therefore 9! * 7 is the definitive upper limit we
+        // have to investigate.
+        return Stream.rangeClosed(3, 2_540_160)
                 .filter(i -> i == sumOfDigitFactorial(i))
                 .sum().intValue();
     }

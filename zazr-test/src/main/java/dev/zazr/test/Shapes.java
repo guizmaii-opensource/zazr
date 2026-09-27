@@ -196,8 +196,8 @@ final class Shapes {
     }
 
     /// `ofAll`, a chain of lazy tails, the same chain with a prefix already evaluated, an eager prefix with a
-    /// lazy suffix appended, and the rest of a longer lazy chain after `drop`. Always finite; every element is drawn
-    /// before the stream is built, so evaluating a tail later draws nothing.
+    /// lazy suffix appended, and the rest of a longer lazy chain after `drop`. Always finite; every element is
+    /// drawn before the stream is built, so evaluating a tail later draws nothing.
     static <T> Stream<T> stream(int layout, ArrayList<T> xs, Gen<T> gen, Sampling sampling, int size) {
         return switch (layout) {
             case 0 -> Stream.ofAll(xs);
@@ -352,8 +352,8 @@ final class Shapes {
         return entries;
     }
 
-    /// `ofAll` of a JDK map, one `put` at a time, extra keys the map does not hold put then removed again, and every key
-    /// first put with another value then overwritten.
+    /// `ofAll` of a JDK map, one `put` at a time, extra keys the map does not hold put then removed again, and every
+    /// key first put with another value then overwritten.
     static <K, V, M> M map(int layout, ArrayList<Tuple2<K, V>> xs, Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops,
                            Sampling sampling, int size) {
         return switch (layout) {

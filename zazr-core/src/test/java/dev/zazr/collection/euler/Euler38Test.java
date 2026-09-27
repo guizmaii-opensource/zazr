@@ -47,7 +47,8 @@ public class Euler38Test {
                 .map(Integer::valueOf)
                 .sorted()
                 .reverse()
-                .map(i -> "9" + i) // Since 918273645 is known we don't have to investigate numbers not starting with a 9.
+                // Since 918273645 is known we don't have to investigate numbers not starting with a 9.
+                .map(i -> "9" + i)
                 .map(s -> Vector.ofAll(s.toCharArray()))
                 .find(Euler38Test::isPandigitalMultiple)
                 .get();

@@ -1000,7 +1000,8 @@ public class TreeMapTest extends AbstractTraversableTest {
         assertThat(of(1, 2, 3).spliterator().getExactSizeIfKnown()).isEqualTo(3);
     }
 
-    // -- null values: everything but get(k) itself must work on a map holding a null value, since Some(null) does not exist
+    // -- null values: everything but get(k) itself must work on a map holding a null value, since Some(null) does not
+    // exist
 
     @Nested
     class NullValueTests {

@@ -71,7 +71,7 @@ public class SealedTypesTest {
         private String label(Option<Tuple2<String, Integer>> option) {
             return switch (option) {
                 case Some(Tuple2(var name, var count)) when count > 1 -> name + " x" + count;
-                case Some(Tuple2(var name, _)) -> name;
+                case Some(Tuple2(var name, var _)) -> name;
                 case None() -> "nothing";
             };
         }
@@ -281,8 +281,8 @@ public class SealedTypesTest {
         private String describe(List<String> list) {
             return switch (list) {
                 case Cons(var head, Nil()) -> "one: " + head;
-                case Cons(var head, Cons(var second, _)) when head.equals(second) -> "starts twice with " + head;
-                case Cons(var head, _) -> "starts with " + head;
+                case Cons(var head, Cons(var second, var _)) when head.equals(second) -> "starts twice with " + head;
+                case Cons(var head, var _) -> "starts with " + head;
                 case Nil() -> "empty";
             };
         }
@@ -379,7 +379,7 @@ public class SealedTypesTest {
                 case Tuple0() -> "()";
                 case Tuple1(var a) -> "(" + a + ")";
                 case Tuple2(var a, var b) -> "(" + a + ", " + b + ")";
-                case Tuple3(var a, _, var c) -> "(" + a + ", _, " + c + ")";
+                case Tuple3(var a, var _, var c) -> "(" + a + ", _, " + c + ")";
                 default -> "?";
             };
         }

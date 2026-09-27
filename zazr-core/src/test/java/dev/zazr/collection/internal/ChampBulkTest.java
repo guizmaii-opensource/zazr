@@ -134,7 +134,8 @@ public class ChampBulkTest {
                 for (int i = 0; i < leftSize; i++) {
                     left = left.updated(new Key(i, 0), "l" + i);
                 }
-                // keys of mixed hashes 0, 1, 2...: the node boundaries; the right side overlaps the upper half of the left one, and goes beyond it
+                // keys of mixed hashes 0, 1, 2...: the node boundaries; the right side overlaps the upper half of the
+                // left one, and goes beyond it
                 BitmapIndexedMapNode<Key, String> right = MapNode.empty();
                 for (int i = 0; i < rightSize; i++) {
                     right = right.updated(new Key(leftSize / 2 + i, 0), "r" + i);

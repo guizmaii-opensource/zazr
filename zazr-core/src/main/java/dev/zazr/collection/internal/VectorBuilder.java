@@ -349,8 +349,8 @@ public final class VectorBuilder<T extends @Nullable Object> {
         final int overallPrefixLength = (int) (((long) before + prefixLength) % maxPrefixLength);
         final int newOffset = (maxPrefixLength - overallPrefixLength) % maxPrefixLength;
         if ((long) newOffset + before + bigVector.length() > Integer.MAX_VALUE) {
-            // the padding would not fit next to the elements: build without it, and still as an aligned builder, so that
-            // the vectors added next are added by addVector, never by initFrom, whose padding would not fit either
+            // the padding would not fit next to the elements: build without it, and still as an aligned builder, so
+            // that the vectors added next are added by addVector, never by initFrom, whose padding would not fit either
             prefixIsRightAligned = true;
             return this;
         }

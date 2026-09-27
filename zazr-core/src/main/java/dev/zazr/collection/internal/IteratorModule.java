@@ -181,9 +181,10 @@ public interface IteratorModule {
             this.step = step;
             this.gap = Math.max(step - size, 0);
             this.preserve = Math.max(size - step, 0);
-            // the first group starts small and grows with the source: a size beyond the source (grouped(Integer.MAX_VALUE)
-            // is one group) must not allocate an array of that size. Later groups allocate `size` directly: they are only
-            // reached when the previous group was full, so the source is known to hold that many.
+            // the first group starts small and grows with the source: a size beyond the source
+            // (grouped(Integer.MAX_VALUE) is one group) must not allocate an array of that size. Later groups allocate
+            // `size` directly: they are only reached when the previous group was full, so the source is known to hold
+            // that many.
             this.buffer = take(that, new Object[Math.min(size, INITIAL_CAPACITY)], 0, size);
         }
 

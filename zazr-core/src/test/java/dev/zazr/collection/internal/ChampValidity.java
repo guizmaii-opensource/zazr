@@ -41,9 +41,10 @@ final class ChampValidity {
 
     /// Asserts every invariant of a map trie, the canonical form included, and returns its size:
     /// - the bitmaps are disjoint, and the arrays are as long as they say (two slots per entry, one per child);
-    /// - every entry sits in the slot of its hash fragment, under the fragments of its path, with its own hash stored;
-    /// - every child holds at least two entries (a single one would be inline), is a bitmap node above the last level
-    ///   of hash bits and a collision node below it;
+    /// - every entry sits in the slot of its hash fragment, under the fragments of its path, with its own hash
+    ///   stored;
+    /// - every child holds at least two entries (a single one would be inline), is a bitmap node above the last
+    ///   level of hash bits and a collision node below it;
     /// - a collision node holds at least two distinct keys, all of its hash;
     /// - the cached sizes and hash sums are the recomputed ones.
     static int assertValid(BitmapIndexedMapNode<?, ?> root) {

@@ -5464,7 +5464,8 @@ public class ListTest extends AbstractTraversableTest {
                 calls[0]++;
                 return x / 2;
             });
-            // every element is classified before the call returns (an element that ends a run is classified again as the key of the next one)
+            // every element is classified before the call returns (an element that ends a run is classified again as
+            // the key of the next one)
             assertThat(calls[0]).isGreaterThanOrEqualTo(4);
             assertThat(windows).isEqualTo(List.of(List.of(1), List.of(2, 3), List.of(4)));
         }
@@ -5754,8 +5755,8 @@ public class ListTest extends AbstractTraversableTest {
 
         @Test
         public void shouldStayCorrectAfterOperationsOnEitherSideOfASharedResult() {
-            // the results of slice, drop, take and subSequence may be the receiver or share its cells: a persistent List
-            // never changes, so writes on either side leave the other as it was
+            // the results of slice, drop, take and subSequence may be the receiver or share its cells: a persistent
+            // List never changes, so writes on either side leave the other as it was
             final List<Integer> list = List.range(0, 5);
             final List<List<Integer>> results = List.of(list.slice(0, 5), list.slice(0, 9), list.slice(2, 9), list.drop(2), list.take(9),
                     list.subSequence(2), list.subSequence(2, 5), list.subSequence(0, 5), list.takeWhile(x -> true));

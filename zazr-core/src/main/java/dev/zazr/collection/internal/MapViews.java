@@ -511,7 +511,8 @@ public final class MapViews {
             return map;
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         @Nullable Object lookup(@Nullable Object key) {
             return trie.getOrElse((K) key, (V) ABSENT);
@@ -564,7 +565,8 @@ public final class MapViews {
             return reversed ? null : map;
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         @Nullable Object lookup(@Nullable Object key) {
             return map.getOrElse((K) key, (V) ABSENT);

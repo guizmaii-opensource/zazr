@@ -141,8 +141,8 @@ final class VectorSliceBuilder {
                     resultDim += 1;
                 }
             } else {
-                // a single highest-dimensional slice may hold WIDTH - 1 entries if it came from a prefix or a suffix, but
-                // the data holds at most WIDTH - 2: add a dimension then
+                // a single highest-dimensional slice may hold WIDTH - 1 entries if it came from a prefix or a suffix,
+                // but the data holds at most WIDTH - 2: add a dimension then
                 final Object[] one = (pre != null) ? pre : slice(suffixIdx(maxDim));
                 if (one.length > WIDTH - 2) {
                     resultDim += 1;

@@ -1174,7 +1174,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default <U extends @Nullable Object> List<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key computed once
+        // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key
+        // computed once
         final java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
         final java.util.HashSet<U> duplicated = new java.util.HashSet<>();
         for (T element : this) {

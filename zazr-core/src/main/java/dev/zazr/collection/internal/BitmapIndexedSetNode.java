@@ -7,8 +7,8 @@ import org.jspecify.annotations.Nullable;
 import static java.lang.Integer.bitCount;
 
 /// The node of a `HashSet` trie that splits its 32 slots between inline elements and children (see [ChampNode]).
-/// Ported from `BitmapIndexedSetNode` in `scala/collection/immutable/HashSet.scala` of the Scala 3 standard library (the
-/// Scala 2.13 collection library, which Scala 3 ships unchanged).
+/// Ported from `BitmapIndexedSetNode` in `scala/collection/immutable/HashSet.scala` of the Scala 3 standard library
+/// (the Scala 2.13 collection library, which Scala 3 ships unchanged).
 ///
 /// `content` holds the elements, `payloadArity` slots in slot order, then the children in reverse slot order; `hashes`
 /// the hash of each element. The node caches the size and the sum of the hashes of its subtree.
@@ -208,7 +208,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             }
             if (subNodeNew.size() == 1) {
                 if (size == subNode.size()) {
-                    // the child was all this node held: the single remaining element goes up, to be inlined by the parent
+                    // the child was all this node held: the single remaining element goes up, to be inlined by the
+                    // parent
                     return (BitmapIndexedSetNode<T>) subNodeNew;
                 } else {
                     return copyAndMigrateFromNodeToInline(bitpos, subNode, subNodeNew);
@@ -222,8 +223,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
     }
 
     /// The node of two elements whose hashes agree up to `shift`, owned by `owner`: one node holding both when their
-    /// fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node below the
-    /// last level.
+    /// fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node below
+    /// the last level.
     static <T extends @Nullable Object> SetNode<T> mergeTwoKeyValPairs(@Nullable Object owner, T element0, int hash0, T element1,
             int hash1, int shift) {
         if (shift >= HASH_CODE_LENGTH) {

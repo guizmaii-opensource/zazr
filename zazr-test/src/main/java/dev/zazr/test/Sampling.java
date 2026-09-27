@@ -48,8 +48,8 @@ final class Sampling {
     }
 
     /// The number of values a filter rejects in a row, in the passes it runs again, before it gives its pass up so
-    /// that the run can try a larger size: a sixteenth of the budget, at least one. Sizes double from one attempt to
-    /// the next, so the run goes from 0 to a size of 100 in 8 attempts, well within the budget.
+    /// that the run can try a larger size: a sixteenth of the budget, at least one. Sizes double from one attempt
+    /// to the next, so the run goes from 0 to a size of 100 in 8 attempts, well within the budget.
     long filterGiveUp() {
         return Math.max(1, maxDiscards / 16);
     }

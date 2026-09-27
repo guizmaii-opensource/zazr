@@ -1260,7 +1260,8 @@ public class NonEmptyVectorTest {
             final NonEmptyVector<Integer> nev = NonEmptyVector.single(1);
             assertThatNullPointerException().isThrownBy(() -> nev.as(null)).withMessage("NonEmptyVector.as: value is null");
             assertThatNullPointerException().isThrownBy(() -> nev.insert(0, null)).withMessage("NonEmptyVector.insert: element is null");
-            // checked even where Vector would not need the element: one element has nothing to intersperse, the size is reached, nothing matches
+            // checked even where Vector would not need the element: one element has nothing to intersperse, the size is
+            // reached, nothing matches
             assertThatNullPointerException().isThrownBy(() -> nev.intersperse(null)).withMessage("NonEmptyVector.intersperse: element is null");
             assertThatNullPointerException().isThrownBy(() -> nev.padTo(0, null)).withMessage("NonEmptyVector.padTo: element is null");
             assertThatNullPointerException().isThrownBy(() -> nev.leftPadTo(0, null)).withMessage("NonEmptyVector.leftPadTo: element is null");

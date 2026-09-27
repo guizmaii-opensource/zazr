@@ -39,8 +39,8 @@ public final class RedBlackTreeBuilder<T extends @Nullable Object> {
     }
 
     /// A builder whose buffer starts with room for `capacity` elements, and which keeps the first of equal elements
-    /// when `keepFirst` is true (as successive insertions that skip an element already present would) instead of the
-    /// last.
+    /// when `keepFirst` is true (as successive insertions that skip an element already present would) instead of
+    /// the last.
     public RedBlackTreeBuilder(Comparator<? super T> comparator, String name, int capacity, boolean keepFirst) {
         this.comparator = comparator;
         this.name = name;

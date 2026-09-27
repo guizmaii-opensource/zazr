@@ -20,8 +20,8 @@ final class LawChecks {
     }
 
     /// The configuration of a check named `name`: the seed of {@value CheckConfig#SEED_PROPERTY} when it is set,
-    /// otherwise one derived from the name; {@link #SAMPLES} samples unless {@value CheckConfig#SAMPLES_PROPERTY} is
-    /// set; the rest from {@link CheckConfig#defaults()}.
+    /// otherwise one derived from the name; {@link #SAMPLES} samples unless {@value CheckConfig#SAMPLES_PROPERTY}
+    /// is set; the rest from {@link CheckConfig#defaults()}.
     static CheckConfig config(String name) {
         final CheckConfig defaults = CheckConfig.defaults();
         final CheckConfig seeded = System.getProperty(CheckConfig.SEED_PROPERTY) == null

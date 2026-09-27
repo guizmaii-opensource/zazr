@@ -7,8 +7,8 @@ import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 /// A node of the CHAMP trie behind `HashMap` (see [ChampNode]): a [BitmapIndexedMapNode], or a [HashCollisionMapNode]
-/// below the last level of hash bits. Ported from `MapNode` in `scala/collection/immutable/HashMap.scala` of the Scala 3
-/// standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a map is always a
+/// below the last level of hash bits. Ported from `MapNode` in `scala/collection/immutable/HashMap.scala` of the Scala
+/// 3 standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a map is always a
 /// [BitmapIndexedMapNode]; the empty map is the one of [#empty()].
 ///
 /// Keys and values are never null; `hash` is always `Objects.hashCode(key)` and `shift` the depth of the node times 5.
@@ -41,9 +41,9 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     /// The node without `key`; this node when the key is absent.
     abstract MapNode<K, V> removed(K key, int hash, int shift);
 
-    /// The put of a [HashMapBuilder]: the node with `key` mapped to `value` (key and value replaced when an equal key is
-    /// present), where a [BitmapIndexedMapNode] owned by `owner` is updated in place instead of copied, and the one
-    /// not owned is copied into a node owned by `owner`, which is updated in place.
+    /// The put of a [HashMapBuilder]: the node with `key` mapped to `value` (key and value replaced when an equal key
+    /// is present), where a [BitmapIndexedMapNode] owned by `owner` is updated in place instead of copied, and the
+    /// one not owned is copied into a node owned by `owner`, which is updated in place.
     abstract MapNode<K, V> putInPlace(Object owner, K key, V value, int hash, int shift);
 
     // -- the operations on whole subtrees

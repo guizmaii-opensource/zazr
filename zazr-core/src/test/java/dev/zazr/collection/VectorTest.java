@@ -449,7 +449,8 @@ public class VectorTest extends AbstractTraversableTest {
         }
     }
 
-    // partitionMap, duplicates, duplicatesBy, flatten and toNonEmptyVector, at the empty/1/32/33/1023/1024/1025 boundaries and on both leaf representations
+    // partitionMap, duplicates, duplicatesBy, flatten and toNonEmptyVector, at the empty/1/32/33/1023/1024/1025
+    // boundaries and on both leaf representations
 
     static java.util.List<Vector<Integer>> bothRepresentations(int n) {
         final Vector<Integer> primitive = Vector.range(0, n);
@@ -3439,7 +3440,8 @@ public class VectorTest extends AbstractTraversableTest {
         public void shouldSortStablyAtEveryBoundary() {
             for (int n : BOUNDARIES) {
                 for (Vector<Integer> vector : representations(n)) {
-                    // equal keys keep their order: sorting by parity leaves the evens, then the odds, each in original order
+                    // equal keys keep their order: sorting by parity leaves the evens, then the odds, each in original
+                    // order
                     final Vector<Integer> expected = vector.filter(i -> i % 2 == 0).appendAll(vector.filter(i -> i % 2 != 0));
                     assertThat(vector.sortBy(i -> i % 2)).isEqualTo(expected);
                     assertThat(vector.sorted(Comparator.comparingInt(i -> i % 2))).isEqualTo(expected);

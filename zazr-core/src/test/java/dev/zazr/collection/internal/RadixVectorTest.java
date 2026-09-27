@@ -777,7 +777,8 @@ public class RadixVectorTest {
         final List<Integer> oneList = List.of(1);
         assertThatThrownBy(() -> full.appended(1)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> full.prepended(1)).isInstanceOf(IllegalArgumentException.class);
-        // Integer.MAX_VALUE elements with the free position in front: prepended reaches the length check, not a full tree
+        // Integer.MAX_VALUE elements with the free position in front: prepended reaches the length check, not a full
+        // tree
         final RadixVector<Integer> freeInFront = full.tail().appended(-1);
         assertThat(freeInFront.length()).isEqualTo(Integer.MAX_VALUE);
         assertThat(freeInFront.last()).isEqualTo(-1);
@@ -918,7 +919,8 @@ public class RadixVectorTest {
         assertThat(ontoSuffix.get(20)).isEqualTo(bigPrefix.head());
         assertThat(ontoSuffix.last()).isEqualTo(bigPrefix.last());
         checkShape(ontoSuffix.take(1 << 16));
-        // prepending to a suffix whose prefix and data are full cannot go further: near the limit the builder takes over
+        // prepending to a suffix whose prefix and data are full cannot go further: near the limit the builder takes
+        // over
         final RadixVector<Integer> front = RadixVector.ofAll(sequence(-1024, 0));
         final RadixVector<Integer> fullFront = full.dropRight(2048);
         final RadixVector<Integer> beforeFullFront = front.appendedAll(fullFront);
@@ -997,9 +999,10 @@ public class RadixVectorTest {
         final RadixVector<Integer> full = half.appendedAll(half.init());
 
         // alignTo: a padding of one slot beyond the limit is skipped, and the result is built without it. The receiver
-        // starts at element 2048 and ends 2^25 - 1 before the end; the prefix holds 2^25 + 1024 elements, so the padding
-        // that aligns the receiver is 1024 slots, and padding plus elements come to Integer.MAX_VALUE + 1. (Multiples of
-        // 1024 keep the leaves aligned without the padding, so that the builder shares them instead of copying.)
+        // starts at element 2048 and ends 2^25 - 1 before the end; the prefix holds 2^25 + 1024 elements, so the
+        // padding that aligns the receiver is 1024 slots, and padding plus elements come to Integer.MAX_VALUE + 1.
+        // (Multiples of 1024 keep the leaves aligned without the padding, so that the builder shares them instead of
+        // copying.)
         final RadixVector<Integer> receiver = full.slice(2048, Integer.MAX_VALUE - ((1 << 25) - 1));
         final RadixVector<Integer> bigPrefix0 = sharedLeafVector(1 << 25).appendedAll(sharedLeafVector(1024));
         final RadixVector<Integer> aligned = receiver.prependedAll(bigPrefix0);
@@ -1027,8 +1030,9 @@ public class RadixVectorTest {
             checkShape(r.takeRight(1 << 16));
         }
 
-        // appending the receiver to the prefix: at Integer.MAX_VALUE - 2^23 elements, above Integer.MAX_VALUE - 2^25, the
-        // builder builds the result (appending 2^23 elements to a prefix with 2^24 free slots in front would not fit)
+        // appending the receiver to the prefix: at Integer.MAX_VALUE - 2^23 elements, above Integer.MAX_VALUE - 2^25,
+        // the builder builds the result (appending 2^23 elements to a prefix with 2^24 free slots in front would not
+        // fit)
         final Object[] many = new Object[1 << 23];
         for (int i = 0; i < many.length; i++) {
             many[i] = -(i & 127) - 1;

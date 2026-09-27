@@ -126,8 +126,8 @@ three records, so pattern matching over it covers every outcome:
 var result = Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.integers(0, 1000), n -> n < 500); // CheckResult
 var summary = switch (result) {
     case CheckResult.Satisfied(var samples) -> "passed " + samples + " samples";
-    case CheckResult.Falsified(var sampleNumber, _, var counterexample, _) -> "broken at sample " + sampleNumber + " by " + counterexample;
-    case CheckResult.Erroneous(var sampleNumber, _, var cause, _) -> "failed at sample " + sampleNumber + " with " + cause;
+    case CheckResult.Falsified(var sampleNumber, var _, var counterexample, var _) -> "broken at sample " + sampleNumber + " by " + counterexample;
+    case CheckResult.Erroneous(var sampleNumber, var _, var cause, var _) -> "failed at sample " + sampleNumber + " with " + cause;
 };
 // "broken at sample 3 by (1000)"
 ```

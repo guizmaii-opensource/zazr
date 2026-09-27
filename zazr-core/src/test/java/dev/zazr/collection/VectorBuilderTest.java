@@ -18,8 +18,8 @@ public class VectorBuilderTest {
 
     // sizes around every leaf (32), node (1024) and second-level node (32768) boundary
     private static final int[] SIZES = { 0, 1, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 32767, 32768, 32769, 1_000_000 };
-    // the boundary at 32^4 = 1 048 576, where a fourth trie level is pushed and finalised; kept out of SIZES for the tests
-    // that build several Vectors per size
+    // the boundary at 32^4 = 1 048 576, where a fourth trie level is pushed and finalised; kept out of SIZES for the
+    // tests that build several Vectors per size
     private static final int[] LEVEL4_SIZES = { 1_048_575, 1_048_576, 1_048_577 };
 
     @Test
@@ -142,8 +142,8 @@ public class VectorBuilderTest {
     @Test
     public void shouldAddAllSlicedVectorsByReusingTheirArrays() {
         // a slice's outer leaves are trimmed copies, so every leaf of a slice holds only live elements: a builder that
-        // starts from the slice keeps its arrays, at the same positions, the partial first leaf of a slice of two levels
-        // or more included (a slice of one leaf is copied into the builder's leaf, which is filled in place)
+        // starts from the slice keeps its arrays, at the same positions, the partial first leaf of a slice of two
+        // levels or more included (a slice of one leaf is copied into the builder's leaf, which is filled in place)
         final Vector<Integer> source = Vector.ofAll(IntStream.range(0, 4200).boxed().toList());
         for (int k : new int[] { 1, 5, 31, 32, 33 }) {
             for (int n : new int[] { 0, 1, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 2047, 2048, 2049 }) {
@@ -156,8 +156,8 @@ public class VectorBuilderTest {
                 if (depth(slice.trie) > 1) {
                     assertThat(leafAt(built.trie, 0)).isSameAs(leafAt(slice.trie, 0));
                 }
-                // a builder started from a slice counts the free slots in front of the slice's first leaf as positions, so
-                // its result may be one level deeper than the minimal depth: only the elements are compared
+                // a builder started from a slice counts the free slots in front of the slice's first leaf as positions,
+                // so its result may be one level deeper than the minimal depth: only the elements are compared
                 assertSameElements(Vector.<Integer> newBuilder().addAll(slice).add(k + n).result(), Vector.range(k, k + n + 1), n + 1);
                 assertSameShape(Vector.<Integer> newBuilder().add(k - 1).addAll(slice).result(), Vector.range(k - 1, k + n), n + 1);
                 assertSameElements(Vector.<Integer> newBuilder().addAll(slice).addAll(slice).result(), expected.appendAll(expected), 2 * n);
@@ -249,7 +249,8 @@ public class VectorBuilderTest {
         // flatMap whose mapper returns Vectors of two leaves
         final Vector<Integer> boxed = range.flatMap(i -> Vector.range(0, 40));
         assertSameShape(boxed, Vector.ofAll(new java.util.ArrayList<>(range.asJava()).stream().flatMap(i -> IntStream.range(0, 40).boxed()).toList()), 4000);
-        // flatMap whose mapper returns the same one-leaf Vector: the first is the builder's start, the others are copied
+        // flatMap whose mapper returns the same one-leaf Vector: the first is the builder's start, the others are
+        // copied
         final Vector<Integer> shared = range.flatMap(i -> full32);
         assertSameShape(shared, Vector.ofAll(java.util.Collections.nCopies(100, list32).stream().flatMap(java.util.List::stream).toList()), 3200);
         assertThat(leafAt(shared.trie, 0)).isSameAs(leafAt(full32.trie, 0));

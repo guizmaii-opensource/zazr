@@ -875,8 +875,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return ofAll(iterable);
         }
         if (!dev.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
-            // a one-shot source (an Iterator, typically wrapping a java.util.stream) is read exactly once: built with the
-            // builder, which also answers whether there is anything to append, then appended array by array
+            // a one-shot source (an Iterator, typically wrapping a java.util.stream) is read exactly once: built with
+            // the builder, which also answers whether there is anything to append, then appended array by array
             final Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : appendAll(elements);
         }
@@ -1006,7 +1006,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public <U extends @Nullable Object> Vector<T> duplicatesBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key computed once
+        // the first element of every key, in first-occurrence order, plus the keys seen again: one pass, the key
+        // computed once
         final java.util.LinkedHashMap<U, T> first = new java.util.LinkedHashMap<>();
         final java.util.HashSet<U> duplicated = new java.util.HashSet<>();
         for (T element : this) {
@@ -1982,7 +1983,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return ofAll(iterable);
         }
         if (!dev.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
-            // a one-shot source is read exactly once: built first, which also answers whether there is anything to prepend
+            // a one-shot source is read exactly once: built first, which also answers whether there is anything to
+            // prepend
             final Vector<T> elements = ofAll(iterable);
             return elements.isEmpty() ? this : prependAll(elements);
         }

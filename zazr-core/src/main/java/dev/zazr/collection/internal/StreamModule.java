@@ -160,7 +160,8 @@ public interface StreamModule {
     interface Windows {
 
         // `source` is non-empty and starts a window; the next window starts `step` elements further on, and is produced
-        // only when this window is full and followed by at least one element, so that no window repeats the previous one
+        // only when this window is full and followed by at least one element, so that no window repeats the previous
+        // one
         static <T extends @Nullable Object> Stream<Stream<T>> apply(Stream<T> source, int size, int step) {
             return Stream.cons(source.take(size), () -> {
                 final Stream<T> next = source.drop(step);

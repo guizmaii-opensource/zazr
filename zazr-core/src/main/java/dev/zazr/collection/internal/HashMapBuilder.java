@@ -8,9 +8,9 @@ import org.jspecify.annotations.Nullable;
 /// `scala/collection/immutable/HashMap.scala` of the Scala 3 standard library (the Scala 2.13 collection library, which
 /// Scala 3 ships unchanged) and Clojure's transients.
 ///
-/// Where Scala's builder updates every node of its trie in place, and copies the whole trie before writing to one it has
-/// handed out, the nodes this builder creates carry its owner token and are the only ones updated in place. A node it
-/// did not create (one of a map adopted by [#putAll], or of any persistent operation) is copied the first time a put
+/// Where Scala's builder updates every node of its trie in place, and copies the whole trie before writing to one it
+/// has handed out, the nodes this builder creates carry its owner token and are the only ones updated in place. A node
+/// it did not create (one of a map adopted by [#putAll], or of any persistent operation) is copied the first time a put
 /// goes through it, and the copy is owned. Collision nodes are immutable and replaced. The trie produced is the one
 /// successive persistent puts of the same entries produce, node for node.
 ///

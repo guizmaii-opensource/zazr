@@ -146,7 +146,8 @@ public class RedBlackTreeTest {
 
     @Test
     public void shouldDelete_2_from_2_1_4_5_9_3_6_7() {
-        // the tree of shouldInsert_2_1_4_5_9_3_6_7, built by the same insertions (`of` sorts, then builds a balanced tree)
+        // the tree of shouldInsert_2_1_4_5_9_3_6_7, built by the same insertions (`of` sorts, then builds a balanced
+        // tree)
         RedBlackTree<Integer> testee = empty();
         for (int value : new int[] { 2, 1, 4, 5, 9, 3, 6, 7 }) {
             testee = testee.insert(value);

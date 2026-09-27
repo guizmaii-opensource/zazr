@@ -1425,7 +1425,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
     static <T extends @Nullable Object, U extends @Nullable Object> Iterator<U> unfoldRight(T seed, Function<? super T, Option<Tuple2<? extends U, ? extends T>>> f, String nullResult) {
         Objects.requireNonNull(f, "the unfold iterating function is null");
         return new AbstractIterator<U>() {
-            // f's result is memoised as it is, null included, and checked on every read: a later force fails the same way
+            // f's result is memoised as it is, null included, and checked on every read: a later force fails the same
+            // way
             private Lazy<Option<Tuple2<? extends U, ? extends T>>> nextVal = Lazy.of(() -> f.apply(seed));
 
             @Override
@@ -1781,7 +1782,8 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
             final Iterator<T> that = this;
             return new AbstractIterator<U>() {
 
-                // a flag and a field, not an Option, as in filter(): the mapper's Option is unwrapped as soon as it is seen
+                // a flag and a field, not an Option, as in filter(): the mapper's Option is unwrapped as soon as it is
+                // seen
                 private boolean nextDefined = false;
                 private @Nullable U next;
 

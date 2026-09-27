@@ -127,7 +127,8 @@ public final class SetViews {
             return set.isEmpty();
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         public boolean contains(@Nullable Object element) {
             return set.contains((T) element);
@@ -180,7 +181,8 @@ public final class SetViews {
             return set.isEmpty();
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         public boolean contains(@Nullable Object element) {
             return set.contains((T) element);

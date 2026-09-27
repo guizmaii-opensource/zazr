@@ -224,8 +224,8 @@ public class UsingTest {
     }
 
     /// Checks the outcome of a run against the rules: every acquired resource released once, in reverse order; the
-    /// most severe throwable surfaces, the first one on equal severity; each other throwable suppressed, once per time
-    /// it was thrown, in the throwable that was surfacing when it was thrown; nothing suppressed in itself.
+    /// most severe throwable surfaces, the first one on equal severity; each other throwable suppressed, once per
+    /// time it was thrown, in the throwable that was surfacing when it was thrown; nothing suppressed in itself.
     static void check(Run run, Scenario s, Object outcome) {
         final List<Integer> expectedReleases = new ArrayList<>();
         for (int i = s.acquired() - 1; i >= 0; i--) {

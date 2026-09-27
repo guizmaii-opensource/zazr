@@ -22,7 +22,7 @@ You need JDK 25 or later. Everything goes through the Makefile; `make help` list
 ```bash
 make verify                                   # what CI runs: tests, formatting, nullness and the checks below
 make test-one TEST=VectorTest MODULE=zazr-core
-make fmt                                      # format the sources
+make fmt                                      # format the sources (Palantir Java Format)
 make site-serve                               # preview the website at http://127.0.0.1:8000/
 make coverage                                 # test coverage report, in zazr-test/target/site/jacoco-aggregate
 ```
@@ -55,6 +55,14 @@ the generated files.
   public signature.
 - **Comments describe the code as it is.** No ticket numbers and no history of how the code got there: that belongs
   in the commit message and the decision log.
+- **Formatted by the Palantir Java Format.** 120 columns and no configuration: run `make fmt` before committing; the
+  build fails on an unformatted file. Two limits of the formatter: keep the lines of a Markdown javadoc comment
+  (`///`) within 120 columns minus their indentation, since the formatter breaks a longer one, and write `var _`
+  rather than a bare `_` inside a record pattern (`case Some(Card(var _))`), which it cannot parse yet.
+- **Locals are never reassigned.** A local variable or a parameter keeps the value it is declared with, and `final`
+  is not written on it: `make reassignment` fails on a reassignment and on a redundant `final`. The variables of a
+  `for` header are exempt; the state of a loop in the collection internals that must change is declared with
+  `@SuppressWarnings("Var")`.
 - **Measure before optimising.** Correctness comes first. Make a change for speed only with a measurement that shows
   the gain, following [Rob Pike's rules](https://users.ece.utexas.edu/~adnan/pike.html).
 - No license header in source files; the attribution to Vavr is in [NOTICE](NOTICE).

@@ -81,8 +81,8 @@ public class DocsTestingExamplesTest {
         var result = Check.evaluate(CheckConfig.defaults().withSeed(42), Gen.integers(0, 1000), n -> n < 500); // CheckResult
         var summary = switch (result) {
             case CheckResult.Satisfied(var samples) -> "passed " + samples + " samples";
-            case CheckResult.Falsified(var sampleNumber, _, var counterexample, _) -> "broken at sample " + sampleNumber + " by " + counterexample;
-            case CheckResult.Erroneous(var sampleNumber, _, var cause, _) -> "failed at sample " + sampleNumber + " with " + cause;
+            case CheckResult.Falsified(var sampleNumber, var _, var counterexample, var _) -> "broken at sample " + sampleNumber + " by " + counterexample;
+            case CheckResult.Erroneous(var sampleNumber, var _, var cause, var _) -> "failed at sample " + sampleNumber + " with " + cause;
         };
         // "broken at sample 3 by (1000)"
 
@@ -198,7 +198,8 @@ public class DocsTestingExamplesTest {
         var nonEmpty = Gen.list(Gen.integers()).filter(list -> !list.isEmpty()); // Gen<List<Integer>>
         // CheckResult
         var impossible = Check.evaluate(Gen.integers().filter(n -> false), n -> true);
-        // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard budget of 1000; ...
+        // Erroneous: Gen.filter rejected too many values: 1001 discards since the last sample, more than the discard
+        // budget of 1000; ...
 
         Gen<Integer> typedEvens = evens;
         Gen<Integer> typedAlsoEvens = alsoEvens;

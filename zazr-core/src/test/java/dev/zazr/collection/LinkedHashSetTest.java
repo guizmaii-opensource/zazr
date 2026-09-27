@@ -2596,7 +2596,8 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCoverEveryRepresentationOfTheInsertionOrder() throws Exception {
-            // offset > 0, markers of removed elements in the middle, and as many markers as elements (one more rebuilds)
+            // offset > 0, markers of removed elements in the middle, and as many markers as elements (one more
+            // rebuilds)
             final java.util.List<LinkedHashSet<Integer>> receivers = receivers();
             final java.util.Set<String> shapes = new java.util.HashSet<>();
             for (LinkedHashSet<Integer> receiver : receivers) {

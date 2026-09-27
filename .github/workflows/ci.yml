@@ -171,9 +171,23 @@ jobs:
       - name: Run NullAway
         run: ./mvnw -B -Pnullaway compile
 
+  reassignment:
+    runs-on: ubuntu-latest
+    name: No reassigned local variable or parameter
+    steps:
+      - uses: actions/checkout@v7
+      - name: Setup JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+          cache: 'maven'
+      - name: Run Error Prone's Var check
+        run: make reassignment
+
   deploy-snapshot:
     runs-on: ubuntu-latest
-    needs: [build, nullness, javadoc, vocabulary, complexity, docs]
+    needs: [build, nullness, reassignment, javadoc, vocabulary, complexity, docs]
     if: github.ref == 'refs/heads/main'
 
     steps:

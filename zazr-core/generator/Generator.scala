@@ -1964,11 +1964,15 @@ object Generator {
   // Every generated file and directory by its lower-cased path: two names that differ only in case, the same entry on
   // a case-insensitive file system, fail the build.
   private val generatedIgnoringCase = scala.collection.mutable.Map.empty[String, Path]
+  // The contents of every generated file as this script wrote it, before the build formatted it.
+  private val rawOutput = Paths.get(project.getBasedir().toString, "target", "generator-output")
 
   /**
-   * Generates a file by writing string contents to the file system. The file is written only when its content
-   * differs from what is on disk: an unchanged file keeps its modification time, so the compiler does not
-   * recompile the module.
+   * Generates a file by writing string contents to the file system. The build formats the generated files after
+   * this script (spotless, in the process-sources phase), so what is on disk is not what this method writes: the
+   * contents are compared with the ones the last run wrote, kept under target/generator-output, and the file is
+   * written only when they differ or when it is missing. An unchanged file keeps its modification time, so the
+   * compiler does not recompile the module.
    *
    * @param baseDir The base directory, e.g. src-gen
    * @param dirName The directory relative to baseDir, e.g. main/java
@@ -1994,9 +1998,12 @@ object Generator {
       Files.delete(file)
     }
     val bytes = contents.getBytes(charset)
-    if (!Files.isRegularFile(file) || !java.util.Arrays.equals(Files.readAllBytes(file), bytes)) {
+    val written = rawOutput.resolve(Paths.get(project.getBasedir().toString).toRealPath().relativize(file).toString)
+    if (!Files.isRegularFile(file) || !Files.isRegularFile(written) || !java.util.Arrays.equals(Files.readAllBytes(written), bytes)) {
       Files.createDirectories(file.getParent)
       Files.write(file, bytes)
+      Files.createDirectories(written.getParent)
+      Files.write(written, bytes)
     }
   }
 

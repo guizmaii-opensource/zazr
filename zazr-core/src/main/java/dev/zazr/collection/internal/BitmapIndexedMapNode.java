@@ -10,8 +10,8 @@ import org.jspecify.annotations.Nullable;
 import static java.lang.Integer.bitCount;
 
 /// The node of a `HashMap` trie that splits its 32 slots between inline entries and children (see [ChampNode]).
-/// Ported from `BitmapIndexedMapNode` in `scala/collection/immutable/HashMap.scala` of the Scala 3 standard library (the
-/// Scala 2.13 collection library, which Scala 3 ships unchanged).
+/// Ported from `BitmapIndexedMapNode` in `scala/collection/immutable/HashMap.scala` of the Scala 3 standard library
+/// (the Scala 2.13 collection library, which Scala 3 ships unchanged).
 ///
 /// `content` holds the key and value of each entry, `2 * payloadArity` slots in slot order, then the children in
 /// reverse slot order; `hashes` the hash of each entry's key. The node caches the size and the sum of the key hashes of
@@ -250,8 +250,8 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     }
 
     /// The node of two entries whose hashes agree up to `shift`, owned by `owner`: one node holding both when their
-    /// fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node below the
-    /// last level.
+    /// fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node below
+    /// the last level.
     static <K extends @Nullable Object, V extends @Nullable Object> MapNode<K, V> mergeTwoKeyValPairs(@Nullable Object owner,
             K key0, V value0, int hash0, K key1, V value1, int hash1, int shift) {
         if (shift >= HASH_CODE_LENGTH) {

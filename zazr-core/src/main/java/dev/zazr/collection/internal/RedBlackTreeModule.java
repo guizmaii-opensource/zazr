@@ -317,7 +317,8 @@ public interface RedBlackTreeModule {
         }
 
         /// Returns a valid tree holding the elements of `t1`, then `value`, then the elements of `t2`. Every element
-        /// of `t1` is less than `value` and every element of `t2` greater. The roots of `t1` and `t2` can be red.
+        /// of `t1` is less than `value` and every element of `t2` greater. The roots of `t1` and `t2` can be
+        /// red.
         static <T extends @Nullable Object> RedBlackTree<T> join(RedBlackTree<T> t1, T value, RedBlackTree<T> t2) {
             if (t1.isEmpty()) {
                 return insertMin(t2, value, (Empty<T>) t2.emptyInstance()).color(BLACK);
@@ -364,8 +365,8 @@ public interface RedBlackTreeModule {
         }
 
         /// Returns a valid tree holding the elements of `t1`, then the elements of `t2`, sharing both when either is
-        /// empty. Every element of `t1` is less than every element of `t2`; the roots can be red. The maximum of `t1` is
-        /// the middle value of [#join]. The `join2` of the Scala 3 standard library (see [#filter]).
+        /// empty. Every element of `t1` is less than every element of `t2`; the roots can be red. The maximum
+        /// of `t1` is the middle value of [#join]. The `join2` of the Scala 3 standard library (see [#filter]).
         private static <T extends @Nullable Object> RedBlackTree<T> join2(RedBlackTree<T> t1, RedBlackTree<T> t2) {
             if (t1.isEmpty()) {
                 return t2;
@@ -387,11 +388,12 @@ public interface RedBlackTreeModule {
         }
 
         /// The elements of `tree` for which `predicate` holds, as a tree with a black root. Port of `filterEntries` in
-        /// the Scala 3 standard library (`scala.collection.immutable.RedBlackTree`, the Scala 2.13 collection library
-        /// that Scala 3 ships unchanged): every subtree whose elements are all kept is returned as it is, and the kept
-        /// parts are rejoined with [#join] (a kept node) or [#join2] (a removed node), so the result shares every
-        /// subtree the predicate leaves whole, and is `tree` itself when every element is kept. `predicate` is called
-        /// once per element, in ascending order. O(n) for n elements, with no comparator call.
+        /// the Scala 3 standard library (`scala.collection.immutable.RedBlackTree`, the Scala 2.13 collection
+        /// library that Scala 3 ships unchanged): every subtree whose elements are all kept is returned as it
+        /// is, and the kept parts are rejoined with [#join] (a kept node) or [#join2] (a removed node), so the
+        /// result shares every subtree the predicate leaves whole, and is `tree` itself when every element is
+        /// kept. `predicate` is called once per element, in ascending order. O(n) for n elements, with no
+        /// comparator call.
         public static <T extends @Nullable Object> RedBlackTree<T> filter(RedBlackTree<T> tree,
                 java.util.function.Predicate<? super T> predicate) {
             return tree.isEmpty() ? tree : color(filter((Node<T>) tree, predicate), BLACK);
@@ -413,9 +415,10 @@ public interface RedBlackTreeModule {
         }
 
         /// The elements of `tree` for which `predicate` holds, then the others, as two trees with a black root, in one
-        /// walk. Port of `partitionEntries` in the Scala 3 standard library (see [#filter]): each side shares every
-        /// subtree whose elements all go to it, and is `tree` itself when it gets every element. `predicate` is called
-        /// once per element, in ascending order. O(n) for n elements, with no comparator call.
+        /// walk. Port of `partitionEntries` in the Scala 3 standard library (see [#filter]): each side shares
+        /// every subtree whose elements all go to it, and is `tree` itself when it gets every element.
+        /// `predicate` is called once per element, in ascending order. O(n) for n elements, with no comparator
+        /// call.
         public static <T extends @Nullable Object> Tuple2<RedBlackTree<T>, RedBlackTree<T>> partition(RedBlackTree<T> tree,
                 java.util.function.Predicate<? super T> predicate) {
             if (tree.isEmpty()) {
@@ -486,8 +489,8 @@ public interface RedBlackTreeModule {
         }
 
         /// Returns a valid tree holding the elements of `t1`, then the elements of `t2`. Every element of `t1` is less
-        /// than every element of `t2`. The roots of `t1` and `t2` can be red. The minimum of `t2` is taken out and
-        /// used as the middle value of [#join].
+        /// than every element of `t2`. The roots of `t1` and `t2` can be red. The minimum of `t2` is taken out
+        /// and used as the middle value of [#join].
         static <T extends @Nullable Object> RedBlackTree<T> merge(RedBlackTree<T> t1, RedBlackTree<T> t2) {
             if (t1.isEmpty()) {
                 return Node.color(t2, BLACK);
@@ -500,11 +503,12 @@ public interface RedBlackTreeModule {
         }
 
         /// Returns a balanced tree of the first `size` elements of `sorted`, which are strictly increasing under the
-        /// comparator of `empty`, in O(size) and with exactly `size` nodes. Port of `fromOrderedKeys` in the Scala 3
-        /// standard library (`scala.collection.immutable.RedBlackTree`, the Scala 2.13 collection library that Scala 3
-        /// ships unchanged): the range is split around its middle element (the left part is never larger than the
-        /// right), every node is black except the one-element subtrees on the deepest level, which are red; so every
-        /// path has the same number of black nodes and no red node has a red child.
+        /// comparator of `empty`, in O(size) and with exactly `size` nodes. Port of `fromOrderedKeys` in the
+        /// Scala 3 standard library (`scala.collection.immutable.RedBlackTree`, the Scala 2.13 collection
+        /// library that Scala 3 ships unchanged): the range is split around its middle element (the left part
+        /// is never larger than the right), every node is black except the one-element subtrees on the deepest
+        /// level, which are red; so every path has the same number of black nodes and no red node has a red
+        /// child.
         static <T extends @Nullable Object> RedBlackTree<T> fromOrdered(Empty<T> empty, @Nullable Object[] sorted, int size) {
             // the deepest level holding a node, the root being on level 1
             final int maxUsedDepth = Integer.SIZE - Integer.numberOfLeadingZeros(size);
@@ -534,8 +538,9 @@ public interface RedBlackTreeModule {
 
         /// Returns a tree of the same shape and colours as `tree`, holding `mapper.apply(e)` in place of each element
         /// `e` and ordered by `comparator`. `mapper` must be strictly increasing from the order of `tree` to
-        /// `comparator` (not checked): the result is then a valid red-black tree, built in O(n) with no comparison
-        /// and exactly one node per element. `mapper` is called once per element, in ascending order.
+        /// `comparator` (not checked): the result is then a valid red-black tree, built in O(n) with no
+        /// comparison and exactly one node per element. `mapper` is called once per element, in ascending
+        /// order.
         public static <T extends @Nullable Object, R extends @Nullable Object> RedBlackTree<R> mapOrdered(RedBlackTree<T> tree,
                 Comparator<? super R> comparator, java.util.function.Function<? super T, ? extends R> mapper) {
             return mapOrdered(tree, new Empty<>(comparator), mapper);

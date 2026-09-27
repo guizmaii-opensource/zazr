@@ -94,6 +94,33 @@
     </build>
 
     <profiles>
+        <!-- the reassignment check of the parent pom: Error Prone on the processor path next to JMH's, which this module
+             lists alone otherwise -->
+        <profile>
+            <id>reassignment</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <annotationProcessorPaths combine.self="override">
+                                <path>
+                                    <groupId>org.openjdk.jmh</groupId>
+                                    <artifactId>jmh-generator-annprocess</artifactId>
+                                    <version>${jmh.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>com.google.errorprone</groupId>
+                                    <artifactId>error_prone_core</artifactId>
+                                    <version>${error.prone.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <!-- `make bench`: runs dev.zazr.JmhRunner against the test classpath's JMH-generated benchmarks. -->
         <profile>
             <id>benchmark</id>

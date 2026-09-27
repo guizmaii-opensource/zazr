@@ -472,7 +472,8 @@ public class DocsExamplesTest {
 
             var parsed = Option.some("x").mapTry(Integer::parseInt); // Try<Integer>
             var absent = Option.<String>none().mapTry(Integer::parseInt); // Try<Integer>
-            // Failure(java.lang.NumberFormatException: For input string: "x"), Failure(java.util.NoSuchElementException: ...)
+            // Failure(java.lang.NumberFormatException: For input string: "x"),
+            // Failure(java.util.NoSuchElementException: ...)
 
             assertThat(port).isEqualTo(8080);
             assertThat(shown).isEqualTo("no value");
@@ -625,7 +626,8 @@ public class DocsExamplesTest {
             var ratio = Try.of(() -> 10).map(n -> 100 / (n - 10)); // Try<Integer>
             var positive = Try.success(-1)
                 .filter(n -> n > 0, n -> new IllegalArgumentException("not positive: " + n)); // Try<Integer>
-            // Failure(java.lang.ArithmeticException: / by zero), Failure(java.lang.IllegalArgumentException: not positive: -1)
+            // Failure(java.lang.ArithmeticException: / by zero), Failure(java.lang.IllegalArgumentException: not
+            // positive: -1)
 
             var log = new StringBuilder();
             var done = Try.of(() -> 1).ensuring(() -> log.append("closed")); // Try<Integer>

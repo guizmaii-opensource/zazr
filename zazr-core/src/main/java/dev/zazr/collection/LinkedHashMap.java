@@ -1099,8 +1099,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     /// This map with the entry of `currentKey`, which must be present, replaced by `newElement` at the same position
     /// in the iteration order; an entry of `newElement`'s key elsewhere in the map is removed. The value of
-    /// `currentKey` plays no part, which is what [LinkedHashSet#replace] needs for a key set whose values are not its
-    /// elements.
+    /// `currentKey` plays no part, which is what [LinkedHashSet#replace] needs for a key set whose values are not
+    /// its elements.
     LinkedHashMap<K, V> replaceKey(K currentKey, Tuple2<K, V> newElement) {
         Vector<K> newList = list;
         HashMap<K, Slot<K, V>> newMap = map;

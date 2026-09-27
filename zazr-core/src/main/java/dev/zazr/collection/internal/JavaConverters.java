@@ -271,7 +271,8 @@ public final class JavaConverters {
             return delegate.isEmpty();
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         public boolean contains(@Nullable Object element) {
             return delegate.contains((T) element);
@@ -305,7 +306,8 @@ public final class JavaConverters {
             return reversed ? delegateGet(delegate, 0) : delegateLast(delegate);
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         public int indexOf(@Nullable Object element) {
             if (reversed) {
@@ -315,7 +317,8 @@ public final class JavaConverters {
             return delegateIndexOf(delegate, (T) element);
         }
 
-        @SuppressWarnings({"unchecked", "NullAway"}) // the unchecked cast of a nullable argument; the delegate accepts null
+        // the unchecked cast of a nullable argument; the delegate accepts null
+        @SuppressWarnings({"unchecked", "NullAway"})
         @Override
         public int lastIndexOf(@Nullable Object element) {
             if (reversed) {
