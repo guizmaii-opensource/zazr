@@ -323,7 +323,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     /**
      * Creates a new map which by merging the entries of {@code this} map and {@code that} map.
      * <p>
-     * If collisions occur, the value of {@code this} map is taken.
+     * If collisions occur, the value of {@code this} map is taken. {@link #putAll(Iterable)} is the operation where
+     * {@code that} wins.
      *
      * @param that the other map
      * @return A merged map
@@ -365,6 +366,21 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * @return A new Map containing these elements and that entry.
      */
     Map<K, V> put(Tuple2<? extends K, ? extends V> entry);
+
+    /**
+     * Puts every entry of {@code entries}, in iteration order: the map that successive {@link #put(Tuple2)} calls
+     * give. On a key already present, the entry's key object and value replace the ones this map holds, and a key put
+     * more than once takes its last entry. The order of the result is the one those puts give: a new key goes where
+     * {@code put} puts it, and a key already present stays where it is in a map with an insertion order.
+     * <p>
+     * This is Scala's {@code concat} ({@code ++}) on maps; {@link #merge(Map)} is the one where this map's entries
+     * win.
+     *
+     * @param entries the entries to put, possibly another map
+     * @return this map with the entries put
+     * @throws NullPointerException if {@code entries} is null, or yields a null entry, key or value
+     */
+    Map<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries);
 
     /**
      * Associates the specified value with the specified key in this map.

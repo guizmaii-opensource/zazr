@@ -1317,6 +1317,18 @@ public class DocsExamplesTest {
             assertThat(values).hasToString("Vector(1, 2, 3)");
             assertThat(first).hasToString("(a, 1)");
         }
+
+        @Test
+        void puttingManyEntries() {
+            var prices = HashMap.of("apple", 3, "pear", 4);
+            var updates = HashMap.of("pear", 5, "fig", 2);
+            var updated = prices.putAll(updates); // HashMap<String, Integer>
+            var kept = prices.merge(updates); // HashMap<String, Integer>
+            // updated has pear -> 5, kept has pear -> 4, both have fig -> 2
+
+            assertThat(updated).isEqualTo(HashMap.of("apple", 3, "pear", 5, "fig", 2));
+            assertThat(kept).isEqualTo(HashMap.of("apple", 3, "pear", 4, "fig", 2));
+        }
     }
 
     @Nested

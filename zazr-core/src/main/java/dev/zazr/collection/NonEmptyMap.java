@@ -25,11 +25,12 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * The contract, per method family:
  * <ul>
- * <li>operations that cannot remove every entry return a {@code NonEmptyMap}: {@code put}, {@code merge},
- * {@code computeIfAbsent}, {@code computeIfPresent}, {@code map}, {@code mapBoth}, {@code mapKeys}, {@code mapValues},
- * {@code flatMap}, {@code replace}, {@code replaceAll}, {@code replaceValue}, {@code tap}; {@code keySet} returns a
- * {@link NonEmptySet}, {@code values} a {@link NonEmptyVector}, {@code groupBy} non-empty groups in a
- * {@code NonEmptyMap}, {@code toMap} a {@code NonEmptyMap} and {@code toSortedMap} a {@link NonEmptySortedMap};</li>
+ * <li>operations that cannot remove every entry return a {@code NonEmptyMap}: {@code put}, {@code putAll},
+ * {@code merge}, {@code computeIfAbsent}, {@code computeIfPresent}, {@code map}, {@code mapBoth}, {@code mapKeys},
+ * {@code mapValues}, {@code flatMap}, {@code replace}, {@code replaceAll}, {@code replaceValue}, {@code tap};
+ * {@code keySet} returns a {@link NonEmptySet}, {@code values} a {@link NonEmptyVector}, {@code groupBy} non-empty
+ * groups in a {@code NonEmptyMap}, {@code toMap} a {@code NonEmptyMap} and {@code toSortedMap} a
+ * {@link NonEmptySortedMap};</li>
  * <li>operations that can shrink return a {@link HashMap}: {@code filter}, {@code filterKeys}, {@code filterValues},
  * {@code reject}, {@code rejectKeys}, {@code rejectValues}, {@code collect}, {@code flatMapAll}, {@code remove},
  * {@code removeAll}, {@code retainAll}, {@code partition};</li>
@@ -325,6 +326,28 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      */
     public NonEmptyMap<K, V> merge(Map<? extends K, ? extends V> that) {
         return wrap(map.merge(that));
+    }
+
+    /**
+     * Accepts entries that may be empty and returns the non-empty type: the map that successive
+     * {@link #put(Tuple2)} calls give, where an entry's key object and value replace the ones already there. This is
+     * Scala's {@code concat} ({@code ++}); {@link #merge(Map)} is the one where this map's entries win. A
+     * {@code NonEmptyMap} argument counts as the {@code HashMap} it wraps.
+     * <p>
+     * Complexity: O(m) for m entries, as {@link HashMap#putAll(Iterable)}; O(n + m) when they are a HashMap, merged
+     * part by part.
+     *
+     * @param entries the entries to put, possibly empty
+     * @return this map with the entries put
+     * @throws NullPointerException if {@code entries} is null, or yields a null entry, key or value
+     */
+    public NonEmptyMap<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+        if (entries instanceof NonEmptyMap<?, ?> other) {
+            @SuppressWarnings("unchecked")
+            HashMap<K, V> wrapped = (HashMap<K, V>) other.map;
+            return wrap(map.putAll(wrapped));
+        }
+        return wrap(map.putAll(entries));
     }
 
     /**

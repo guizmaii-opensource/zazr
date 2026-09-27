@@ -1062,12 +1062,15 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
 - **`LinkedHashMap`**: a repeated key stays at the position of its first occurrence and takes the key object and the
   value of its last. Every factory, collector and bulk operation (`of` at every arity, `ofEntries` ×3, `ofAll`,
   `collector()` ×3, `tabulate`, `fill`, `orElse`, `mapBoth`, `mapKeys(keyMapper)`, `map`, `flatMap`, `collect`, and
-  `merge(that)` on an empty receiver) gives the map that putting the entries one by one into an empty map gives.
+  `merge(that)` on an empty receiver) gives the map that putting the entries one by one into an empty map gives;
+  `putAll` (added later) gives the map that putting them one by one into the receiver gives.
   `merge(that, f)` and `mapKeys(keyMapper, valueMerge)` are successive `put`s of the combined value: first position,
   last key object, combined value. `merge(that)` on a non-empty receiver is deliberately different: a key the receiver
-  already holds keeps the receiver's key object and value, and only absent keys are added. Scala's insertion-ordered maps do the
-  same: `VectorMap.updated` and `ListMap.updated` keep an existing key where it is, and building one from a sequence
-  is repeated `updated` (Scala 3 ships the Scala 2.13 collection library unchanged, so these are its classes).
+  already holds keeps the receiver's key object and value, and only absent keys are added; Scala has no bulk operation
+  that does this. The positions follow Scala's insertion-ordered maps: `VectorMap.updated` and `ListMap.updated` keep an
+  existing key where it is and replace its value, and building one from a sequence, or `concat` (`++`), is repeated
+  `updated`, so the argument wins (Scala 3 ships the Scala 2.13 collection library unchanged, so these are its
+  classes). `putAll` (below) is that operation in Zazr.
 - **`put` of an equal but distinct key object** also writes that object into the insertion-order `Vector`, not only
   into the entry: the positional operations of the key set (`zipWithIndex`, `takeWhile` and its siblings,
   `slideBy`) read the keys from that `Vector`, and returned the first key object while iteration returned the last.
@@ -1089,6 +1092,34 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   In `zazr-test`, `IterationOrder.keysByLastOccurrence` is gone: `LinkedHashMap`'s subjects, its collector and
   successive `put`s all use `keysByFirstOccurrence`, and `LawsTest` checks that the law catches a map that moves a
   repeated key to its last occurrence.
+
+**`putAll`: the bulk put where the argument wins (decided 2026-09-28).** `merge(that)` keeps the receiver's entries on
+a shared key, and no bulk operation let the argument win, while Scala's `concat` (`++`) on maps is repeated `updated`.
+`putAll(Iterable<? extends Tuple2<? extends K, ? extends V>>)` on `Map`, `SortedMap`, `HashMap`, `LinkedHashMap`,
+`TreeMap`, `NonEmptyMap` and `NonEmptySortedMap` (these two return the non-empty type) gives the map that successive
+`put`s of the entries, in their iteration order, give: a shared key takes the entry's key object and value, keeps its
+position in a `LinkedHashMap`, and a key given twice takes its last entry. `merge(that)` stays as it is.
+
+- **No `putAll(Map)` overload.** A Zazr map is an iterable of its `Tuple2` entries, so the one signature takes maps,
+  lists, vectors and the `asJava()` views; the fast paths below look at the argument's runtime type. An overload would
+  add nothing and make `putAll(null)` ambiguous.
+- **`HashMap`**: a `HashMap` argument (or the `asJava()` view of one) goes through the CHAMP `concat` with the argument
+  as the right side, whose entries win (3.8.2). Two maps with colliding keys can iterate a collision node in another
+  order than successive puts would (the argument's colliding keys first); equality and the kept objects are the same,
+  and `HashMap` defines no iteration order. Other entries are put one by one on the trie, and the receiver comes back
+  when no put changed it.
+- **`TreeMap`**: a `TreeMap` with an equal comparator (or its `asJava()` view) goes through the red-black `union`, which
+  keeps the element of its argument; another comparator or other entries are inserted one by one.
+- **`LinkedHashMap`**: successive `put`s, which is the definition; on an empty receiver, `ofEntries`, which builds the
+  same map (and returns a `LinkedHashMap` argument as is).
+- **Non-empty maps**: they delegate to the map they wrap, a `NonEmptyMap`/`NonEmptySortedMap` argument counting as the
+  map it wraps, and return themselves when that map comes back unchanged.
+- **Tests**: `MapPutAllTest` compares every receiver type with every kind of argument (the three map types, a
+  `TreeMap` of another comparator, the non-empty maps, the `asJava()` views, a `java.util.List`, a `Vector` and a
+  one-shot iterable, the last three with repeated keys) against successive `put`s, by the identity of the key and
+  value objects, in iteration order where the type has one; with no key, all keys or some keys shared, colliding
+  hashes, and the sizes 0/1/2/31/32/33/1023/1024/1025. It also checks the red-black invariants, that the receiver
+  never changes, which instance comes back, and the null checks.
 
 **Decided while implementing #25 (`partitionMap`, `duplicates`, static `flatten`):**
 
@@ -1686,6 +1717,8 @@ deleted. Attribution in `NOTICE`.
   - `HashSet.union` and `addAll` with a `HashSet`, and `HashMap.merge` with a `HashMap`, concatenate the tries
     (Scala's `concat`, whose right side wins). The receiver is the right side in both, since a set keeps the elements
     it has and a merge keeps this map's entries; the receiver is returned when its size does not change.
+  - `HashMap.putAll` with a `HashMap` concatenates the tries with the argument as the right side, since its entries
+    win; the receiver is returned when the result is its trie, the argument when the result is the argument's trie.
   - `HashSet.diff` and `removeAll` with a `HashSet` walk both tries (Scala's `diff`); `containsAll` of a `HashSet` is
     Scala's `subsetOf`.
   - `filter` and `reject` on both, and `filterKeys`, `filterValues`, `rejectKeys`, `rejectValues` on `HashMap`, filter
