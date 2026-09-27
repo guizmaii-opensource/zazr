@@ -156,9 +156,13 @@
             </build>
         </profile>
 
+        <!-- `make nullness`: NullAway in JSpecify mode on the main sources of zazr-core, every other Error Prone check
+             off. The classes go to their own directory: the compiler skips a module whose classes are up to date,
+             which would skip the check after a build. -->
         <profile>
             <id>nullaway</id>
             <build>
+                <directory>${project.basedir}/target/nullaway</directory>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
