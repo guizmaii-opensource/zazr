@@ -25,8 +25,11 @@ COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 BARE_NONE = re.compile(r"^\W*(none|n/?a|nothing|-+)\W*$", re.IGNORECASE)
 # Sections where "none" alone is a complete answer; elsewhere a "none" must say why.
 NONE_ALLOWED = {"decisions beyond the ticket", "found but not fixed"}
+# Trailer lines and tool footers, not a mention of them in prose (`Co-Authored-By` in backquotes passes).
 ATTRIBUTION = re.compile(
-    r"co-authored-by:|generated with|claude-session:|claude\.ai/code|noreply@anthropic\.com", re.IGNORECASE
+    r"^\s*(co-authored-by|claude-session):\s*\S"
+    r"|generated with \[?claude|claude\.ai/code|noreply@anthropic\.com",
+    re.IGNORECASE,
 )
 
 
