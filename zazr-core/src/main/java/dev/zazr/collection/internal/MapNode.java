@@ -8,8 +8,8 @@ import org.jspecify.annotations.Nullable;
 
 /// A node of the CHAMP trie behind `HashMap` (see [ChampNode]): a [BitmapIndexedMapNode], or a [HashCollisionMapNode]
 /// below the last level of hash bits. Ported from `MapNode` in `scala/collection/immutable/HashMap.scala` of the Scala
-/// 3 standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a map is always a
-/// [BitmapIndexedMapNode]; the empty map is the one of [#empty()].
+/// 2.13 collections library, which Scala 3 uses unchanged. The root of a map is always a [BitmapIndexedMapNode]; the
+/// empty map is the one of [#empty()].
 ///
 /// Keys and values are never null; `hash` is always `Objects.hashCode(key)` and `shift` the depth of the node times 5.
 ///

@@ -28,6 +28,16 @@ documents it. The [complexity page](complexity.md) lists them all.
 | a sorted map | [`TreeMap`](maps.md) | O(log n) lookups and updates, positional methods in key order |
 | a map that has at least one entry | [`NonEmptyMap`, `NonEmptySortedMap`](../non-empty-set-map.md) | `keySet` and `values` stay non-empty, `max` and `reduce` cannot fail |
 
+## Where they come from
+
+Several structures are ported from the Scala 2.13 collections library, which Scala 3 uses unchanged:
+
+- `Vector` and its builder: Scala's `Vector` and `VectorBuilder`.
+- `HashSet` and `HashMap`: Scala's CHAMP `HashSet` and `HashMap`.
+- `LazyList`: the evaluation model of Scala's `LazyList`.
+- `TreeSet` and `TreeMap`: `filter`, `partition` and the one-pass tree building of the builders follow Scala's
+  `RedBlackTree`.
+
 ## What they share
 
 Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their sorted variants)

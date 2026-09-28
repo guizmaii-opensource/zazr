@@ -46,4 +46,4 @@ next to it.
 ## Keep it current
 
 The skill describes the API of `main`, which changes before 1.0. Copy the folder again when you move to a newer
-snapshot of Zazr.
+version of Zazr.

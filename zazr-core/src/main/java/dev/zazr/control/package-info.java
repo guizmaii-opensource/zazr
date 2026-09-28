@@ -1,14 +1,15 @@
 /**
  * Control structures like the disjoint union type {@linkplain dev.zazr.control.Either}, the optional value type
- * {@linkplain dev.zazr.control.Option} and {@linkplain dev.zazr.control.Try} for exception handling.
+ * {@linkplain dev.zazr.control.Option}, {@linkplain dev.zazr.control.Try} for exception handling,
+ * {@linkplain dev.zazr.control.Validation} for checks that keep every error, and {@linkplain dev.zazr.control.Using}
+ * for resources. {@code Option}, {@code Either}, {@code Try} and {@code Validation} are sealed interfaces of records,
+ * taken apart with pattern matching.
  * <p>
  * <strong>Either</strong>
  * <p>
- * The control package contains an implementation of the {@linkplain dev.zazr.control.Either} control which is either Left or Right.
- * A given Either is projected to a Left or a Right.
- * Both cases can be further processed with control operations map, flatMap, filter.
- * If a Right is projected to a Left, the Left control operations have no effect on the Right value.
- * If a Left is projected to a Right, the Right control operations have no effect on the Left value.
+ * An {@linkplain dev.zazr.control.Either} is either a {@code Left} or a {@code Right}. It is right-biased:
+ * {@code map}, {@code flatMap} and {@code filterOrElse} work on the {@code Right} value and pass a {@code Left}
+ * through. The {@code Left} side is reached with {@code mapLeft}, {@code flip} and {@code fold}.
  * <p>
  * <strong>Option</strong>
  * <p>

@@ -7,8 +7,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/// The one implementation of [LazyList], ported from the evaluation model of Scala 3's `LazyList` (the Scala 2.13
-/// collection library, which Scala 3 ships unchanged): a cell is a lazily evaluated state, either empty or a head and a
+/// The one implementation of [LazyList], ported from the evaluation model of the `LazyList` of the Scala 2.13
+/// collections library, which Scala 3 uses unchanged: a cell is a lazily evaluated state, either empty or a head and a
 /// tail, computed on the first read of [#isEmpty()], [#head()] or [#tail()] and kept. The tail is itself a cell, not
 /// evaluated until it is read.
 ///

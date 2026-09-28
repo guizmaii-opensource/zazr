@@ -4,8 +4,7 @@ import static java.lang.Integer.bitCount;
 
 /// A node of a compressed hash-array mapped prefix tree (CHAMP, Steindorfer and Vinju, OOPSLA 2015), the trie behind
 /// `HashMap` ([MapNode]) and `HashSet` ([SetNode]). Ported from `Node` in
-/// `scala/collection/immutable/ChampCommon.scala` of the Scala 3 standard library, which ships the Scala 2.13
-/// collection library unchanged.
+/// `scala/collection/immutable/ChampCommon.scala` of the Scala 2.13 collections library, which Scala 3 uses unchanged.
 ///
 /// A node splits 32 slots between two bitmaps: `dataMap` marks the slots holding an entry inline, `nodeMap` the slots
 /// holding a child node. The slot of an entry at depth `d` is the fragment `(hash >>> 5d) & 31` of its hash. The

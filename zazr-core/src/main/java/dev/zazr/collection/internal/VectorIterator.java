@@ -6,7 +6,8 @@ import static dev.zazr.collection.internal.VectorStatics.*;
 
 /**
  * The iterator of a non-empty {@link RadixVector}, ported from {@code NewVectorIterator} of
- * {@code scala/collection/immutable/Vector.scala} (Scala 3 standard library).
+ * {@code scala/collection/immutable/Vector.scala} of the Scala 2.13 collections library, which Scala 3 uses
+ * unchanged.
  * <p>
  * It walks the slices of the vector in order and, inside a slice of dimension {@code d > 1}, keeps the arrays on the
  * path to the current leaf in {@code a2} .. {@code a6}: moving to the next leaf re-reads only the levels whose index

@@ -6,9 +6,9 @@ import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
 /// The elements of a `HashSet` trie that have one same hash: a leaf below the last level of hash bits, holding at least
-/// two elements. Ported from `HashCollisionSetNode` in `scala/collection/immutable/HashSet.scala` of the Scala 3
-/// standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged), with the elements kept in an
-/// array instead of a vector. Immutable: every update copies the array, in a builder too.
+/// two elements. Ported from `HashCollisionSetNode` in `scala/collection/immutable/HashSet.scala` of the Scala 2.13
+/// collections library, which Scala 3 uses unchanged, with the elements kept in an array instead of a vector.
+/// Immutable: every update copies the array, in a builder too.
 ///
 /// @param <T> the element type
 final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> {

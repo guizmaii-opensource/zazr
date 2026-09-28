@@ -16,7 +16,7 @@ such as JUnit. `Check.evaluate` returns the result instead, for code that looks 
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-test</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
         <scope>test</scope>
     </dependency>
     ```
@@ -25,7 +25,7 @@ such as JUnit. `Check.evaluate` returns the result instead, for code that looks 
 
     ```kotlin
     dependencies {
-        testImplementation("dev.zazr:zazr-test:0.1.0-SNAPSHOT")
+        testImplementation("dev.zazr:zazr-test:0.1.0")
     }
     ```
 

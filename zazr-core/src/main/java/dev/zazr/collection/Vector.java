@@ -24,11 +24,12 @@ import static dev.zazr.collection.internal.Collections.withSize;
  * Many other operations ({@code update}, {@code append}, {@code prepend}, {@code tail}, {@code drop}, {@code take},
  * {@code slice}) are effectively constant too.
  * <p>
- * The elements are kept in a wide, shallow tree of arrays of 32 elements, at most six levels deep, whose first and
- * last arrays are kept apart, so that {@code head}, {@code last}, {@code prepend} and {@code append} work on those
- * only. Vector declares its whole API itself and implements only {@link Traversable}: every positional method carries
- * a {@code Complexity:} line in its javadoc, where "effectively O(1)" means at most six array reads, or a copy of at
- * most six small arrays of 32 elements, whatever the size: the result shares every other element with this Vector.
+ * The elements are kept in a wide, shallow tree of arrays of 32 elements, at most six levels deep, whose first and last
+ * arrays are kept apart, so that {@code head}, {@code last}, {@code prepend} and {@code append} work on those only: the
+ * structure of the {@code Vector} of the Scala 2.13 collections library, which Scala 3 uses unchanged, ported to Java.
+ * Vector declares its whole API itself and implements only {@link Traversable}: every positional method carries a
+ * {@code Complexity:} line in its javadoc, where "effectively O(1)" means at most six array reads, or a copy of at most
+ * six small arrays of 32 elements, whatever the size: the result shares every other element with this Vector.
  * <p>
  * Complexity: the methods without a note of their own ({@code map}, {@code filter}, {@code flatMap}, the folds,
  * {@code groupBy}, the conversions, and the factories such as {@code ofAll} and {@code range}) walk the elements once:

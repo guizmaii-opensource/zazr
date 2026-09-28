@@ -5,8 +5,8 @@ import org.jspecify.annotations.Nullable;
 
 /// A node of the CHAMP trie behind `HashSet` (see [ChampNode]): a [BitmapIndexedSetNode], or a [HashCollisionSetNode]
 /// below the last level of hash bits. Ported from `SetNode` in `scala/collection/immutable/HashSet.scala` of the Scala
-/// 3 standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged). The root of a set is always a
-/// [BitmapIndexedSetNode]; the empty set is the one of [#empty()].
+/// 2.13 collections library, which Scala 3 uses unchanged. The root of a set is always a [BitmapIndexedSetNode]; the
+/// empty set is the one of [#empty()].
 ///
 /// Elements are never null; `hash` is always `Objects.hashCode(element)` and `shift` the depth of the node times 5.
 ///

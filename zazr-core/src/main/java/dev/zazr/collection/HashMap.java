@@ -19,8 +19,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * An immutable {@code HashMap} implementation based on a compressed hash-array mapped prefix tree (CHAMP, Steindorfer
  * and Vinju, <em>Optimizing Hash-Array Mapped Tries for Fast and Lean Immutable JVM Collections</em>, OOPSLA 2015),
- * ported from the {@code HashMap} of the Scala 3 standard library. Each node keeps its entries inline, keys and values
- * side by side in one array, with no object per entry.
+ * ported from the {@code HashMap} of the Scala 2.13 collections library, which Scala 3 uses unchanged. Each node keeps
+ * its entries inline, keys and values side by side in one array, with no object per entry.
  * <p>
  * Of two equal keys, {@link #put(Object, Object)} keeps the one put last, key and value; the factories, the collector
  * and the {@link Builder} do as successive puts, and so does {@link #putAll(Iterable)}. {@link #merge(Map)} keeps the

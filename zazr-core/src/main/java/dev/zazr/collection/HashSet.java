@@ -19,8 +19,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * An immutable {@code HashSet} implementation based on a compressed hash-array mapped prefix tree (CHAMP, Steindorfer
  * and Vinju, <em>Optimizing Hash-Array Mapped Tries for Fast and Lean Immutable JVM Collections</em>, OOPSLA 2015),
- * ported from the {@code HashSet} of the Scala 3 standard library. Each node keeps its elements inline, with no object
- * per element.
+ * ported from the {@code HashSet} of the Scala 2.13 collections library, which Scala 3 uses unchanged. Each node keeps
+ * its elements inline, with no object per element.
  * <p>
  * Of two equal elements, a HashSet keeps the one it received first: {@link #add(Object)}, {@link #addAll(Iterable)},
  * {@link #union(Set)}, the factories, the collector and the {@link Builder} never replace an element already there,
