@@ -35,7 +35,7 @@ public class Euler22Test {
     }
 
     private static long nameScore(String name, long position) {
-        return Vector.ofAll(name.toCharArray()).map(c -> c - 'A' + 1).sum().longValue() * position;
+        return Vector.ofAll(name.toCharArray()).map(c -> c - 'A' + 1).sumLong(Number::longValue) * position;
     }
 
     private static long totalOfAllNameScores() {
@@ -45,7 +45,6 @@ public class Euler22Test {
                 .sorted()
                 .zipWithIndex()
                 .map(t -> nameScore(t._1(), t._2() + 1))
-                .sum()
-                .longValue();
+                .sumLong(Number::longValue);
     }
 }

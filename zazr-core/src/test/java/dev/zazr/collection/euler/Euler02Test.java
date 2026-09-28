@@ -30,7 +30,6 @@ public class Euler02Test {
                 .map(BigInteger::longValue)
                 .takeWhile(f -> f <= max)
                 .filter(f -> f % 2 == 0)
-                .sum()
-                .longValue();
+                .sumLong(Number::longValue);
     }
 }

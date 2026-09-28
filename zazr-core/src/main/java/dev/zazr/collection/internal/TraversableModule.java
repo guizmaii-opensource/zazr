@@ -15,6 +15,8 @@ import java.util.function.Function;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import org.jspecify.annotations.Nullable;
 
 /** The one-pass operations the concrete types declare with their own signatures, implemented once over an Iterable. */
@@ -275,87 +277,114 @@ public interface TraversableModule {
         return Option.some(tm);
     }
 
-    static Option<Double> average(Traversable<?> traversable) {
-        try {
-            double[] sum = neumaierSum(traversable, t -> ((Number) t).doubleValue());
-            double count = sum[1];
-            return (count == 0) ? Option.none() : Option.some(sum[0] / count);
-        } catch (ClassCastException x) {
-            throw new UnsupportedOperationException("Elements are not numeric", x);
+    // The int and long sums and products throw when the exact result does not fit, and only then: the result of a set
+    // does not depend on its iteration order, and an overflow the later elements undo does not throw.
+
+    @SuppressWarnings("Var")
+    static <T extends @Nullable Object> int sumInt(Iterable<T> ts, ToIntFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // a long cannot overflow before 2^32 int elements; addExact still guards a longer LazyList
+        long sum = 0L;
+        for (T t : ts) {
+            sum = Math.addExact(sum, mapper.applyAsInt(t));
         }
+        return Math.toIntExact(sum);
     }
 
     @SuppressWarnings("Var")
-    static Number product(Traversable<?> traversable) {
-        java.util.Iterator<?> iterator = traversable.iterator();
-        if (!iterator.hasNext()) {
-            return 1;
-        }
-        try {
-            Object o = iterator.next();
-            if (o instanceof Integer || o instanceof Long || o instanceof Byte || o instanceof Short) {
-                long product = ((Number) o).longValue();
-                while (iterator.hasNext()) {
-                    product *= ((Number) iterator.next()).longValue();
-                }
-                return product;
-            } else if (o instanceof java.math.BigInteger) {
-                java.math.BigInteger product = (java.math.BigInteger) o;
-                while (iterator.hasNext()) {
-                    product = product.multiply((java.math.BigInteger) iterator.next());
-                }
-                return product;
-            } else if (o instanceof java.math.BigDecimal) {
-                java.math.BigDecimal product = (java.math.BigDecimal) o;
-                while (iterator.hasNext()) {
-                    product = product.multiply((java.math.BigDecimal) iterator.next());
-                }
-                return product;
-            } else {
-                double product = ((Number) o).doubleValue();
-                while (iterator.hasNext()) {
-                    product *= ((Number) iterator.next()).doubleValue();
-                }
-                return product;
+    static <T extends @Nullable Object> long sumLong(Iterable<T> ts, ToLongFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // the exact sum is sum + carries * 2^64: a partial sum may overflow as long as the later elements bring it back
+        long sum = 0L;
+        long carries = 0L;
+        for (T t : ts) {
+            long x = mapper.applyAsLong(t);
+            long next = sum + x;
+            if (((sum ^ next) & (x ^ next)) < 0) {
+                carries += (x < 0) ? -1 : 1;
             }
-        } catch (ClassCastException x) {
-            throw new UnsupportedOperationException("not numeric", x);
+            sum = next;
         }
+        if (carries != 0) {
+            throw new ArithmeticException("long overflow");
+        }
+        return sum;
+    }
+
+    static <T extends @Nullable Object> double sumDouble(Iterable<T> ts, ToDoubleFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return neumaierSum(ts, mapper)[0];
     }
 
     @SuppressWarnings("Var")
-    static Number sum(Traversable<?> traversable) {
-        java.util.Iterator<?> iterator = traversable.iterator();
-        if (!iterator.hasNext()) {
+    static <T extends @Nullable Object> int productInt(Iterable<T> ts, ToIntFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // once a factor is not zero, the magnitude never shrinks: past 2^31 only a zero factor makes the result fit
+        long product = 1L;
+        boolean zero = false;
+        boolean overflow = false;
+        for (T t : ts) {
+            int x = mapper.applyAsInt(t);
+            if (x == 0) {
+                zero = true;
+            } else if (!overflow) {
+                // |product| <= 2^31 and |x| <= 2^31, so this long product is exact
+                product *= x;
+                overflow = Math.abs(product) > (1L << 31);
+            }
+        }
+        if (zero) {
             return 0;
+        } else if (overflow) {
+            throw new ArithmeticException("integer overflow");
+        } else {
+            return Math.toIntExact(product);
         }
-        try {
-            Object o = iterator.next();
-            if (o instanceof Integer || o instanceof Long || o instanceof Byte || o instanceof Short) {
-                long sum = ((Number) o).longValue();
-                while (iterator.hasNext()) {
-                    sum += ((Number) iterator.next()).longValue();
-                }
-                return sum;
-            } else if (o instanceof java.math.BigInteger) {
-                java.math.BigInteger sum = (java.math.BigInteger) o;
-                while (iterator.hasNext()) {
-                    sum = sum.add((java.math.BigInteger) iterator.next());
-                }
-                return sum;
-            } else if (o instanceof java.math.BigDecimal) {
-                java.math.BigDecimal sum = (java.math.BigDecimal) o;
-                while (iterator.hasNext()) {
-                    sum = sum.add((java.math.BigDecimal) iterator.next());
-                }
-                return sum;
-            } else {
-                // any other Number, Double and Float included: Neumaier summation over the whole collection
-                return neumaierSum(traversable, t -> ((Number) t).doubleValue())[0];
+    }
+
+    @SuppressWarnings("Var")
+    static <T extends @Nullable Object> long productLong(Iterable<T> ts, ToLongFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        // the magnitude is an unsigned long (Math.abs(Long.MIN_VALUE) is 2^63 read as unsigned) and the sign is kept
+        // apart; once a factor is not zero, the magnitude never shrinks: past 2^64 only a zero factor makes it fit
+        long magnitude = 1L;
+        boolean negative = false;
+        boolean zero = false;
+        boolean overflow = false;
+        for (T t : ts) {
+            long x = mapper.applyAsLong(t);
+            if (x == 0L) {
+                zero = true;
+            } else if (!overflow) {
+                long m = Math.abs(x);
+                overflow = Math.unsignedMultiplyHigh(magnitude, m) != 0L;
+                magnitude *= m;
+                negative ^= x < 0L;
             }
-        } catch (ClassCastException x) {
-            throw new UnsupportedOperationException("Elements are not numeric", x);
         }
+        if (zero) {
+            return 0L;
+        } else if (overflow || (negative ? Long.compareUnsigned(magnitude, Long.MIN_VALUE) > 0 : magnitude < 0L)) {
+            throw new ArithmeticException("long overflow");
+        } else {
+            return negative ? -magnitude : magnitude;
+        }
+    }
+
+    @SuppressWarnings("Var")
+    static <T extends @Nullable Object> double productDouble(Iterable<T> ts, ToDoubleFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        double product = 1.0;
+        for (T t : ts) {
+            product *= mapper.applyAsDouble(t);
+        }
+        return product;
+    }
+
+    static <T extends @Nullable Object> Option<Double> average(Iterable<T> ts, ToDoubleFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        double[] sum = neumaierSum(ts, mapper);
+        return (sum[1] == 0) ? Option.none() : Option.some(sum[0] / sum[1]);
     }
 
     /**
@@ -369,7 +398,7 @@ public interface TraversableModule {
      * @return A pair {@code [sum, size]}, where {@code sum} is the compensated sum and {@code size} is the number of elements which were summed.
      */
     @SuppressWarnings("Var")
-    static <T extends @Nullable Object> double[] neumaierSum(Iterable<T> ts, ToDoubleFunction<T> toDouble) {
+    static <T extends @Nullable Object> double[] neumaierSum(Iterable<T> ts, ToDoubleFunction<? super T> toDouble) {
         double simpleSum = 0.0;
         double sum = 0.0;
         double compensation = 0.0;

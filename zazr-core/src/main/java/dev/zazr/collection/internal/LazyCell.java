@@ -101,6 +101,13 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
         }
     }
 
+    /// The elements of `list` without its first `n > 0`, skipped when the result is first read. Dropping from
+    /// a list that is itself such a drop, not read yet, makes one drop of the sum instead of a drop of a drop,
+    /// so a chain of drops built without reading is read at the stack depth of one.
+    public static <T extends @Nullable Object> LazyList<T> drop(LazyList<T> list, int n) {
+        return new Dropped<>(list, n);
+    }
+
     // -- evaluation
 
     /// Computes the state: sets head and tail and returns CONS, or returns EMPTY. Called under the lock of this cell,
@@ -286,6 +293,49 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
         @Override
         void release() {
             supplier = null;
+        }
+    }
+
+    // the elements of a list without its first ones, skipped on the first read
+    private static final class Dropped<T extends @Nullable Object> extends LazyCell<T> {
+
+        // null once the state is kept
+        private @Nullable LazyList<T> source;
+        private final int count;
+
+        Dropped(LazyList<T> source, int count) {
+            this.source = source;
+            this.count = count;
+        }
+
+        @Override
+        public LazyList<T> drop(int n) {
+            // Correct whatever the state of this cell, so no lock is needed: a source read as null (the state is kept)
+            // only makes a drop of this cell, which is evaluated then. A sum past Integer.MAX_VALUE is not collapsed.
+            LazyList<T> from = source;
+            if (n <= 0 || knownIsEmpty(this)) {
+                return this;
+            } else if (from != null && count <= Integer.MAX_VALUE - n) {
+                return new Dropped<>(from, count + n);
+            } else {
+                return new Dropped<>(this, n);
+            }
+        }
+
+        @Override
+        Object compute() {
+            // compute() runs only while the state is not kept, before release() clears source
+            @SuppressWarnings("Var")
+            LazyList<T> rest = Objects.requireNonNull(source, "LazyList: a kept cell is evaluated again");
+            for (int i = count; i > 0 && !rest.isEmpty(); i--) {
+                rest = rest.tail();
+            }
+            return adopt(rest);
+        }
+
+        @Override
+        void release() {
+            source = null;
         }
     }
 

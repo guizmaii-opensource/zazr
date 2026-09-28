@@ -100,7 +100,7 @@ class GenScalarsTest {
     void doublesAreBetweenZeroAndOne() {
         List<Double> drawn = values(Gen.doubles(), 5_000);
         assertThat(drawn).allMatch(d -> d >= 0.0 && d < 1.0);
-        assertThat(drawn.average().get()).isBetween(0.45, 0.55);
+        assertThat(drawn.average(d -> d).get()).isBetween(0.45, 0.55);
     }
 
     @Test

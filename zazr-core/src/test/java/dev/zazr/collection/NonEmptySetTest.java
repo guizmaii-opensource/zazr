@@ -460,10 +460,14 @@ public class NonEmptySetTest {
             assertThat(nes.fold(0, Integer::sum)).isEqualTo(n * (n - 1) / 2);
             assertThat(nes.foldLeft("", (s, i) -> s + i).length())
                     .isEqualTo(set.foldLeft("", (s, i) -> s + i).length());
-            assertThat(nes.sum()).isEqualTo(set.sum());
-            assertThat(nes.product()).isEqualTo(set.product());
-            assertThat(nes.average()).isEqualTo(set.average().get());
-            assertThatThrownBy(() -> NonEmptySet.of("a").average()).isInstanceOf(UnsupportedOperationException.class);
+            assertThat(nes.sumInt(i -> i)).isEqualTo(set.sumInt(i -> i)).isEqualTo(n * (n - 1) / 2);
+            assertThat(nes.sumLong(i -> i)).isEqualTo(set.sumLong(i -> i));
+            assertThat(nes.sumDouble(i -> i / 3.0)).isEqualTo(set.sumDouble(i -> i / 3.0));
+            assertThat(nes.productInt(i -> i % 3 == 0 ? -1 : 1)).isEqualTo(set.productInt(i -> i % 3 == 0 ? -1 : 1));
+            assertThat(nes.productLong(i -> i % 3 == 0 ? -1L : 1L))
+                    .isEqualTo(set.productLong(i -> i % 3 == 0 ? -1L : 1L));
+            assertThat(nes.productDouble(i -> i % 3 + 1)).isEqualTo(set.productDouble(i -> i % 3 + 1));
+            assertThat(nes.average(i -> i)).isEqualTo(set.average(i -> i).get());
         }
 
         @ParameterizedTest

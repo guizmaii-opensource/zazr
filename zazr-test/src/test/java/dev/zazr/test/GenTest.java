@@ -348,7 +348,7 @@ class GenTest {
         // an exponential distribution of mean 4
         assertThat(sizes.count(n -> n <= 10)).isGreaterThan(1_800);
         assertThat(sizes.count(n -> n == 0)).isGreaterThan(100);
-        assertThat(sizes.average().get()).isBetween(3.0, 5.0);
+        assertThat(sizes.average(n -> n).get()).isBetween(3.0, 5.0);
     }
 
     @Test
@@ -368,7 +368,7 @@ class GenTest {
     void largeIsUniformUpToTheSize() {
         List<Integer> sizes = Gen.large(Gen::constant).withSize(100).runCollectN(5_000, config(5));
         assertThat(sizes).allMatch(n -> n >= 0 && n <= 100).contains(0, 100);
-        assertThat(sizes.average().get()).isBetween(45.0, 55.0);
+        assertThat(sizes.average(n -> n).get()).isBetween(45.0, 55.0);
         assertThat(Gen.large(Gen::constant, 10).withSize(100).runCollectN(500, config(5)))
                 .allMatch(n -> n >= 10)
                 .contains(10, 100);

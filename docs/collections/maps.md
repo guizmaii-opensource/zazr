@@ -40,6 +40,23 @@ var first  = byName.head();    // Tuple2<String, Integer>
 // values is Vector(1, 2, 3), first is (a, 1)
 ```
 
+## Putting many entries
+
+`putAll` puts every entry of another map, or of any iterable of `Tuple2`s, as successive `put`s would. On a key both
+sides hold, the argument's value wins: this is Scala's `++` on maps.
+
+`merge` is the other way round: this map's value stays, and only the keys it lacks are added.
+
+```java
+var prices  = HashMap.of("apple", 3, "pear", 4);
+var updates = HashMap.of("pear", 5, "fig", 2);
+var updated = prices.putAll(updates);  // HashMap<String, Integer>
+var kept    = prices.merge(updates);   // HashMap<String, Integer>
+// updated has pear -> 5, kept has pear -> 4, both have fig -> 2
+```
+
+On a `LinkedHashMap`, a key already present keeps its position and a new key goes to the end, as with `put`.
+
 `map`, `filter` and `forEach` take a function of the key and the value. `mapValues`, `filterKeys` and similar
 methods work on one side. `keySet()` returns the keys as a set, and `values()` the values as a `Vector`, in iteration
 order.

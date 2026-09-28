@@ -1300,8 +1300,7 @@ public class TreeMapTest extends AbstractTraversableTest {
     public void shouldNarrowMap() {
         SortedMap<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
         SortedMap<Integer, Number> number2numberMap = SortedMap.narrow(int2doubleMap);
-        int actual =
-                number2numberMap.put(2, new BigDecimal("2.0")).values().sum().intValue();
+        int actual = number2numberMap.put(2, new BigDecimal("2.0")).values().sumInt(Number::intValue);
         assertThat(actual).isEqualTo(3);
     }
 
@@ -2672,11 +2671,7 @@ public class TreeMapTest extends AbstractTraversableTest {
         public void shouldNarrowTreeMap() {
             TreeMap<Integer, Double> int2doubleMap = mapOf(1, 1.0d);
             TreeMap<Integer, Number> number2numberMap = TreeMap.narrow(int2doubleMap);
-            int actual = number2numberMap
-                    .put(2, new BigDecimal("2.0"))
-                    .values()
-                    .sum()
-                    .intValue();
+            int actual = number2numberMap.put(2, new BigDecimal("2.0")).values().sumInt(Number::intValue);
             assertThat(actual).isEqualTo(3);
         }
 

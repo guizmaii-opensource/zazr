@@ -4,7 +4,7 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.Tuple3;
 import dev.zazr.collection.internal.Comparators;
-import dev.zazr.collection.internal.TraversableModule;
+import dev.zazr.collection.internal.NonEmptyModule;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import java.util.Comparator;
@@ -19,6 +19,9 @@ import java.util.function.IntFunction;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
@@ -2148,45 +2151,101 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * The sum of the elements, which must be {@link Number}s, with the arithmetic of {@link Vector#sum()}.
+     * The sum of the {@code int} values {@code mapper} gives for the elements, exact as {@link Vector#sumInt}.
      * <p>
-     * Complexity: O(n), as {@link Vector#sum()}.
+     * Complexity: O(n).
      *
+     * @param mapper gives the value of an element
      * @return the sum
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     * @throws ArithmeticException if the sum does not fit in an {@code int}
+     * @throws NullPointerException if {@code mapper} is null
      */
-    public Number sum() {
-        return vector.sum();
+    public int sumInt(ToIntFunction<? super A> mapper) {
+        return vector.sumInt(mapper);
     }
 
     /**
-     * The product of the elements, which must be {@link Number}s, with the arithmetic of {@link Vector#product()}.
+     * The sum of the {@code long} values {@code mapper} gives for the elements, exact as {@link Vector#sumLong}.
      * <p>
-     * Complexity: O(n), as {@link Vector#product()}.
+     * Complexity: O(n).
      *
-     * @return the product
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     * @param mapper gives the value of an element
+     * @return the sum
+     * @throws ArithmeticException if the sum does not fit in a {@code long}
+     * @throws NullPointerException if {@code mapper} is null
      */
-    public Number product() {
-        return vector.product();
+    public long sumLong(ToLongFunction<? super A> mapper) {
+        return vector.sumLong(mapper);
     }
 
     /**
-     * The average of the elements, which must be {@link Number}s, summed as {@code double}s with Neumaier
-     * compensation: the value {@link Vector#average()} holds.
+     * The sum of the {@code double} values {@code mapper} gives for the elements, with the Neumaier compensation of
+     * {@link Vector#sumDouble}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the sum
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public double sumDouble(ToDoubleFunction<? super A> mapper) {
+        return vector.sumDouble(mapper);
+    }
+
+    /**
+     * The product of the {@code int} values {@code mapper} gives for the elements, exact as {@link Vector#productInt}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws ArithmeticException if the product does not fit in an {@code int}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public int productInt(ToIntFunction<? super A> mapper) {
+        return vector.productInt(mapper);
+    }
+
+    /**
+     * The product of the {@code long} values {@code mapper} gives for the elements, exact as
+     * {@link Vector#productLong}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws ArithmeticException if the product does not fit in a {@code long}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public long productLong(ToLongFunction<? super A> mapper) {
+        return vector.productLong(mapper);
+    }
+
+    /**
+     * The product of the {@code double} values {@code mapper} gives for the elements, as {@link Vector#productDouble}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public double productDouble(ToDoubleFunction<? super A> mapper) {
+        return vector.productDouble(mapper);
+    }
+
+    /**
+     * The mean of the {@code double} values {@code mapper} gives for the elements: the value {@link Vector#average}
+     * holds, without the {@code Option}.
      * <p>
      * Complexity: O(n), one compensated pass.
      *
-     * @return the average
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     * @param mapper gives the value of an element
+     * @return the mean
+     * @throws NullPointerException if {@code mapper} is null
      */
-    public double average() {
-        try {
-            double[] sum = TraversableModule.neumaierSum(vector, element -> ((Number) element).doubleValue());
-            return sum[0] / sum[1];
-        } catch (ClassCastException x) {
-            throw new UnsupportedOperationException("Elements are not numeric", x);
-        }
+    public double average(ToDoubleFunction<? super A> mapper) {
+        return NonEmptyModule.average(vector, mapper);
     }
 
     /**

@@ -17,6 +17,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /// What each operation evaluates, counted: a call evaluates nothing (or what its note says, for the operations that
 /// read the whole list or check bounds), and reading the first element of the result evaluates exactly the cells it
@@ -353,5 +354,163 @@ class LazyListLazinessTest {
         assertThat(calls.get()).isEqualTo(1);
         assertThat(seen).hasSize(8);
         assertThat(new java.util.HashSet<>(seen)).hasSize(1);
+    }
+
+    // -- stack depth of chains built without reading
+
+    @Test
+    void aChainOf100000DropsReads() {
+        LazyList<Integer> dropped =
+                LazyList.range(0, 100_000).foldLeft(LazyList.range(0, 100_010), (l, i) -> l.drop(1));
+        assertThat(dropped.head()).isEqualTo(100_000);
+        assertThat(dropped.get(1)).isEqualTo(100_001);
+        assertThat(dropped.toVector()).isEqualTo(Vector.range(100_000, 100_010));
+    }
+
+    @Test
+    void aChainOfDropsEvaluatesNothingAtTheCallAndOnlyWhatItSkipsOnRead() {
+        AtomicInteger evaluated = new AtomicInteger();
+        LazyList<Integer> dropped = counted(evaluated).drop(1).drop(2).drop(3);
+        assertThat(evaluated.get()).isZero();
+        assertThat(dropped.head()).isEqualTo(6);
+        assertThat(evaluated.get()).isEqualTo(7);
+    }
+
+    @Test
+    void aDropOfADropKeepsBothLists() {
+        LazyList<Integer> first = LazyList.range(0, 10).drop(2);
+        LazyList<Integer> second = first.drop(3);
+        assertThat(second.toVector()).isEqualTo(Vector.of(5, 6, 7, 8, 9));
+        assertThat(first.toVector()).isEqualTo(Vector.of(2, 3, 4, 5, 6, 7, 8, 9));
+        // first is evaluated now: dropping from it starts from its cells
+        assertThat(first.drop(1).toVector()).isEqualTo(Vector.of(3, 4, 5, 6, 7, 8, 9));
+        assertThat(second.drop(4).toVector()).isEqualTo(Vector.of(9));
+    }
+
+    @Test
+    void aDropOfADropPastIntegerMaxValueDropsEverything() {
+        assertThat(LazyList.range(0, 5).drop(Integer.MAX_VALUE).drop(1).isEmpty())
+                .isTrue();
+        assertThat(LazyList.range(0, 5).drop(Integer.MAX_VALUE - 1).drop(1).isEmpty())
+                .isTrue();
+    }
+
+    @Test
+    void aDropOfNothingOrOfAnEmptyDropIsTheSameList() {
+        LazyList<Integer> dropped = LazyList.range(0, 5).drop(1);
+        assertThat(dropped.drop(0)).isSameAs(dropped);
+        assertThat(dropped.drop(-1)).isSameAs(dropped);
+        LazyList<Integer> emptied = LazyList.range(0, 5).drop(7);
+        assertThat(emptied.isEmpty()).isTrue();
+        assertThat(emptied.drop(1)).isSameAs(emptied);
+    }
+
+    @Test
+    void chainsOfAThousandLazyOperationsRead() {
+        int depth = 1_000;
+        LazyList<Integer> source = LazyList.range(0, 10);
+        LazyList<Integer> mapped = LazyList.range(0, depth).foldLeft(source, (l, i) -> l.map(x -> x + 1));
+        LazyList<Integer> filtered = LazyList.range(0, depth).foldLeft(source, (l, i) -> l.filter(x -> true));
+        LazyList<Integer> taken = LazyList.range(0, depth).foldLeft(source, (l, i) -> l.take(100));
+        LazyList<Integer> deferred = LazyList.range(0, depth).foldLeft(source, (l, i) -> LazyList.defer(() -> l));
+        assertThat(mapped.head()).isEqualTo(depth);
+        assertThat(filtered.head()).isZero();
+        assertThat(taken.head()).isZero();
+        assertThat(deferred.head()).isZero();
+        assertThat(mapped.get(1)).isEqualTo(depth + 1);
+        assertThat(filtered.get(1)).isEqualTo(1);
+        assertThat(taken.get(1)).isEqualTo(1);
+        assertThat(deferred.get(1)).isEqualTo(1);
+    }
+
+    // -- arguments that are the asJava() view of a LazyList
+
+    @Test
+    void flattenOfAnAsJavaViewEvaluatesNothingAtTheCall() {
+        AtomicInteger evaluated = new AtomicInteger();
+        LazyList<Integer> flat =
+                LazyList.flatten(counted(evaluated).map(LazyList::of).asJava());
+        assertThat(evaluated.get()).isZero();
+        assertThat(flat.toVector()).isEqualTo(Vector.range(0, SIZE));
+    }
+
+    @Test
+    void concatOfAnAsJavaViewEvaluatesNothingAtTheCall() {
+        AtomicInteger evaluated = new AtomicInteger();
+        LazyList<Integer> concatenated =
+                LazyList.concat(counted(evaluated).map(List::of).asJava());
+        assertThat(evaluated.get()).isZero();
+        assertThat(concatenated.toVector()).isEqualTo(Vector.range(0, SIZE));
+    }
+
+    @Test
+    void removeAllOfAnAsJavaViewEvaluatesNothingAtTheCall() {
+        AtomicInteger evaluated = new AtomicInteger();
+        LazyList<Integer> removed =
+                LazyList.range(0, 12).removeAll(counted(evaluated).asJava());
+        assertThat(evaluated.get()).isZero();
+        assertThat(removed.toVector()).isEqualTo(Vector.of(10, 11));
+    }
+
+    @Test
+    void theAsJavaViewOfAnEvaluatedEmptyListIsKnownToBeEmpty() {
+        assertThat(LazyList.flatten(LazyList.<LazyList<Integer>>empty().asJava()))
+                .isSameAs(LazyList.empty());
+        assertThat(LazyList.concat(LazyList.<List<Integer>>empty().asJava())).isSameAs(LazyList.empty());
+        LazyList<Integer> list = LazyList.range(0, 3);
+        assertThat(list.removeAll(LazyList.<Integer>empty().asJava())).isSameAs(list);
+    }
+
+    // -- of(T...) and takeRight
+
+    @Test
+    void ofCopiesTheArrayAtTheCall() {
+        Integer[] elements = {1, 2, 3};
+        LazyList<Integer> list = LazyList.of(elements);
+        elements[0] = 9;
+        elements[1] = null;
+        assertThat(list.toVector()).isEqualTo(Vector.of(1, 2, 3));
+        assertThat(elements).containsExactly(9, null, 3);
+    }
+
+    @Test
+    void takeRightOfNothingReadsNothing() {
+        AtomicInteger evaluated = new AtomicInteger();
+        LazyList<Integer> infinite = LazyList.from(0).map(i -> {
+            evaluated.incrementAndGet();
+            return i;
+        });
+        assertThat(infinite.takeRight(0)).isSameAs(LazyList.empty());
+        assertThat(infinite.takeRight(-1)).isSameAs(LazyList.empty());
+        assertThat(infinite.takeRight(0).isEmpty()).isTrue();
+        assertThat(evaluated.get()).isZero();
+    }
+
+    // -- messages
+
+    @Test
+    void reduceOnAnEmptyListNamesNoInternalClass() {
+        LazyList<Integer> deferred = LazyList.defer(LazyList::empty);
+        for (LazyList<Integer> empty : List.of(LazyList.<Integer>empty(), deferred)) {
+            assertThatThrownBy(() -> empty.reduce(Integer::sum))
+                    .isInstanceOf(java.util.NoSuchElementException.class)
+                    .hasMessage("reduceLeft on empty Empty");
+            assertThatThrownBy(() -> empty.reduceLeft(Integer::sum))
+                    .isInstanceOf(java.util.NoSuchElementException.class)
+                    .hasMessage("reduceLeft on empty Empty");
+        }
+    }
+
+    @Test
+    void updateOfANegativeIndexOnAnEmptyListSaysSo() {
+        assertThatThrownBy(() -> LazyList.<Integer>empty().update(-1, 0))
+                .isInstanceOf(IndexOutOfBoundsException.class)
+                .hasMessage("update(-1, e) on Nil");
+        assertThatThrownBy(() -> LazyList.<Integer>empty().update(-1, x -> x))
+                .isInstanceOf(IndexOutOfBoundsException.class)
+                .hasMessage("update(-1, e) on Nil");
+        assertThatThrownBy(() -> LazyList.of(1).update(-1, 0))
+                .isInstanceOf(IndexOutOfBoundsException.class)
+                .hasMessage("update(-1, e)");
     }
 }

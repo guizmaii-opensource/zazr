@@ -45,12 +45,12 @@ The return type tells you whether the result can be empty:
 
 | Returns | When | For example |
 |---|---|---|
-| the non-empty type | the operation cannot remove every element | `add`, `addAll`, `union`, `map`, `put`, `merge`, `mapValues`, `replace` |
+| the non-empty type | the operation cannot remove every element | `add`, `addAll`, `union`, `map`, `put`, `putAll`, `merge`, `mapValues`, `replace` |
 | the plain type | the operation may remove elements | `filter`, `remove`, `intersect`, `diff`, `take`, `drop`, `tail` |
 | `Option` | you ask for a part that may not exist | `find`, `get`, `tailNonEmpty()`, `initNonEmpty()` |
 
-`addAll`, `union` and `merge` accept a collection that may be empty and still return the non-empty type. `map` on a
-set may merge equal results, and `map` on a map equal keys, but never down to nothing.
+`addAll`, `union`, `putAll` and `merge` accept a collection that may be empty and still return the non-empty type.
+`map` on a set may merge equal results, and `map` on a map equal keys, but never down to nothing.
 
 On a map, `keySet()` returns a `NonEmptySet` (a `NonEmptySortedSet` on a `NonEmptySortedMap`) and `values()` a
 `NonEmptyVector`. `groupBy` returns a `NonEmptyMap` whose values are non-empty, and on the sorted variants `grouped`,
