@@ -57,6 +57,10 @@ below are deliberate. [Design](principles.md) explains the ideas behind them, an
   `Iterator`.
 - **`tap` on a collection runs on every element.** Vavr's `peek` ran on the first one.
 - **Two `Try.Failure`s are equal when they hold the same `Throwable` instance**, not when their stack traces match.
+- **`unfold` returns the element first, then the next state**, as in Scala and ZIO; Vavr's returned
+  `(nextState, element)`, and its `unfoldRight` is gone. When the element and the state have the same type, Vavr code
+  still compiles with the roles swapped: `List.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x - 1,
+  x)))` keeps the state at 10 and never returns. Swap the tuple (`Tuple.of(x, x - 1)`) when moving it over.
 - **Every positional method documents its cost** ([complexity](collections/complexity.md)).
 
 ## Moving code over
