@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>dev.zazr</groupId>
     <artifactId>zazr-parent</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Zazr Parent</name>
     <description>Zazr: persistent collections and functional control types for Java 25+. Inspired by Scala 2.13+, ZIO, and zio-prelude.</description>
