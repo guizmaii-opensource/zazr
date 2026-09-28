@@ -169,7 +169,7 @@ jobs:
           cache: 'maven'
 
       - name: Run NullAway
-        run: ./mvnw -B -Pnullaway compile
+        run: make nullness
 
   reassignment:
     runs-on: ubuntu-latest

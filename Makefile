@@ -40,7 +40,7 @@ install: ## install the jars into ~/.m2 (runs tests)
 
 verify: ## what CI runs: full build with tests, formatting, nullness, reassignment, javadoc, vocabulary, complexity and docs checks
 	$(MVN) verify
-	$(MVN) -Pnullaway compile
+	$(MAKE) nullness
 	$(MAKE) reassignment
 	$(MAKE) javadoc
 	$(MAKE) vocabulary
@@ -120,7 +120,7 @@ fmt: ## format the sources with the Palantir Java Format (spotless apply)
 fmt-check: ## fail if sources are not formatted with the Palantir Java Format (spotless check)
 	$(MVN) spotless:check
 
-nullness: ## NullAway / JSpecify nullness check
+nullness: ## NullAway / JSpecify nullness check of zazr-core's main sources (classes in zazr-core/target/nullaway)
 	$(MVN) -Pnullaway compile
 
 reassignment: ## fail when a local variable or a parameter is assigned after its declaration (Error Prone Var, main and test sources)
