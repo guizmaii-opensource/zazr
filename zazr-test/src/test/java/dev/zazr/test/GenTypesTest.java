@@ -471,7 +471,7 @@ class GenTypesTest {
         assertThat(Shapes.VECTOR_LAYOUTS).isEqualTo(6);
         assertThat(Shapes.LIST_LAYOUTS).isEqualTo(3);
         assertThat(Shapes.QUEUE_LAYOUTS).isEqualTo(4);
-        assertThat(Shapes.LAZY_LIST_LAYOUTS).isEqualTo(5);
+        assertThat(Shapes.LAZY_LIST_LAYOUTS).isEqualTo(6);
         assertThat(Shapes.NON_EMPTY_VECTOR_LAYOUTS).isEqualTo(3);
         assertThat(Shapes.SET_LAYOUTS).isEqualTo(4);
         assertThat(Shapes.MAP_LAYOUTS).isEqualTo(4);
@@ -675,13 +675,10 @@ class GenTypesTest {
     void lazyListReachesEvaluatedAndUnevaluatedTails() {
         List<LazyList<Integer>> streams = samples(Gen.lazyList(Gen.integers()));
         assertSome(
-                streams,
-                s -> !s.isEmpty() && !(field(s, LazyList.Cons.class, "tail") instanceof LazyList<?>),
-                "an unevaluated tail");
+                streams, s -> !s.isEmpty() && s.toString().matches("LazyList\\([^,]*, \\?\\)"), "an unevaluated tail");
         assertSome(
-                streams,
-                s -> !s.isEmpty() && field(s, LazyList.Cons.class, "tail") instanceof LazyList<?>,
-                "an evaluated tail");
+                streams, s -> !s.isEmpty() && !s.toString().matches("LazyList\\([^,]*, \\?\\)"), "an evaluated tail");
+        assertSome(streams, s -> s.toString().equals("LazyList(?)"), "an unevaluated list");
     }
 
     @Test

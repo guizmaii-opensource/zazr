@@ -1,11 +1,11 @@
 ---
-description: LazyList, the lazy list that keeps what it computed - possibly infinite, and which calls compute its elements.
+description: LazyList, the lazy list that keeps what it computed - possibly infinite, and nothing computed before it is read.
 ---
 
 # `LazyList`
 
-A lazy list that remembers what it computed. The first element is computed when the `LazyList` is built, each of the
-others when it is first reached, and then kept. It can be infinite.
+A lazy list that remembers what it computed. Nothing is computed before it is read, not even its first element or
+whether it is empty: each element is computed when it is first reached, and then kept. It can be infinite.
 
 Unlike a `java.util.stream.Stream`, which is a one-shot pipeline, a `LazyList` is a collection: it can be read
 many times, and each read after the first reuses what was computed.
@@ -29,11 +29,27 @@ var firstTen  = fibonacci.take(10).toVector(); // Vector<Long>
 
 `LazyList.iterate(seed, f)`, `LazyList.continually(supplier)` and `LazyList.ofAll` are other ways to create one.
 
+## Nothing is computed before it is read
+
+Building a `LazyList` and calling `map`, `filter` or `appendAll` on it compute nothing. Reading an element computes
+the elements it needs, once, even when several threads read it.
+
+```java
+var seen    = new java.util.ArrayList<Integer>();
+var squares = LazyList.from(1).tap(seen::add).map(n -> n * n); // LazyList<Integer>
+// seen is empty: nothing is computed yet
+var third = squares.get(2); // 9, and seen is [1, 2, 3]
+```
+
+`LazyList.cons(head, () -> tail)` takes its first element as a value. `LazyList.defer(() -> ...)` computes the whole
+list, first element included, when it is first read.
+
 ## Costs
 
-`lazy` means the call returns without walking the `LazyList`: each element is computed when the result reaches
-it. Some calls compute a prefix now, and their note says how much: `filter` and the calls like it up to the first
-element they keep, `drop`, `slice` and `dropRight` the elements they skip or hold back.
+`lazy` means the call computes nothing: each element of the result is computed when it is first read. The note
+says what reading the first element computes: `filter` and the calls like it the elements up to the first one they
+keep, `drop`, `slice` and `dropRight` the elements they skip or hold back, `rotateLeft` or `takeRight` the whole
+list. `reverse`, `sorted` and `scanRight` compute the whole list when they are called.
 
 --8<-- "LazyList.md"
 
@@ -47,14 +63,21 @@ Every method: [complexity page](complexity.md#lazylist).
 - `equals` stops at the first difference or at the end of the shorter side, so an infinite `LazyList` compared with a
   finite `List`, `Vector`, `Queue` or `LazyList` returns. Two infinite `LazyList`s with the same elements never do.
 - `filter` and the calls like it (`reject`, `retainAll`, `removeAll`, `collect`, `flatMap`, `distinct`) compute
-  elements until they find one to keep, when they are called and each time the result moves on. On an infinite
-  `LazyList` with nothing more to keep, that search never ends.
-- `partition` and `partitionMap` look for the first element of each side right away. On an infinite `LazyList` whose
-  elements all go to one side, they never return.
-- The first element is never lazy: building a `LazyList` computes it, and `map`, `tap` and the others compute the first
-  element of their result.
+  elements until they find one to keep, each time the result is read further. On an infinite `LazyList` with nothing
+  more to keep, reading the next element never returns. `isEmpty()` reads: it runs that search too.
+- `partition` and `partitionMap` return at once, but reading a side that stays empty on an infinite `LazyList` never
+  returns.
+- An out-of-range index given to `insert`, `insertAll`, `removeAt` or `update` throws when the result is read that
+  far, not when the method is called (unless the `LazyList` is already known to be empty). A negative index throws
+  at once.
+- `LazyList.cons(head, supplier)` calls the supplier when the tail is read, not when `tail()` returns it: a supplier
+  that returns null fails there.
 - When computing an element throws, the `LazyList` keeps the exception in its place: reading that element again throws
   the same exception, and never skips to the next one. Only a `VirtualMachineError`, such as a stack overflow, lets a
   later read try again.
+- A chain of thousands of lazy operations (`map`, `filter`, `take`, `defer` inside `defer`) built without reading
+  anything is evaluated recursively on the first read, as in Scala, and can overflow the stack then. Reading as you
+  go, or reading on a thread with a bigger stack, avoids it. A chain of `drop`s, or a loop of `append` or
+  `appendAll`, has no such limit.
 - A `LazyList` keeps every element it computed. Holding on to the start of a long `LazyList` while walking it keeps all
   of it in memory.

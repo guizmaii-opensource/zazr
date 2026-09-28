@@ -10,7 +10,7 @@ public final class FailedTailOutOfMemoryProbe {
 
     private static Throwable failure(LazyList<Integer> stream) {
         try {
-            stream.tail();
+            stream.tail().isEmpty();
             return null;
         } catch (Throwable t) {
             return t;
@@ -32,7 +32,7 @@ public final class FailedTailOutOfMemoryProbe {
             }
         }
         try {
-            stream.tail();
+            stream.tail().isEmpty();
         } catch (Throwable t) {
             // the supplier's exception, or an OutOfMemoryError met on the way out of the cell
         }

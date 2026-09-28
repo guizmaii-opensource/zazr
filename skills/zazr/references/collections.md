@@ -167,9 +167,9 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
 - `max()` and `min()` on a set walk every element in natural order, even on a `TreeSet`; its own least and greatest
   are `head()` and `last()`.
 - `TreeSet` and `TreeMap` decide membership with the comparator, not `equals`.
-- `LazyList`: the first element is computed when the `LazyList` is built; `size`, `last`, `reverse`,
-  `sorted`, `foldLeft`, `mkString` and `toVector` never return on an infinite one; it keeps every element it
-  computed.
+- `LazyList`: nothing is computed before it is read, not even the first element (`LazyList.defer(() -> ...)` for a
+  lazy first element too); `size`, `last`, `reverse`, `sorted`, `foldLeft`, `mkString` and `toVector` never return
+  on an infinite one; it keeps every element it computed, and every exception.
 - `Queue`'s amortised cost holds only when each `dequeue` works on the queue the previous one returned.
   `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
 - `List.size()` and `Queue.size()` are O(n); `isEmpty()` is O(1).
