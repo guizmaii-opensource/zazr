@@ -80,6 +80,7 @@ plugins:
       post_url_format: "{slug}"
       categories_allowed:
         - Announcements
+        - Testing
   # the pages that moved keep their old address
   - redirects:
       redirect_maps:

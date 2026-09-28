@@ -26,7 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * The fenced {@code java} blocks of docs/testing.md, pasted verbatim, compiled and run (zazr-core's
+ * The fenced {@code java} blocks of docs/testing.md and of the blog post docs/blog/posts/property-based-testing.md,
+ * pasted verbatim, compiled and run (zazr-core's
  * {@code DocsExamplesTest} cannot see zazr-test, which depends on zazr-core). {@code make docs-examples} fails when a
  * block of that page is missing from this file. Each test also checks the static types and the results the page
  * states in its comments, and the text blocks of the page.
@@ -398,5 +399,217 @@ public class DocsTestingExamplesTest {
                 2 law(s) failed:
                 mapIdentity: falsified at sample 5 by (Box[items=Vector(6)]): left = Box[items=Vector()], right = Box[items=Vector(6)] (seed 42, replay with -Dzazr.check.seed=42)
                 mapComposition: falsified at sample 7 by (Box[items=Vector(99, -6)], x -> -1 * x + -9, x -> -10 * x + 80): left = Box[items=Vector()], right = Box[items=Vector(1160)] (seed 42, replay with -Dzazr.check.seed=42)""");
+    }
+
+    /// The blog post "Property-based testing with zazr-test" (docs/blog/posts/property-based-testing.md). The
+    /// failures the post prints are checked with the seed 42, as the post says.
+    @Nested
+    class BlogPropertyBasedTesting {
+
+        static int midpoint(int a, int b) {
+            return (a + b) / 2;
+        }
+
+        private static final Gen<Integer> NATURALS = Gen.integers(0, Integer.MAX_VALUE);
+
+        @Nested
+        class ReverseTest {
+
+            @Test
+            void reversingTwiceGivesTheListBack() {
+                var lists = Gen.list(Gen.integers()); // Gen<List<Integer>>
+                Check.check(lists, list -> list.reverse().reverse().equals(list));
+            }
+        }
+
+        @Test
+        void whenAPropertyBreaks() {
+            class MidpointTest {
+
+                static int midpoint(int a, int b) {
+                    return (a + b) / 2;
+                }
+
+                @Test
+                void theMidpointIsBetweenItsArguments() {
+                    var naturals = Gen.integers(0, Integer.MAX_VALUE); // Gen<Integer>
+                    Check.check(naturals, naturals, (a, b) -> {
+                        var mid = midpoint(a, b);
+                        return mid >= Math.min(a, b) && mid <= Math.max(a, b);
+                    });
+                }
+            }
+
+            assertThatThrownBy(() -> new MidpointTest().theMidpointIsBetweenItsArguments())
+                    .isExactlyInstanceOf(AssertionError.class)
+                    .hasMessageStartingWith("falsified at sample ");
+            // the message Maven prints after "MidpointTest.theMidpointIsBetweenItsArguments:14 ", with the seed 42
+            assertThatThrownBy(() -> Check.check(CheckConfig.defaults().withSeed(42), NATURALS, NATURALS, (a, b) -> {
+                        var mid = midpoint(a, b);
+                        return mid >= Math.min(a, b) && mid <= Math.max(a, b);
+                    }))
+                    .isExactlyInstanceOf(AssertionError.class)
+                    .hasMessage(
+                            "falsified at sample 2 by (2147483647, 513683364) (seed 42, replay with -Dzazr.check.seed=42)");
+            // the fix the post gives
+            assertThat(Check.evaluate(CheckConfig.defaults().withSeed(42), NATURALS, NATURALS, (a, b) -> {
+                        var mid = a + (b - a) / 2;
+                        return mid >= Math.min(a, b) && mid <= Math.max(a, b);
+                    }))
+                    .isEqualTo(new CheckResult.Satisfied(200));
+        }
+
+        @Test
+        void generators() {
+            record User(String name, int age) {}
+
+            var names = Gen.alphaNumericStrings(); // Gen<String>
+            var ages = Gen.integers(0, 120); // Gen<Integer>
+            var users = names.zipWith(ages, User::new); // Gen<User>
+            var teams = Gen.vector(users); // Gen<Vector<User>>
+            var lookups = Gen.option(users); // Gen<Option<User>>
+            var byName = Gen.hashMap(names, users); // Gen<HashMap<String, User>>
+            Check.check(
+                    teams,
+                    team -> team.sortBy(User::age)
+                            .map(User::age)
+                            .equals(team.map(User::age).sorted()));
+
+            Gen<Vector<User>> typedTeams = teams;
+            Gen<Option<User>> typedLookups = lookups;
+            Gen<dev.zazr.collection.HashMap<String, User>> typedByName = byName;
+            assertThat(typedTeams.runCollectN(3, CheckConfig.defaults())).hasSize(3);
+            assertThat(typedLookups.runCollectN(3, CheckConfig.defaults())).hasSize(3);
+            assertThat(typedByName.runCollectN(3, CheckConfig.defaults())).hasSize(3);
+        }
+
+        @Test
+        void finiteGenerators() {
+            var days = Gen.fromIterable(EnumSet.allOf(DayOfWeek.class)); // Gen<DayOfWeek>
+            Check.checkAll(days, day -> DayOfWeek.of(day.getValue()) == day);
+
+            assertThat(Check.evaluateAll(days, day -> DayOfWeek.of(day.getValue()) == day))
+                    .isEqualTo(new CheckResult.Satisfied(7));
+        }
+
+        @Test
+        void assertionsThatExplainFailures() {
+            assertThatThrownBy(() -> {
+                        var naturals = Gen.integers(0, Integer.MAX_VALUE); // Gen<Integer>
+                        Check.check(
+                                naturals,
+                                naturals,
+                                (a, b) -> assertThat(midpoint(a, b), isWithin(Math.min(a, b), Math.max(a, b))));
+                    })
+                    .isExactlyInstanceOf(AssertionError.class);
+            assertThatThrownBy(() -> Check.check(
+                            CheckConfig.defaults().withSeed(42),
+                            NATURALS,
+                            NATURALS,
+                            (a, b) -> assertThat(midpoint(a, b), isWithin(Math.min(a, b), Math.max(a, b)))))
+                    .isExactlyInstanceOf(AssertionError.class)
+                    .hasMessage(
+                            "falsified at sample 2 by (2147483647, 513683364): -816900142 is not within 513683364 and 2147483647 (seed 42, replay with -Dzazr.check.seed=42)");
+        }
+
+        @Test
+        void combiningAssertions() {
+            // Assertion<Integer>
+            var percentage =
+                    isGreaterThanOrEqualTo(0).and(isLessThanOrEqualTo(100)).label("a percentage");
+            var result = assertThat(Vector.of(20, 150, -3), forall(percentage), hasSize(isLessThan(3)));
+
+            var scores = Gen.vector(Gen.integers(0, 100)); // Gen<Vector<Integer>>
+            Check.check(scores, forall(percentage), hasSize(isLessThanOrEqualTo(100)));
+
+            Assertion<Integer> typed = percentage;
+            assertThat(assertThat(150, typed))
+                    .isEqualTo(new TestResult.Failure("a percentage: 150 is greater than 100"));
+            assertThat(result).isEqualTo(new TestResult.Failure("""
+                    Vector(20, 150, -3) has 150 at index 1:
+                      a percentage: 150 is greater than 100
+                    Vector(20, 150, -3) has size 3:
+                      3 is not less than 3"""));
+            Gen<Vector<Integer>> typedScores = scores;
+            assertThat(Check.evaluate(typedScores, forall(percentage))).isEqualTo(new CheckResult.Satisfied(200));
+        }
+
+        @Test
+        void readingTheResult() {
+            var naturals = NATURALS;
+            var config = CheckConfig.defaults().withSeed(42); // CheckConfig
+            var result = Check.evaluate(config, naturals, naturals, (a, b) -> midpoint(a, b) >= 0); // CheckResult
+            var summary = switch (result) {
+                case CheckResult.Satisfied(var samples) -> "passed " + samples + " samples";
+                case CheckResult.Falsified(var sample, var seed, var counterexample, var _) ->
+                    "sample " + sample + " broke it: " + counterexample + ", seed " + seed;
+                case CheckResult.Erroneous(var sample, var _, var cause, var _) ->
+                    "sample " + sample + " threw " + cause;
+            };
+            // "sample 2 broke it: (2147483647, 513683364), seed 42"
+
+            assertThat(summary).isEqualTo("sample 2 broke it: (2147483647, 513683364), seed 42");
+            assertThat(result.isFalsified()).isTrue();
+        }
+
+        @Test
+        void replayingAFailure() {
+            var naturals = NATURALS;
+            assertThatThrownBy(() -> {
+                        var config = CheckConfig.defaults().withSeed(42); // CheckConfig
+                        Check.check(
+                                config, naturals, naturals, (a, b) -> midpoint(a, b) >= 0); // throws an AssertionError
+                    })
+                    .isExactlyInstanceOf(AssertionError.class)
+                    .hasMessage(
+                            "falsified at sample 2 by (2147483647, 513683364) (seed 42, replay with -Dzazr.check.seed=42)");
+        }
+
+        @Test
+        void lawsForYourOwnTypes() {
+            assertThatThrownBy(() -> {
+                        record Bag(Vector<?> items) {
+                            Bag map(Function<Object, Object> f) {
+                                return new Bag(items.map(f).distinct());
+                            }
+                        }
+                        var bags = new MapSubject<Bag>() {
+                            public Gen<Bag> values() {
+                                return Gen.vector(Gen.integers(0, 9)).map(Bag::new);
+                            }
+
+                            public Bag map(Bag bag, Function<Object, Object> f) {
+                                return bag.map(f);
+                            }
+                        }; // MapSubject<Bag>
+                        MapLaws.<Bag>all().assertSatisfied(bags); // throws an AssertionError
+                    })
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessageStartingWith("1 law(s) failed:\nmapIdentity: falsified at sample ");
+
+            // the same, with the seed 42 of the failure the post prints
+            assertThatThrownBy(() -> {
+                        record Bag(Vector<?> items) {
+                            Bag map(Function<Object, Object> f) {
+                                return new Bag(items.map(f).distinct());
+                            }
+                        }
+                        var bags = new MapSubject<Bag>() {
+                            public Gen<Bag> values() {
+                                return Gen.vector(Gen.integers(0, 9)).map(Bag::new);
+                            }
+
+                            public Bag map(Bag bag, Function<Object, Object> f) {
+                                return bag.map(f);
+                            }
+                        }; // MapSubject<Bag>
+                        MapLaws.<Bag>all()
+                                .assertSatisfied(bags, CheckConfig.defaults().withSeed(42)); // throws an AssertionError
+                    })
+                    .isInstanceOf(AssertionError.class)
+                    .hasMessage("""
+                    1 law(s) failed:
+                    mapIdentity: falsified at sample 13 by (Bag[items=Vector(9, 1, 2, 9, 8, 9)]): left = Bag[items=Vector(9, 1, 2, 8)], right = Bag[items=Vector(9, 1, 2, 9, 8, 9)] (seed 42, replay with -Dzazr.check.seed=42)""");
+        }
     }
 }
