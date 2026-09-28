@@ -69,7 +69,7 @@ Six types, all in `dev.zazr.test`:
 
 | Type | Role |
 |---|---|
-| `Gen<A>` | a generator of values of type `A`: scalars, combinators, and one generator per Zazr type |
+| `Gen<A>` | a generator of values of type `A`: scalars, combinators, and generators for the Zazr types |
 | `Check` | runs a property for 1 to 8 generators: `check`, `checkN` and `checkAll` fail the test when it breaks; `evaluate`, `evaluateN` and `evaluateAll` return the result |
 | `Assertion<A>` | a condition on an `A` that explains why a value breaks it: `equalTo`, `isGreaterThan`, `hasSize`, `isSome`, ... |
 | `TestResult` | the outcome of `assertThat(value, assertions...)`: a success, or a failure with its explanation |

@@ -103,8 +103,8 @@ A `Gen<A>` produces values of type `A`. The scalar generators have plural names,
 `integers()`, `longs()`, `doubles()`, `booleans()`, `chars()`, `strings()`, `alphaNumericStrings()`,
 `localDateTimes()`, most of them with a range.
 
-You build the generators of your own types from these. `map`, `zipWith` and `flatMap` combine them, and `Gen` has one
-generator per Zazr type, from `option` and `either` to `vector`, `hashMap` and `treeMap`. You pass it the generators
+You build the generators of your own types from these. `map`, `zipWith` and `flatMap` combine them, and `Gen` has a
+generator for the Zazr types, from `option` and `either` to `vector`, `hashMap` and `treeMap`. You pass it the generators
 of the elements.
 
 ```java
