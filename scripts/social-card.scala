@@ -10,10 +10,10 @@
 // https://github.com/rsms/inter/releases). OUTPUT defaults to docs/assets/social-card.png. The PNG is committed, so
 // the site build needs neither this script nor the fonts; run it again when the logo, the colours or the tagline change.
 //
-// The card: Zaz (docs/assets/zaz-512.png) on the left, and on the right the wordmark and the tagline, on
-// the espresso brown of the site header with the yuzu accent (docs/assets/zazr.css). The bottom left stays empty:
-// X lays the page title over it, and every network already shows the domain under the card. It is laid out on a 1200x630
-// grid and drawn at twice that size, so the text stays sharp when a network scales the card down or recompresses it.
+// The card: Zaz (docs/assets/zaz-512.png) on the left, and on the right the wordmark and the tagline, on the espresso
+// brown of the site header with the yuzu accent (docs/assets/zazr.css). The bottom left stays empty: X lays the page
+// title over it, and every network already shows the domain under the card. The card is laid out on a 1200x630 grid
+// and drawn at twice that size, so the text stays sharp when a network scales the card down or recompresses it.
 
 import java.awt.{Color, Font, RenderingHints}
 import java.awt.image.BufferedImage
