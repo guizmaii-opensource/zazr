@@ -18,12 +18,26 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
+      - name: Test the checker
+        run: python3 scripts/test_check_pr.py
+      # The checkout is the merge of the pull request into its base: ^1 is the base, ^2 the pull request's head.
+      # The checker and the template come from the base when it has them, so a pull request cannot loosen the check
+      # it is judged by.
       - name: Check the description and the commits
         env:
           BODY: ${{ github.event.pull_request.body }}
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
-          git log --format='%B%x00' "$BASE..$HEAD" > "$RUNNER_TEMP/commits.txt"
-          python3 scripts/check-pr.py --body "$RUNNER_TEMP/body.md" --commits "$RUNNER_TEMP/commits.txt"
+          git log --format='%B%x00' "HEAD^1..HEAD^2" > "$RUNNER_TEMP/commits.txt"
+          checker=scripts/check-pr.py
+          template=.github/pull_request_template.md
+          if git cat-file -e "HEAD^1:scripts/check-pr.py" 2>/dev/null \
+            && git cat-file -e "HEAD^1:.github/pull_request_template.md" 2>/dev/null; then
+            git show "HEAD^1:scripts/check-pr.py" > "$RUNNER_TEMP/check-pr.py"
+            git show "HEAD^1:.github/pull_request_template.md" > "$RUNNER_TEMP/pull_request_template.md"
+            checker="$RUNNER_TEMP/check-pr.py"
+            template="$RUNNER_TEMP/pull_request_template.md"
+          fi
+          python3 "$checker" --body "$RUNNER_TEMP/body.md" --commits "$RUNNER_TEMP/commits.txt" \
+            --template "$template"
