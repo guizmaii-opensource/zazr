@@ -47,8 +47,9 @@ review of their pull requests is not theirs to run (section 6).
    coordinator, with no further review. Every finding gets a written answer on the pull request: fixed (with the
    commit), kept (with the reason), or filed as a new issue (with its number).
 7. **Ready.** When the coordinator's check is clean and the last independent review found no correctness defect (or
-   its defects are fixed and checked), the coordinator comments "Ready to merge" on the pull request and tells the
-   maintainer.
+   its defects are fixed and checked), the coordinator checks the pull request's trail (section 7) and comments
+   "Ready to merge" on the pull request, with a link to each item of the trail, then tells the maintainer. The
+   maintainer merges only a pull request with that comment.
 8. **After the merge.** Check `main`'s CI. Find the open pull requests that now conflict and have their implementers
    merge `main` in (a merge commit). Update the tracker.
 
@@ -153,7 +154,10 @@ The trail a finished pull request leaves, in order:
 6. a written answer to every finding;
 7. the "Ready to merge" comment.
 
-The maintainer checks that this trail is complete before merging.
+Checking the trail is the coordinator's job, on the maintainer's side: before its "Ready to merge" comment, it
+confirms every item is there and links each one in that comment (the ticket, the CI run, each review, each answer to
+a finding). A contributor's pull request is checked by the maintainer's coordinator, never by the contributor's
+own. Anything missing sends the pull request back, and the comment says what is missing.
 
 ## 8. Tickets, trackers and decisions
 
