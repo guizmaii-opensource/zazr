@@ -19,15 +19,6 @@ var best = NonEmptyVector.of(7, 3, 9).max(Integer::compare); // Integer
 
 <!-- /hero -->
 
-<div class="zz-section zz-status" markdown>
-
-!!! warning "Pre-1.0 and changing fast"
-
-    The current release is 0.1.0. The API may still change between releases before 1.0: the
-    [release notes](https://github.com/guizmaii-opensource/zazr/releases) list every change.
-
-</div>
-
 <div class="zz-section" markdown>
 
 ## What Zazr is { .zz-kicker }
