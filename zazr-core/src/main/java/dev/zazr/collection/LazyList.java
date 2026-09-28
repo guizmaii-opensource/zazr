@@ -106,6 +106,13 @@ import org.jspecify.annotations.Nullable;
  * exception is kept in its place, and every later read of that place throws the same exception instead of computing
  * it again, so a LazyList read from a one-shot source never skips or reorders an element. Only a
  * {@link VirtualMachineError}, such as a stack overflow, is not kept.
+ * <p>
+ * A chain of lazy operations built without reading anything ({@code map}, {@code filter}, {@code take},
+ * {@code defer} inside {@code defer}, ...) is evaluated recursively on the first read, one level of the chain inside
+ * the next, as Scala's {@code LazyList} does: a chain of thousands of such operations can overflow the stack then.
+ * A {@link StackOverflowError} is not kept, so reading again on a thread with a bigger stack works. {@code drop} of a
+ * {@code drop} not read yet is one {@code drop}, so a chain of drops has no such limit, and a loop of
+ * {@code append}, {@code appendAll} or {@code prependAll} has none either.
  *
  * @param <T> component type of this LazyList
  * @author Daniel Dietrich, Jörgen Andersson, Ruslan Sennov
@@ -383,6 +390,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * <pre>{@code  LazyList.of(1, 2, 3, 4)
      * = empty().prepend(4).prepend(3).prepend(2).prepend(1)
      * = LazyList.cons(1, () -> LazyList.cons(2, () -> LazyList.cons(3, () -> LazyList.cons(4, LazyList::empty))))}</pre>
+     * <p>
+     * Complexity: O(n) now, to copy the array and check it for nulls; the elements are read from the copy, so changing
+     * the array afterwards does not change the list.
      *
      * @param <T>      Component type of the LazyList.
      * @param elements Zero or more elements.
@@ -391,10 +401,12 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     @SafeVarargs
     static <T extends @Nullable Object> LazyList<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        for (T element : elements) {
+        // a copy, checked after it is taken: changing the array later changes nothing in the list
+        T[] copy = elements.clone();
+        for (T element : copy) {
             Objects.requireNonNull(element, "LazyList.of: element is null");
         }
-        if (elements.length == 0) {
+        if (copy.length == 0) {
             return empty();
         }
         return LazyList.ofAll(new Iterator<T>() {
@@ -402,12 +414,12 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
 
             @Override
             public boolean hasNext() {
-                return i < elements.length;
+                return i < copy.length;
             }
 
             @Override
             public T next() {
-                return elements[i++];
+                return copy[i++];
             }
         });
     }
@@ -1765,14 +1777,14 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: lazy; nothing is computed now. Reading the first element computes the k dropped elements and the first
-     * one kept, O(k); the rest are computed when the result reaches them.
+     * one kept, O(k); the rest are computed when the result reaches them. A drop of a drop not read yet is one drop of
+     * the sum, so a chain of drops is read at the stack depth of one.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
      */
-    @SuppressWarnings("Var")
     default LazyList<T> drop(int n) {
-        return n <= 0 || LazyCell.knownIsEmpty(this) ? this : lazily(() -> LazyListModule.dropNow(this, n));
+        return n <= 0 || LazyCell.knownIsEmpty(this) ? this : LazyCell.drop(this, n);
     }
 
     /**
@@ -3050,12 +3062,15 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n), because the
-     * last elements are found by walking to the end.
+     * last elements are found by walking to the end. For {@code n <= 0}, the empty LazyList, and nothing is read.
      *
      * @param n the number of elements to take from the end
      * @return a new {@code LazyList} containing the last {@code n} elements
      */
     default LazyList<T> takeRight(int n) {
+        if (n <= 0) {
+            return empty();
+        }
         return lazilyUnlessEmpty(() -> {
             @SuppressWarnings("Var")
             LazyList<T> right = this;
@@ -3157,10 +3172,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     default LazyList<T> update(int index, T element) {
-        if (index < 0) {
-            throw new IndexOutOfBoundsException("update(" + index + ", e)");
-        } else if (LazyCell.knownIsEmpty(this)) {
+        if (LazyCell.knownIsEmpty(this)) {
             throw new IndexOutOfBoundsException("update(" + index + ", e) on Nil");
+        } else if (index < 0) {
+            throw new IndexOutOfBoundsException("update(" + index + ", e)");
         }
         return LazyListModule.updated(this, index, index, ignored -> element);
     }
@@ -3178,10 +3193,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default LazyList<T> update(int index, Function<? super T, ? extends T> updater) {
         Objects.requireNonNull(updater, "updater is null");
-        if (index < 0) {
-            throw new IndexOutOfBoundsException("update(" + index + ", e)");
-        } else if (LazyCell.knownIsEmpty(this)) {
+        if (LazyCell.knownIsEmpty(this)) {
             throw new IndexOutOfBoundsException("update(" + index + ", e) on Nil");
+        } else if (index < 0) {
+            throw new IndexOutOfBoundsException("update(" + index + ", e)");
         }
         return LazyListModule.updated(this, index, index, updater);
     }
@@ -3620,7 +3635,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException   if {@code op} is null
      */
     default T reduce(BiFunction<? super T, ? super T, ? extends T> op) {
-        return TraversableModule.reduceLeft(this, op);
+        return reduceLeft(op);
     }
 
     /**
@@ -3764,6 +3779,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @throws NullPointerException   if {@code op} is null
      */
     default T reduceLeft(BiFunction<? super T, ? super T, ? extends T> op) {
+        Objects.requireNonNull(op, "op is null");
+        if (isEmpty()) {
+            throw new NoSuchElementException("reduceLeft on empty Empty");
+        }
         return TraversableModule.reduceLeft(this, op);
     }
 

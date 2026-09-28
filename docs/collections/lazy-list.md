@@ -75,5 +75,9 @@ Every method: [complexity page](complexity.md#lazylist).
 - When computing an element throws, the `LazyList` keeps the exception in its place: reading that element again throws
   the same exception, and never skips to the next one. Only a `VirtualMachineError`, such as a stack overflow, lets a
   later read try again.
+- A chain of thousands of lazy operations (`map`, `filter`, `take`, `defer` inside `defer`) built without reading
+  anything is evaluated recursively on the first read, as in Scala, and can overflow the stack then. Reading as you
+  go, or reading on a thread with a bigger stack, avoids it. A chain of `drop`s, or a loop of `append` or
+  `appendAll`, has no such limit.
 - A `LazyList` keeps every element it computed. Holding on to the start of a long `LazyList` while walking it keeps all
   of it in memory.

@@ -1321,6 +1321,16 @@ library, which Scala 3 ships unchanged):
 - **Identity.** An operation on a list already known to be empty returns `empty()` without evaluating; otherwise the
   result is a new cell, even when it turns out equal to the receiver (`orElse` on a non-empty list, `rotateLeft` by the
   length), since deciding would evaluate. `toString` never evaluates: `LazyList(?)` for an unevaluated list.
+- **Stack depth (decided 2026-09-28): copy what Scala does.** A chain of lazy operations built without reading
+  (`map`, `filter`, `take`, `defer` inside `defer`) is evaluated recursively on the first read, one level inside the
+  next, so a chain of a few thousand levels overflows the stack there, as in Scala 2.13.18 (the strict head of the old
+  `Stream` made `main` read such chains shallowly). It is documented on the page and in the javadoc, not worked
+  around. `drop` must not be worse than Scala's: its cell skips the elements itself (no lambda or helper frame per
+  level), and a `drop` of a `drop` not read yet is one `drop` of the sum (not collapsed when the sum passes
+  `Integer.MAX_VALUE`, since saturating would drop too few elements of an infinite list), so a chain of drops reads at
+  the depth of one. `defer` inside `defer` is not collapsed: the inner list is known only once the supplier runs, and
+  flattening it then would evaluate the inner cell outside its lock. `of(T...)` copies its array at the call, and
+  `takeRight(n <= 0)` returns `empty()` without reading, as Scala.
 
 ### 3.8 `Vector` builder
 

@@ -7,10 +7,13 @@ import org.jspecify.annotations.Nullable;
 
 public interface LazyListModule {
 
-    // whether elements is known to be empty without reading anything: an evaluated empty LazyList, or an empty
-    // collection whose emptiness is stored (Scala's knownSize == 0)
+    // whether elements is known to be empty without reading anything: an evaluated empty LazyList (or its asJava()
+    // view), or an empty collection whose emptiness is stored (Scala's knownSize == 0)
     static boolean knownIsEmpty(Iterable<?> elements) {
         if (elements instanceof LazyList<?> list) {
+            return LazyCell.knownIsEmpty(list);
+        } else if (JavaConverters.underlying(elements) instanceof LazyList<?> list) {
+            // the asJava() view of a LazyList: asking the view whether it is empty would evaluate the list
             return LazyCell.knownIsEmpty(list);
         } else if (elements instanceof java.util.Collection<?> collection) {
             return collection.isEmpty();
@@ -29,16 +32,6 @@ public interface LazyListModule {
                 LazyList.defer(() -> list.isEmpty()
                         ? LazyList.empty()
                         : scanned(list.tail(), operation.apply(acc, list.head()), operation)));
-    }
-
-    // the list without its first n > 0 elements, evaluating them now
-    @SuppressWarnings("Var")
-    static <T extends @Nullable Object> LazyList<T> dropNow(LazyList<T> list, int n) {
-        LazyList<T> rest = list;
-        for (int i = 0; i < n && !rest.isEmpty(); i++) {
-            rest = rest.tail();
-        }
-        return rest;
     }
 
     // the elements of the non-empty list but its last one, each evaluated when the result reaches it
