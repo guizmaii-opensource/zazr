@@ -93,8 +93,8 @@ var passed = scores.filter(s -> s > 5);     // Vector<Integer>: may be empty, so
 
 ## Every collection states its cost
 
-Each Zazr collection declares its own operations, with no shared sequence interface, and every positional
-operation documents its cost. The [complexity page](collections/complexity.md) lists them all in one place,
+Each Zazr sequence declares its own positional operations, with no shared sequence interface, and each of them
+documents its cost. The [complexity page](collections/complexity.md) lists them all in one place,
 so you can choose a collection for what you do with it.
 
 ## Order is only promised where it exists
