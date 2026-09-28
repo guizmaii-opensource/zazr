@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Every fenced {@code java} block of the Agent Skill under skills/zazr (except references/functional-java.md, whose
@@ -189,6 +190,21 @@ public class SkillExamplesTest {
             assertThat(split).isEqualTo(new Tuple2<>(List.of(2, 4), List.of("odd 1", "odd 3")));
             assertThat(pears).isEqualTo(Option.some(5));
             assertThat(kiwis).isEqualTo(0);
+        }
+
+        @Test
+        void sumsProductsAndAverages() {
+            var words = List.of("one", "three", "five");
+            var letters = words.sumInt(String::length); // int
+            var mean = words.average(String::length); // Option<Double>
+            var big = Vector.of(Integer.MAX_VALUE, 1).sumLong(n -> n); // long
+            // 12, Some(4.0), 2147483648
+
+            assertThat(letters).isEqualTo(12);
+            assertThat(mean).isEqualTo(Option.some(4.0));
+            assertThat(big).isEqualTo(2_147_483_648L);
+            assertThatThrownBy(() -> Vector.of(Integer.MAX_VALUE, 1).sumInt(n -> n))
+                    .isInstanceOf(ArithmeticException.class);
         }
 
         @Test

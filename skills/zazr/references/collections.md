@@ -66,6 +66,19 @@ var kiwis = stock.getOrElse("kiwi", 0);  // Integer
 // split is (List(2, 4), List(odd 1, odd 3)), pears is Some(5), kiwis is 0
 ```
 
+Sums, products and averages take the function that reads the number from an element, and its type picks the
+arithmetic: `sumInt`, `sumLong`, `sumDouble`, `productInt`, `productLong`, `productDouble` return the primitive,
+`average` an `Option<Double>` (a `double` on `NonEmptyVector`, `NonEmptySet` and `NonEmptySortedSet`). The `int` and
+`long` forms throw an `ArithmeticException` when the result does not fit; there is no untyped `sum()`.
+
+```java
+var words   = List.of("one", "three", "five");
+var letters = words.sumInt(String::length);                     // int
+var mean    = words.average(String::length);                    // Option<Double>
+var big     = Vector.of(Integer.MAX_VALUE, 1).sumLong(n -> n);  // long
+// 12, Some(4.0), 2147483648
+```
+
 A map is a collection of `Tuple2<K, V>` entries. `get` returns an `Option`; `map`, `filter` and `forEach` on a
 map take a function of the key and the value; `mapValues` and `filterKeys` work on one side; `keySet()` gives a set
 and `values()` a `Vector`.
@@ -101,7 +114,7 @@ A sequence with at least one element, backed by a `Vector`. Parse into it instea
 - Build: `NonEmptyVector.of(head, rest...)`, `single(a)`, `fromIterable(head, tail)`; from something that may be
   empty, `vector.toNonEmptyVector()`, `NonEmptyVector.fromVector(v)` or `fromIterable(it)`, all returning an
   `Option`. `unsafeFromVector` throws on an empty `Vector`.
-- Total: `head`, `last`, `max(comparator)`, `min`, `reduce`, `average` return the value, not an `Option`.
+- Total: `head`, `last`, `max(comparator)`, `min`, `reduce`, `average(mapper)` return the value, not an `Option`.
 - The return type says whether the result can be empty: `map`, `append`, `sorted`, `distinct` return a
   `NonEmptyVector`; `filter`, `tail`, `take`, `drop` return a `Vector`; `tailNonEmpty()` returns an `Option`.
 - `zip` and `crossProduct` return a `NonEmptyVector` when given a `NonEmptyVector`, and a `Vector` when given any

@@ -55,9 +55,9 @@ var rest  = NonEmptyVector.of(1).tailNonEmpty();                 // Option<NonEm
 
 ```java
 var xs      = NonEmptyVector.of(1, 2, 3, 4);
-var halves  = xs.splitAt(2);  // Tuple2<Vector<Integer>, Vector<Integer>>
-var windows = xs.sliding(3);  // Vector<NonEmptyVector<Integer>>
-var mean    = xs.average();   // double
+var halves  = xs.splitAt(2);                     // Tuple2<Vector<Integer>, Vector<Integer>>
+var windows = xs.sliding(3);                     // Vector<NonEmptyVector<Integer>>
+var mean    = xs.average(Integer::doubleValue);  // double
 // (Vector(1, 2), Vector(3, 4)), Vector(NonEmptyVector(1, 2, 3), NonEmptyVector(2, 3, 4)), 2.5
 ```
 

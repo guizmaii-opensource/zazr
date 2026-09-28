@@ -37,7 +37,7 @@ public class Euler28Test {
     }
 
     private static long sumOfDiagonalInSpiralWithSide(long maxSideLength) {
-        return diagonalNumbersInSpiralWithSide(maxSideLength).sum().longValue();
+        return diagonalNumbersInSpiralWithSide(maxSideLength).sumLong(Number::longValue);
     }
 
     private static LazyList<Long> diagonalNumbersInSpiralWithSide(long maxSideLength) {

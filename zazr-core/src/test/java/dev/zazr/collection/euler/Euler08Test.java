@@ -49,7 +49,7 @@ public class Euler08Test {
     private static long largestProductOfConsecutives(int sizeOfConsecutive, String num) {
         return digits(num)
                 .sliding(sizeOfConsecutive)
-                .map(List::product)
+                .map(window -> window.productLong(Number::longValue))
                 .max()
                 .get()
                 .longValue();

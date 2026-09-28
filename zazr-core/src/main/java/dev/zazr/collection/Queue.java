@@ -3125,40 +3125,104 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * The sum of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
-     * {@code Long} are summed as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
-     * arithmetic, any other {@code Number} as a {@code double} with Neumaier compensation. The arithmetic is chosen
-     * from the first element. {@code 0} on an empty Queue.
+     * The sum of the {@code int} values {@code mapper} gives for the elements; {@code 0} on an empty Queue.
+     * <p>
+     * The sum is exact: it throws when the result does not fit in an {@code int}, and only then, whatever the order of
+     * the elements. {@link #sumLong} gives a wider result.
      *
+     * @param mapper gives the value of an element
      * @return the sum
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     * @throws ArithmeticException if the sum does not fit in an {@code int}
+     * @throws NullPointerException if {@code mapper} is null
      */
-    public Number sum() {
-        return TraversableModule.sum(this);
+    public int sumInt(ToIntFunction<? super T> mapper) {
+        return TraversableModule.sumInt(this, mapper);
     }
 
     /**
-     * The product of the elements, which must be {@link Number}s: {@code Byte}, {@code Short}, {@code Integer} and
-     * {@code Long} are multiplied as a {@code long}, {@code BigInteger} and {@code BigDecimal} with their own
-     * arithmetic, any other {@code Number} as a {@code double}. The arithmetic is chosen from the first element.
-     * {@code 1} on an empty Queue.
+     * The sum of the {@code long} values {@code mapper} gives for the elements; {@code 0} on an empty Queue.
+     * <p>
+     * The sum is exact: it throws when the result does not fit in a {@code long}, and only then, whatever the order
+     * of the elements.
      *
+     * @param mapper gives the value of an element
+     * @return the sum
+     * @throws ArithmeticException if the sum does not fit in a {@code long}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public long sumLong(ToLongFunction<? super T> mapper) {
+        return TraversableModule.sumLong(this, mapper);
+    }
+
+    /**
+     * The sum of the {@code double} values {@code mapper} gives for the elements; {@code 0.0} on an empty Queue.
+     * <p>
+     * The values are added with Neumaier compensation, so the rounding error does not grow with the number of
+     * elements. The sum is {@code NaN} when a value is {@code NaN} or when both infinities appear, and infinite when a
+     * value is infinite or a partial sum overflows.
+     *
+     * @param mapper gives the value of an element
+     * @return the sum
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public double sumDouble(ToDoubleFunction<? super T> mapper) {
+        return TraversableModule.sumDouble(this, mapper);
+    }
+
+    /**
+     * The product of the {@code int} values {@code mapper} gives for the elements; {@code 1} on an empty Queue.
+     * <p>
+     * The product is exact: it throws when the result does not fit in an {@code int}, and only then, whatever the
+     * order of the elements (a zero value makes it {@code 0}). {@link #productLong} gives a wider result.
+     *
+     * @param mapper gives the value of an element
      * @return the product
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     * @throws ArithmeticException if the product does not fit in an {@code int}
+     * @throws NullPointerException if {@code mapper} is null
      */
-    public Number product() {
-        return TraversableModule.product(this);
+    public int productInt(ToIntFunction<? super T> mapper) {
+        return TraversableModule.productInt(this, mapper);
     }
 
     /**
-     * The average of the elements, which must be {@link Number}s, summed as {@code double}s with Neumaier
-     * compensation.
+     * The product of the {@code long} values {@code mapper} gives for the elements; {@code 1} on an empty Queue.
+     * <p>
+     * The product is exact: it throws when the result does not fit in a {@code long}, and only then, whatever the
+     * order of the elements (a zero value makes it {@code 0}).
      *
-     * @return {@code Some(average)} if there is an element, {@code None} otherwise
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws ArithmeticException if the product does not fit in a {@code long}
+     * @throws NullPointerException if {@code mapper} is null
      */
-    public Option<Double> average() {
-        return TraversableModule.average(this);
+    public long productLong(ToLongFunction<? super T> mapper) {
+        return TraversableModule.productLong(this, mapper);
+    }
+
+    /**
+     * The product of the {@code double} values {@code mapper} gives for the elements; {@code 1.0} on an empty Queue.
+     * <p>
+     * The values are multiplied in iteration order with the rounding of {@code double}: infinite on overflow,
+     * {@code NaN} when a value is {@code NaN} or when a zero meets an infinity.
+     *
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public double productDouble(ToDoubleFunction<? super T> mapper) {
+        return TraversableModule.productDouble(this, mapper);
+    }
+
+    /**
+     * The mean of the {@code double} values {@code mapper} gives for the elements: their sum, as {@link #sumDouble}
+     * computes it, divided by their number.
+     *
+     * @param mapper gives the value of an element
+     * @return {@code Some(mean)}, or {@code None} on an empty Queue
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public Option<Double> average(ToDoubleFunction<? super T> mapper) {
+        return TraversableModule.average(this, mapper);
     }
 
     /**

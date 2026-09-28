@@ -1064,7 +1064,7 @@ public class DocsExamplesTest {
             var xs = NonEmptyVector.of(1, 2, 3, 4);
             var halves = xs.splitAt(2); // Tuple2<Vector<Integer>, Vector<Integer>>
             var windows = xs.sliding(3); // Vector<NonEmptyVector<Integer>>
-            var mean = xs.average(); // double
+            var mean = xs.average(Integer::doubleValue); // double
             // (Vector(1, 2), Vector(3, 4)), Vector(NonEmptyVector(1, 2, 3), NonEmptyVector(2, 3, 4)), 2.5
 
             assertThat(halves).hasToString("(Vector(1, 2), Vector(3, 4))");
@@ -1160,6 +1160,21 @@ public class DocsExamplesTest {
             assertThat(sortedList).hasToString("List(1, 2, 3)");
             assertThat(set).isEqualTo(HashSet.of(1, 2, 3));
             assertThat(same).isTrue();
+        }
+
+        @Test
+        void sumsProductsAndAverages() {
+            var words = List.of("one", "three", "five");
+            var letters = words.sumInt(String::length); // int
+            var mean = words.average(String::length); // Option<Double>
+            var big = Vector.of(Integer.MAX_VALUE, 1).sumLong(n -> n); // long
+            // 12, Some(4.0), 2147483648
+
+            assertThat(letters).isEqualTo(12);
+            assertThat(mean).isEqualTo(Option.some(4.0));
+            assertThat(big).isEqualTo(2_147_483_648L);
+            assertThatThrownBy(() -> Vector.of(Integer.MAX_VALUE, 1).sumInt(n -> n))
+                    .isInstanceOf(ArithmeticException.class);
         }
 
         @Test

@@ -14,6 +14,9 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
@@ -877,30 +880,101 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * @return the sum of the elements, which must be {@link Number}s, with the arithmetic of {@link TreeSet#sum()}
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
-     */
-    public Number sum() {
-        return set.sum();
-    }
-
-    /**
-     * @return the product of the elements, which must be {@link Number}s, with the arithmetic of
-     *         {@link TreeSet#product()}
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
-     */
-    public Number product() {
-        return set.product();
-    }
-
-    /**
-     * The average of the elements, which must be {@link Number}s: the value {@link TreeSet#average()} holds.
+     * The sum of the {@code int} values {@code mapper} gives for the elements, exact as {@link TreeSet#sumInt}.
+     * <p>
+     * Complexity: O(n).
      *
-     * @return the average
-     * @throws UnsupportedOperationException if an element is not a {@code Number}
+     * @param mapper gives the value of an element
+     * @return the sum
+     * @throws ArithmeticException if the sum does not fit in an {@code int}
+     * @throws NullPointerException if {@code mapper} is null
      */
-    public double average() {
-        return NonEmptyModule.average(set);
+    public int sumInt(ToIntFunction<? super A> mapper) {
+        return set.sumInt(mapper);
+    }
+
+    /**
+     * The sum of the {@code long} values {@code mapper} gives for the elements, exact as {@link TreeSet#sumLong}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the sum
+     * @throws ArithmeticException if the sum does not fit in a {@code long}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public long sumLong(ToLongFunction<? super A> mapper) {
+        return set.sumLong(mapper);
+    }
+
+    /**
+     * The sum of the {@code double} values {@code mapper} gives for the elements, with the Neumaier compensation of
+     * {@link TreeSet#sumDouble}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the sum
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public double sumDouble(ToDoubleFunction<? super A> mapper) {
+        return set.sumDouble(mapper);
+    }
+
+    /**
+     * The product of the {@code int} values {@code mapper} gives for the elements, exact as {@link TreeSet#productInt}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws ArithmeticException if the product does not fit in an {@code int}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public int productInt(ToIntFunction<? super A> mapper) {
+        return set.productInt(mapper);
+    }
+
+    /**
+     * The product of the {@code long} values {@code mapper} gives for the elements, exact as
+     * {@link TreeSet#productLong}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws ArithmeticException if the product does not fit in a {@code long}
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public long productLong(ToLongFunction<? super A> mapper) {
+        return set.productLong(mapper);
+    }
+
+    /**
+     * The product of the {@code double} values {@code mapper} gives for the elements, as {@link TreeSet#productDouble}.
+     * <p>
+     * Complexity: O(n).
+     *
+     * @param mapper gives the value of an element
+     * @return the product
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public double productDouble(ToDoubleFunction<? super A> mapper) {
+        return set.productDouble(mapper);
+    }
+
+    /**
+     * The mean of the {@code double} values {@code mapper} gives for the elements: the value {@link TreeSet#average}
+     * holds, without the {@code Option}.
+     * <p>
+     * Complexity: O(n), one compensated pass.
+     *
+     * @param mapper gives the value of an element
+     * @return the mean
+     * @throws NullPointerException if {@code mapper} is null
+     */
+    public double average(ToDoubleFunction<? super A> mapper) {
+        return NonEmptyModule.average(set, mapper);
     }
 
     /**

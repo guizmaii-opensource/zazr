@@ -835,9 +835,13 @@ Every method costs what the same method of the wrapped Vector costs; wrapping an
 | `maxBy(Comparator<? super A>)` | <abbr class="cx cx-linear" title="O(n), every element compared once, as max.">O(n)</abbr> | O(n), every element compared once, as max. |
 | `minBy(Comparator<? super A>)` | <abbr class="cx cx-linear" title="O(n), every element compared once, as min.">O(n)</abbr> | O(n), every element compared once, as min. |
 | `fold(A, BiFunction<? super A, ? super A, ? extends A>)` | <abbr class="cx cx-linear" title="O(n), as Vector.fold.">O(n)</abbr> | O(n), as Vector.fold. |
-| `sum()` | <abbr class="cx cx-linear" title="O(n), as Vector.sum.">O(n)</abbr> | O(n), as Vector.sum. |
-| `product()` | <abbr class="cx cx-linear" title="O(n), as Vector.product.">O(n)</abbr> | O(n), as Vector.product. |
-| `average()` | <abbr class="cx cx-linear" title="O(n), one compensated pass.">O(n)</abbr> | O(n), one compensated pass. |
+| `sumInt(ToIntFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `sumLong(ToLongFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `sumDouble(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productInt(ToIntFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productLong(ToLongFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productDouble(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `average(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n), one compensated pass.">O(n)</abbr> | O(n), one compensated pass. |
 | `single()` | <abbr class="cx cx-constant" title="O(1).">O(1)</abbr> | O(1). |
 | `arrangeBy(Function<? super A, ? extends K>)` | <abbr class="cx cx-linear" title="O(n), as Vector.arrangeBy.">O(n)</abbr> | O(n), as Vector.arrangeBy. |
 | `forEachWithIndex(ObjIntConsumer<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
@@ -1039,6 +1043,13 @@ The methods without a note of their own are O(n) at most, one walk over the elem
 | `diff(Set<? extends A>)` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements, as HashSet.diff.">O(n + m)</abbr> | O(n + m) for a set of m elements, as HashSet.diff. |
 | `max()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `min()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
+| `sumInt(ToIntFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `sumLong(ToLongFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `sumDouble(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productInt(ToIntFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productLong(ToLongFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productDouble(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `average(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n), one compensated pass.">O(n)</abbr> | O(n), one compensated pass. |
 | `size()` | <abbr class="cx cx-constant" title="O(1): the size is stored.">O(1)</abbr> | O(1): the size is stored. |
 | `contains(A)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashSet.contains.">effectively O(1)</abbr> | effectively O(1), as HashSet.contains. |
 | `iterator()` | <abbr class="cx cx-constant" title="O(1) to create; a whole walk is O(n), as HashSet.iterator.">O(1)</abbr> | O(1) to create; a whole walk is O(n), as HashSet.iterator. |
@@ -1082,6 +1093,13 @@ The methods without a note of their own are O(n) at most, one walk over the elem
 | `last()` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeSet.last.">O(log n)</abbr> | O(log n), as TreeSet.last. |
 | `max()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `min()` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
+| `sumInt(ToIntFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `sumLong(ToLongFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `sumDouble(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productInt(ToIntFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productLong(ToLongFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `productDouble(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
+| `average(ToDoubleFunction<? super A>)` | <abbr class="cx cx-linear" title="O(n), one compensated pass.">O(n)</abbr> | O(n), one compensated pass. |
 | `size()` | <abbr class="cx cx-constant" title="O(1): the size is stored.">O(1)</abbr> | O(1): the size is stored. |
 | `contains(A)` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeSet.contains.">O(log n)</abbr> | O(log n), as TreeSet.contains. |
 | `iterator()` | <abbr class="cx cx-constant" title="O(1) to create; a whole walk is O(n), in the comparator's order.">O(1)</abbr> | O(1) to create; a whole walk is O(n), in the comparator's order. |

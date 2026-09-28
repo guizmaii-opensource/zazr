@@ -208,8 +208,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         int actual = number2numberMap
                 .put(new BigDecimal("2"), new BigDecimal("2.0"))
                 .values()
-                .sum()
-                .intValue();
+                .sumInt(Number::intValue);
         assertThat(actual).isEqualTo(3);
     }
 
@@ -2436,8 +2435,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             int actual = number2numberMap
                     .put(new BigDecimal("2"), new BigDecimal("2.0"))
                     .values()
-                    .sum()
-                    .intValue();
+                    .sumInt(Number::intValue);
             assertThat(actual).isEqualTo(3);
         }
     }
