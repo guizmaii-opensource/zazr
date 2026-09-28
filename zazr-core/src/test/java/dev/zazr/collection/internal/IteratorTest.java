@@ -562,15 +562,16 @@ class IteratorTest {
                 .isEqualTo(6);
     }
 
-    // -- static unfold, unfoldLeft, unfoldRight
+    // -- static unfold
 
     @Nested
-    class UnfoldrightTests {
+    class UnfoldTests {
+
         @Test
-        void shouldUnfoldRightLazily() {
+        void shouldUnfoldLazily() {
             AtomicInteger calls = new AtomicInteger();
 
-            Iterator<Integer> it = Iterator.unfoldRight(1, i -> {
+            Iterator<Integer> it = Iterator.unfold(1, i -> {
                 calls.incrementAndGet();
                 return i <= 3 ? Option.some(Tuple.of(i, i + 1)) : Option.none();
             });
@@ -600,37 +601,27 @@ class IteratorTest {
         }
 
         @Test
-        public void shouldUnfoldRightToEmpty() {
-            assertThat(list(Iterator.unfoldRight(0, x -> Option.none()))).isEqualTo(List.empty());
-        }
-
-        @Test
-        public void shouldUnfoldRightSimpleList() {
-            assertThat(list(Iterator.unfoldRight(
-                            10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1)))))
-                    .isEqualTo(List.of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
-        }
-
-        @Test
-        public void shouldUnfoldLeftToEmpty() {
-            assertThat(list(Iterator.unfoldLeft(0, x -> Option.none()))).isEqualTo(List.empty());
-        }
-
-        @Test
-        public void shouldUnfoldLeftSimpleList() {
-            assertThat(list(Iterator.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x)))))
-                    .isEqualTo(List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
-        }
-
-        @Test
         public void shouldUnfoldToEmpty() {
             assertThat(list(Iterator.unfold(0, x -> Option.none()))).isEqualTo(List.empty());
         }
 
         @Test
-        public void shouldUnfoldSimpleList() {
-            assertThat(list(Iterator.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x)))))
-                    .isEqualTo(List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        public void shouldUnfoldElementFirstInTheOrderProduced() {
+            assertThat(list(Iterator.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x, x - 1)))))
+                    .isEqualTo(List.of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
+        }
+
+        @Test
+        public void shouldUnfoldWithAStateOfAnotherType() {
+            assertThat(list(Iterator.unfold(1, i -> i > 3 ? Option.none() : Option.some(Tuple.of("#" + i, i + 1)))))
+                    .isEqualTo(List.of("#1", "#2", "#3"));
+        }
+
+        @Test
+        public void shouldRejectANullResultFromF() {
+            Iterator<Integer> it = Iterator.unfold(0, x -> null);
+            assertThatNullPointerException().isThrownBy(it::hasNext).withMessage("Iterator.unfold: f returned null");
+            assertThatNullPointerException().isThrownBy(it::hasNext).withMessage("Iterator.unfold: f returned null");
         }
     }
 
@@ -1801,11 +1792,7 @@ class IteratorTest {
         multipleHasNext(() -> Iterator.iterate(1, i -> i + 1), 5);
         multipleHasNext(() -> Iterator.iterate(new OptionSupplier(1)), 5);
         multipleHasNext(() -> Iterator.tabulate(10, i -> i + 1));
-        multipleHasNext(() -> Iterator.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))));
-        multipleHasNext(() ->
-                Iterator.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))));
-        multipleHasNext(() ->
-                Iterator.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))));
+        multipleHasNext(() -> Iterator.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))));
 
         multipleHasNext(() -> Iterator.range('a', 'd'));
         multipleHasNext(() -> Iterator.range(1, 4));
@@ -2051,7 +2038,7 @@ class IteratorTest {
     public void shouldRejectNullResultOnUnfold() {
         assertThatNullPointerException()
                 .isThrownBy(() ->
-                        Iterator.unfold(1, i -> Option.some(Tuple.of(i, null))).toList());
+                        Iterator.unfold(1, i -> Option.some(Tuple.of(null, i))).toList());
     }
 
     @Test
@@ -2119,7 +2106,7 @@ class IteratorTest {
     @Test
     public void shouldRejectNullFromUnfoldAtTheFunnel() {
         assertThatNullPointerException()
-                .isThrownBy(() -> Iterator.unfold(1, i -> Option.some(Tuple.of(i, (Integer) null)))
+                .isThrownBy(() -> Iterator.unfold(1, i -> Option.some(Tuple.of((Integer) null, i)))
                         .next())
                 .withMessage("Iterator: element is null");
     }

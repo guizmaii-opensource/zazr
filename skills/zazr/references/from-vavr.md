@@ -58,5 +58,9 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 - **`tap` on a collection runs on every element**; Vavr's `peek` ran on the first one. `List.peek()` is the stack
   top.
 - **Two `Try.Failure`s are equal only when they hold the same `Throwable` instance.**
+- **`unfold` returns `(element, nextState)`**, as in Scala and ZIO; Vavr's `unfold`/`unfoldLeft` returned
+  `(nextState, element)`, and `unfoldRight` is gone. With one type for both, Vavr code still compiles but swaps the
+  roles: `List.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x - 1, x)))` never returns. Swap the
+  tuple.
 - **No type is `Serializable`.**
 - **No collection has `length()`**: use `size()`.

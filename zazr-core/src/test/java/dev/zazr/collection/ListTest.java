@@ -331,36 +331,48 @@ public class ListTest extends AbstractTraversableTest {
     @Nested
     class UnfoldTests {
         @Test
-        public void shouldUnfoldRightToEmpty() {
-            assertThat(List.unfoldRight(0, x -> Option.none())).isEqualTo(empty());
-        }
-
-        @Test
-        public void shouldUnfoldRightSimpleList() {
-            assertThat(List.unfoldRight(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x, x - 1))))
-                    .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
-        }
-
-        @Test
-        public void shouldUnfoldLeftToEmpty() {
-            assertThat(List.unfoldLeft(0, x -> Option.none())).isEqualTo(empty());
-        }
-
-        @Test
-        public void shouldUnfoldLeftSimpleList() {
-            assertThat(List.unfoldLeft(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
-                    .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
-        }
-
-        @Test
         public void shouldUnfoldToEmpty() {
             assertThat(List.unfold(0, x -> Option.none())).isEqualTo(empty());
         }
 
         @Test
-        public void shouldUnfoldSimpleList() {
-            assertThat(List.unfold(10, x -> x == 0 ? Option.none() : Option.some(new Tuple2<>(x - 1, x))))
-                    .isEqualTo(of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        public void shouldUnfoldElementFirstInTheOrderProduced() {
+            assertThat(List.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x, x - 1))))
+                    .isEqualTo(of(10, 9, 8, 7, 6, 5, 4, 3, 2, 1));
+        }
+
+        @Test
+        public void shouldUnfoldWithAStateOfAnotherType() {
+            // the Fibonacci numbers below 100, the state being the pair of the last two
+            List<Integer> fibonacci = List.unfold(
+                    Tuple.of(0, 1),
+                    s -> s._1() > 100
+                            ? Option.none()
+                            : Option.some(Tuple.of(s._1(), Tuple.of(s._2(), s._1() + s._2()))));
+            assertThat(fibonacci).isEqualTo(of(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89));
+            List<String> labels = List.unfold(1, i -> i > 3 ? Option.none() : Option.some(Tuple.of("#" + i, i + 1)));
+            assertThat(labels.mkString(",")).isEqualTo("#1,#2,#3");
+        }
+
+        @Test
+        public void shouldRejectANullResultFromF() {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> List.unfold(0, x -> null).size())
+                    .withMessage("List.unfold: f returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> List.unfold(0, x -> x < 2 ? Option.some(Tuple.of(x, x + 1)) : null)
+                            .size())
+                    .withMessage("List.unfold: f returned null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> List.unfold(0, null))
+                    .withMessage("f is null");
+        }
+
+        @Test
+        public void shouldRejectANullElement() {
+            assertThatNullPointerException()
+                    .isThrownBy(() -> List.unfold(
+                            0, x -> x > 2 ? Option.none() : Option.some(Tuple.of(x == 2 ? null : x, x + 1))));
         }
     }
 
