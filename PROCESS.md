@@ -129,7 +129,11 @@ maintainer's side.**
 ## 7. What a pull request must contain
 
 The pull request template (`.github/pull_request_template.md`) has these sections. Each is filled in, or says
-"none" with a reason.
+"none" with a reason; "none" alone is enough for the decisions beyond the ticket and for what was found but not
+fixed. The `pr-process` CI check (`scripts/check-pr.py`) fails a pull request whose description misses the
+`Closes #N` line or a section, leaves one empty, or says a bare "none" elsewhere, and one whose description or
+commits carry an attribution line. It runs again when the description is edited. The check proves the sections are
+there, not that they are true: the reviews check the content.
 
 - **Ticket:** `Closes #N`, and the tracker it belongs to.
 - **What changed and why**, in a few lines, with the behaviour before and after.

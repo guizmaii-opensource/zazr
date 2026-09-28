@@ -1,4 +1,5 @@
-<!-- Every section is filled in, or says "none" and why. See PROCESS.md, section 7. -->
+<!-- Every section is filled in, or says "none" and why ("none" alone is fine for the decisions and for "Found but
+not fixed"). The pr-process check fails the pull request otherwise. See PROCESS.md, section 7. -->
 
 Closes #
 

@@ -1,0 +1,29 @@
+name: pr-process
+
+# Fails a pull request whose description does not follow .github/pull_request_template.md (PROCESS.md section 7),
+# or whose body or commits carry attribution lines. Runs again when the description is edited.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  template:
+    name: Pull request follows PROCESS.md
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check the description and the commits
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
+          git log --format='%B%x00' "$BASE..$HEAD" > "$RUNNER_TEMP/commits.txt"
+          python3 scripts/check-pr.py --body "$RUNNER_TEMP/body.md" --commits "$RUNNER_TEMP/commits.txt"
