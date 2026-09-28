@@ -32,9 +32,8 @@ is what makes it safe to pass around, but it has a cost when you build a collect
 copies part of the structure, so a loop of a million `append`s creates a million intermediate collections that
 are thrown away at once.
 
-Java code builds collections in loops all the time, and Vavr offered no better way. Zazr has builders, as Scala
-does: a builder collects the elements in place, where nobody else can see them, and `result()` turns them into
-the collection once.
+Java code builds collections in loops all the time, so Zazr has builders, as Scala does: a builder collects the
+elements in place, where nobody else can see them, and `result()` turns them into the collection once.
 
 ```java
 var squares = Vector.<Integer>newBuilder();
@@ -94,9 +93,8 @@ var passed = scores.filter(s -> s > 5);     // Vector<Integer>: may be empty, so
 
 ## Every collection states its cost
 
-Vavr has a `Seq` interface shared by all sequences. It lets you call `get(i)` on a `List`, where that walks
-`i` elements. Zazr has no such interface: each collection declares its own operations, and every positional
-operation documents its cost. The [complexity page](collections/complexity.md) lists them all in one place,
+Each Zazr sequence declares its own positional operations, with no shared sequence interface, and each of them
+documents its cost. The [complexity page](collections/complexity.md) lists them all in one place,
 so you can choose a collection for what you do with it.
 
 ## Order is only promised where it exists

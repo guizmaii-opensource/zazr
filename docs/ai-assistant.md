@@ -4,10 +4,8 @@ description: The Zazr Agent Skill teaches your coding assistant to write idiomat
 
 # Zazr in your AI assistant
 
-A coding assistant that has never seen Zazr writes Vavr, or plain Java. It reaches for `Option.of`, `Match` or a loop
-of `append`, and the code does not compile or does not read like Zazr.
-
-The Zazr Agent Skill fixes that. It is a folder of Markdown files, in the open
+The Zazr Agent Skill teaches your coding assistant Zazr: its names, its types and its rules, so the code it writes
+compiles and reads like Zazr. It is a folder of Markdown files, in the open
 [Agent Skills](https://agentskills.io/) format, that the assistant reads when it works on code that uses Zazr.
 
 ## What it teaches
