@@ -67,8 +67,8 @@ the generated files.
   is not written on it: `make reassignment` fails on a reassignment and on a redundant `final`. The variables of a
   `for` header are exempt; the state of a loop in the collection internals that must change is declared with
   `@SuppressWarnings("Var")`.
-- **Measure before optimising.** Correctness comes first. Make a change for speed only with a measurement that shows
-  the gain, following [Rob Pike's rules](https://users.ece.utexas.edu/~adnan/pike.html).
+- **Measure before optimising.** Correctness comes first. Make a change for speed only in a performance ticket,
+  where the measurement is agreed first, following [Rob Pike's rules](https://users.ece.utexas.edu/~adnan/pike.html).
 - No license header in source files; the attribution to Vavr is in [NOTICE](NOTICE).
 
 ## Tests
@@ -88,7 +88,7 @@ a small example where it helps, and no internal names or ticket numbers. The met
 
 - Branch from `main` and open a pull request against it; `main` only changes through pull requests.
 - Keep a pull request to one change. A large change is split into several pull requests, each building on the
-  previous one.
+  previous one (from a fork, open the next once the previous one is merged).
 - Write commit messages that explain what changed and why, enough to write the release notes from them.
 
 ## Releases and versions

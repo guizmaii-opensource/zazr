@@ -6,8 +6,8 @@ Rules for working in this repository. They come from the maintainer and override
 
 A fork of Vavr that brings the API design of ZIO and zio-prelude to Java. `docs/design.md` is the source
 of truth: every design question is decided there, marked **(decided)**, and implementation PRs follow its
-section 5 order. When a new rule or decision is given, record it in `docs/design.md` (design) or here
-(workflow) in the same PR.
+section 5 order. When a new rule or decision is given, record it in `docs/design.md` (design), in
+`PROCESS.md` (process) or here (code and repository rules) in the same PR.
 
 ## Language and platform
 
@@ -129,14 +129,12 @@ contributor's. The points below are the project-specific parts of the review rul
   yes-or-no question or to pass a value between two private methods (the `Maps.ABSENT` sentinel with
   `getOrElse` instead of `get(key).isDefined()` is the pattern), no boxing where a primitive leaf
   exists, whole-leaf copies over per-element loops, wrappers created only at the public boundary.
-  Implementers write internals this way by default; reviewers flag a wrapper allocated on a hot path
-  as a finding even when correct. Whether a given allocation survives escape analysis is settled by
-  the coordinator's JMH run at the end, not assumed either way.
-- Performance claims in a PR are measured once by the coordinator at the end (JMH, three forks, both
-  branches back to back, nothing else running), and the PR table states only what that run shows,
-  with error bars and the losing shapes included. Implementers do not reroute an existing operation
-  through a new mechanism without a measurement that shows a win; "measure before rerouting" is part
-  of every implementation brief.
+  Implementers write internals this way by default; the coordinator's review flags a wrapper allocated
+  on a hot path as a finding even when correct. Whether a given allocation survives escape analysis is
+  left to a performance ticket, not assumed either way.
+- A PR makes no performance claim and carries no benchmark table: measurements belong to performance
+  tickets. Implementers do not reroute an existing operation through a new mechanism for speed
+  (`PROCESS.md` section 4).
 - Copilot reviews PRs automatically. Its comments are read and answered in-thread like any other
   review comment, but critically: it is often wrong, so each one is checked against the code before
   anything is changed, and a wrong comment gets a short reply saying why.
