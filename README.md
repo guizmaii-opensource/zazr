@@ -26,14 +26,15 @@
 </p>
 
 > [!WARNING]
-> **Pre-1.0 and changing fast.** Nothing is released yet. Snapshots of `main` are published to Maven Central's
-> snapshot repository, and the API changes between them.
+> **Pre-1.0 and changing fast.** The current release is 0.1.0, and the API may still change between releases before
+> 1.0.
 
 ## What Zazr is
 
 Zazr gives Java immutable collections and the types that make functional code pleasant: `Option`, `Either`, `Try`,
 `Validation` and `Lazy`. It is built for Java 25: sealed interfaces, records and pattern matching are part of its
-API, not an afterthought. Its design comes from modern Scala's collections and from ZIO.
+API, not an afterthought. Its collections come from the Scala 2.13 collections library, which Scala 3 uses unchanged;
+its names and its control types come from ZIO and zio-prelude.
 
 ## What it brings
 
@@ -65,31 +66,18 @@ JDK 25 or later. No runtime dependencies.
 Maven:
 
 ```xml
-<repositories>
-    <repository>
-        <id>central-portal-snapshots</id>
-        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-        <snapshots><enabled>true</enabled></snapshots>
-        <releases><enabled>false</enabled></releases>
-    </repository>
-</repositories>
-
 <dependency>
     <groupId>dev.zazr</groupId>
     <artifactId>zazr-core</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
 Gradle:
 
 ```kotlin
-repositories {
-    maven("https://central.sonatype.com/repository/maven-snapshots/")
-}
-
 dependencies {
-    implementation("dev.zazr:zazr-core:0.1.0-SNAPSHOT")
+    implementation("dev.zazr:zazr-core:0.1.0")
 }
 ```
 

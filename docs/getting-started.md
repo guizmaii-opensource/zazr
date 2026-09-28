@@ -12,39 +12,36 @@ JDK 25 or later. Zazr has no runtime dependency.
 
 ## Add the dependency
 
-Nothing is released yet: the snapshots of `main` are on Maven Central's snapshot repository, and the API changes
-between them.
+Zazr is on Maven Central. The current version is 0.1.0; the
+[releases](https://github.com/guizmaii-opensource/zazr/releases) list what each version changes.
 
 === "Maven"
 
     ```xml
-    <repositories>
-        <repository>
-            <id>central-portal-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <snapshots><enabled>true</enabled></snapshots>
-            <releases><enabled>false</enabled></releases>
-        </repository>
-    </repositories>
-
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-core</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
+    </dependency>
+
+    <dependency>
+        <groupId>dev.zazr</groupId>
+        <artifactId>zazr-test</artifactId>
+        <version>0.1.0</version>
+        <scope>test</scope>
     </dependency>
     ```
 
 === "Gradle (Kotlin)"
 
     ```kotlin
-    repositories {
-        maven("https://central.sonatype.com/repository/maven-snapshots/")
-    }
-
     dependencies {
-        implementation("dev.zazr:zazr-core:0.1.0-SNAPSHOT")
+        implementation("dev.zazr:zazr-core:0.1.0")
+        testImplementation("dev.zazr:zazr-test:0.1.0")
     }
     ```
+
+`zazr-test` is optional: it adds [property-based testing](testing.md).
 
 If your project uses Java modules (a `module-info.java`), add `requires dev.zazr;` to it. Projects
 without a `module-info.java` need nothing more.
@@ -53,7 +50,7 @@ without a `module-info.java` need nothing more.
 
 | Package | Types |
 |---|---|
-| `dev.zazr.control` | `Option`, `Either`, `Try`, `Validation` |
+| `dev.zazr.control` | `Option`, `Either`, `Try`, `Validation`, `Using` |
 | `dev.zazr.collection` | `Vector`, `NonEmptyVector`, `List`, `Queue`, `LazyList`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet`, `NonEmptySortedSet`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap`, `NonEmptySortedMap` |
 | `dev.zazr` | `Lazy`, `Tuple` and `Tuple0` to `Tuple8`, `Function3` to `Function8`, the `Checked*` functional interfaces |
 

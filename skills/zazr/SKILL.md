@@ -13,7 +13,8 @@ license: Apache-2.0
 
 Zazr gives Java 25 immutable collections and the types of functional code: `Option`, `Either`, `Try`, `Validation`,
 `Lazy` and `Using`. Its control types are sealed interfaces of records, so the code takes them apart with pattern
-matching. Its names come from ZIO and its collections from Scala's. Website: https://zazr.dev/.
+matching. Its names and control types come from ZIO and zio-prelude, and its collections from the Scala 2.13
+collections library, which Scala 3 uses unchanged. Website: https://zazr.dev/.
 
 ## When to use this skill
 
@@ -51,8 +52,9 @@ The cases are nested records: `import dev.zazr.control.Option.Some;`. With a `mo
 6. **`Vector` is the default sequence**, `HashSet` the default set, `HashMap` the default map. `List` only to take
    a sequence apart from the front. Choose by the cost of what you do; `HashSet` and `HashMap` have no positional
    methods (`head`, `take`) because their order is not defined.
-7. **Build in bulk.** A loop of `append` copies each time. Use `Vector.newBuilder()` (or the `HashMap`, `HashSet`,
-   `TreeMap`, `TreeSet` builders), `collector()` from a `java.util.stream.Stream`, or `ofAll`.
+7. **Build in bulk.** A loop of `append` copies each time. Use `Vector.newBuilder()` (or the `List`, `HashMap`,
+   `HashSet`, `LinkedHashMap`, `LinkedHashSet`, `TreeMap`, `TreeSet` builders), `collector()` from a
+   `java.util.stream.Stream`, or `ofAll`.
 8. **Use Zazr's names, not Vavr's.** `Option.ofNullable` (no `Option.of`), `zipWith`, `collectAll`, `forEach`,
    `mapBoth`, `tap`, `catchAll`, `flip`, `fromPredicate`. No `Match`, no `Seq`, no `Function1`. No
    category-theory words (`ap`, `pure`, `traverse`, `sequence`) in names or comments.

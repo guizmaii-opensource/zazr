@@ -12,7 +12,7 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 | a sequence with at least one element | `NonEmptyVector` | `head`, `max`, `reduce` cannot fail |
 | a set or map with at least one element | `NonEmptySet`, `NonEmptyMap` and their `Sorted` variants | `max`, `reduce` (and `head` when sorted) cannot fail |
 | to take a sequence apart from the front, a stack | `List` | O(1) `prepend`, `head`, `tail`; pattern matching on `Cons` and `Nil` |
-| first in, first out | `Queue` | amortised O(1) `enqueue` and `dequeue` |
+| first in, first out | `Queue` | O(1) `enqueue`, amortised O(1) `dequeue` |
 | a sequence computed on demand, maybe infinite | `LazyList` | lazy and memoised |
 | a set, by default | `HashSet` | effectively O(1) `contains`, `add`, `remove` |
 | a set in insertion order | `LinkedHashSet` | a `HashSet` plus the order, with positional methods |
@@ -31,9 +31,9 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 | `tail` | effectively O(1) | O(1) | amortised O(1) | O(1) |
 | `append` | effectively O(1) | O(n) | O(1) | O(1), lazy |
 | `get(i)` | effectively O(1) | O(i) | O(i) to O(n) | O(i) |
-| `update(i, v)` | effectively O(1) | O(i) | O(n) | O(i) |
+| `update(i, v)` | effectively O(1) | O(i) | O(n) | lazy |
 | `last`, `init` | effectively O(1) | O(n) | O(n) / amortised O(1) | O(n) / lazy |
-| `take`, `drop` | effectively O(1) | O(k) | O(n) | lazy / O(k) |
+| `take`, `drop` | effectively O(1) | O(k) | O(n) | lazy |
 | `size()` | O(1) | O(n) | O(n) | O(n), forces all |
 
 | Operation | `HashSet` / `HashMap` | `LinkedHashSet` / `LinkedHashMap` | `TreeSet` / `TreeMap` |
@@ -89,8 +89,8 @@ and `values()` a `Vector`.
 
 A loop of `append` or `put` copies part of the structure on every call. Build once:
 
-- `Vector.newBuilder()`, and the builders of `HashMap`, `HashSet`, `TreeMap` and `TreeSet` (maps use `put` and
-  `putAll`). A builder is mutable, single-use and not thread-safe: after `result()` it throws.
+- `Vector.newBuilder()`, and the builders of `List`, `HashMap`, `HashSet`, `LinkedHashMap`, `LinkedHashSet`,
+  `TreeMap` and `TreeSet` (maps use `put` and `putAll`). A builder is mutable, single-use and not thread-safe: after `result()` it throws.
 - `collector()` on every collection, for `java.util.stream.Stream.collect`.
 - `ofAll(iterable)` or `ofAll(javaStream)`; `Vector.range` and `Vector.ofAll(int...)` box their elements, like every other factory.
 - `map`, `flatMap`, `collect`, `filter` on an existing collection.
@@ -105,7 +105,7 @@ var sorted = java.util.stream.Stream.of("b", "a", "b").collect(TreeSet.collector
 // Vector(THE, QUICK, BROWN, FOX), TreeSet(a, b)
 ```
 
-`List`, `Queue`, `LinkedHashMap` and `LinkedHashSet` have no builder; use `ofAll` or `collector()`.
+`Queue` has no builder; use `ofAll` or `collector()`.
 
 ## `NonEmptyVector`
 

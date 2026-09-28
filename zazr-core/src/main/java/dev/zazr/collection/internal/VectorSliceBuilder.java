@@ -7,7 +7,8 @@ import static dev.zazr.collection.internal.VectorStatics.*;
 
 /**
  * Builds the slice {@code [lo, hi)} of a {@link RadixVector}, ported from {@code VectorSliceBuilder} of
- * {@code scala/collection/immutable/Vector.scala} (Scala 3 standard library).
+ * {@code scala/collection/immutable/Vector.scala} of the Scala 2.13 collections library, which Scala 3 uses
+ * unchanged.
  * <p>
  * The slices of the source vector are passed in order to {@link #consider(int, Object[])}. Whatever the dimension of
  * the source and wherever the cut falls, the kept parts form the highest-dimensional data in the middle and arrays of

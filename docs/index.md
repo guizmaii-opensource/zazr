@@ -1,7 +1,7 @@
 ---
 template: home.html
 title: Zazr
-description: Modern Functional Programming for Java 25+. Inspired by modern Scala, ZIO, and zio-prelude.
+description: Modern Functional Programming for Java 25+. Collections from Scala 2.13+, names and control types from ZIO and zio-prelude.
 hide:
   - navigation
   - toc
@@ -23,8 +23,8 @@ var best = NonEmptyVector.of(7, 3, 9).max(Integer::compare); // Integer
 
 !!! warning "Pre-1.0 and changing fast"
 
-    Nothing is released yet. Snapshots of `main` are published to Maven Central's snapshot repository, and the API
-    changes between them. Pin a snapshot you have tested.
+    The current release is 0.1.0. The API may still change between releases before 1.0: the
+    [release notes](https://github.com/guizmaii-opensource/zazr/releases) list every change.
 
 </div>
 
@@ -34,7 +34,8 @@ var best = NonEmptyVector.of(7, 3, 9).max(Integer::compare); // Integer
 
 Zazr gives Java immutable collections and the types that make functional code pleasant: `Option`, `Either`,
 `Try`, `Validation` and `Lazy`. It is built for Java 25: sealed interfaces, records and pattern matching are part of
-its API, not an afterthought. Its design comes from modern Scala's collections and from ZIO.
+its API, not an afterthought. Its collections come from the Scala 2.13 collections library, which Scala 3 uses
+unchanged; its names and its control types come from ZIO and zio-prelude.
 
 ## What it brings { .zz-kicker }
 
@@ -166,11 +167,11 @@ var numbers = builder.result();
 
 <div class="grid cards zz-cards zz-cards--plain" markdown>
 
--   __Modern Scala__
+-   __Scala 2.13+ collections__
 
     ---
 
-    The Scala 3 collections: the `Vector` builder, fast set operations on sorted sets, `grouped` and `sliding` that
+    The Scala 2.13 collections library, which Scala 3 uses unchanged: the `Vector` builder, fast set operations on sorted sets, `grouped` and `sliding` that
     return collections, and a table of what each operation costs. Sealed interfaces, records and `switch` bring
     Scala's pattern matching to Java.
 
@@ -199,36 +200,23 @@ Zazr started as a fork of [Vavr](https://github.com/vavr-io/vavr). Coming from V
 
 ## Install { .zz-kicker }
 
-JDK 25 or later, no runtime dependencies. Snapshots of `main` are on Maven Central's snapshot repository.
+JDK 25 or later, no runtime dependencies. Zazr is on Maven Central.
 
 === "Maven"
 
     ```xml
-    <repositories>
-        <repository>
-            <id>central-portal-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <snapshots><enabled>true</enabled></snapshots>
-            <releases><enabled>false</enabled></releases>
-        </repository>
-    </repositories>
-
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-core</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
     </dependency>
     ```
 
 === "Gradle (Kotlin)"
 
     ```kotlin
-    repositories {
-        maven("https://central.sonatype.com/repository/maven-snapshots/")
-    }
-
     dependencies {
-        implementation("dev.zazr:zazr-core:0.1.0-SNAPSHOT")
+        implementation("dev.zazr:zazr-core:0.1.0")
     }
     ```
 

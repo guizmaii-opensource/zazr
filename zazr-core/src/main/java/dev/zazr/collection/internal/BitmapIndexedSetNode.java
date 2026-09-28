@@ -6,9 +6,9 @@ import org.jspecify.annotations.Nullable;
 
 import static java.lang.Integer.bitCount;
 
-/// The node of a `HashSet` trie that splits its 32 slots between inline elements and children (see [ChampNode]).
-/// Ported from `BitmapIndexedSetNode` in `scala/collection/immutable/HashSet.scala` of the Scala 3 standard library
-/// (the Scala 2.13 collection library, which Scala 3 ships unchanged).
+/// The node of a `HashSet` trie that splits its 32 slots between inline elements and children (see [ChampNode]). Ported
+/// from `BitmapIndexedSetNode` in `scala/collection/immutable/HashSet.scala` of the Scala 2.13 collections library,
+/// which Scala 3 uses unchanged.
 ///
 /// `content` holds the elements, `payloadArity` slots in slot order, then the children in reverse slot order; `hashes`
 /// the hash of each element. The node caches the size and the sum of the hashes of its subtree.

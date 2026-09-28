@@ -97,8 +97,8 @@ import org.jspecify.annotations.Nullable;
  * List<Integer>       s2 = List.of(1, 2, 3);
  *                           // = List.of(new Integer[] {1, 2, 3});
  *
- * List<int[]>         s3 = List.ofAll(1, 2, 3);
- * List<List<Integer>> s4 = List.ofAll(List.of(1, 2, 3));
+ * List<int[]>         s3 = List.of(new int[] {1, 2, 3});
+ * List<List<Integer>> s4 = List.of(List.of(1, 2, 3));
  *
  * List<Integer>       s5 = List.ofAll(1, 2, 3);
  * List<Integer>       s6 = List.ofAll(List.of(1, 2, 3));
@@ -113,7 +113,7 @@ import org.jspecify.annotations.Nullable;
  * <pre>
  * {@code
  * // = List(1, 2, 3)
- * List.of("123".toCharArray()).map(c -> Character.digit(c, 10))
+ * List.ofAll("123".toCharArray()).map(c -> Character.digit(c, 10))
  * }
  * </pre>
  *

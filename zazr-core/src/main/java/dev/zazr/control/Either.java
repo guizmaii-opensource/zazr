@@ -31,7 +31,7 @@ import org.jspecify.annotations.Nullable;
  * a success (represented by {@code Right}) or a failure (represented by {@code Left}).
  * <p>
  * This implementation is <strong>right-biased</strong>, meaning that most operations such as
- * {@code map}, {@code flatMap}, {@code filter}, etc., are defined for the {@code Right} value,
+ * {@code map}, {@code flatMap}, {@code filterOrElse}, etc., are defined for the {@code Right} value,
  * so computations chain fluently in the successful case. The {@code Left} side is reached with
  * {@link #mapLeft(Function)}, {@link #flip()} and {@link #fold(Function, Function)}.
  * <p>
