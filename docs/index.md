@@ -122,7 +122,7 @@ unchanged; its names and most of its control types come from ZIO and zio-prelude
 ## Zazr is AI ready { .zz-kicker }
 
 Teach your coding assistant Zazr. The Zazr Agent Skill gives it the rules, the names and the sharp edges, so it
-writes idiomatic Zazr code instead of Vavr from memory.
+writes idiomatic Zazr code.
 
 [Add it to your assistant :octicons-arrow-right-24:](ai-assistant.md){ .md-button .md-button--primary }
 [The skill on GitHub](https://github.com/guizmaii-opensource/zazr/tree/main/skills/zazr){ .md-button target="_blank" rel="noopener" }
