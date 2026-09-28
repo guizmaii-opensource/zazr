@@ -8,7 +8,7 @@ PL := $(if $(MODULE),-pl $(MODULE) -am,)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness reassignment vocabulary complexity docs-complexity docs-complexity-check docs-examples docs-align docs-align-check site site-serve bench coverage coverage-summary coverage-check javadoc generate deps-updates
+.PHONY: help clean compile test-compile test test-one package install verify fmt fmt-check nullness reassignment vocabulary complexity docs-complexity docs-complexity-check docs-examples docs-align docs-align-check blog-check site site-serve bench coverage coverage-summary coverage-check javadoc generate deps-updates
 
 help: ## list the targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -38,7 +38,7 @@ package: ## build the jars (runs tests)
 install: ## install the jars into ~/.m2 (runs tests)
 	$(MVN) install
 
-verify: ## what CI runs: full build with tests, formatting, nullness, reassignment, javadoc, vocabulary, complexity and docs checks
+verify: ## what CI runs: full build with tests, formatting, nullness, reassignment, javadoc, vocabulary, complexity, docs and blog checks
 	$(MVN) verify
 	$(MAKE) nullness
 	$(MAKE) reassignment
@@ -48,6 +48,7 @@ verify: ## what CI runs: full build with tests, formatting, nullness, reassignme
 	$(MAKE) docs-complexity-check
 	$(MAKE) docs-examples
 	$(MAKE) docs-align-check
+	$(MAKE) blog-check
 
 vocabulary: ## fail on category-theory vocabulary in the code, the site and the skill (not docs/design.md) (CLAUDE.md: use the ZIO names)
 	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs skills ':!docs/design.md')"; \
@@ -97,6 +98,9 @@ docs-align: ## align the `=` signs and the trailing type comments of consecutive
 
 docs-align-check: ## fail when a java block of the site, README.md or skills/ is not aligned (fix: make docs-align)
 	@scala-cli run scripts/align-docs-examples.scala -- --check $(DOCS_ALIGN_ARGS)
+
+blog-check: ## fail when a blog post has no author or no date
+	@scala-cli run scripts/check-blog-posts.scala -- docs/blog/posts
 
 # The site (MkDocs + Material), built in a local virtualenv pinned by requirements-docs.txt.
 DOCS_VENV := .venv-docs

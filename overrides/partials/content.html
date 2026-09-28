@@ -1,0 +1,26 @@
+{#-
+  Material's partials/content.html. On a blog post, a byline (the authors and the date) follows the title: the post's
+  sidebar shows them too, but below the post on a narrow screen, so zazr.css shows the byline on narrow screens only.
+-#}
+{% include "partials/tags.html" %}
+{% include "partials/actions.html" %}
+{% if "<h1" not in page.content %}
+  <h1>{{ page.title | d(config.site_name, true)}}</h1>
+{% endif %}
+{% if page.config is defined and page.config.date is defined and page.config.date.created and "</h1>" in page.content %}
+  {% set parts = page.content.split("</h1>", 1) %}
+  {{ parts[0] }}</h1>
+  <p class="zz-byline">
+    {% for author in page.authors %}
+      <span class="md-author"><img src="{{ author.avatar | url }}" alt=""></span>
+      <span class="zz-byline__author">{{ author.name }}</span>
+    {% endfor %}
+    <time datetime="{{ page.config.date.created }}">{{ page.config.date.created | date }}</time>
+  </p>
+  {{ parts[1] }}
+{% else %}
+  {{ page.content }}
+{% endif %}
+{% include "partials/source-file.html" %}
+{% include "partials/feedback.html" %}
+{% include "partials/comments.html" %}

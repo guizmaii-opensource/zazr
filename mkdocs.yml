@@ -74,6 +74,12 @@ extra_css:
 
 plugins:
   - search
+  # the posts live in docs/blog/posts, the authors in docs/blog/.authors.yml
+  - blog:
+      # a post lives at /blog/<slug>/, with no date in its address
+      post_url_format: "{slug}"
+      categories_allowed:
+        - Announcements
   # the pages that moved keep their old address
   - redirects:
       redirect_maps:
@@ -148,5 +154,7 @@ nav:
       - Complexity: collections/complexity.md
   - Testing: testing.md
   - Compared to Vavr: vavr.md
+  - Blog:
+      - blog/index.md
   - Releases: https://github.com/guizmaii-opensource/zazr/releases
   - Design: principles.md
