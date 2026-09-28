@@ -1,6 +1,9 @@
 <!-- Every section is filled in, or says "none" and why. See PROCESS.md, section 7. -->
 
+## Ticket
+
 Closes #
+<!-- and the release tracker issue it belongs to: "Tracker: #M" -->
 
 ## What changed and why
 
@@ -13,11 +16,11 @@ Closes #
 ## Tests
 
 <!-- The test classes and what they cover: new public methods, branches and fast paths, boundaries, nulls,
-one-shot iterables, persistence. -->
+one-shot iterables, persistence, reuse after close, each representation an input can have. -->
 
 ## Mutation check
 
-<!-- What you broke on purpose, and which test failed. -->
+<!-- The change made on purpose, as a diff in a <details> block, and the name of the test that failed. -->
 
 ## Checks run
 

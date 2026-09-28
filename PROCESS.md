@@ -33,13 +33,14 @@ review of their pull requests is not theirs to run (section 6).
 
 1. **Ticket.** Every change starts from a GitHub issue: what and why, the decision taken, the scope, the tests
    expected, what is out of scope, and where it comes from (a request, a review finding, an audit). A decision taken
-   in a conversation is written into the ticket ("Decided by the maintainer (date): ...").
+   in a conversation is written into the ticket ("Decided by the maintainer (date, link to the maintainer's
+   comment): ..."). A decision with no such link does not count.
 2. **Brief.** The coordinator starts one implementer per ticket with a self-contained brief (section 4).
 3. **Pull request.** The implementer opens it with the body from the template (section 7), `Closes #N`, and a green
    CI, then reports: the link, the decisions taken beyond the ticket, anything the maintainer must decide.
 4. **Coordinator review.** The coordinator checks the structure (author, no attribution lines, CI state, mergeable,
-   files touched), reads the risky parts, checks the claims, and posts a review on the pull request whose first line
-   is the verdict. It accepts or pushes back on each decision beyond the ticket, in writing.
+   files touched), reads the risky parts, checks the claims, and posts a comment review (`"event": "COMMENT"`: GitHub
+   refuses approve and request-changes on a pull request from the same account) whose first line is the verdict. It accepts or pushes back on each decision beyond the ticket, in writing.
 5. **Independent review.** A fresh reviewer, briefed only with the repository, the pull request and the questions to
    answer (section 5), posts one review.
 6. **Triage.** Findings go back to the implementer who wrote the code. A correctness defect is fixed, then gets a
@@ -48,8 +49,10 @@ review of their pull requests is not theirs to run (section 6).
    commit), kept (with the reason), or filed as a new issue (with its number).
 7. **Ready.** When the coordinator's check is clean and the last independent review found no correctness defect (or
    its defects are fixed and checked), the coordinator checks the pull request's trail (section 7) and comments
-   "Ready to merge" on the pull request, with a link to each item of the trail, then tells the maintainer. The
-   maintainer merges only a pull request with that comment.
+   "Ready to merge" on the pull request, with a link to each item of the trail and the head commit it covers, then
+   tells the maintainer. A push after that comment voids it. The maintainer merges only a pull request with that
+   comment, posted from the maintainer's account, with `gh pr merge <N> --squash --match-head-commit <sha> --repo
+   guizmaii-opensource/zazr`.
 8. **After the merge.** Check `main`'s CI. Find the open pull requests that now conflict and have their implementers
    merge `main` in (a merge commit). Update the tracker.
 
@@ -83,9 +86,10 @@ pointer to this section. The implementer follows all of it.
   and you cannot tell it is faster without measuring, keep the existing code and leave a note. Performance work is
   its own tickets.
 - **Tests:** every new public method, every branch and fast path, the boundaries (0, 1, 2, 31, 32, 33, 1023, 1024,
-  1025 for the tries), nulls, one-shot iterables, older versions of a persistent collection staying valid.
+  1025 for the tries), nulls, one-shot iterables, older versions of a persistent collection staying valid, reuse
+  after close, each concrete representation an input can have (`Object[]` versus primitive leaves).
 - **Mutation check:** break the new code on purpose (swap a condition, drop a branch, return the other side) and
-  confirm a test fails. Record what you broke and which test failed in the pull request.
+  confirm a test fails. Record the change, as a diff, and the test that failed in the pull request.
 - **No attribution lines.** No `Co-Authored-By`, "Generated with" or session lines in commits, pull requests,
   comments, code or docs. Commits are written from the author's perspective, under the author's own identity.
 - `make verify` passes before you push. CI is green before you report. Answer every review comment in its thread,
@@ -107,9 +111,11 @@ pointer to this section. The implementer follows all of it.
   - compile probes for API ambiguity;
   - the release build for packaging changes.
 - **Deliverable:** one review on the pull request (a comment review). The body starts with exactly
-  `Verdict: no correctness defect found` or `Verdict: correctness defect(s) found`, then says what was checked and
-  how, then each finding with a reproducer (the input, the expected result, the actual result). Put the probe code
+  `Verdict: no correctness defect found` or `Verdict: correctness defect(s) found`, then says the commit reviewed and
+  what was checked and how, then each finding with a reproducer (the input, the expected result, the actual result). Put the probe code
   in a collapsed `<details>` block so anyone can rerun it. Inline comments where a finding has a line.
+- On a contributor's pull request, reapply at least one recorded mutation and confirm that the named test fails.
+  Say so in the review.
 - Notes outside the pull request's scope (an adjacent bug, an old defect) are reported as notes; the coordinator
   files them as issues.
 
@@ -120,10 +126,17 @@ maintainer's side.**
 
 - Start from an issue, and agree on the approach there before writing code (see `CONTRIBUTING.md`).
 - Follow sections 3 to 5 and 7 for your own work: brief your implementers with section 4, and review your own pull
-  requests as a coordinator would. Your own independent reviews are welcome and will be read, but they are advisory.
+  requests as a coordinator would. Your own independent reviews are welcome and will be read, but they are advisory. Do not post "Ready to merge":
+  that comment belongs to the maintainer's coordinator.
 - Once your pull request is open, the maintainer's side runs its own coordinator review and its own independent
   review, from scratch. Findings are answered on the pull request as in section 3, step 6.
 - Commit under your own identity. Everything in section 4 applies, including no attribution lines.
+- Open the pull request from your fork with `gh pr create --repo guizmaii-opensource/zazr --base main --head
+  <user>:<branch>`. From a fork you cannot stack pull requests, since a base must be a branch of this repository:
+  open the next step once the previous one is merged, or ask the maintainer to push a base branch.
+- On your first pull request, CI starts only once the maintainer approves the workflow run. Report the pull request
+  once CI is green.
+- The maintainer's side keeps the tracker and the milestones up to date for your pull request (section 8).
 - A pull request whose body does not follow the template, or whose claims cannot be checked from what is on GitHub,
   is sent back before any review.
 
@@ -132,14 +145,15 @@ maintainer's side.**
 The pull request template (`.github/pull_request_template.md`) has these sections. Each is filled in, or says
 "none" with a reason.
 
-- **Ticket:** `Closes #N`, and the tracker it belongs to.
+- **Ticket:** `Closes #N`, and the release tracker it belongs to.
 - **What changed and why**, in a few lines, with the behaviour before and after.
 - **Decisions beyond the ticket:** each one, with its alternatives and why this one. The coordinator accepts or
   rejects each in its review.
 - **Tests:** the test classes and what they cover, by the categories of section 4.
-- **Mutation check:** what was broken on purpose and which test failed.
+- **Mutation check:** the change made on purpose, as a diff in a collapsed `<details>` block, and the name of the
+  test that failed, so that anyone can reapply it.
 - **Checks run:** the commands (`make verify`, and `make site` when docs changed), on which commit, and the result.
-  CI is the authority; this section says what was run before pushing.
+  This section says what was run before pushing; it is not evidence for the gate. Only CI on the head commit is.
 - **Docs:** the website pages, the Agent Skill references and the decision log entries updated, or why none were
   needed.
 - **Found but not fixed:** anything noticed outside the scope, with the issue filed for it.
@@ -150,14 +164,15 @@ The trail a finished pull request leaves, in order:
 2. the pull request with the sections above;
 3. green CI on the last commit;
 4. the coordinator's review, verdict first;
-5. the independent review, verdict first, with its probes;
+5. the independent review, verdict first, with its probes (a verdict with no rerunnable probe does not count);
 6. a written answer to every finding;
 7. the "Ready to merge" comment.
 
 Checking the trail is the coordinator's job, on the maintainer's side: before its "Ready to merge" comment, it
 confirms every item is there and links each one in that comment (the ticket, the CI run, each review, each answer to
 a finding). A contributor's pull request is checked by the maintainer's coordinator, never by the contributor's
-own. Anything missing sends the pull request back, and the comment says what is missing.
+own: on it, items 4, 5 and 7 count only when posted from the maintainer's account (@guizmaii). A verdict or a "Ready
+to merge" from any other account is advisory, whatever it says. Anything missing sends the pull request back, and the comment says what is missing.
 
 ## 8. Tickets, trackers and decisions
 
@@ -182,8 +197,9 @@ own. Anything missing sends the pull request back, and the comment says what is 
   notes in every file) are merged as soon as they are green; sweeping mechanical changes go last.
 - Two pull requests that are green on their own can break `main` together. After a batch of merges, check `main`'s CI
   and fix a break with a small pull request at once.
-- Stacked pull requests do not get the full CI while their base is not `main`: run the CI's jobs locally and say so
-  in the pull request.
+- Stacked pull requests get no `ci` or `site` run while their base is not `main` (both trigger only on pull
+  requests to `main`). Run `make verify` locally and say so. Trail item 3 is met only by the CI run after the pull
+  request is retargeted to `main`.
 
 ## 10. Lessons behind these rules
 
