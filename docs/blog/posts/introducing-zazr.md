@@ -31,10 +31,11 @@ To build a collection in a loop, a builder fills it in place and hands it over o
 `asJava()` gives a read-only `java.util` view in constant time, with no copy.
 
 It also gives Java the types that make functional code pleasant to write: `Option`, `Either`, `Try`, `Validation`
-and `Lazy`. They are sealed interfaces of records, so you take them apart with pattern matching, and the compiler
-checks that every case is handled.
+and `Lazy`. `Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so you take them apart with
+pattern matching, and the compiler checks that every case is handled. `Lazy` is a value computed on first use, then
+kept.
 
-It has no runtime dependencies, and nothing inside it is `null`.
+It has no runtime dependencies. `Some`, `Right`, `Success`, `Valid` and every collection reject `null`.
 
 ## Why I built it
 
@@ -53,8 +54,8 @@ Most of Zazr is borrowed. I took the parts I trust from the ecosystems I know, a
 
 ### The Scala 2.13 collections library
 
-Scala 2.13 rewrote its collections library, and Scala 3 uses that library unchanged. Zazr's collections are ported
-from it:
+Scala 2.13 rewrote its collections library, and Scala 3 uses that library unchanged. Zazr's `Vector`, `HashSet`,
+`HashMap` and `LazyList` are ported from it, and so are parts of `TreeSet` and `TreeMap`:
 
 - `Vector` is a radix-balanced tree of arrays of 32 elements, so reading, updating, appending and prepending are
   effectively constant time.
