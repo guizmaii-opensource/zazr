@@ -15,12 +15,14 @@ Scala 2.13 rewrote its collections library, and Scala 3 uses that library unchan
 collections simpler to use and faster, and it is the best-tested design of persistent collections on the JVM.
 When Zazr has a choice to make about a collection, it starts from what Scala 2.13+ does:
 
-- An operation returns the same kind of collection it was called on: `grouped` on a `List` gives a `List` of
-  `List`s, on a `Vector` a `Vector` of `Vector`s.
+- An operation returns the same kind of collection it was called on: `map` on a `List` gives a `List`, on a
+  `Vector` a `Vector`. Zazr goes one step further: `grouped` and `sliding` return a collection, such as a `List`
+  of `List`s, where Scala returns an `Iterator`.
 - A `Vector` can be built with a builder that fills its arrays in place, like Scala's `VectorBuilder`.
 - `partitionMap` splits a collection in one pass, and every collection documents the cost of its operations,
   like Scala's performance characteristics page.
-- Sorted sets combine with `union`, `intersect` and `diff` using Scala's red-black tree algorithms.
+- `filter` and `partition` on sorted sets and maps use Scala's red-black tree algorithms, keeping every subtree
+  they leave whole.
 - Java interop goes through views, like `scala.jdk.CollectionConverters`, instead of copies.
 
 ## Build a collection once, not once per element

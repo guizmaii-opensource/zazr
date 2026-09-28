@@ -50,8 +50,7 @@ import static dev.zazr.internal.Throwables.sneakyThrow;
 /// that surfaced, or, when that throwable is fatal (see [Try]), the throwable itself rethrown. A `null` result is a
 /// `Failure` of a [NullPointerException], and so is a `null` resource.
 ///
-/// This is a port of `scala.util.Using` from the Scala 3 standard library, which ships the Scala 2.13 library's
-/// `Using` unchanged
+/// This is a port of `scala.util.Using` from the Scala 2.13 standard library, which Scala 3 uses unchanged
 /// ([source](https://github.com/scala/scala/blob/2.13.x/src/library/scala/util/Using.scala)): `Using.of` is
 /// `Using.apply`, `Using.manager` is `Using.Manager.apply`, and the severity scale is its `preferentiallySuppress`.
 /// Two behaviours differ from that source: a throwable is never suppressed in itself (Scala's `addSuppressed` call

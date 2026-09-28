@@ -5,9 +5,9 @@ description: What Zazr changes from Vavr - removed types, renamed operations, an
 # Compared to Vavr
 
 Zazr is a fork of the latest [Vavr](https://github.com/vavr-io/vavr), reshaped for Java 25. Its collections follow the
-Scala 2.13 collections library, which Scala 3 uses unchanged; its names and its control types follow ZIO and
-zio-prelude. It is not a drop-in replacement: the package is `dev.zazr`, and the changes
-below are deliberate. [Design](principles.md) explains the ideas behind them, and the
+Scala 2.13 collections library, which Scala 3 uses unchanged; its names and most of its control types follow ZIO
+and zio-prelude, and `Using` follows Scala's `scala.util.Using`. It is not a drop-in replacement: the package is
+`dev.zazr`, and the changes below are deliberate. [Design](principles.md) explains the ideas behind them, and the
 [release notes](https://github.com/guizmaii-opensource/zazr/releases) list what each release changes.
 
 ## Removed
@@ -63,7 +63,8 @@ below are deliberate. [Design](principles.md) explains the ideas behind them, an
   `LinkedHashSet`, `LinkedHashMap`, `TreeSet`, `TreeMap`.
 - **`grouped`, `sliding` and `crossProduct` return a collection**, not an `Iterator`: of the receiver's type on
   the sequences (`Vector<Vector<T>>`...), a `Vector` of the receiver's type for `grouped` and `sliding` on the
-  ordered sets and maps and on `NonEmptyVector` (`Vector<TreeSet<T>>`).
+  ordered sets and maps and on `NonEmptyVector` (`Vector<TreeSet<T>>`), and a `Vector` for `crossProduct(power)` on
+  `NonEmptyVector`.
 - **`tap` on a collection runs on every element.** Vavr's `peek` ran on the first one.
 - **Two `Try.Failure`s are equal when they hold the same `Throwable` instance**, not when their stack traces match.
 - **`unfold` returns the element first, then the next state**, as in Scala and ZIO, and gives the elements in the

@@ -34,7 +34,7 @@
 Zazr gives Java immutable collections and the types that make functional code pleasant: `Option`, `Either`, `Try`,
 `Validation` and `Lazy`. It is built for Java 25: sealed interfaces, records and pattern matching are part of its
 API, not an afterthought. Its collections come from the Scala 2.13 collections library, which Scala 3 uses unchanged;
-its names and its control types come from ZIO and zio-prelude.
+its names and most of its control types come from ZIO and zio-prelude, and `Using` from Scala's `scala.util.Using`.
 
 ## What it brings
 

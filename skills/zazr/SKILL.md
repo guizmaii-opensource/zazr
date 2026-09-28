@@ -13,8 +13,8 @@ license: Apache-2.0
 
 Zazr gives Java 25 immutable collections and the types of functional code: `Option`, `Either`, `Try`, `Validation`,
 `Lazy` and `Using`. Its control types are sealed interfaces of records, so the code takes them apart with pattern
-matching. Its names and control types come from ZIO and zio-prelude, and its collections from the Scala 2.13
-collections library, which Scala 3 uses unchanged. Website: https://zazr.dev/.
+matching. Its names and most control types come from ZIO and zio-prelude, `Using` from Scala's `scala.util.Using`,
+and its collections from the Scala 2.13 collections library, which Scala 3 uses unchanged. Website: https://zazr.dev/.
 
 ## When to use this skill
 

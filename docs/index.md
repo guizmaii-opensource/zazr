@@ -1,7 +1,7 @@
 ---
 template: home.html
 title: Zazr
-description: Modern Functional Programming for Java 25+. Collections from Scala 2.13+, names and control types from ZIO and zio-prelude.
+description: Modern Functional Programming for Java 25+. Collections from Scala 2.13+, names and most control types from ZIO and zio-prelude.
 hide:
   - navigation
   - toc
@@ -35,7 +35,8 @@ var best = NonEmptyVector.of(7, 3, 9).max(Integer::compare); // Integer
 Zazr gives Java immutable collections and the types that make functional code pleasant: `Option`, `Either`,
 `Try`, `Validation` and `Lazy`. It is built for Java 25: sealed interfaces, records and pattern matching are part of
 its API, not an afterthought. Its collections come from the Scala 2.13 collections library, which Scala 3 uses
-unchanged; its names and its control types come from ZIO and zio-prelude.
+unchanged; its names and most of its control types come from ZIO and zio-prelude, and `Using` from Scala's
+`scala.util.Using`.
 
 ## What it brings { .zz-kicker }
 
@@ -171,9 +172,9 @@ var numbers = builder.result();
 
     ---
 
-    The Scala 2.13 collections library, which Scala 3 uses unchanged: the `Vector` builder, fast set operations on sorted sets, `grouped` and `sliding` that
-    return collections, and a table of what each operation costs. Sealed interfaces, records and `switch` bring
-    Scala's pattern matching to Java.
+    The Scala 2.13 collections library, which Scala 3 uses unchanged: the `Vector` and its builder, the hash tries
+    of `HashSet` and `HashMap`, the fully lazy `LazyList`, and a table of what each operation costs. Sealed
+    interfaces, records and `switch` bring Scala's pattern matching to Java.
 
 -   __ZIO__
 
