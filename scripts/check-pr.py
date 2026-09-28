@@ -9,8 +9,8 @@ when the pull request does not follow the template.
 Checks:
 - a closing line for an issue (`Closes #N`, `Fixes #N`, `Resolves #N`, with GitHub's variants), outside comments and
   code blocks;
-- every section of the template present once as a `## ` heading outside code blocks, with content once HTML comments
-  are removed; a placeholder answer (only punctuation, "none", "n/a", "tbd"...) is accepted only where nothing is a
+- every section of the template present once as a `## ` heading outside code blocks and comments, with content once
+  comments are removed (a code block is content); a placeholder answer (only punctuation, "none", "n/a", "tbd"...) is accepted only where nothing is a
   normal answer (decisions beyond the ticket, found but not fixed), elsewhere a "none" says why;
 - no attribution lines (trailers and tool footers) in the body or the commits.
 """
@@ -22,13 +22,20 @@ from pathlib import Path
 
 DEFAULT_TEMPLATE = Path(__file__).resolve().parent.parent / ".github" / "pull_request_template.md"
 
-HEADING = re.compile(r"^ {0,3}## +(.+?)(?: +#+)? *$", re.MULTILINE)
+HEADING = re.compile(r"^ {0,3}##[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$", re.MULTILINE)
 CLOSING = re.compile(
     r"^ *(?:[-*] +)?(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):? +#\d+\b", re.IGNORECASE | re.MULTILINE
 )
-# An unclosed comment hides the rest of the body, as it does when GitHub renders it.
-COMMENT = re.compile(r"<!--.*?(?:-->|\Z)", re.DOTALL)
-FENCE = re.compile(r"^ {0,3}(```|~~~).*?^ {0,3}\1[^\n]*$", re.DOTALL | re.MULTILINE)
+# A fence closes on a run of the same character at least as long as the opening one, with no info string, or runs to
+# the end of the body, as in CommonMark.
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})[^\n]*\n?.*?(?:^ {0,3}\1[`~]*[ \t]*$|\Z)", re.DOTALL | re.MULTILINE)
+CODE_SPAN = re.compile(r"(`+)[^\n]*?\1")
+COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+# A comment left open hides the rest of the body only when it starts a line, as GitHub renders it.
+OPEN_COMMENT = re.compile(r"^ {0,3}<!--.*\Z", re.DOTALL | re.MULTILINE)
+# What a code block leaves in the text it is blanked from: content for the emptiness test, and nothing any other test
+# matches.
+CODE_MARK = "\x00code"
 PLACEHOLDER = re.compile(r"^[\W_]*(?:none|n/?a|nothing|tbd|todo)?[\W_]*$", re.IGNORECASE)
 # Sections where "none" alone is a complete answer; elsewhere a "none" must say why.
 NONE_ALLOWED = {"decisions beyond the ticket", "found but not fixed"}
@@ -44,21 +51,31 @@ def template_sections(template: Path) -> list[str]:
     return HEADING.findall(COMMENT.sub("", template.read_text(encoding="utf-8")))
 
 
+def blank(match: re.Match, mark: str = "") -> str:
+    return mark + "\n" * match.group(0).count("\n")
+
+
 def blank_code(text: str) -> str:
-    """Comments and code blocks replaced by as many blank lines, so that nothing inside them counts."""
-    text = COMMENT.sub(lambda m: "\n" * m.group(0).count("\n"), text)
-    return FENCE.sub(lambda m: "\n" * m.group(0).count("\n"), text)
+    """Code blocks, code spans and comments replaced by as many blank lines, so that nothing inside them counts.
+
+    A code block leaves a mark, so that a section holding only a code block is not empty."""
+    text = FENCE.sub(lambda m: blank(m, CODE_MARK), text)
+    text = CODE_SPAN.sub(lambda m: CODE_MARK, text)
+    text = COMMENT.sub(blank, text)
+    return OPEN_COMMENT.sub(blank, text)
 
 
-def sections(body: str) -> tuple[dict[str, str], list[str]]:
+def sections(body: str, names: list[str]) -> tuple[dict[str, str], list[str]]:
+    """The content of each template section, and the template sections given more than once."""
+    wanted = {name.lower() for name in names}
     found: dict[str, str] = {}
     duplicates: list[str] = []
     parts = HEADING.split(body)
     for i in range(1, len(parts), 2):
         name = parts[i].strip().lower()
-        if name in found:
+        if name in found and name in wanted:
             duplicates.append(parts[i].strip())
-        else:
+        elif name not in found:
             found[name] = parts[i + 1]
     return found, duplicates
 
@@ -69,10 +86,11 @@ def check(body: str, commits: list[str], template: Path) -> list[str]:
     visible = blank_code(body)
     if not CLOSING.search(visible):
         problems.append("no `Closes #N` line: every pull request starts from an issue")
-    found, duplicates = sections(visible)
+    names = template_sections(template)
+    found, duplicates = sections(visible, names)
     for name in duplicates:
         problems.append(f"section `## {name}` appears more than once")
-    for name in template_sections(template):
+    for name in names:
         content = found.get(name.lower())
         if content is None:
             problems.append(f"section `## {name}` is missing")

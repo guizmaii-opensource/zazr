@@ -38,3 +38,6 @@ scripts/.scala-build/
 # -- Website (make site)
 .venv-docs/
 site/
+
+# -- Python
+__pycache__/

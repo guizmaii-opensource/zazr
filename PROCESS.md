@@ -159,11 +159,16 @@ request when:
 
 - the description has no closing line (`Closes #N`, `Fixes #N` or `Resolves #N`);
 - a section is missing, repeated or empty;
-- a section holds only a placeholder ("none", "n/a", "tbd", a dash) outside the two sections above;
-- the description or a commit carries an attribution trailer (`Co-Authored-By:`), or a tool footer or address.
+- a section holds only a placeholder ("none", "n/a", "nothing", "tbd", "todo", a dash or only punctuation) outside
+  the two sections above;
+- the description or a commit carries an attribution trailer (`Co-Authored-By:`), or a tool footer or address,
+  anywhere, code blocks included.
 
-Comments and code blocks don't count. The check runs again when the description is edited, and it uses the checker and
-template of the base branch, so a pull request cannot loosen its own check. Dependabot's pull requests are skipped.
+Headings and closing lines inside comments and code blocks don't count; a code block does count as a section's
+content. The check runs again when the description is edited. It uses the checker and template of the base branch
+(or the pull request's own when the base has none), so a change to either takes effect only once merged. The workflow
+file itself comes from the pull request, as GitHub runs it: a change to it is caught by the coordinator review, which
+names every change under `.github/` (below). Dependabot's pull requests are skipped.
 The check proves the sections are there, not that they are true: the reviews check the content.
 
 - **Ticket:** `Closes #N`, and the release tracker it belongs to.

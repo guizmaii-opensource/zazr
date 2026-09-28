@@ -66,8 +66,33 @@ class CheckPrTest(unittest.TestCase):
 
     def test_comments(self):
         self.assertIn("section `## Tests` is empty", problems(body(Tests="<!-- to do -->")))
-        unclosed = body(Tests="<!-- to do")
-        self.assertTrue(any("is empty" in p or "missing" in p for p in problems(unclosed)))
+        found = problems(body(Tests="<!-- to do"))
+        self.assertIn("section `## Tests` is empty", found)
+        self.assertIn("section `## Docs` is missing", found)
+
+    def test_comment_openers_that_hide_nothing(self):
+        # GitHub shows all three as text: only a comment left open at the start of a line hides the rest
+        for text in ["Blanks `<!--` comments.", "Sample:\n\n```html\n<!-- start\n```\n", "Blanks <!-- comments mid line."]:
+            self.assertEqual(problems(body(**{"What changed and why": text})), [], text)
+        self.assertIn("section `## Tests` is missing", problems(body(**{"What changed and why": "Text\n<!-- open"})))
+
+    def test_fences_as_commonmark_closes_them(self):
+        for closing in [
+            "````\n```\nCloses #1\n```\n````",  # closed only by a run as long as the opening one
+            "```\nx\n```py\nCloses #1\n```",  # a closing fence has no info string
+            "`Closes #1`",
+        ]:
+            self.assertIn("no `Closes #N` line: every pull request starts from an issue", problems(body(closing)), closing)
+        unclosed = body("See below.", **{"Found but not fixed": "None.\n\n```\nCloses #1"})
+        self.assertIn("no `Closes #N` line: every pull request starts from an issue", problems(unclosed))
+
+    def test_code_block_is_content(self):
+        self.assertEqual(problems(body(**{"Checks run": "```\n$ make verify\nBUILD SUCCESS\n```"})), [])
+        self.assertEqual(problems(body(**{"Mutation check": "```diff\n- if (x) return;\n+ // removed\n```"})), [])
+
+    def test_repeated_heading_outside_the_template(self):
+        self.assertEqual(problems(body(Tests="Unit.\n\n## Notes\n\na\n\n## Notes\n\nb")), [])
+        self.assertEqual(problems(body().replace("## Docs", "##\tDocs")), [])
 
     def test_crlf(self):
         self.assertEqual(problems(body().replace("\n", "\r\n")), [])
