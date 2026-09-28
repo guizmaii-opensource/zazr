@@ -83,7 +83,9 @@ Formatting (decided 2026-09-25) and locals (decided 2026-09-27):
   perspective.
 - Never commit on `main`. Branch, push, open a PR. Commit only when asked to produce a PR.
 - Big changes are delivered as stacked PRs, one per step, each based on the previous step's branch until that one
-  is merged; then `main` is merged in (a merge commit, never a rebase or a force-push).
+  is merged; then `main` is merged in (a merge commit, never a rebase or a force-push). From a fork, where a base
+  must be a branch of this repository, the next step is opened once the previous one is merged (`PROCESS.md`
+  section 6).
 - Documentation lives in this repo (`docs/`), not in a fork of `vavr-docs`. It is short and factual:
   representation, complexity table, when to choose a type over its siblings, invariants, interop, sharp
   edges. The method list is the javadoc.
@@ -120,9 +122,8 @@ evidence each one must leave on GitHub. It applies to every agent working on thi
 contributor's. The points below are the project-specific parts of the review rules.
 
 - **Correctness first, performance second.** Reviews and fixes spend their effort on defects, contracts
-  and test coverage. Performance is evaluated and improved where cheap, but a PR is not held for a
-  benchmark row, and an operation that is correct and not slower than before ships as is; further
-  optimisation is a follow-up.
+  and test coverage. A PR is not held for performance and measures nothing (`PROCESS.md` section 4);
+  optimisation is a follow-up in a performance ticket.
 - **Allocation-aware collection internals.** Correctness decides what the code does; how it does it, on
   internal hot paths (lookups, presence checks, iteration, builders, trie and tree walks), avoids
   allocating what a raw form can replace: no `Option`, `Tuple` or lambda allocated to answer a
