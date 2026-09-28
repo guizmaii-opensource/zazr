@@ -75,14 +75,15 @@ Formatting (decided 2026-09-25) and locals (decided 2026-09-27):
 - Repository: `guizmaii-opensource/zazr` (origin `git@github.com:guizmaii-opensource/zazr.git`). It is a
   GitHub fork of `vavr-io/vavr`, so every `gh pr` command passes `--repo guizmaii-opensource/zazr`;
   otherwise the PR targets upstream.
-- Commit as `Jules Ivanic <jules.ivanic@gmail.com>`, never the work address. A git `includeIf` covers
-  the workspace; check `git config --show-origin user.email` in a fresh clone.
+- The maintainer's agents commit as `Jules Ivanic <jules.ivanic@gmail.com>`, never the work address. A git
+  `includeIf` covers the workspace; check `git config --show-origin user.email` in a fresh clone. A contributor's
+  agents commit under the contributor's own identity.
 - Never mention Claude, an AI or an assistant in commit messages or PR descriptions, and add no
   `Co-Authored-By`, `Claude-Session` or "Generated with" lines. Commits are written from the developer's
   perspective.
 - Never commit on `main`. Branch, push, open a PR. Commit only when asked to produce a PR.
-- Big changes are delivered as stacked PRs, one per step of `docs/design.md` section 5, each based on
-  the previous step's branch until that one is merged, then rebased onto `main`.
+- Big changes are delivered as stacked PRs, one per step, each based on the previous step's branch until that one
+  is merged; then `main` is merged in (a merge commit, never a rebase or a force-push).
 - Documentation lives in this repo (`docs/`), not in a fork of `vavr-docs`. It is short and factual:
   representation, complexity table, when to choose a type over its siblings, invariants, interop, sharp
   edges. The method list is the javadoc.
@@ -110,37 +111,14 @@ Formatting (decided 2026-09-25) and locals (decided 2026-09-27):
   only what is on `main`, and links to the website with absolute `https://zazr.dev/` URLs, since the folder is copied
   out of the repository.
 
-## Subagents and reviews
+## Process: tickets, subagents and reviews
 
-- Implementation steps are delegated to subagents, one at a time because each step depends on the
-  previous branch. A subagent works in the main checkout; any parallel work by the coordinator happens
-  in a separate `git worktree`, never in the checkout the subagent owns.
-- Every subagent PR is reviewed by the coordinator: read the diff, verify the claims by running the
-  build, tests and a probe or benchmark where a claim is measurable, check that the tests are
-  exhaustive (every new public method, every branch and fast path in the implementation, every
-  boundary such as 0/1/31/32/33 and 1023/1024/1025 for a 32-wide trie, nulls, reuse after close, and
-  each concrete representation an input can have, e.g. `Object[]` versus primitive leaves), and post
-  the findings as a review with inline comments on the PR (GitHub refuses the request-changes state on a same-account PR: post a
-  comment review whose first line is the verdict).
-- Subagents answer every review comment on GitHub, in the comment's thread, saying what changed and
-  giving the measured result where there is one, and post the updated benchmark table as a PR comment.
-- After fixes are pushed, the coordinator re-reviews the new commits on GitHub before anything else
-  moves. Nothing is merged by the coordinator; the maintainer merges.
-- Once the coordinator is satisfied with a PR, **one independent review** is launched: a fresh agent
-  with no context from the session, briefed only with the repository, the PR and the review rules
-  above, working in its own worktree, posting one review on GitHub with the verdict first. **Its
-  scope is correctness only**: defects, broken contracts and invariants, unsafe sharing or mutation,
-  edge cases, and the tests that would have caught them. It runs no benchmarks under any pretext (checking
-  that a benchmark target still works means compiling `zazr-benchmark`, never running it) and reports
-  nothing about performance, documentation wording or style; those are the coordinator's review. The
-  coordinator's brief to a reviewer must not contain a benchmark step. Its findings
-  are triaged by the coordinator and the accepted ones go to the implementer. **Termination**: a
-  second independent review happens only if the first found a correctness defect; if a review's
-  findings are documentation, test-coverage or benchmark-table items, they are fixed and the PR is
-  declared ready after the coordinator's own check, with no further review cycle. On PR #4 the second
-  review found three measured regressions the first had accepted; the third found none, and a fourth
-  would have found nothing either. Ready means: the coordinator's check is clean and the last
-  independent review reported no correctness defect.
+**Read [`PROCESS.md`](PROCESS.md) before any work and follow it.** It describes how the work is done: the roles
+(maintainer, coordinator, implementer, independent reviewer), the loop from ticket to merge, the rules for
+implementers and reviewers, what a pull request must contain (`.github/pull_request_template.md`), and the trail of
+evidence each one must leave on GitHub. It applies to every agent working on this repository, including a
+contributor's. The points below are the project-specific parts of the review rules.
+
 - **Correctness first, performance second.** Reviews and fixes spend their effort on defects, contracts
   and test coverage. Performance is evaluated and improved where cheap, but a PR is not held for a
   benchmark row, and an operation that is correct and not slower than before ships as is; further
@@ -162,5 +140,5 @@ Formatting (decided 2026-09-25) and locals (decided 2026-09-27):
 - Copilot reviews PRs automatically. Its comments are read and answered in-thread like any other
   review comment, but critically: it is often wrong, so each one is checked against the code before
   anything is changed, and a wrong comment gets a short reply saying why.
-- Ping the maintainer (desktop notification) when a PR they asked about is up or when a decision is
-  needed; not for routine progress.
+- Ping the maintainer when a PR they asked about is ready or when a decision is needed; not for routine
+  progress.

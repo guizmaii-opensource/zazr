@@ -11,6 +11,10 @@ reports with a failing snippet are always welcome as they are.
 Using AI tools to write code is fine. Make sure you understand every line you submit and can explain it: a pull
 request that is easier to rewrite than to review is unlikely to be merged.
 
+Every change follows the process in [PROCESS.md](PROCESS.md): an issue first, a pull request that fills in the
+template, and an independent review on the maintainer's side before merging. If you work with agents, brief them
+with that file.
+
 The reasons behind the API are on the [Design](https://zazr.dev/principles/) page, and every decision is recorded,
 with its alternatives, in the [decision log](docs/design.md). If a change goes against a decision there, say so in
 the issue.
