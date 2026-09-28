@@ -25,10 +25,6 @@
   <a href="https://github.com/guizmaii-opensource/zazr/releases">Releases</a>
 </p>
 
-> [!WARNING]
-> **Pre-1.0 and changing fast.** The current release is 0.1.0, and the API may still change between releases before
-> 1.0.
-
 ## What Zazr is
 
 Zazr gives Java immutable collections and the types that make functional code pleasant: `Option`, `Either`, `Try`,
