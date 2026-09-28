@@ -30,9 +30,9 @@ import org.jspecify.annotations.Nullable;
  * A key given more than once keeps the position of its first occurrence and takes the key object and the value of
  * its last, whichever way the map is built: {@link #put(Object, Object)} on a key already present, the
  * {@link Builder}, and every factory, collector and bulk operation ({@code of}, {@code ofEntries}, {@code ofAll},
- * {@code collector()}, {@code tabulate}, {@code fill}, {@code mapBoth}, {@code mapKeys}, {@code map}, and
- * {@code merge(that)} on an empty map), which gives the map that putting the entries one by one into an empty map
- * gives. For example,
+ * {@code collector()}, {@code tabulate}, {@code fill}, {@code mapBoth}, {@code mapKeys}, {@code map},
+ * {@link #putAll(Iterable)}, and {@code merge(that)} on an empty map), which gives the map that putting the entries
+ * one by one gives. For example,
  * {@code ofEntries((1, a), (2, b), (1, c))} iterates as {@code (1, c), (2, b)}. The operations that combine the values
  * of a repeated key, {@code merge(that, f)} and {@code mapKeys(keyMapper, valueMerge)}, keep its first position too
  * and take its last key object, with the combined value. On a map that is not empty, {@code merge(that)} keeps the
@@ -1089,6 +1089,31 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public LinkedHashMap<K, V> put(Tuple2<? extends K, ? extends V> entry) {
         return Maps.put(this, entry);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * A key already present keeps its position and takes the entry's key object and value; a new key goes to the end
+     * of the insertion order.
+     * <p>
+     * Complexity: O(m) for m entries, one effectively O(1) {@link #put(Object, Object)} each. When this map is empty,
+     * the entries are built into a new map as {@link #ofEntries(Iterable)} does, and a LinkedHashMap is returned as
+     * is.
+     */
+    @Override
+    public LinkedHashMap<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+        Objects.requireNonNull(entries, "entries is null");
+        if (isEmpty()) {
+            return ofEntries(entries);
+        }
+        @SuppressWarnings("Var")
+        LinkedHashMap<K, V> result = this;
+        for (Tuple2<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "entry is null");
+            result = result.put(entry._1(), entry._2());
+        }
+        return result;
     }
 
     /**

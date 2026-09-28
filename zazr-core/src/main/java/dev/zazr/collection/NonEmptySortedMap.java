@@ -25,12 +25,13 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * The contract is {@link NonEmptyMap}'s, plus the positional operations of a sorted map:
  * <ul>
- * <li>operations that cannot remove every entry return a {@code NonEmptySortedMap}: {@code put}, {@code merge},
- * {@code computeIfAbsent}, {@code computeIfPresent}, {@code map}, {@code mapBoth}, {@code mapKeys}, {@code mapValues},
- * {@code flatMap}, {@code replace}, {@code replaceAll}, {@code replaceValue}, {@code tap}; {@code keySet} returns a
- * {@link NonEmptySortedSet}, {@code values} and {@code zipWithIndex} a {@link NonEmptyVector}, and {@code grouped},
- * {@code sliding}, {@code slideBy} and {@code groupBy} non-empty groups ({@code groupBy} in a {@link NonEmptyMap}),
- * {@code toMap} a {@code NonEmptyMap} and {@code toSortedMap} a {@code NonEmptySortedMap};</li>
+ * <li>operations that cannot remove every entry return a {@code NonEmptySortedMap}: {@code put}, {@code putAll},
+ * {@code merge}, {@code computeIfAbsent}, {@code computeIfPresent}, {@code map}, {@code mapBoth}, {@code mapKeys},
+ * {@code mapValues}, {@code flatMap}, {@code replace}, {@code replaceAll}, {@code replaceValue}, {@code tap};
+ * {@code keySet} returns a {@link NonEmptySortedSet}, {@code values} and {@code zipWithIndex} a
+ * {@link NonEmptyVector}, and {@code grouped}, {@code sliding}, {@code slideBy} and {@code groupBy} non-empty groups
+ * ({@code groupBy} in a {@link NonEmptyMap}), {@code toMap} a {@code NonEmptyMap} and {@code toSortedMap} a
+ * {@code NonEmptySortedMap};</li>
  * <li>operations that can shrink return a {@link TreeMap} with the same comparator: {@code filter},
  * {@code filterKeys}, {@code filterValues}, {@code reject}, {@code rejectKeys}, {@code rejectValues}, {@code collect},
  * {@code flatMapAll}, {@code remove}, {@code removeAll}, {@code retainAll}, {@code partition}, {@code tail},
@@ -403,6 +404,27 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     public NonEmptySortedMap<K, V> merge(Map<? extends K, ? extends V> that) {
         return wrap(map.merge(that));
+    }
+
+    /**
+     * Accepts entries that may be empty and returns the non-empty type: the map that successive
+     * {@link #put(Tuple2)} calls give, where an entry's key object and value replace the ones already there. This is
+     * Scala's {@code concat} ({@code ++}); {@link #merge(Map)} is the one where this map's entries win. A
+     * {@code NonEmptySortedMap} argument counts as the {@code TreeMap} it wraps.
+     * <p>
+     * Complexity: O(m log(n + m)) for m entries, as {@link TreeMap#putAll(Iterable)}.
+     *
+     * @param entries the entries to put, possibly empty
+     * @return this map with the entries put
+     * @throws NullPointerException if {@code entries} is null, or yields a null entry, key or value
+     */
+    public NonEmptySortedMap<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+        if (entries instanceof NonEmptySortedMap<?, ?> other) {
+            @SuppressWarnings("unchecked")
+            TreeMap<K, V> wrapped = (TreeMap<K, V>) other.map;
+            return wrap(map.putAll(wrapped));
+        }
+        return wrap(map.putAll(entries));
     }
 
     /**

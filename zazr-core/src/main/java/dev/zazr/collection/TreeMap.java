@@ -1571,6 +1571,48 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.put(this, entry);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns this map when {@code entries} is empty, and a TreeMap with an equal comparator given as
+     * {@code entries} itself when this map is empty.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public TreeMap<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+        Objects.requireNonNull(entries, "entries is null");
+        if (entries instanceof TreeMap<?, ?> other && hasSameComparator(other)) {
+            return union((TreeMap<K, V>) other);
+        } else if (JavaConverters.underlying(entries) instanceof TreeMap<?, ?> other && hasSameComparator(other)) {
+            return union((TreeMap<K, V>) other);
+        }
+        @SuppressWarnings("Var")
+        RedBlackTree<Tuple2<K, V>> result = this.entries;
+        for (Tuple2<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "entry is null");
+            Objects.requireNonNull(entry._1(), "TreeMap: key is null");
+            Objects.requireNonNull(entry._2(), "TreeMap: value is null");
+            result = result.insert(new Tuple2<>(entry._1(), entry._2()));
+        }
+        return withEntries(result);
+    }
+
+    // the entries of `that` win: the red-black union keeps the element of its argument
+    private TreeMap<K, V> union(TreeMap<K, V> that) {
+        if (that.isEmpty()) {
+            return this;
+        } else if (isEmpty()) {
+            return that;
+        } else {
+            return new TreeMap<>(entries.union(that.entries));
+        }
+    }
+
+    // the red-black union needs both trees ordered by the same comparator
+    private boolean hasSameComparator(TreeMap<?, ?> that) {
+        return comparator().equals(that.comparator());
+    }
+
     @Override
     public <U extends V> TreeMap<K, V> put(
             Tuple2<? extends K, U> entry, BiFunction<? super V, ? super U, ? extends V> merge) {

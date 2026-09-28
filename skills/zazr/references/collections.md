@@ -69,6 +69,8 @@ var kiwis = stock.getOrElse("kiwi", 0);  // Integer
 A map is a collection of `Tuple2<K, V>` entries. `get` returns an `Option`; `map`, `filter` and `forEach` on a
 map take a function of the key and the value; `mapValues` and `filterKeys` work on one side; `keySet()` gives a set
 and `values()` a `Vector`.
+`putAll(entries)` puts many entries as successive `put`s would, the argument's value winning on a shared key (Scala's
+`++`); `merge(that)` keeps this map's value and adds only the keys it lacks.
 
 ## Build in bulk
 

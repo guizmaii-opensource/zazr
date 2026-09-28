@@ -633,6 +633,16 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
+     * Complexity: O(m log(n + m)) for m entries, one insertion each. When {@code entries} is a TreeMap with an equal
+     * comparator (for a lambda, the same object), the cost is O(m log(n / m + 1)), m then being the smaller of the two
+     * sizes: the two trees are cut and joined, not rebuilt. O(1) when {@code entries} is an empty map.
+     */
+    @Override
+    SortedMap<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries);
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: O(log n): one lookup, then one insertion.
      */
     @Override
