@@ -57,7 +57,7 @@ its names and most of its control types come from ZIO and zio-prelude, and `Usin
 - **Names that say what happens.** `zip`, `collectAll`, `catchAll`, `mapBoth`: the vocabulary of ZIO, with no theory
   to learn first.
 - **[AI ready.](https://zazr.dev/ai-assistant/)** An [Agent Skill](skills/zazr) teaches your coding assistant to
-  write idiomatic Zazr code instead of Vavr from memory.
+  write idiomatic Zazr code.
 
 ## Installation
 
