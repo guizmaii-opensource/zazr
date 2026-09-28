@@ -3,10 +3,9 @@ package dev.zazr.collection.internal;
 import org.jspecify.annotations.Nullable;
 
 /// The walk of a [ChampNode] trie with a fixed stack: a depth-first pre-order traversal that yields the entries held
-/// inline by a node before those of its children, left to right. A subclass reads the entry at [#currentValueCursor]
-/// of [#currentValueNode] and advances the cursor. Ported from `ChampBaseIterator` in
-/// `scala/collection/immutable/ChampCommon.scala` of the Scala 3 standard library (the Scala 2.13 collection library,
-/// which Scala 3 ships unchanged).
+/// inline by a node before those of its children, left to right. A subclass reads the entry at [#currentValueCursor] of
+/// [#currentValueNode] and advances the cursor. Ported from `ChampBaseIterator` in
+/// `scala/collection/immutable/ChampCommon.scala` of the Scala 2.13 collections library, which Scala 3 uses unchanged.
 ///
 /// @param <T> the element type
 /// @param <N> the node type

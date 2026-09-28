@@ -11,8 +11,8 @@ import static dev.zazr.collection.internal.VectorStatics.*;
 
 /**
  * A persistent vector stored as a radix-balanced finger tree of width 32, ported from
- * {@code scala.collection.immutable.Vector} of the Scala 3 standard library (which ships the Scala 2.13.18 collections
- * unchanged; the source is {@code scala/collection/immutable/Vector.scala}).
+ * {@code scala.collection.immutable.Vector} of the Scala 2.13 collections library, which Scala 3 uses unchanged (the
+ * source is {@code scala/collection/immutable/Vector.scala}, Scala 2.13.18).
  * <p>
  * There is one final class per depth: {@link Vector0} (empty), {@link Vector1} (one leaf of up to 32 elements) and
  * {@link Vector2} .. {@link Vector6}. A {@code VectorN} keeps its elements in {@code 2N - 1} slices, from left to right

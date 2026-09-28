@@ -14,6 +14,7 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 | `Case`, `$`, `Patterns` | record patterns and `when` guards |
 | `Seq<T>`, `IndexedSeq<T>`, `LinearSeq<T>` | the concrete type (`Vector<T>` by default), or `Traversable<T>` for what every collection does at the same cost |
 | `Array<T>` | `Vector<T>` |
+| `Stream<T>`, `toStream()` | `LazyList<T>`, `toLazyList()`: fully lazy, not even the first element is computed before it is read |
 | `CharSeq` | `String`, or `Vector<Character>` |
 | `Tree`, `BitSet`, `PriorityQueue`, `Multimap` | `Map<K, Vector<V>>` with `groupBy`, or a JDK type |
 | `Future`, `Promise`, `Task` | `CompletableFuture` or virtual threads; `Try.fromCompletableFuture` and `toCompletableFuture()` |
@@ -34,6 +35,7 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 | `recoverWith` | `catchAllWith`, `catchSomeWith` |
 | `mapFailure(Case...)` | `mapError(Function)` |
 | `andFinally` | `ensuring` |
+| `Try.withResources(...)` | `Using.of(...)`, `Using.manager(...)` |
 | `Either.cond`, `Validation.cond` | `Either.fromPredicate`, `Validation.fromPredicate` |
 | `getOrElseGet(f)` | `getOrElse(f)`, an overload taking the failure |
 | `mapTo(value)` | `as(value)` on a sequence or a set; `map(x -> value)` on a control type or a map |
@@ -41,6 +43,8 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 | `toJavaOptional()` | `toOptional()` |
 | `toJavaStream()` | `stream()` |
 | `toJavaArray` | `toArray` |
+| `reverseIterator()`, `iterator(int)` | `reverse().iterator()`, `drop(n).iterator()` |
+| `Tuple.sequence2(tuples)`, `tuple.toSeq()` | `Tuple.unzip2(tuples)`, `tuple.toVector()` |
 | `tuple._1` (field) | `tuple._1()`, or a record pattern `Tuple2(var a, var b)` |
 | `for (var x : option)` | pattern matching, or `option.toVector()`: control types are not `Iterable` |
 
@@ -58,9 +62,10 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 - **`tap` on a collection runs on every element**; Vavr's `peek` ran on the first one. `List.peek()` is the stack
   top.
 - **Two `Try.Failure`s are equal only when they hold the same `Throwable` instance.**
-- **`unfold` returns `(element, nextState)`**, as in Scala and ZIO; Vavr's `unfold`/`unfoldLeft` returned
-  `(nextState, element)`, and `unfoldRight` is gone. With one type for both, Vavr code still compiles but swaps the
-  roles: `List.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x - 1, x)))` never returns. Swap the
-  tuple.
+- **`unfold` returns `(element, nextState)`**, as in Scala and ZIO, and gives the elements in the order it produces
+  them: it is Vavr's `unfoldRight`, which is gone with `unfoldLeft`. Vavr's `unfold`/`unfoldLeft` returned
+  `(nextState, element)` and gave the elements in reverse order. With one type for both, Vavr code still compiles but
+  swaps the roles: `List.unfold(10, x -> x == 0 ? Option.none() : Option.some(Tuple.of(x - 1, x)))` never returns.
+  Swap the tuple, and `reverse()` the result where the order matters.
 - **No type is `Serializable`.**
 - **No collection has `length()`**: use `size()`.

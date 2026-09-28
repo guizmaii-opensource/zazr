@@ -9,8 +9,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The constants and array helpers of {@link RadixVector}, ported from {@code VectorInline} and {@code VectorStatics} of
- * {@code scala/collection/immutable/Vector.scala} (the Scala 3 standard library, which ships the Scala 2.13.18
- * collections unchanged).
+ * {@code scala/collection/immutable/Vector.scala} of the Scala 2.13 collections library, which Scala 3 uses unchanged
+ * (Scala 2.13.18).
  * <p>
  * Every level of the tree is a plain {@code Object[]}: a leaf holds the elements, an inner array holds the arrays of the
  * level below. Scala types them as {@code Array[Array[...]]}; one runtime class for every level means no reflective

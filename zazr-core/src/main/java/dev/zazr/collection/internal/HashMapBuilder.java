@@ -5,8 +5,8 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /// The state behind `HashMap.Builder`: a transient CHAMP trie (see [ChampNode]), after `HashMapBuilder` in
-/// `scala/collection/immutable/HashMap.scala` of the Scala 3 standard library (the Scala 2.13 collection library, which
-/// Scala 3 ships unchanged) and Clojure's transients.
+/// `scala/collection/immutable/HashMap.scala` of the Scala 2.13 collections library, which Scala 3 uses unchanged and
+/// Clojure's transients.
 ///
 /// Where Scala's builder updates every node of its trie in place, and copies the whole trie before writing to one it
 /// has handed out, the nodes this builder creates carry its owner token and are the only ones updated in place. A node

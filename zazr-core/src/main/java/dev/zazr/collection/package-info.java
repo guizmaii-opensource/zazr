@@ -1,7 +1,10 @@
 /**
- * Purely functional collections based on {@linkplain dev.zazr.collection.Traversable}.
+ * Immutable, persistent collections. All but the non-empty ones implement
+ * {@linkplain dev.zazr.collection.Traversable}.
  *
- * <h2>Performance Characteristics of Vavr Collections</h2>
+ * <h2>Performance Characteristics of Zazr Collections</h2>
+ * The {@code Complexity:} note in the javadoc of each method gives its exact cost; this table sums up the common
+ * operations.
  * <table style="border-collapse: collapse; border: 1px solid; padding: 5px;">
  * <caption>Time Complexity of Sequential Operations</caption>
  * <thead>
@@ -18,7 +21,7 @@
  * <tbody>
  * <tr><td>{@linkplain dev.zazr.collection.List}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>linear</small></td></tr>
  * <tr><td>{@linkplain dev.zazr.collection.Queue}</td><td><small>const</small></td><td><small>const<sup>a</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const</small></td><td><small>const</small></td></tr>
- * <tr><td>{@linkplain dev.zazr.collection.LazyList}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>const<sup>lazy</sup></small></td><td><small>const<sup>lazy</sup></small></td></tr>
+ * <tr><td>{@linkplain dev.zazr.collection.LazyList}</td><td><small>const</small></td><td><small>const</small></td><td><small>linear</small></td><td><small>const<sup>lazy</sup></small></td><td><small>const<sup>lazy</sup></small></td><td><small>const<sup>lazy</sup></small></td></tr>
  * <tr><td>{@linkplain dev.zazr.collection.Vector}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td></tr>
  * </tbody>
  * </table>
@@ -37,10 +40,10 @@
  * <tbody>
  * <tr><td>{@linkplain dev.zazr.collection.HashMap}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td></tr>
  * <tr><td>{@linkplain dev.zazr.collection.HashSet}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain dev.zazr.collection.LinkedHashMap}</td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain dev.zazr.collection.LinkedHashSet}</td><td><small>const<sup>eff</sup></small></td><td><small>linear</small></td><td><small>linear</small></td><td><small>linear</small></td></tr>
- * <tr><td>{@linkplain dev.zazr.collection.TreeMap}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td></tr>
- * <tr><td>{@linkplain dev.zazr.collection.TreeSet}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td></tr>
+ * <tr><td>{@linkplain dev.zazr.collection.LinkedHashMap}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>a</sup></small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain dev.zazr.collection.LinkedHashSet}</td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>eff</sup></small></td><td><small>const<sup>a</sup></small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain dev.zazr.collection.TreeMap}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>linear</small></td></tr>
+ * <tr><td>{@linkplain dev.zazr.collection.TreeSet}</td><td><small>log</small></td><td><small>log</small></td><td><small>log</small></td><td><small>linear</small></td></tr>
  * </tbody>
  * </table>
  * <br>

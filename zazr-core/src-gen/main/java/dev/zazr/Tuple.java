@@ -19,7 +19,7 @@ public interface Tuple {
     /**
      * The maximum arity of an Tuple.
      * <p>
-     * Note: This value might be changed in a future version of Vavr.
+     * Note: This value might be changed in a future version of Zazr.
      * So it is recommended to use this constant instead of hardcoding the current maximum arity.
      */
     int MAX_ARITY = 8;

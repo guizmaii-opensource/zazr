@@ -21,12 +21,12 @@ import org.jspecify.annotations.Nullable;
  * An immutable {@code LazyList} is a lazy sequence of elements which may be infinitely long.
  * Its immutability makes it suitable for concurrent programming.
  * <p>
- * A {@code LazyList} is fully lazy, as Scala's {@code LazyList}: nothing is evaluated until it is read, not its first
- * element, and not even whether it is empty. It is a lazily evaluated state, either empty or a {@code head} and a
- * {@code tail} {@code LazyList}, computed on the first call to {@link #isEmpty()}, {@link #head()} or {@link #tail()}
- * and kept; the tail is itself a {@code LazyList}, not evaluated until it is read. Building a {@code LazyList} and
- * calling a lazy operation on it evaluate nothing; reading an element evaluates the cells it needs, once, even when
- * several threads read it.
+ * A {@code LazyList} is fully lazy, as the {@code LazyList} of the Scala 2.13 collections library, which Scala 3 uses
+ * unchanged: nothing is evaluated until it is read, not its first element, and not even whether it is empty. It is a
+ * lazily evaluated state, either empty or a {@code head} and a {@code tail} {@code LazyList}, computed on the first
+ * call to {@link #isEmpty()}, {@link #head()} or {@link #tail()} and kept; the tail is itself a {@code LazyList}, not
+ * evaluated until it is read. Building a {@code LazyList} and calling a lazy operation on it evaluate nothing; reading
+ * an element evaluates the cells it needs, once, even when several threads read it.
  *
  * Methods to obtain a {@code LazyList}:
  *
@@ -94,9 +94,10 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Complexity: a lazy call computes now only what its note says, and each further element when the result reaches it.
  * The methods without a note of their own that read every element (the folds, {@code reduce}, {@code count},
- * {@code sum}, {@code mkString}, {@code forEach}, the conversions to other collections and {@code hashCode}) are O(n)
- * and never return on an infinite LazyList; {@code equals} compares the elements in order and stops at the first
- * difference or at the end of the shorter side, so it returns when either side is finite, but never on two infinite
+ * the sums and products, {@code average}, {@code mkString}, {@code forEach}, the conversions to other collections
+ * and {@code hashCode}) are O(n) and never return on an infinite LazyList; {@code equals} compares the elements in
+ * order and stops at the first difference or at the end of the shorter side, so it returns when either side is
+ * finite, but never on two infinite
  * LazyLists with the same elements; {@code exists}, {@code forAll}, {@code find} and
  * {@code contains} stop at the first element that decides, {@code existsUnique} at the second match, and each
  * {@code ...Option} variant costs what the method it wraps costs. {@code toString} shows only the elements already
@@ -109,7 +110,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * A chain of lazy operations built without reading anything ({@code map}, {@code filter}, {@code take},
  * {@code defer} inside {@code defer}, ...) is evaluated recursively on the first read, one level of the chain inside
- * the next, as Scala's {@code LazyList} does: a chain of thousands of such operations can overflow the stack then.
+ * the next, as in the Scala 2.13+ collections: a chain of thousands of such operations can overflow the stack then.
  * A {@link StackOverflowError} is not kept, so reading again on a thread with a bigger stack works. {@code drop} of a
  * {@code drop} not read yet is one {@code drop}, so a chain of drops has no such limit, and a loop of
  * {@code append}, {@code appendAll} or {@code prependAll} has none either.
@@ -140,8 +141,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Creates a LazyList which traverses along the concatenation of the given iterables.
      * <p>
-     * Building the LazyList is O(k) in the number of given iterables, since an iterator is eagerly
-     * obtained from every one of them up front; only the traversal of the elements is lazy.
+     * An iterator is obtained from every one of the given iterables when the first element is read.
      * <p>
      * Complexity: lazy; nothing is computed now. Reading the first element takes the iterators and reads past the empty
      * iterables before it; each further element is read when the result reaches it.
@@ -162,9 +162,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Creates a LazyList which traverses along the concatenation of the given iterables.
      * <p>
-     * The outer iterable is fully traversed and an iterator is eagerly obtained from every element
-     * up front, so it must be finite (an infinite outer iterable causes this call to never return);
-     * only the traversal of the resulting elements is lazy.
+     * The outer iterable is fully traversed, and an iterator obtained from every element, when the first element is
+     * read, so it must be finite: on an infinite outer iterable, that read never returns.
      * <p>
      * Complexity: lazy; nothing is computed now. Reading the first element reads the outer iterable whole, so an
      * infinite one never returns then; each element is read when the result reaches it.

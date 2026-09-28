@@ -318,7 +318,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
 
     /**
      * Accepts the possibly empty type and returns the non-empty one; of two entries with the same key, {@code that}'s
-     * value wins only where this map has none.
+     * value wins only where this map has none. {@link #putAll(Iterable)} is the operation where {@code that} wins.
      *
      * @param that A map, possibly empty
      * @return the entries of both maps, this map's values kept on shared keys

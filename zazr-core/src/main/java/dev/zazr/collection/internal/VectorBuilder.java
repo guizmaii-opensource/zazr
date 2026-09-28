@@ -8,7 +8,8 @@ import static dev.zazr.collection.internal.VectorStatics.*;
 
 /**
  * A single-shot builder of {@link RadixVector}, ported from {@code VectorBuilder} of
- * {@code scala/collection/immutable/Vector.scala} (Scala 3 standard library).
+ * {@code scala/collection/immutable/Vector.scala} of the Scala 2.13 collections library, which Scala 3 uses
+ * unchanged.
  * <p>
  * The state is one array per level, {@code a1} (the leaf being filled) to {@code a6}, the fill {@code len1} of
  * {@code a1} and {@code lenRest}, the number of elements before {@code a1}. Elements are written once, into their final

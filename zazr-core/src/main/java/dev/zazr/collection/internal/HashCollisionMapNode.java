@@ -8,9 +8,9 @@ import java.util.function.BiPredicate;
 import org.jspecify.annotations.Nullable;
 
 /// The entries of a `HashMap` trie whose keys have one same hash: a leaf below the last level of hash bits, holding at
-/// least two entries. Ported from `HashCollisionMapNode` in `scala/collection/immutable/HashMap.scala` of the Scala 3
-/// standard library (the Scala 2.13 collection library, which Scala 3 ships unchanged), with the entries kept in a flat
-/// array of keys and values instead of a vector of pairs. Immutable: every update copies the array, in a builder too.
+/// least two entries. Ported from `HashCollisionMapNode` in `scala/collection/immutable/HashMap.scala` of the Scala
+/// 2.13 collections library, which Scala 3 uses unchanged, with the entries kept in a flat array of keys and values
+/// instead of a vector of pairs. Immutable: every update copies the array, in a builder too.
 ///
 /// @param <K> the key type
 /// @param <V> the value type
