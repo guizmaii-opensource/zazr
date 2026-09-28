@@ -91,19 +91,29 @@ a small example where it helps, and no internal names or ticket numbers. The met
   previous one (from a fork, open the next once the previous one is merged).
 - Write commit messages that explain what changed and why, enough to write the release notes from them.
 
-## Releases and versions
+## Versions
 
-Zazr is pre-1.0: the API changes between snapshots, with no compatibility promise. From 1.0, it follows
+Before 1.0, there is no compatibility promise: any 0.x release may change the API, and its release notes in
+[GitHub Releases](https://github.com/guizmaii-opensource/zazr/releases) list the changes. From 1.0, Zazr follows
 [Semantic Versioning](https://semver.org).
 
-Snapshots of `main` are published automatically.
+## Snapshots
 
-A release is fully automatic once the GitHub release is published:
+`main` is always on the next `-SNAPSHOT` version. When snapshot publishing is enabled, the CI deploys every commit of
+`main` to the Maven Central snapshot repository. To test a change against the latest code, build `main` locally
+with `make install` and depend on its `-SNAPSHOT` version.
+
+## Releases
+
+Only the maintainer cuts a release. A release is automatic once the GitHub release is published:
 
 1. Create a GitHub release whose tag is the version prefixed with `v` (for example `v0.1.0`), on a `main` commit whose
    CI is green, with the release notes in its description. There is no changelog file: the notes live in the release.
-2. Publishing it starts the `release` workflow. It builds and signs the artifacts, uploads them to the Maven Central
-   Portal, and waits until Central has validated and published them. If Central rejects them, or does not publish them
-   in time, the workflow fails.
-3. When the workflow succeeds, the release is on Maven Central. Bump `main` to the next snapshot version
+2. Publishing it starts the `release` workflow. It sets the version from the tag, builds and signs the artifacts,
+   uploads them to the Maven Central Portal, and waits until Central has validated and published them. If Central
+   rejects them, or does not publish them in time, the workflow fails; it can be run again by hand from the Actions
+   tab, with the tag as its `release-tag` input.
+3. When the workflow succeeds, check that the new version of each artifact is on
+   [Maven Central](https://repo1.maven.org/maven2/dev/zazr/).
+4. Bump `main` to the next snapshot version
    (`./mvnw versions:set -DnewVersion=0.2.0-SNAPSHOT -DgenerateBackupPoms=false`) in a pull request.
