@@ -6,7 +6,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Zazr Parent</name>
-    <description>Zazr: persistent collections and functional control types for Java 25+. A fork of Vavr shaped by the API design of ZIO and zio-prelude.</description>
+    <description>Zazr: persistent collections and functional control types for Java 25+. Inspired by Scala 2.13+, ZIO, and zio-prelude.</description>
     <modules>
         <module>zazr-core</module>
         <module>zazr-test</module>
