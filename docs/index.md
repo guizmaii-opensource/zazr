@@ -1,7 +1,7 @@
 ---
 template: home.html
 title: Zazr
-description: Modern Functional Programming for Java 25+. Collections from Scala 2.13+, names and most control types from ZIO and zio-prelude.
+description: Modern Functional Programming for Java 25+. Inspired by Scala 2.13+, ZIO, and zio-prelude.
 hide:
   - navigation
   - toc

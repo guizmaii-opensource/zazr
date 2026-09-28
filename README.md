@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Modern Functional Programming for Java 25+</b><br>
-  Inspired by modern <a href="https://www.scala-lang.org">Scala</a>, <a href="https://zio.dev">ZIO</a>,
+  Inspired by <a href="https://www.scala-lang.org">Scala 2.13+</a>, <a href="https://zio.dev">ZIO</a>,
   and <a href="https://zio.dev/zio-prelude/">zio-prelude</a>
 </p>
 
