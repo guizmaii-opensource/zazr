@@ -40,7 +40,8 @@ review of their pull requests is not theirs to run (section 6).
    CI, then reports: the link, the decisions taken beyond the ticket, anything the maintainer must decide.
 4. **Coordinator review.** The coordinator checks the structure (author, no attribution lines, CI state, mergeable,
    files touched), reads the risky parts, checks the claims, and posts a comment review (`"event": "COMMENT"`: GitHub
-   refuses approve and request-changes on a pull request from the same account) whose first line is the verdict. It accepts or pushes back on each decision beyond the ticket, in writing.
+   refuses approve and request-changes on a pull request from the same account) whose first line is the verdict. It
+   accepts or pushes back on each decision beyond the ticket, in writing.
 5. **Independent review.** A fresh reviewer, briefed only with the repository, the pull request and the questions to
    answer (section 5), posts one review.
 6. **Triage.** Findings go back to the implementer who wrote the code. A correctness defect is fixed, then gets a
@@ -112,8 +113,8 @@ pointer to this section. The implementer follows all of it.
   - the release build for packaging changes.
 - **Deliverable:** one review on the pull request (a comment review). The body starts with exactly
   `Verdict: no correctness defect found` or `Verdict: correctness defect(s) found`, then says the commit reviewed and
-  what was checked and how, then each finding with a reproducer (the input, the expected result, the actual result). Put the probe code
-  in a collapsed `<details>` block so anyone can rerun it. Inline comments where a finding has a line.
+  what was checked and how, then each finding with a reproducer (the input, the expected result, the actual result). Put the
+  probe code in a collapsed `<details>` block so anyone can rerun it. Inline comments where a finding has a line.
 - On a contributor's pull request, reapply at least one recorded mutation and confirm that the named test fails.
   Say so in the review.
 - Notes outside the pull request's scope (an adjacent bug, an old defect) are reported as notes; the coordinator
@@ -126,8 +127,8 @@ maintainer's side.**
 
 - Start from an issue, and agree on the approach there before writing code (see `CONTRIBUTING.md`).
 - Follow sections 3 to 5 and 7 for your own work: brief your implementers with section 4, and review your own pull
-  requests as a coordinator would. Your own independent reviews are welcome and will be read, but they are advisory. Do not post "Ready to merge":
-  that comment belongs to the maintainer's coordinator.
+  requests as a coordinator would. Your own independent reviews are welcome and will be read, but they are advisory. Do
+  not post "Ready to merge": that comment belongs to the maintainer's coordinator.
 - Once your pull request is open, the maintainer's side runs its own coordinator review and its own independent
   review, from scratch. Findings are answered on the pull request as in section 3, step 6.
 - Commit under your own identity. Everything in section 4 applies, including no attribution lines.
@@ -168,11 +169,12 @@ The trail a finished pull request leaves, in order:
 6. a written answer to every finding;
 7. the "Ready to merge" comment.
 
-Checking the trail is the coordinator's job, on the maintainer's side: before its "Ready to merge" comment, it
-confirms every item is there and links each one in that comment (the ticket, the CI run, each review, each answer to
-a finding). A contributor's pull request is checked by the maintainer's coordinator, never by the contributor's
-own: on it, items 4, 5 and 7 count only when posted from the maintainer's account (@guizmaii). A verdict or a "Ready
-to merge" from any other account is advisory, whatever it says. Anything missing sends the pull request back, and the comment says what is missing.
+Checking the trail is the coordinator's job, on the maintainer's side: before its "Ready to merge" comment, it confirms
+every item is there and links each one in that comment (the ticket, the CI run, each review, each answer to a finding).
+A contributor's pull request is checked by the maintainer's coordinator, never by the contributor's own: on it, items 4,
+5 and 7 count only when posted from the maintainer's account (@guizmaii). A verdict or a "Ready to merge" from any other
+account is advisory, whatever it says. Anything missing sends the pull request back, and the comment says what is
+missing.
 
 ## 8. Tickets, trackers and decisions
 
