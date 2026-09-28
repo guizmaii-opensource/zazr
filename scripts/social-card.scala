@@ -1,7 +1,7 @@
 //> using scala 3.9.0
 //> using jvm system
 //
-// Draws the link preview card of the website (docs/assets/social-card.png), the 1200x630 image that X, LinkedIn,
+// Draws the link preview card of the website (docs/assets/social-card.png), the 2400x1260 image that X, LinkedIn,
 // Slack and the others show under a link to zazr.dev. The page tags that point to it are in overrides/main.html.
 //
 //   scala-cli run scripts/social-card.scala -- FONT_DIR [OUTPUT]
@@ -11,7 +11,8 @@
 // the site build needs neither this script nor the fonts; run it again when the logo, the colours or the tagline change.
 //
 // The card: Zaz (docs/assets/zaz-512.png) on the left, and on the right the wordmark, the tagline and the address, on
-// the espresso brown of the site header with the yuzu accent (docs/assets/zazr.css).
+// the espresso brown of the site header with the yuzu accent (docs/assets/zazr.css). It is laid out on a 1200x630
+// grid and drawn at twice that size, so the text stays sharp when a network scales the card down or recompresses it.
 
 import java.awt.{Color, Font, RenderingHints}
 import java.awt.image.BufferedImage
@@ -22,6 +23,7 @@ import javax.imageio.ImageIO
   val output = rest.headOption.getOrElse("docs/assets/social-card.png")
   val width  = 1200
   val height = 630
+  val scale  = 2
 
   val espresso = Color(0x2e2017)
   val yuzu     = Color(0xf5a524)
@@ -32,8 +34,9 @@ import javax.imageio.ImageIO
   def font(name: String, size: Float): Font =
     Font.createFont(Font.TRUETYPE_FONT, File(fontDir, s"Inter-$name.ttf")).deriveFont(size)
 
-  val card = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+  val card = BufferedImage(width * scale, height * scale, BufferedImage.TYPE_INT_RGB)
   val g    = card.createGraphics()
+  g.scale(scale, scale)
   g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
   g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
   g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
