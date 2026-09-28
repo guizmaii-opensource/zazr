@@ -30,6 +30,10 @@ of records, so a `switch` takes them apart, and the compiler checks that every c
 removing an element returns a new collection, which shares most of its structure with the old one. Every operation
 whose cost depends on the size says what that cost is, so you choose a collection for what you do with it.
 
+Some collections can never be empty: `NonEmptyVector`, `NonEmptySet` and `NonEmptyMap`, with their sorted versions.
+On them, `reduce` always returns a value, and an operation that could remove every element, like `filter`, gives
+back a plain collection, so the type always tells you whether emptiness is still ruled out.
+
 Both fit into ordinary Java code. A builder fills a collection in a loop, `asJava()` hands it to any Java API without
 copying, and the collections and the "present" cases (`Some`, `Right`, `Success`, `Valid`) never hold `null`. Zazr
 has no runtime dependencies.
