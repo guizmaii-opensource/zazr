@@ -23,7 +23,8 @@ import org.jspecify.annotations.Nullable;
  * side by side in one array, with no object per entry.
  * <p>
  * Of two equal keys, {@link #put(Object, Object)} keeps the one put last, key and value; the factories, the collector
- * and the {@link Builder} do as successive puts. {@link #merge(Map)} keeps the entries of this map.
+ * and the {@link Builder} do as successive puts, and so does {@link #putAll(Iterable)}. {@link #merge(Map)} keeps the
+ * entries of this map.
  * <p>
  * Complexity: lookups, insertions and removals by key are effectively O(1); an insertion or a removal copies a few
  * small arrays and shares the rest with the original map. The methods without a note of their own (map, filter,
@@ -947,6 +948,47 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     public HashMap<K, V> put(Tuple2<? extends K, ? extends V> entry) {
         return Maps.put(this, entry);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns this map when {@code entries} is empty, and a HashMap given as {@code entries} itself when this map is
+     * empty. Entries that are not a HashMap also give this map back when each one's key and value objects are already
+     * there.
+     * <p>
+     * Complexity: O(n + m) for a HashMap of m entries (or the {@link #asJava()} view of one): the two maps are merged
+     * part by part, and a part only one of them holds is shared without being walked. For other entries, O(m): one
+     * effectively O(1) {@link #put(Object, Object)} each. O(1) when either map is empty.
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public HashMap<K, V> putAll(Iterable<? extends Tuple2<? extends K, ? extends V>> entries) {
+        Objects.requireNonNull(entries, "entries is null");
+        if (entries instanceof HashMap<?, ?> other) {
+            return concat((HashMap<K, V>) other);
+        } else if (JavaConverters.underlying(entries) instanceof HashMap<?, ?> other) {
+            return concat((HashMap<K, V>) other);
+        }
+        @SuppressWarnings("Var")
+        BitmapIndexedMapNode<K, V> result = trie;
+        for (Tuple2<? extends K, ? extends V> entry : entries) {
+            Objects.requireNonNull(entry, "entry is null");
+            result = putChecked(result, entry._1(), entry._2());
+        }
+        return result == trie ? this : new HashMap<>(result);
+    }
+
+    // the entries of `that` win: they are the right side of the concatenation
+    private HashMap<K, V> concat(HashMap<K, V> that) {
+        BitmapIndexedMapNode<K, V> result = trie.concat(that.trie, 0);
+        if (result == trie) {
+            return this;
+        } else if (result == that.trie) {
+            return that;
+        } else {
+            return new HashMap<>(result);
+        }
     }
 
     /**

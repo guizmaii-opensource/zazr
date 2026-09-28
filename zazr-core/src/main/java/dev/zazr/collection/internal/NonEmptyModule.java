@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -140,13 +141,10 @@ public interface NonEmptyModule {
         return result;
     }
 
-    /* the value the plain collections' average() holds, from the same compensated sum */
-    static double average(Iterable<?> nonEmpty) {
-        try {
-            double[] sum = TraversableModule.neumaierSum(nonEmpty, element -> ((Number) element).doubleValue());
-            return sum[0] / sum[1];
-        } catch (ClassCastException x) {
-            throw new UnsupportedOperationException("Elements are not numeric", x);
-        }
+    /* the average of a collection known to be non-empty: the value the plain collections' average holds */
+    static <T extends @Nullable Object> double average(Iterable<T> nonEmpty, ToDoubleFunction<? super T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        double[] sum = TraversableModule.neumaierSum(nonEmpty, mapper);
+        return sum[0] / sum[1];
     }
 }

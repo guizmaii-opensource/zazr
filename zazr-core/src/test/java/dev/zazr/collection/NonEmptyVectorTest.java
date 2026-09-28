@@ -1168,14 +1168,18 @@ public class NonEmptyVectorTest {
             assertThat(nev.maxBy(mod2)).isEqualTo(nev.toVector().maxBy(mod2).get());
             assertThat(nev.minBy(mod2)).isEqualTo(nev.toVector().minBy(mod2).get());
             assertThat(nev.fold(0, Integer::sum)).isEqualTo(vector.fold(0, Integer::sum));
-            assertThat(nev.sum()).isEqualTo(vector.sum()).isEqualTo((long) n * (n - 1) / 2);
-            NonEmptyVector<Integer> small = nev(vector.map(i -> i % 3 + 1));
-            assertThat(small.product()).isEqualTo(small.toVector().product());
-            double average = nev.average();
-            assertThat(average).isEqualTo(vector.average().get()).isEqualTo((n - 1) / 2.0);
+            assertThat(nev.sumInt(i -> i)).isEqualTo(vector.sumInt(i -> i)).isEqualTo(n * (n - 1) / 2);
+            assertThat(nev.sumLong(i -> i)).isEqualTo(vector.sumLong(i -> i)).isEqualTo((long) n * (n - 1) / 2);
+            NonEmptyVector<Integer> signs = nev(vector.map(i -> i % 3 == 0 ? -1 : 1));
+            assertThat(signs.productInt(i -> i)).isEqualTo(signs.toVector().productInt(i -> i));
+            assertThat(signs.productLong(i -> i)).isEqualTo(signs.toVector().productLong(i -> i));
+            assertThat(signs.productDouble(i -> i)).isEqualTo(signs.toVector().productDouble(i -> i));
+            double average = nev.average(i -> i);
+            assertThat(average).isEqualTo(vector.average(i -> i).get()).isEqualTo((n - 1) / 2.0);
             NonEmptyVector<Double> doubles = nev(vector.map(i -> i / 3.0));
-            assertThat(doubles.average()).isEqualTo(doubles.toVector().average().get());
-            assertThat(doubles.sum()).isEqualTo(doubles.toVector().sum());
+            assertThat(doubles.average(d -> d))
+                    .isEqualTo(doubles.toVector().average(d -> d).get());
+            assertThat(doubles.sumDouble(d -> d)).isEqualTo(doubles.toVector().sumDouble(d -> d));
         }
 
         @Test
@@ -1193,41 +1197,6 @@ public class NonEmptyVectorTest {
             assertThatThrownBy(
                             () -> NonEmptyVector.of(new Object(), new Object()).max())
                     .isInstanceOf(ClassCastException.class);
-            assertThatThrownBy(() -> NonEmptyVector.of("a").average())
-                    .isInstanceOf(UnsupportedOperationException.class);
-            assertThatThrownBy(() -> NonEmptyVector.of("a").sum()).isInstanceOf(UnsupportedOperationException.class);
-        }
-
-        @Test
-        public void shouldAggregateValuesThatOverflowAsVectorDoes() {
-            java.util.List<Vector<? extends Number>> inputs = java.util.List.of(
-                    Vector.of(Integer.MAX_VALUE, Integer.MAX_VALUE),
-                    Vector.of(Integer.MIN_VALUE, -1),
-                    Vector.of(Long.MAX_VALUE, Long.MAX_VALUE),
-                    Vector.of(Long.MAX_VALUE, Long.MIN_VALUE, 1L),
-                    Vector.of(Double.MAX_VALUE, Double.MAX_VALUE),
-                    Vector.of(Double.MAX_VALUE, -Double.MAX_VALUE, 1.0),
-                    Vector.of(1e308, 1e308, -1e308),
-                    Vector.of(1e16, 1.0, -1e16),
-                    Vector.of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY),
-                    Vector.of(Float.MAX_VALUE, Float.MAX_VALUE),
-                    Vector.of(
-                            new java.math.BigInteger("9223372036854775807"),
-                            new java.math.BigInteger("9223372036854775807")));
-            for (Vector<? extends Number> input : inputs) {
-                NonEmptyVector<? extends Number> nev = nev(input);
-                assertThat(nev.sum()).as("sum of " + input).isEqualTo(input.sum());
-                assertThat(nev.product()).as("product of " + input).isEqualTo(input.product());
-                assertThat(nev.average())
-                        .as("average of " + input)
-                        .isEqualTo(input.average().get());
-            }
-            assertThat(nev(Vector.of(Double.MAX_VALUE, Double.MAX_VALUE)).average())
-                    .isEqualTo(Double.POSITIVE_INFINITY);
-            assertThat(nev(Vector.of(1e16, 1.0, -1e16)).average()).isEqualTo(1.0 / 3);
-            assertThat(nev(Vector.of(Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY))
-                            .average())
-                    .isNaN();
         }
 
         @ParameterizedTest

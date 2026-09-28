@@ -64,8 +64,7 @@ public class Euler23Test {
                         1,
                         LOWER_LIMIT_FOUND_BY_MATHEMATICAL_ANALYSIS_FOR_NUMBERS_THAT_CAN_BE_WRITTEN_AS_THE_SUM_OF_TO_ABUNDANT_NUMBERS)
                 .filter(l -> !canBeWrittenAsTheSumOfTwoAbundantNumbers(l))
-                .sum()
-                .longValue();
+                .sumLong(Number::longValue);
     }
 
     private static boolean canBeWrittenAsTheSumOfTwoAbundantNumbers(long l) {
@@ -80,5 +79,5 @@ public class Euler23Test {
     }
 
     private static final Function<Long, Boolean> isAbundant =
-            Memoize.of((Long l) -> Utils.divisors(l).sum().longValue() > l);
+            Memoize.of((Long l) -> Utils.divisors(l).sumLong(Number::longValue) > l);
 }

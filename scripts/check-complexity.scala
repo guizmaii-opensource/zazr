@@ -46,7 +46,7 @@ val documented: Set[String] = Set(
   "enqueue", "enqueueAll", "dequeue", "dequeueOption",
   "cycle", "extend", "appendSelf",
   // the rows of the complexity page that are not positional: lookups, updates and the set algebra
-  "contains", "concat", "add", "addAll", "put", "min", "max", "union", "intersect", "diff", "containsKey",
+  "contains", "concat", "add", "addAll", "put", "putAll", "min", "max", "union", "intersect", "diff", "containsKey",
   "keySet", "values"
 )
 
@@ -339,7 +339,7 @@ val families: List[Family] = List(
     "As for the sets, only the ordered maps have positional methods. `NonEmptyMap` and `NonEmptySortedMap` wrap a " +
       "`HashMap` and a `TreeMap`, so their costs are those of the map they wrap.",
     List("HashMap", "LinkedHashMap", "TreeMap", "NonEmptyMap", "NonEmptySortedMap"),
-    List("get", "containsKey", "put", "remove", "keySet", "values", "head", "take", "drop")
+    List("get", "containsKey", "put", "putAll", "remove", "keySet", "values", "head", "take", "drop")
   )
 )
 

@@ -516,6 +516,7 @@ public class NonEmptyMapTest {
             calls.put("put(Object, Object, BiFunction)", m -> java.util.List.of(m.put(0, "x", String::concat)));
             calls.put("put(Tuple2, BiFunction)", m -> java.util.List.of(m.put(Tuple.of(0, "x"), String::concat)));
             calls.put("merge(Map)", m -> java.util.List.of(m.merge(HashMap.empty()), m.merge(m.toMap())));
+            calls.put("putAll(Iterable)", m -> java.util.List.of(m.putAll(HashMap.empty()), m.putAll(m.toMap())));
             calls.put(
                     "merge(Map, BiFunction)",
                     m -> java.util.List.of(m.merge(HashMap.<Integer, String>empty(), String::concat)));

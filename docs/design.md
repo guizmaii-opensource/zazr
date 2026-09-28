@@ -382,6 +382,7 @@ duplication is cheaper than a god interface).
 | `Lazy.val(Supplier, Class)` (dynamic proxy) | delete | magic |
 | `Lazy.filter -> Option` | delete | |
 | `isAsync`, `isLazy`, `isSingleValued`, `isTraversableAgain`, `hasDefiniteSize`, `isSequential`, `isOrdered`, `isDistinct` | delete | reflection-on-the-type flags that no caller should branch on |
+| `sum()`, `product()` → `Number`; `average()` → `Option<Double>`, all picking the arithmetic from the first element's class at run time | `sumInt(ToIntFunction)`, `sumLong(ToLongFunction)`, `sumDouble(ToDoubleFunction)`, `productInt`, `productLong`, `productDouble` with the same arguments, returning the primitive; `average(ToDoubleFunction)` → `Option<Double>` on the sequences and the sets, `double` on `NonEmptyVector`, `NonEmptySet`, `NonEmptySortedSet`. The untyped ones are deleted (decided 2026-09-28, #194) | the old forms summed `Integer`s into a `Long`, truncated a mixed `[1, 2.5]`, overflowed `long` silently and threw `UnsupportedOperationException` on non-numbers; Scala types them by `Numeric` at compile time, Java by the mapper, as `IntStream.sum`/`mapToInt`. **Overflow**: the `int` and `long` sums and products are exact and throw `ArithmeticException` when, and only when, the exact result does not fit: a partial result may leave the range if the later elements bring it back (`[MAX_VALUE, 1, -1]` gives `MAX_VALUE` in every order), so a set's result never depends on its iteration order. `sumInt` accumulates in a `long`, `sumLong` counts the carries out of 64 bits, the products keep the magnitude (unsigned for `long`) and the sign apart and become `0` on a zero factor whatever came before. The JDK's silent wrap-around was rejected (a wrong total is worse than an exception), and so was `Math.addExact` on the running total (it throws on `[MAX_VALUE, 1, -1]` and not on `[1, -1, MAX_VALUE]`). **Doubles**: `sumDouble` and `average` use Neumaier's compensated summation (NaN when a value is NaN or both infinities appear, the infinity when one is infinite or a partial sum overflows); `productDouble` multiplies in iteration order, compensation does not apply to products. **Empty**: `0`/`0L`/`0.0` and `1`/`1L`/`1.0`, the identities, as Scala and `IntStream`; `average` is `None`. **`Option<Double>` rather than `OptionalDouble`**: it is the library's absence type (pattern matching, `map`, `getOrElse`), what `max`/`min`/`reduceOption` already return, and 3.12 keeps primitive options out of v1; the one boxed `Double` per call is not a per-element cost. No `BigInteger`/`BigDecimal` forms: `foldLeft(BigInteger.ZERO, BigInteger::add)` says the same thing |
 
 Things ZIO does that **do not** port and should not be imitated:
 - `Par` suffix: there is no parallelism in pure data. Do **not** name `Validation`'s accumulating zip
@@ -630,9 +631,9 @@ now has every operation of `Vector`, each under the same contract, delegating to
   power gives none, 0 gives one empty vector), and the `Iterable` forms `zip(Iterable)`, `zipWith(Iterable, ·)`,
   `crossProduct(Iterable)`, empty when the argument is.
 - **Total:** `max()`, `min()` (natural order; `min` returns a `NaN` whenever one is present, as `Vector.min()` does),
-  `maxBy(Comparator)`, `minBy(Comparator)`, `average()` as a `double` (the value `Vector.average()` holds, from the
-  same compensated sum, without the `Option`), `single()` (throws when there is more than one element), `fold`, `sum`,
-  `product`, and the queries `indexOf(a, from)`, `indexWhere` ×2, `lastIndexOf` ×2, `lastIndexWhere` ×2,
+  `maxBy(Comparator)`, `minBy(Comparator)`, `average(ToDoubleFunction)` as a `double` (the value `Vector.average`
+  holds, from the same compensated sum, without the `Option`), `single()` (throws when there is more than one element),
+  `fold`, the typed sums and products of 3.3, and the queries `indexOf(a, from)`, `indexWhere` ×2, `lastIndexOf` ×2, `lastIndexWhere` ×2,
   `indexOfSlice` ×2, `lastIndexOfSlice` ×2, `startsWith` ×2, `endsWith`, `containsSlice`, `containsAll`, `search` ×2,
   `segmentLength`, `prefixLength`, `existsUnique`, `forEachWithIndex`, `collect(Collector)`,
   `collect(Supplier, BiConsumer, BiConsumer)`.
@@ -697,7 +698,7 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   `partition`, `partitionMap` (`HashSet` only, `TreeSet` has none), and on the sorted ones `tail`, `init`, `take*`,
   `drop*`.
 - **Total:** `max()`, `min()`, `maxBy` ×2, `minBy` ×2, `reduce`, `reduceMap`, `fold`, `single` (throws on more than one),
-  `average` as a `double` on the sets, `head`/`last` on the sorted ones, all through the loops of
+  `average(ToDoubleFunction)` as a `double` on the sets (and the typed sums and products of 3.3), `head`/`last` on the sorted ones, all through the loops of
   `collection.internal.NonEmptyModule` (no `Option` wrapped to be unwrapped). `max`/`min` stay in the natural order of
   the elements on the sorted variants, as on `TreeSet`/`TreeMap`; the comparator's extremes are `head`/`last`.
 - **Unwrap and narrowing.** `toSet()`, `toSortedSet()`, `toMap()`, `toSortedMap()` without arguments return the
@@ -963,7 +964,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
 - **What `Set` keeps** (decided): the set algebra (`add`, `addAll`, `remove`, `removeAll(Iterable)`, `union`,
   `intersect`, `diff`, `contains`), `filter`, `reject`, `map`, `flatMap`, `collect(Function)`, `as`, `partition`,
   `groupBy`, `orElse` ×2, `tap`, `replace`, `replaceAll` (the same thing on a set), `retainAll`, `existsUnique`,
-  `max`/`maxBy` ×2/`min`/`minBy` ×2, `sum`/`product`/`average`, `fold`/`reduce`/`reduceOption`, `single`/
+  `max`/`maxBy` ×2/`min`/`minBy` ×2, `sum`/`product`/`average` (typed since #194, 3.3), `fold`/`reduce`/`reduceOption`, `single`/
   `singleOption`, `arrangeBy`, `collect(Collector)` ×2, the `toJava*` and `to*` conversions, `toJavaSet()`;
   `SortedSet` adds `comparator()` and the comparator-taking `map`/`flatMap`/`collect`. **What it drops**: `head`,
   `headOption`, `last`, `lastOption`, `init`, `initOption`, `tail`, `tailOption`, `take`/`takeRight`/`takeUntil`/
@@ -982,7 +983,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `computeIfAbsent`/`computeIfPresent`, `toJavaMap()`), plus `existsUnique`, `max`/`maxBy` ×2/`min`/`minBy` ×2 over
   the entries, `fold`/`reduce`/`reduceOption`, `single`/`singleOption`, `arrangeBy`, `collect(Collector)` ×2 and
   the conversions; `SortedMap` adds `comparator()` and the comparator-taking forms. **What it drops**: the same
-  positional names as `Set`, `length`, `sum`/`product`/`average` (entries are never numbers), and every
+  positional names as `Set`, `length`, the sums, products and `average` (entries are never numbers), and every
   sequence-shaped method step 2 had typed `Stream`: `map(Function)`, `flatMap(Function)`, `collect(Function)`,
   `as`, `zip`/`zipWith`/`zipAll`/`zipWithIndex` ×2, `unzip` ×3, `unzip3` ×2, `scanLeft`/`scanRight`, together with
   `keysIterator`, `valuesIterator` and `iterator(BiFunction)` (`keySet()` and `values()` are the replacements).
@@ -1062,12 +1063,15 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
 - **`LinkedHashMap`**: a repeated key stays at the position of its first occurrence and takes the key object and the
   value of its last. Every factory, collector and bulk operation (`of` at every arity, `ofEntries` ×3, `ofAll`,
   `collector()` ×3, `tabulate`, `fill`, `orElse`, `mapBoth`, `mapKeys(keyMapper)`, `map`, `flatMap`, `collect`, and
-  `merge(that)` on an empty receiver) gives the map that putting the entries one by one into an empty map gives.
+  `merge(that)` on an empty receiver) gives the map that putting the entries one by one into an empty map gives;
+  `putAll` (added later) gives the map that putting them one by one into the receiver gives.
   `merge(that, f)` and `mapKeys(keyMapper, valueMerge)` are successive `put`s of the combined value: first position,
   last key object, combined value. `merge(that)` on a non-empty receiver is deliberately different: a key the receiver
-  already holds keeps the receiver's key object and value, and only absent keys are added. Scala's insertion-ordered maps do the
-  same: `VectorMap.updated` and `ListMap.updated` keep an existing key where it is, and building one from a sequence
-  is repeated `updated` (Scala 3 ships the Scala 2.13 collection library unchanged, so these are its classes).
+  already holds keeps the receiver's key object and value, and only absent keys are added; Scala has no bulk operation
+  that does this. The positions follow Scala's insertion-ordered maps: `VectorMap.updated` and `ListMap.updated` keep an
+  existing key where it is and replace its value, and building one from a sequence, or `concat` (`++`), is repeated
+  `updated`, so the argument wins (Scala 3 ships the Scala 2.13 collection library unchanged, so these are its
+  classes). `putAll` (below) is that operation in Zazr.
 - **`put` of an equal but distinct key object** also writes that object into the insertion-order `Vector`, not only
   into the entry: the positional operations of the key set (`zipWithIndex`, `takeWhile` and its siblings,
   `slideBy`) read the keys from that `Vector`, and returned the first key object while iteration returned the last.
@@ -1089,6 +1093,34 @@ iteration-order law of `zazr-test` needed two orders for one type. Every way of 
   In `zazr-test`, `IterationOrder.keysByLastOccurrence` is gone: `LinkedHashMap`'s subjects, its collector and
   successive `put`s all use `keysByFirstOccurrence`, and `LawsTest` checks that the law catches a map that moves a
   repeated key to its last occurrence.
+
+**`putAll`: the bulk put where the argument wins (decided 2026-09-28).** `merge(that)` keeps the receiver's entries on
+a shared key, and no bulk operation let the argument win, while Scala's `concat` (`++`) on maps is repeated `updated`.
+`putAll(Iterable<? extends Tuple2<? extends K, ? extends V>>)` on `Map`, `SortedMap`, `HashMap`, `LinkedHashMap`,
+`TreeMap`, `NonEmptyMap` and `NonEmptySortedMap` (these two return the non-empty type) gives the map that successive
+`put`s of the entries, in their iteration order, give: a shared key takes the entry's key object and value, keeps its
+position in a `LinkedHashMap`, and a key given twice takes its last entry. `merge(that)` stays as it is.
+
+- **No `putAll(Map)` overload.** A Zazr map is an iterable of its `Tuple2` entries, so the one signature takes maps,
+  lists, vectors and the `asJava()` views; the fast paths below look at the argument's runtime type. An overload would
+  add nothing and make `putAll(null)` ambiguous.
+- **`HashMap`**: a `HashMap` argument (or the `asJava()` view of one) goes through the CHAMP `concat` with the argument
+  as the right side, whose entries win (3.8.2). Two maps with colliding keys can iterate a collision node in another
+  order than successive puts would (the argument's colliding keys first); equality and the kept objects are the same,
+  and `HashMap` defines no iteration order. Other entries are put one by one on the trie, and the receiver comes back
+  when no put changed it.
+- **`TreeMap`**: a `TreeMap` with an equal comparator (or its `asJava()` view) goes through the red-black `union`, which
+  keeps the element of its argument; another comparator or other entries are inserted one by one.
+- **`LinkedHashMap`**: successive `put`s, which is the definition; on an empty receiver, `ofEntries`, which builds the
+  same map (and returns a `LinkedHashMap` argument as is).
+- **Non-empty maps**: they delegate to the map they wrap, a `NonEmptyMap`/`NonEmptySortedMap` argument counting as the
+  map it wraps, and return themselves when that map comes back unchanged.
+- **Tests**: `MapPutAllTest` compares every receiver type with every kind of argument (the three map types, a
+  `TreeMap` of another comparator, the non-empty maps, the `asJava()` views, a `java.util.List`, a `Vector` and a
+  one-shot iterable, the last three with repeated keys) against successive `put`s, by the identity of the key and
+  value objects, in iteration order where the type has one; with no key, all keys or some keys shared, colliding
+  hashes, and the sizes 0/1/2/31/32/33/1023/1024/1025. It also checks the red-black invariants, that the receiver
+  never changes, which instance comes back, and the null checks.
 
 **Decided while implementing #25 (`partitionMap`, `duplicates`, static `flatten`):**
 
@@ -1731,6 +1763,8 @@ deleted. Attribution in `NOTICE`.
   - `HashSet.union` and `addAll` with a `HashSet`, and `HashMap.merge` with a `HashMap`, concatenate the tries
     (Scala's `concat`, whose right side wins). The receiver is the right side in both, since a set keeps the elements
     it has and a merge keeps this map's entries; the receiver is returned when its size does not change.
+  - `HashMap.putAll` with a `HashMap` concatenates the tries with the argument as the right side, since its entries
+    win; the receiver is returned when the result is its trie, the argument when the result is the argument's trie.
   - `HashSet.diff` and `removeAll` with a `HashSet` walk both tries (Scala's `diff`); `containsAll` of a `HashSet` is
     Scala's `subsetOf`.
   - `filter` and `reject` on both, and `filterKeys`, `filterValues`, `rejectKeys`, `rejectValues` on `HashMap`, filter
@@ -1847,7 +1881,8 @@ allocates an `Integer` (outside the -128..127 cache) plus a `Some`. The options 
   collections store every element boxed (`Vector`'s leaves are `Object[]` only, 3.8), and there is no
   `IntVector`-style primitive collection API. **Deferred** until a JMH benchmark on a real
   hot path shows the boxing, and then added together with the producing methods (`indexOfOption`,
-  numeric `max`/`sum` folds).
+  numeric `max` folds). The typed sums and products (3.3) return primitives and need none; `average` returns an
+  `Option<Double>`.
 - **JIT escape analysis** already removes both allocations for the common inline pattern
   (`find(...).map(...).getOrElse(...)` in one method) once C2 inlines; records make that more likely.
   Measure before adding types.

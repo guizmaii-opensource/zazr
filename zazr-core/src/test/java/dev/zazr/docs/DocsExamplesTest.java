@@ -1064,7 +1064,7 @@ public class DocsExamplesTest {
             var xs = NonEmptyVector.of(1, 2, 3, 4);
             var halves = xs.splitAt(2); // Tuple2<Vector<Integer>, Vector<Integer>>
             var windows = xs.sliding(3); // Vector<NonEmptyVector<Integer>>
-            var mean = xs.average(); // double
+            var mean = xs.average(Integer::doubleValue); // double
             // (Vector(1, 2), Vector(3, 4)), Vector(NonEmptyVector(1, 2, 3), NonEmptyVector(2, 3, 4)), 2.5
 
             assertThat(halves).hasToString("(Vector(1, 2), Vector(3, 4))");
@@ -1160,6 +1160,21 @@ public class DocsExamplesTest {
             assertThat(sortedList).hasToString("List(1, 2, 3)");
             assertThat(set).isEqualTo(HashSet.of(1, 2, 3));
             assertThat(same).isTrue();
+        }
+
+        @Test
+        void sumsProductsAndAverages() {
+            var words = List.of("one", "three", "five");
+            var letters = words.sumInt(String::length); // int
+            var mean = words.average(String::length); // Option<Double>
+            var big = Vector.of(Integer.MAX_VALUE, 1).sumLong(n -> n); // long
+            // 12, Some(4.0), 2147483648
+
+            assertThat(letters).isEqualTo(12);
+            assertThat(mean).isEqualTo(Option.some(4.0));
+            assertThat(big).isEqualTo(2_147_483_648L);
+            assertThatThrownBy(() -> Vector.of(Integer.MAX_VALUE, 1).sumInt(n -> n))
+                    .isInstanceOf(ArithmeticException.class);
         }
 
         @Test
@@ -1328,6 +1343,18 @@ public class DocsExamplesTest {
             assertThat(kiwis).isZero();
             assertThat(values).hasToString("Vector(1, 2, 3)");
             assertThat(first).hasToString("(a, 1)");
+        }
+
+        @Test
+        void puttingManyEntries() {
+            var prices = HashMap.of("apple", 3, "pear", 4);
+            var updates = HashMap.of("pear", 5, "fig", 2);
+            var updated = prices.putAll(updates); // HashMap<String, Integer>
+            var kept = prices.merge(updates); // HashMap<String, Integer>
+            // updated has pear -> 5, kept has pear -> 4, both have fig -> 2
+
+            assertThat(updated).isEqualTo(HashMap.of("apple", 3, "pear", 5, "fig", 2));
+            assertThat(kept).isEqualTo(HashMap.of("apple", 3, "pear", 4, "fig", 2));
         }
     }
 

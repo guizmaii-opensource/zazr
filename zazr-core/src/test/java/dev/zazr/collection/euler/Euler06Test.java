@@ -42,13 +42,10 @@ public class Euler06Test {
     }
 
     private static long squareOfSumFrom1UpTo(int max) {
-        return (long) Math.pow(LazyList.rangeClosed(1, max).sum().longValue(), 2);
+        return (long) Math.pow(LazyList.rangeClosed(1, max).sumLong(Number::longValue), 2);
     }
 
     private static long sumOfSquaresFrom1UpTo(int max) {
-        return LazyList.rangeClosed(1, max)
-                .map(i -> (long) Math.pow(i, 2))
-                .sum()
-                .longValue();
+        return LazyList.rangeClosed(1, max).map(i -> (long) Math.pow(i, 2)).sumLong(Number::longValue);
     }
 }
