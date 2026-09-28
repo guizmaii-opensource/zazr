@@ -20,22 +20,19 @@ This post says what Zazr is, why we built it, what it borrows and why, and where
 
 ## What Zazr is
 
-Zazr gives Java persistent collections: `Vector`, `List`, `Queue`, `LazyList`, hash and sorted sets and maps, and
-collections that cannot be empty. Each operation whose cost depends on the size documents that cost, and one page
-lists them all.
+Zazr gives Java two families of types, made to work together.
 
-On a `NonEmptyVector`, `head`, `max` and `reduce` cannot fail, and the return types tell you when that guarantee is
-lost: `filter` gives back a plain `Vector`, since it may be empty.
+**Types that say what can happen.** `Option` is a value that may be absent. `Either` and `Try` are the result of an
+operation that may fail. `Validation` is a set of checks that reports every error at once. They are sealed interfaces
+of records, so a `switch` takes them apart, and the compiler checks that every case is handled.
 
-To build a collection in a loop, a builder fills it in place and hands it over once. To pass one to Java code,
-`asJava()` gives a read-only `java.util` view in constant time, with no copy.
+**Collections that never change.** `Vector`, `List`, `HashMap`, `TreeSet` and the others are immutable: adding or
+removing an element returns a new collection, which shares most of its structure with the old one. Every operation
+whose cost depends on the size says what that cost is, so you choose a collection for what you do with it.
 
-It also gives Java the types that make functional code pleasant to write: `Option`, `Either`, `Try`, `Validation`
-and `Lazy`. `Option`, `Either`, `Try` and `Validation` are sealed interfaces of records, so you take them apart with
-pattern matching, and the compiler checks that every case is handled. `Lazy` is a value computed on first use, then
-kept.
-
-It has no runtime dependencies. `Some`, `Right`, `Success`, `Valid` and every collection reject `null`.
+Both fit into ordinary Java code. A builder fills a collection in a loop, `asJava()` hands it to any Java API without
+copying, and the collections and the "present" cases (`Some`, `Right`, `Success`, `Valid`) never hold `null`. Zazr
+has no runtime dependencies.
 
 ## Why we built it
 
