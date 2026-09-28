@@ -51,7 +51,7 @@ Java 25 has the pieces that make this style feel at home: records, sealed interf
 exhaustive `switch`. We wanted a library that builds on those pieces, so that functional code in Java reads like
 modern Java.
 
-That is Zazr. The [Design](../../principles.md) page explains the ideas behind it, one by one.
+That is Zazr.
 
 ## What we took, and why
 
