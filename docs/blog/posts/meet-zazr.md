@@ -4,17 +4,17 @@ authors:
   - guizmaii
 categories:
   - Announcements
-slug: introducing-zazr
-description: What Zazr is, why I built it, what it takes from Scala, ZIO and zio-prelude, and where it stands at 0.1.0.
+slug: meet-zazr
+description: What Zazr is, why we built it, what it takes from Scala, ZIO and zio-prelude, and where it stands at 0.1.0.
 ---
 
-# Introducing Zazr
+# Meet Zazr: a Vavr fork bringing modern functional programming to Java
 
 Zazr is a library of immutable collections and functional types for Java 25 and later. It is built on what the
 language now offers: records, sealed interfaces and pattern matching. Its tagline says where the ideas come from:
 inspired by Scala 2.13+, ZIO, and zio-prelude.
 
-This post says what Zazr is, why I built it, what it borrows and why, and where it stands today.
+This post says what Zazr is, why we built it, what it borrows and why, and where it stands today.
 
 <!-- more -->
 
@@ -37,20 +37,25 @@ kept.
 
 It has no runtime dependencies. `Some`, `Right`, `Success`, `Valid` and every collection reject `null`.
 
-## Why I built it
+## Why we built it
 
-I come from Scala and ZIO. There, I got used to a way of writing code: values that don't change, errors that are
+We come from Scala and ZIO. There, we got used to a way of writing code: values that don't change, errors that are
 values, and names that say what an operation does.
 
+From the outside, functional programming can look like a field that stopped moving: old ideas wrapped in jargon. It
+isn't. Functional programming keeps evolving, and some of its most useful progress has made it simpler. ZIO did that
+for Scala: it traded jargon for names that say what they do, and abstractions you had to study for operations you can
+read. Zazr brings that to Java. Zazr brings modern FP to Java.
+
 Java 25 has the pieces that make this style feel at home: records, sealed interfaces, record patterns and
-exhaustive `switch`. I wanted a library that builds on those pieces, so that functional code in Java reads like
+exhaustive `switch`. We wanted a library that builds on those pieces, so that functional code in Java reads like
 modern Java.
 
 That is Zazr. The [Design](../../principles.md) page explains the ideas behind it, one by one.
 
-## What I took, and why
+## What we took, and why
 
-Most of Zazr is borrowed. I took the parts I trust from the ecosystems I know, and ported them to Java.
+Most of Zazr is borrowed. We took the parts we trust from the ecosystems we know, and ported them to Java.
 
 ### The Scala 2.13 collections library
 
@@ -121,7 +126,7 @@ collections and its control types. Thank you, all of you.
 Zazr has changed a lot since the fork. The [Compared to Vavr](../../vavr.md) page lists every difference, for anyone
 who knows Vavr.
 
-I also want to thank the Scala and ZIO communities. The collections, the names and `Validation` are their work, and
+We also want to thank the Scala and ZIO communities. The collections, the names and `Validation` are their work, and
 Zazr builds on it.
 
 ## Where it stands

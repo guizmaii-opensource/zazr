@@ -453,3 +453,35 @@
 .zz-hero__eyebrow {
   overflow-wrap: anywhere;
 }
+
+/* The byline under a blog post's title (overrides/partials/content.html): the authors and the date, on the screens
+   where Material moves the post's sidebar below the post. */
+.md-typeset .zz-byline {
+  align-items: center;
+  color: var(--md-default-fg-color--light);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: -0.4rem;
+}
+
+.md-typeset .zz-byline .md-author {
+  float: none;
+  margin: 0;
+}
+
+.md-typeset .zz-byline__author {
+  color: var(--md-default-fg-color);
+  font-weight: 700;
+}
+
+.md-typeset .zz-byline time::before {
+  content: "\00b7";
+  margin-right: 0.4rem;
+}
+
+@media screen and (min-width: 76.25em) {
+  .md-typeset .zz-byline {
+    display: none;
+  }
+}

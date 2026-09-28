@@ -92,6 +92,8 @@ jobs:
         run: make docs-examples
       - name: Check that the declarations of every java block of the site are aligned
         run: make docs-align-check
+      - name: Check that every blog post has an author and a date
+        run: make blog-check
 
   coverage:
     runs-on: ubuntu-latest

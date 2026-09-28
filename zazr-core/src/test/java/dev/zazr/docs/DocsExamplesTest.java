@@ -118,7 +118,7 @@ public class DocsExamplesTest {
     }
 
     @Nested
-    class BlogIntroducingZazr {
+    class BlogMeetZazr {
 
         @Test
         void aTaste() {
