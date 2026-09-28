@@ -10,8 +10,9 @@
 // https://github.com/rsms/inter/releases). OUTPUT defaults to docs/assets/social-card.png. The PNG is committed, so
 // the site build needs neither this script nor the fonts; run it again when the logo, the colours or the tagline change.
 //
-// The card: Zaz (docs/assets/zaz-512.png) on the left, and on the right the wordmark, the tagline and the address, on
-// the espresso brown of the site header with the yuzu accent (docs/assets/zazr.css). It is laid out on a 1200x630
+// The card: Zaz (docs/assets/zaz-512.png) on the left, and on the right the wordmark and the tagline, on
+// the espresso brown of the site header with the yuzu accent (docs/assets/zazr.css). The bottom left stays empty:
+// X lays the page title over it, and every network already shows the domain under the card. It is laid out on a 1200x630
 // grid and drawn at twice that size, so the text stays sharp when a network scales the card down or recompresses it.
 
 import java.awt.{Color, Font, RenderingHints}
@@ -29,7 +30,6 @@ import javax.imageio.ImageIO
   val yuzu     = Color(0xf5a524)
   val cream    = Color(0xfff8ee)
   val muted    = Color(0xc9bcae)
-  val caramel  = Color(0xc07d45)
 
   def font(name: String, size: Float): Font =
     Font.createFont(Font.TRUETYPE_FONT, File(fontDir, s"Inter-$name.ttf")).deriveFont(size)
@@ -76,12 +76,10 @@ import javax.imageio.ImageIO
   val wordmark = font("Bold", 132f)
   val title    = font("SemiBold", 44f)
   val subtitle = font("Regular", 32f)
-  val address  = font("SemiBold", 28f)
 
   val afterWordmark = draw(List("Zazr"), wordmark, cream, 225, 0)
   val afterTitle    = draw(wrap("Modern Functional Programming for Java 25+", title), title, yuzu, afterWordmark + 80, 56)
   draw(wrap("Inspired by Scala 2.13+, ZIO, and zio-prelude", subtitle), subtitle, muted, afterTitle + 62, 44)
-  draw(List("zazr.dev"), address, caramel, height - 60, 0)
 
   g.dispose()
   ImageIO.write(card, "png", File(output))
