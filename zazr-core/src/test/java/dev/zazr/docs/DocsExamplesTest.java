@@ -118,6 +118,28 @@ public class DocsExamplesTest {
     }
 
     @Nested
+    class BlogIntroducingZazr {
+
+        @Test
+        void aTaste() {
+            record Signup(String email, int age) {}
+
+            var email = Validation.fromPredicate("jules", e -> e.contains("@"), e -> "email has no @");
+            var age = Validation.fromPredicate(-1, a -> a >= 0, a -> "age is negative");
+            var signup = Validation.zipWith(email, age, Signup::new); // Validation<String, Signup>
+
+            var message = switch (signup) {
+                case Valid(var s) -> "welcome, " + s.email();
+                case Invalid(var errors) -> errors.mkString(", ");
+            };
+            // "email has no @, age is negative"
+
+            assertThat(signup).hasToString("Invalid(email has no @, age is negative)");
+            assertThat(message).isEqualTo("email has no @, age is negative");
+        }
+    }
+
+    @Nested
     class NewToFpPage {
 
         record Customer(String name, String email) {}
