@@ -1,0 +1,43 @@
+name: pr-process
+
+# Fails a pull request whose description does not follow .github/pull_request_template.md (PROCESS.md section 7),
+# or whose body or commits carry attribution lines. Runs again when the description is edited.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  template:
+    name: Pull request follows PROCESS.md
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test the checker
+        run: python3 scripts/test_check_pr.py
+      # The checkout is the merge of the pull request into its base: ^1 is the base, ^2 the pull request's head.
+      # The checker and the template come from the base when it has them, so a change to either takes effect only once
+      # merged. This file itself comes from the pull request: a change to it is for the coordinator review to catch.
+      - name: Check the description and the commits
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s' "$BODY" > "$RUNNER_TEMP/body.md"
+          git log --format='%B%x00' "HEAD^1..HEAD^2" > "$RUNNER_TEMP/commits.txt"
+          checker=scripts/check-pr.py
+          template=.github/pull_request_template.md
+          if git cat-file -e "HEAD^1:scripts/check-pr.py" 2>/dev/null \
+            && git cat-file -e "HEAD^1:.github/pull_request_template.md" 2>/dev/null; then
+            git show "HEAD^1:scripts/check-pr.py" > "$RUNNER_TEMP/check-pr.py"
+            git show "HEAD^1:.github/pull_request_template.md" > "$RUNNER_TEMP/pull_request_template.md"
+            checker="$RUNNER_TEMP/check-pr.py"
+            template="$RUNNER_TEMP/pull_request_template.md"
+          fi
+          python3 "$checker" --body "$RUNNER_TEMP/body.md" --commits "$RUNNER_TEMP/commits.txt" \
+            --template "$template"

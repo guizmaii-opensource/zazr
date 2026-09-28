@@ -153,7 +153,23 @@ maintainer's side.**
 ## 7. What a pull request must contain
 
 The pull request template (`.github/pull_request_template.md`) has these sections. Each is filled in, or says
-"none" with a reason.
+"none" with a reason; "none" alone is enough for the decisions beyond the ticket and for what was found but not
+fixed. The `pr-process` CI check (`scripts/check-pr.py`, tested by `scripts/test_check_pr.py`) fails a pull
+request when:
+
+- the description has no closing line (`Closes #N`, `Fixes #N` or `Resolves #N`);
+- a section is missing, repeated or empty;
+- a section holds only a placeholder ("none", "n/a", "nothing", "tbd", "todo", a dash or only punctuation) outside
+  the two sections above;
+- the description or a commit carries an attribution trailer (`Co-Authored-By:`), or a tool footer or address,
+  anywhere, code blocks included.
+
+Headings and closing lines inside comments and code blocks don't count; a code block does count as a section's
+content. The check runs again when the description is edited. It uses the checker and template of the base branch
+(or the pull request's own when the base has none), so a change to either takes effect only once merged. The workflow
+file itself comes from the pull request, as GitHub runs it: a change to it is caught by the coordinator review, which
+names every change under `.github/` (below). Dependabot's pull requests are skipped.
+The check proves the sections are there, not that they are true: the reviews check the content.
 
 - **Ticket:** `Closes #N`, and the release tracker it belongs to.
 - **What changed and why**, in a few lines, with the behaviour before and after.
