@@ -142,8 +142,7 @@ Zazr 0.1.0 is on Maven Central:
 </dependency>
 ```
 
-It is pre-1.0, and the API may still change between releases. The
-[release notes](https://github.com/guizmaii-opensource/zazr/releases) list every change.
+The [release notes](https://github.com/guizmaii-opensource/zazr/releases) list every change.
 
 Feedback is very welcome. If something is missing, unclear or broken, please
 [open an issue](https://github.com/guizmaii-opensource/zazr/issues).
