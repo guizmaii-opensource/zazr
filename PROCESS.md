@@ -113,8 +113,9 @@ pointer to this section. The implementer follows all of it.
   - the release build for packaging changes.
 - **Deliverable:** one review on the pull request (a comment review). The body starts with exactly
   `Verdict: no correctness defect found` or `Verdict: correctness defect(s) found`, then says the commit reviewed and
-  what was checked and how, then each finding with a reproducer (the input, the expected result, the actual result). Put the
-  probe code in a collapsed `<details>` block so anyone can rerun it. Inline comments where a finding has a line.
+  what was checked and how, then each finding with a reproducer (the input, the expected result, the actual
+  result). Put the probe code in a collapsed `<details>` block so anyone can rerun it. Inline comments where a finding
+  has a line.
 - On a contributor's pull request, reapply at least one recorded mutation and confirm that the named test fails.
   Say so in the review.
 - Notes outside the pull request's scope (an adjacent bug, an old defect) are reported as notes; the coordinator
