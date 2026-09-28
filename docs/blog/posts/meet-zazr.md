@@ -150,8 +150,8 @@ Feedback is very welcome. If something is missing, unclear or broken, please
 
 ## What's next
 
-The next posts will each teach one thing Zazr brings, starting with property-based testing with
-[zazr-test](../../testing.md).
+The next posts will each teach one thing Zazr brings, starting with
+[property-based testing with zazr-test](property-based-testing.md).
 
 Until then:
 
