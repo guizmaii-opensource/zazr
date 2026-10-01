@@ -35,10 +35,10 @@ A unit test checks the inputs you picked: reverse `[1, 2, 3]` and expect `[3, 2,
 limited by your imagination. The bug is often in the case you didn't write: the empty list, the negative
 number, the value next to the limit.
 
-A property-based test states a rule instead, one that must hold for every input. "Reversing a list twice gives the
-list back" is such a rule. A generator produces the inputs: short lists and long ones, empty ones, lists with
-duplicates, large and negative numbers. The check runs the rule on each of them, and stops at the first one that
-breaks it.
+A property-based test is the same unit test, with a generated input. Since you don't know the input in advance, you
+don't write the exact result you expect; you write what is always true, such as "reversing a list twice gives the
+list back". A generator produces the inputs: short lists and long ones, empty ones, lists with duplicates, large and
+negative numbers. The test runs on each of them, and stops at the first one that fails.
 
 The two work well together. Tests with picked inputs document the cases that matter to you; properties explore the
 ones you didn't list.
