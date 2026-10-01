@@ -29,10 +29,10 @@ It's simpler than that. A property-based test is a unit test where you don't hav
 generated for you. And because they are generated, the test doesn't run on one input but on hundreds of variants,
 including the ones you would never have thought of. That's how it finds the edge cases your code doesn't handle yet.
 
-## From examples to properties
+## From picked inputs to generated ones
 
-An example-based test checks the cases you thought of: reverse `[1, 2, 3]` and expect `[3, 2, 1]`. It is precise, and
-it is limited by your imagination. The bug is often in the case you didn't write: the empty list, the negative
+A unit test checks the inputs you picked: reverse `[1, 2, 3]` and expect `[3, 2, 1]`. It is precise, and it is
+limited by your imagination. The bug is often in the case you didn't write: the empty list, the negative
 number, the value next to the limit.
 
 A property-based test states a rule instead, one that must hold for every input. "Reversing a list twice gives the
@@ -40,8 +40,8 @@ list back" is such a rule. A generator produces the inputs: short lists and long
 duplicates, large and negative numbers. The check runs the rule on each of them, and stops at the first one that
 breaks it.
 
-The two styles work well together. Examples document the cases that matter to you; properties explore the ones you
-didn't list.
+The two work well together. Tests with picked inputs document the cases that matter to you; properties explore the
+ones you didn't list.
 
 ## Your first check
 
