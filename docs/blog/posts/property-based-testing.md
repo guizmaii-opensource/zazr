@@ -302,6 +302,12 @@ was generated.
 The growing size keeps it small in practice: the first samples are the small ones, so the first failure is usually
 small too. When a counterexample is still large, the seed replays it, so you can look at it in a debugger.
 
+## Thank you, ZIO Test
+
+`zazr-test` follows the design of [ZIO Test](https://zio.dev/reference/test/), the testing library of ZIO: one
+generator type whose values grow over a run, assertions that explain why they failed, and seeds that replay a run.
+We ported those ideas to Java. Thank you to the ZIO contributors, who created ZIO Test and keep making it better.
+
 ## Getting it
 
 `zazr-test` 0.1.0 is on Maven Central. Add it with the test scope:
