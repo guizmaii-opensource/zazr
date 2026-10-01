@@ -18,7 +18,17 @@ This post shows what property-based testing is, how to write a check, how to rea
 
 <!-- more -->
 
-## The idea
+## Property-based testing, simply
+
+Before anything else, let's make property-based testing less mysterious. It is often explained in abstract terms: you
+don't test examples, you check that "properties of the system hold". That can make it sound like a whole new
+discipline.
+
+It's simpler than that. A property-based test is a unit test where you don't have to invent the inputs: they are
+generated for you. And because they are generated, the test doesn't run on one input but on hundreds of variants,
+including the ones you would never have thought of. That's how it finds the edge cases your code doesn't handle yet.
+
+## From examples to properties
 
 An example-based test checks the cases you thought of: reverse `[1, 2, 3]` and expect `[3, 2, 1]`. It is precise, and
 it is limited by your imagination. The bug is often in the case you didn't write: the empty list, the negative
