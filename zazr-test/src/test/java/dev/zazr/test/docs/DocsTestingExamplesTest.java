@@ -12,6 +12,8 @@ import dev.zazr.test.CheckConfig;
 import dev.zazr.test.CheckResult;
 import dev.zazr.test.Gen;
 import dev.zazr.test.TestResult;
+import dev.zazr.test.laws.EqualityLaws;
+import dev.zazr.test.laws.EqualitySubject;
 import dev.zazr.test.laws.MapLaws;
 import dev.zazr.test.laws.MapSubject;
 import java.time.DayOfWeek;
@@ -569,48 +571,44 @@ public class DocsTestingExamplesTest {
         @Test
         void lawsForYourOwnTypes() {
             assertThatThrownBy(() -> {
-                        record Bag(Vector<?> items) {
-                            Bag map(Function<Object, Object> f) {
-                                return new Bag(items.map(f).distinct());
+                        record Money(long cents, String currency) {
+                            @Override
+                            public boolean equals(Object o) {
+                                return o instanceof Money(var c, var cur)
+                                        && c == cents
+                                        && cur.equalsIgnoreCase(currency);
                             }
                         }
-                        var bags = new MapSubject<Bag>() {
-                            public Gen<Bag> values() {
-                                return Gen.vector(Gen.integers(0, 9)).map(Bag::new);
-                            }
-
-                            public Bag map(Bag bag, Function<Object, Object> f) {
-                                return bag.map(f);
-                            }
-                        }; // MapSubject<Bag>
-                        MapLaws.<Bag>all().assertSatisfied(bags); // throws an AssertionError
+                        var money = new EqualitySubject<Money>(
+                                Gen.longs(0, 100_000).zipWith(Gen.elements("EUR", "USD"), Money::new), // the values
+                                m -> new Money(m.cents(), m.currency().toLowerCase()), // an equal copy
+                                m -> Tuple.of(m.cents(), m.currency().toUpperCase())); // what equals compares
+                        EqualityLaws.<Money>all().assertSatisfied(money); // throws an AssertionError
                     })
-                    .isInstanceOf(AssertionError.class)
-                    .hasMessageStartingWith("1 law(s) failed:\nmapIdentity: falsified at sample ");
+                    .isInstanceOf(AssertionError.class);
 
             // the same, with the seed 42 of the failure the post prints
             assertThatThrownBy(() -> {
-                        record Bag(Vector<?> items) {
-                            Bag map(Function<Object, Object> f) {
-                                return new Bag(items.map(f).distinct());
+                        record Money(long cents, String currency) {
+                            @Override
+                            public boolean equals(Object o) {
+                                return o instanceof Money(var c, var cur)
+                                        && c == cents
+                                        && cur.equalsIgnoreCase(currency);
                             }
                         }
-                        var bags = new MapSubject<Bag>() {
-                            public Gen<Bag> values() {
-                                return Gen.vector(Gen.integers(0, 9)).map(Bag::new);
-                            }
-
-                            public Bag map(Bag bag, Function<Object, Object> f) {
-                                return bag.map(f);
-                            }
-                        }; // MapSubject<Bag>
-                        MapLaws.<Bag>all()
-                                .assertSatisfied(bags, CheckConfig.defaults().withSeed(42)); // throws an AssertionError
+                        var money = new EqualitySubject<Money>(
+                                Gen.longs(0, 100_000).zipWith(Gen.elements("EUR", "USD"), Money::new),
+                                m -> new Money(m.cents(), m.currency().toLowerCase()),
+                                m -> Tuple.of(m.cents(), m.currency().toUpperCase()));
+                        EqualityLaws.<Money>all()
+                                .assertSatisfied(
+                                        money, CheckConfig.defaults().withSeed(42)); // throws an AssertionError
                     })
                     .isInstanceOf(AssertionError.class)
                     .hasMessage("""
                     1 law(s) failed:
-                    mapIdentity: falsified at sample 13 by (Bag[items=Vector(9, 1, 2, 9, 8, 9)]): left = Bag[items=Vector(9, 1, 2, 8)], right = Bag[items=Vector(9, 1, 2, 9, 8, 9)] (seed 42, replay with -Dzazr.check.seed=42)""");
+                    equalsHashCodeConsistency: falsified at sample 1 by (Money[cents=1, currency=EUR], Money[cents=100000, currency=USD]): Money[cents=1, currency=EUR] and Money[cents=1, currency=eur] are equal but hash to 69057 and 100833 (seed 42, replay with -Dzazr.check.seed=42)""");
         }
     }
 }

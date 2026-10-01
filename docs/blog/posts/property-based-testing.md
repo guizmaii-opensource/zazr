@@ -15,7 +15,7 @@ input, and it tries the rule on hundreds of generated inputs. It runs inside the
 any other framework.
 
 This post shows what property-based testing is, how to write a check and read its failure, how to generate values
-and explain failures, how to replay a failure, and how to check the laws of your own types.
+and explain failures, how to replay a failure, and how to check the rules of your own types.
 
 <!-- more -->
 
@@ -253,39 +253,46 @@ Check.check(config, naturals, naturals, (a, b) -> midpoint(a, b) >= 0);  // thro
 
 A seed set with `withSeed` takes precedence over the system property.
 
-## Laws for your own types
+## Checking the rules of your own types
 
-Some rules are shared by many types. Mapping the identity function over a value must change nothing: that rule is
-called `mapIdentity`. `zazr-test` states such rules once, as laws in the package `dev.zazr.test.laws`, and you check
-them against your own types.
+Some rules come with every Java class. Override `equals`, and Java expects equal values to have equal hash codes, a
+value to equal its copy, and nothing to equal `null`. Break one, and a `HashMap` or a `HashSet` quietly loses your
+values.
 
-A law needs two things from your type: a generator of its values, and the operation under test. You give them in a
-subject. Here is a `Bag` whose `map` removes duplicates by mistake:
+`zazr-test` has these rules ready to check, as laws. You don't write the test: you give a generator of your values,
+and the check tries the rules on hundreds of them.
+
+Here is a `Money` record that compares currencies ignoring their case, but kept the `hashCode` that Java generated,
+which doesn't:
 
 ```java
-record Bag(Vector<?> items) {
-    Bag map(Function<Object, Object> f) { return new Bag(items.map(f).distinct()); }
+record Money(long cents, String currency) {
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Money(var c, var cur) && c == cents && cur.equalsIgnoreCase(currency);
+    }
 }
-var bags = new MapSubject<Bag>() {
-    public Gen<Bag> values() { return Gen.vector(Gen.integers(0, 9)).map(Bag::new); }
-    public Bag map(Bag bag, Function<Object, Object> f) { return bag.map(f); }
-}; // MapSubject<Bag>
-MapLaws.<Bag>all().assertSatisfied(bags); // throws an AssertionError
+
+var money = new EqualitySubject<Money>(
+        Gen.longs(0, 100_000).zipWith(Gen.elements("EUR", "USD"), Money::new), // the values
+        m -> new Money(m.cents(), m.currency().toLowerCase()),                 // an equal copy
+        m -> Tuple.of(m.cents(), m.currency().toUpperCase()));                 // what equals compares
+EqualityLaws.<Money>all().assertSatisfied(money); // throws an AssertionError
 ```
 
-`MapLaws.all()` holds two laws, `mapIdentity` and `mapComposition`. `assertSatisfied` checks both, then throws one error
-that names each law that failed, the value that broke it, and the two sides of the rule. With the seed 42:
+The subject gives the check three things: how to generate values, how to build an equal copy of one, and what two
+equal values have in common. With the seed 42, the error names the rule that broke and shows why:
 
 ```text
 1 law(s) failed:
-mapIdentity: falsified at sample 13 by (Bag[items=Vector(9, 1, 2, 9, 8, 9)]): left = Bag[items=Vector(9, 1, 2, 8)], right = Bag[items=Vector(9, 1, 2, 9, 8, 9)] (seed 42, replay with -Dzazr.check.seed=42)
+equalsHashCodeConsistency: falsified at sample 1 by (Money[cents=1, currency=EUR], Money[cents=100000, currency=USD]): Money[cents=1, currency=EUR] and Money[cents=1, currency=eur] are equal but hash to 69057 and 100833 (seed 42, replay with -Dzazr.check.seed=42)
 ```
 
-Mapping the identity over `Bag(9, 1, 2, 9, 8, 9)` lost the duplicates. `mapComposition` is not listed: it holds,
-since removing the duplicates after the first `map` or only after the second gives the same bag.
+`EUR` and `eur` are equal, but their hash codes differ, so a `HashSet` could hold both. The fix is a `hashCode` that
+ignores the case too.
 
-The package has other sets: `FlatMapLaws`, `ZipLaws`, `EqualityLaws` (such as `equals` agreeing with `hashCode`) and
-`CollectionLaws`, each with its subject. `Law.of` states a law of your own.
+The package `dev.zazr.test.laws` has other sets of laws, for types with `map`, `flatMap` or `zip`, and for
+collections.
 
 ## No shrinking
 
