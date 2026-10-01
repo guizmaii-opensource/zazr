@@ -32,7 +32,7 @@ don't depend on each other, so all three can be checked, and the user can fix al
 A `Validation<E, A>` is one of two things:
 
 - `Valid(value)`: the input passed, and here is the value, of type `A`;
-- `Invalid(errors)`: the input failed, and here are the errors, of type `E`.
+- `Invalid(errors)`: the input failed, and here are the errors, each of type `E`.
 
 The errors are held in a `NonEmptyVector`: a vector that always has at least one element. An `Invalid` with no error
 can't exist, and the type says so.
