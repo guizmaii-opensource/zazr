@@ -1,5 +1,5 @@
 ---
-description: Property-based testing with zazr-test - Gen generators, Check, assertions that explain failures, CheckResult and CheckConfig in any JUnit test, a generator for every Zazr type, seeds that replay a failure, and ready-made laws.
+description: Property-based testing with zazr-test - Gen generators, Check, assertions that explain failures, CheckResult and CheckConfig in any JUnit test, generators for the Zazr types, seeds that replay a failure, and ready-made laws.
 ---
 
 # Testing with `zazr-test`
@@ -9,6 +9,9 @@ generates a few hundred values and reports the first one that breaks the rule.
 
 A check is a method call that fails the test itself when a value breaks the rule, so it runs in any test framework,
 such as JUnit. `Check.evaluate` returns the result instead, for code that looks at it.
+
+`zazr-test` follows the design of [ZIO Test](https://zio.dev/reference/test/), the testing library of ZIO: one
+generator type whose values grow over a run, assertions that explain why they failed, and seeds that replay a run.
 
 === "Maven"
 
@@ -69,7 +72,7 @@ Six types, all in `dev.zazr.test`:
 
 | Type | Role |
 |---|---|
-| `Gen<A>` | a generator of values of type `A`: scalars, combinators, and one generator per Zazr type |
+| `Gen<A>` | a generator of values of type `A`: scalars, combinators, and generators for the Zazr types |
 | `Check` | runs a property for 1 to 8 generators: `check`, `checkN` and `checkAll` fail the test when it breaks; `evaluate`, `evaluateN` and `evaluateAll` return the result |
 | `Assertion<A>` | a condition on an `A` that explains why a value breaks it: `equalTo`, `isGreaterThan`, `hasSize`, `isSome`, ... |
 | `TestResult` | the outcome of `assertThat(value, assertions...)`: a success, or a failure with its explanation |
