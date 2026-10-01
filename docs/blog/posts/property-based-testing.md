@@ -1,20 +1,21 @@
 ---
-date: 2026-09-28
+date: 2026-10-01
 authors:
   - guizmaii
 categories:
   - Testing
 slug: property-based-testing
-description: Property-based testing in your JUnit tests with zazr-test - generators, checks, assertions that explain failures, seeds that replay them, and laws for your own types.
+description: "Property-based testing in your JUnit tests with zazr-test: generators, checks, assertions that explain failures, seeds that replay them, and laws for your own types."
 ---
 
 # Property-based testing with zazr-test
 
 Zazr comes with a second artifact, `zazr-test`, for property-based testing. You state a rule that must hold for every
-input, and it tries the rule on a few hundred generated inputs. It runs inside the tests you already have, JUnit or
+input, and it tries the rule on hundreds of generated inputs. It runs inside the tests you already have, JUnit or
 any other framework.
 
-This post shows what property-based testing is, how to write a check, how to read a failure, and how to replay it.
+This post shows what property-based testing is, how to write a check and read its failure, how to generate values
+and explain failures, how to replay a failure, and how to check the laws of your own types.
 
 <!-- more -->
 
@@ -192,8 +193,8 @@ Vector(20, 150, -3) has size 3:
   3 is not less than 3
 ```
 
-A nested assertion's explanation follows the part that failed: `forall` names the first element that breaks it, and
-the label says which rule that was.
+When an assertion contains another, the explanation shows the part that failed: `forall` names the first element
+that breaks it, and the label says which rule that was.
 
 When the property only asserts on the generated value, `Check.check(gen, assertions...)` skips the lambda:
 
@@ -208,8 +209,8 @@ falsifies the sample, and the error's message goes into the failure.
 ## Reading the result
 
 `Check.check` fails the test. `Check.evaluate` runs the same check and returns a `CheckResult` instead, for code that
-wants to look at the outcome. A `CheckResult` is one of three records, so pattern matching over it covers every case.
-Here, with the `midpoint` from above, before the fix:
+wants to look at the outcome. A `CheckResult` is one of three records, so a `switch` over it covers every case, and
+the compiler checks it. Here, with the `midpoint` from above, before the fix:
 
 ```java
 var config = CheckConfig.defaults().withSeed(42);                                        // CheckConfig
@@ -241,7 +242,7 @@ The failure tells you how: pass the seed to the test JVM as a system property, w
 mvn test -Dtest=MidpointTest -Dzazr.check.seed=42
 ```
 
-Maven passes it to the tests. A Gradle build needs `systemProperty` in its `test` task.
+Maven passes it on to the tests as it is. With Gradle, forward it with `systemProperty` in the `test` task.
 
 To keep the case in the code, while you fix it or after, set the seed in a `CheckConfig`:
 
@@ -272,7 +273,7 @@ var bags = new MapSubject<Bag>() {
 MapLaws.<Bag>all().assertSatisfied(bags); // throws an AssertionError
 ```
 
-`MapLaws.all()` is two laws, `mapIdentity` and `mapComposition`. `assertSatisfied` checks both, then throws one error
+`MapLaws.all()` holds two laws, `mapIdentity` and `mapComposition`. `assertSatisfied` checks both, then throws one error
 that names each law that failed, the value that broke it, and the two sides of the rule. With the seed 42:
 
 ```text
