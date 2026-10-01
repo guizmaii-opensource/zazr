@@ -26,8 +26,8 @@ You know the usual ways to report a problem in Java. An exception stops at the f
 it never reaches the next check. `Either` stops at the first error too: it is made for steps where each one needs
 the result of the one before.
 
-That is right when the steps depend on each other. It is wrong for a form. The username, the email address and the
-age don't depend on each other, so all three can be checked, and the user can fix all three at once.
+That is right when the steps depend on each other. A form is different: the username, the email address and the age
+don't depend on each other, so all three can be checked, and the user can fix all three at once.
 
 A `Validation<E, A>` is one of two things:
 
