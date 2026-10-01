@@ -515,14 +515,14 @@ public class DocsTestingExamplesTest {
         @Test
         void combiningAssertions() {
             // Assertion<Integer>
-            var percentage =
+            var isPercentage =
                     isGreaterThanOrEqualTo(0).and(isLessThanOrEqualTo(100)).label("a percentage");
-            var result = assertThat(Vector.of(20, 150, -3), forall(percentage), hasSize(isLessThan(3)));
+            var result = assertThat(Vector.of(20, 150, -3), forall(isPercentage), hasSize(isLessThan(3)));
 
-            var scores = Gen.vector(Gen.integers(0, 100)); // Gen<Vector<Integer>>
-            Check.check(scores, forall(percentage), hasSize(isLessThanOrEqualTo(100)));
+            var sortedScores = Gen.vector(Gen.integers(0, 100)).map(Vector::sorted); // Gen<Vector<Integer>>
+            Check.check(sortedScores, forall(isPercentage), isSorted());
 
-            Assertion<Integer> typed = percentage;
+            Assertion<Integer> typed = isPercentage;
             assertThat(assertThat(150, typed))
                     .isEqualTo(new TestResult.Failure("a percentage: 150 is greater than 100"));
             assertThat(result).isEqualTo(new TestResult.Failure("""
@@ -530,8 +530,9 @@ public class DocsTestingExamplesTest {
                       a percentage: 150 is greater than 100
                     Vector(20, 150, -3) has size 3:
                       3 is not less than 3"""));
-            Gen<Vector<Integer>> typedScores = scores;
-            assertThat(Check.evaluate(typedScores, forall(percentage))).isEqualTo(new CheckResult.Satisfied(200));
+            Gen<Vector<Integer>> typedScores = sortedScores;
+            assertThat(Check.evaluate(typedScores, forall(isPercentage), isSorted()))
+                    .isEqualTo(new CheckResult.Satisfied(200));
         }
 
         @Test

@@ -182,8 +182,8 @@ assertions, and a failure lists every one that fails, not only the first:
 
 ```java
 // Assertion<Integer>
-var percentage = isGreaterThanOrEqualTo(0).and(isLessThanOrEqualTo(100)).label("a percentage");
-var result     = assertThat(Vector.of(20, 150, -3), forall(percentage), hasSize(isLessThan(3)));
+var isPercentage = isGreaterThanOrEqualTo(0).and(isLessThanOrEqualTo(100)).label("a percentage");
+var result       = assertThat(Vector.of(20, 150, -3), forall(isPercentage), hasSize(isLessThan(3)));
 ```
 
 ```text
@@ -199,8 +199,8 @@ that breaks it, and the label says which rule that was.
 When the property only asserts on the generated value, `Check.check(gen, assertions...)` skips the lambda:
 
 ```java
-var scores = Gen.vector(Gen.integers(0, 100)); // Gen<Vector<Integer>>
-Check.check(scores, forall(percentage), hasSize(isLessThanOrEqualTo(100)));
+var sortedScores = Gen.vector(Gen.integers(0, 100)).map(Vector::sorted); // Gen<Vector<Integer>>
+Check.check(sortedScores, forall(isPercentage), isSorted());
 ```
 
 You can keep the assertions you already use, too. A property may throw a JUnit or AssertJ assertion error: that
