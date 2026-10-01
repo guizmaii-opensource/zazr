@@ -3,6 +3,7 @@ package dev.zazr.docs;
 import dev.zazr.Lazy;
 import dev.zazr.Tuple;
 import dev.zazr.Tuple0;
+import dev.zazr.Tuple2;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
 import dev.zazr.collection.LazyList;
@@ -136,6 +137,135 @@ public class DocsExamplesTest {
 
             assertThat(signup).hasToString("Invalid(email has no @, age is negative)");
             assertThat(message).isEqualTo("email has no @, age is negative");
+        }
+    }
+
+    @Nested
+    class BlogValidation {
+
+        record SignUp(String username, String email, int age) {}
+
+        static Validation<String, String> username(String value) {
+            return Validation.fromPredicate(value, v -> v.length() >= 3, v -> "username '" + v + "' is too short");
+        }
+
+        static Validation<String, String> email(String value) {
+            return Validation.fromPredicate(value, v -> v.contains("@"), v -> "email '" + v + "' has no @");
+        }
+
+        static Validation<String, Integer> age(int value) {
+            return Validation.fromPredicate(value, v -> v >= 13, v -> "age " + v + " is under 13");
+        }
+
+        @Test
+        void oneCheck() {
+            var ok = email("ana@example.com"); // Validation<String, String>
+            var bad = email("ana"); // Validation<String, String>
+            // Valid(ana@example.com), Invalid(email 'ana' has no @)
+
+            assertThat(ok).hasToString("Valid(ana@example.com)");
+            assertThat(bad).hasToString("Invalid(email 'ana' has no @)");
+        }
+
+        @Test
+        void everyErrorAtOnce() {
+            var signUp = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new);
+            // Invalid(username 'jo' is too short, email 'jules' has no @, age 9 is under 13)
+
+            var welcome = Validation.zipWith(username("ana"), email("ana@example.com"), age(30), SignUp::new);
+            // Valid(SignUp[username=ana, email=ana@example.com, age=30])
+
+            Validation<String, SignUp> typed = signUp;
+            assertThat(typed)
+                    .hasToString("Invalid(username 'jo' is too short, email 'jules' has no @, age 9 is under 13)");
+            assertThat(welcome).hasToString("Valid(SignUp[username=ana, email=ana@example.com, age=30])");
+            assertThat(Validation.zipWith(username("jo"), email("jules"), age(30), SignUp::new))
+                    .hasToString("Invalid(username 'jo' is too short, email 'jules' has no @)");
+        }
+
+        @Test
+        void readingTheResult() {
+            var signUp = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new);
+
+            var message = switch (signUp) {
+                case Valid(var user) -> "welcome, " + user.username();
+                case Invalid(var errors) -> "please fix: " + errors.mkString("; ");
+            };
+            // "please fix: username 'jo' is too short; email 'jules' has no @; age 9 is under 13"
+
+            assertThat(message)
+                    .isEqualTo("please fix: username 'jo' is too short; email 'jules' has no @; age 9 is under 13");
+        }
+
+        @Test
+        void manyInputs() {
+            var invites = Vector.of("ana@example.com", "bob", "cleo@example.com", "dan");
+            var all = Validation.forEach(invites, a -> email(a)); // Validation<String, Vector<String>>
+            // Invalid(email 'bob' has no @, email 'dan' has no @)
+
+            var checks = invites.map(a -> email(a)); // Vector<Validation<String, String>>
+            var same = Validation.collectAll(checks); // Validation<String, Vector<String>>
+            // Invalid(email 'bob' has no @, email 'dan' has no @)
+
+            var split = Validation.partition(invites, a -> email(a)); // Tuple2<Vector<String>, Vector<String>>
+            // (Vector(email 'bob' has no @, email 'dan' has no @), Vector(ana@example.com, cleo@example.com))
+
+            Validation<String, Vector<String>> allTyped = all;
+            Vector<Validation<String, String>> checksTyped = checks;
+            Validation<String, Vector<String>> sameTyped = same;
+            Tuple2<Vector<String>, Vector<String>> splitTyped = split;
+            assertThat(allTyped).hasToString("Invalid(email 'bob' has no @, email 'dan' has no @)");
+            assertThat(checksTyped).hasSize(4);
+            assertThat(sameTyped).isEqualTo(allTyped);
+            assertThat(splitTyped)
+                    .hasToString(
+                            "(Vector(email 'bob' has no @, email 'dan' has no @), Vector(ana@example.com, cleo@example.com))");
+            assertThat(Validation.forEach(Vector.of("ana@example.com", "cleo@example.com"), a -> email(a)))
+                    .hasToString("Valid(Vector(ana@example.com, cleo@example.com))");
+        }
+
+        @Test
+        void aStepThatNeedsThePreviousValue() {
+            var taken = HashSet.of("ana", "bob"); // HashSet<String>
+            var account = Validation.zipWith(username("ana"), email("ana@example.com"), age(30), SignUp::new)
+                    .flatMapEither(s -> taken.contains(s.username())
+                            ? Either.left("username '" + s.username() + "' is taken")
+                            : Either.right(s));
+            // Invalid(username 'ana' is taken)
+
+            HashSet<String> takenTyped = taken;
+            assertThat(takenTyped).hasSize(2);
+            assertThat(account).hasToString("Invalid(username 'ana' is taken)");
+
+            // an invalid form keeps its errors, and the lookup is never called
+            var lookups = new java.util.concurrent.atomic.AtomicInteger();
+            var rejected = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new)
+                    .flatMapEither(s -> {
+                        lookups.incrementAndGet();
+                        return Either.<String, SignUp>right(s);
+                    });
+            assertThat(rejected)
+                    .hasToString("Invalid(username 'jo' is too short, email 'jules' has no @, age 9 is under 13)");
+            assertThat(lookups.get()).isZero();
+        }
+
+        @Test
+        void optionAndEither() {
+            var form = HashMap.of("username", "ana", "email", "ana@example.com"); // HashMap<String, String>
+            var birthday = Validation.fromOption(form.get("birthday"), () -> "birthday is missing");
+            // Invalid(birthday is missing)
+
+            var signUp = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new);
+            var result = signUp.toEitherWith(errors -> errors.mkString("; ")); // Either<String, SignUp>
+            // Left(username 'jo' is too short; email 'jules' has no @; age 9 is under 13)
+
+            HashMap<String, String> formTyped = form;
+            Validation<String, String> birthdayTyped = birthday;
+            Either<String, SignUp> resultTyped = result;
+            assertThat(formTyped).hasSize(2);
+            assertThat(birthdayTyped).hasToString("Invalid(birthday is missing)");
+            assertThat(resultTyped)
+                    .hasToString("Left(username 'jo' is too short; email 'jules' has no @; age 9 is under 13)");
         }
     }
 

@@ -81,6 +81,7 @@ plugins:
       categories_allowed:
         - Announcements
         - Testing
+        - Error handling
   # the pages that moved keep their old address
   - redirects:
       redirect_maps:
