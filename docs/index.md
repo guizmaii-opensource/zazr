@@ -200,7 +200,7 @@ JDK 25 or later, no runtime dependencies. Zazr is on Maven Central.
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-core</artifactId>
-        <version>0.1.0</version>
+        <version>0.2.0</version>
     </dependency>
     ```
 
@@ -208,7 +208,7 @@ JDK 25 or later, no runtime dependencies. Zazr is on Maven Central.
 
     ```kotlin
     dependencies {
-        implementation("dev.zazr:zazr-core:0.1.0")
+        implementation("dev.zazr:zazr-core:0.2.0")
     }
     ```
 

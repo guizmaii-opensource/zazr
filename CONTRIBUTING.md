@@ -117,4 +117,4 @@ Only the maintainer cuts a release. A release is automatic once the GitHub relea
 3. When the workflow succeeds, check that the new version of each artifact is on
    [Maven Central](https://repo1.maven.org/maven2/dev/zazr/).
 4. Bump `main` to the next snapshot version
-   (`./mvnw versions:set -DnewVersion=0.2.0-SNAPSHOT -DgenerateBackupPoms=false`) in a pull request.
+   (`./mvnw versions:set -DnewVersion=<next version>-SNAPSHOT -DgenerateBackupPoms=false`) in a pull request.
