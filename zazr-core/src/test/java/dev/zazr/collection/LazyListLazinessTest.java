@@ -17,6 +17,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /// What each operation evaluates, counted: a call evaluates nothing (or what its note says, for the operations that
@@ -386,35 +387,45 @@ class LazyListLazinessTest {
         for (int kind = 0; kind < last.size(); kind++) {
             assertThat(possible.get(kind)).contains(last.get(kind));
         }
-        // Platform threads and no yield, so that a toString runs while another thread evaluates the cell it reads.
-        // A round that does not end within its timeout fails the test instead of hanging the build.
-        for (int round = 0; round < 5000; round++) {
-            int kind = round % SHOWN_WHILE_EVALUATED.size();
-            LazyList<Integer> list = SHOWN_WHILE_EVALUATED.get(kind).get();
-            CountDownLatch start = new CountDownLatch(1);
-            java.util.Set<String> shown = java.util.concurrent.ConcurrentHashMap.newKeySet();
-            java.util.List<Thread> started = new ArrayList<>();
-            for (int i = 0; i < 4; i++) {
-                started.add(Thread.ofPlatform().daemon().start(() -> {
-                    awaitQuietly(start);
-                    list.take(depth).size();
-                }));
-                started.add(Thread.ofPlatform().daemon().start(() -> {
-                    awaitQuietly(start);
-                    for (int call = 0; call < 20; call++) {
-                        shown.add(list.toString());
-                    }
-                }));
+        // Eight platform threads, kept across the rounds, and no yield, so that a toString runs while another thread
+        // evaluates the cell it reads. A task that does not end within its timeout fails the test instead of hanging
+        // the build; its thread is a daemon, so it does not keep the JVM alive.
+        java.util.concurrent.ExecutorService threads = java.util.concurrent.Executors.newFixedThreadPool(
+                8, Thread.ofPlatform().daemon().factory());
+        try {
+            for (int round = 0; round < 20_000; round++) {
+                int kind = round % SHOWN_WHILE_EVALUATED.size();
+                LazyList<Integer> list = SHOWN_WHILE_EVALUATED.get(kind).get();
+                CountDownLatch start = new CountDownLatch(1);
+                CountDownLatch read = new CountDownLatch(4);
+                java.util.Set<String> shown = java.util.concurrent.ConcurrentHashMap.newKeySet();
+                java.util.List<java.util.concurrent.Future<?>> tasks = new ArrayList<>();
+                for (int i = 0; i < 4; i++) {
+                    tasks.add(threads.submit(() -> {
+                        awaitQuietly(start);
+                        list.take(depth).size();
+                        read.countDown();
+                    }));
+                    tasks.add(threads.submit(() -> {
+                        awaitQuietly(start);
+                        // while the readers evaluate the list, and a bounded number of times
+                        for (int call = 0; call < 10_000 && read.getCount() > 0; call++) {
+                            shown.add(list.toString());
+                        }
+                    }));
+                }
+                start.countDown();
+                for (java.util.concurrent.Future<?> task : tasks) {
+                    int current = round;
+                    assertThatCode(() -> task.get(10, java.util.concurrent.TimeUnit.SECONDS))
+                            .as("round %d", current)
+                            .doesNotThrowAnyException();
+                }
+                assertThat(possible.get(kind)).as("round %d", round).containsAll(shown);
+                assertThat(list.toString()).isEqualTo(last.get(kind));
             }
-            start.countDown();
-            for (Thread thread : started) {
-                thread.join(java.time.Duration.ofSeconds(10));
-                assertThat(thread.isAlive())
-                        .as("round %d still running after 10 s", round)
-                        .isFalse();
-            }
-            assertThat(possible.get(kind)).as("round %d", round).containsAll(shown);
-            assertThat(list.toString()).isEqualTo(last.get(kind));
+        } finally {
+            threads.shutdownNow();
         }
     }
 
