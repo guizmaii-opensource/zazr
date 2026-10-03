@@ -200,7 +200,7 @@ Thank you to the zio-prelude contributors, who built it and keep making it bette
 The [Validation](../../control/validation.md) page covers what this post leaves out: `Validation.of` for code that
 throws, transforming the errors with `mapError`, the other conversions, and the sharp edges.
 
-Zazr 0.1.0 is on Maven Central, and the [Getting started](../../getting-started.md) page has the dependency.
+Zazr is on Maven Central, and the [Getting started](../../getting-started.md) page has the dependency.
 
 Feedback is very welcome. If something is missing, unclear or broken, please
 [open an issue](https://github.com/guizmaii-opensource/zazr/issues).
