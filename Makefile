@@ -159,15 +159,16 @@ coverage: ## test coverage (JaCoCo): HTML reports of zazr-core and zazr-test, za
 # missing or empty and a check without data, and it passes a bundle of 0 classes (after a failed compile); so data
 # and at least one class file are required here, and the merged file of an earlier run is deleted first, so that a
 # skipped merge cannot leave it to be checked again.
-coverage-check: ## fail when zazr-core or zazr-jackson is below 95 % of lines or 95 % of branches in the last make coverage
-	@for f in zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec zazr-jackson/target/jacoco.exec; do \
+coverage-check: ## fail when zazr-core, zazr-jackson or zazr-avaje-jsonb is below 95 % of lines or 95 % of branches in the last make coverage
+	@for f in zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec zazr-jackson/target/jacoco.exec zazr-avaje-jsonb/target/jacoco.exec; do \
 		test -s $$f || { echo "$$f is missing or empty: run make coverage first"; exit 1; }; done
-	@for m in zazr-core zazr-jackson; do \
+	@for m in zazr-core zazr-jackson zazr-avaje-jsonb; do \
 		find $$m/target/classes -name '*.class' -print -quit 2>/dev/null | grep -q . \
 			|| { echo "no class file in $$m/target/classes: run make coverage first"; exit 1; }; done
 	@rm -f zazr-core/target/jacoco-merged.exec
 	$(MVN) -Pcoverage -pl zazr-core jacoco:merge@coverage-merge jacoco:check@coverage-check
 	$(MVN) -Pcoverage -pl zazr-jackson jacoco:check@coverage-check
+	$(MVN) -Pcoverage -pl zazr-avaje-jsonb jacoco:check@coverage-check
 
 coverage-summary: ## print the line and branch coverage per module and package of the last make coverage, in Markdown
 	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml $(COVERAGE_REPORT_JACKSON)/jacoco.xml $(COVERAGE_AVAJE_JSONB)/jacoco.xml
