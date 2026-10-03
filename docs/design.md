@@ -2107,6 +2107,48 @@ unreleased).
   `Laws.assertSatisfied` names every failing law, its counterexample and the seed. Every law of a set runs with the
   same configuration, so one seed replays them all.
 
+### 3.16 `zazr-jackson`: Jackson 3 support (decided 2026-10-03, #243)
+
+Requested by users, decided by the maintainer: an optional `dev.zazr:zazr-jackson` artifact with one public class,
+`ZazrModule`; `zazr-core` does not depend on Jackson.
+
+- **Jackson 3 only** (`tools.jackson`), checked on 2026-10-03: `jackson-databind` 3.2.3 is the latest release on Maven
+  Central (3.0.0 went GA in 2025; the 2.x line is at 2.22.3), and Spring Boot 4.1.1's `spring-boot-jackson` depends on
+  `tools.jackson.core:jackson-databind` 3.1.5. The parent pins 3.2.3; the module uses only API that 3.0 already has,
+  and its tests pass against 3.0.3, 3.1.5 and 3.2.3, since Spring Boot's dependency management picks the version.
+- **Formats.** Sequences and sets are JSON arrays, maps JSON objects whose keys go through Jackson's key serializers
+  and key deserializers, `Option` its value or `null`, `Tuple1` to `Tuple8` arrays. `Either`, `Try`, `Validation`,
+  `Lazy` and `Tuple0` have no format: each would be a format to keep stable.
+- **Reading.** The declared type picks the collection: `Set`, `SortedSet`, `Map` and `SortedMap` read as `HashSet`,
+  `TreeSet`, `HashMap` and `TreeMap`. The sorted types use the natural order and fail, when the reader is built, on an
+  element or key type that is not `Comparable` (`Object` included). `null` reads as `None`, and so does an absent
+  creator property, as Jackson does for `Optional` (`DeserializationFeature.USE_NULL_FOR_MISSING_REFERENCE_VALUES`, from
+  Jackson 3.1, still turns it into `null`). A `null` element, key or value of a collection fails, unless its type reads
+  `null` as a value (`Option`); a tuple holds `null` components, as 3.9 decides, so `[1,null]` reads as
+  `Tuple.of(1, null)`. A `null` collection property reads as `null`, as for `java.util`; `@JsonSetter(nulls =
+  AS_EMPTY)` gives the empty collection.
+- **Writing** reuses Jackson's own serializers: `IterableSerializer` for the sequences and sets (a `LazyList` is forced
+  as it is written), Jackson's `java.util.Map` serializer on the `asJavaMap()` view for the maps (so
+  `ORDER_MAP_ENTRIES_BY_KEYS` and the content `@JsonInclude` apply), `ReferenceTypeSerializer` for `Option` (so
+  `NON_ABSENT` and `@JsonUnwrapped` apply).
+- **Type ids** (`@JsonTypeInfo`, default typing) name the public type: `List` for `List.Cons` and `List.Nil`,
+  `LazyList` for its classes in `dev.zazr.collection.internal`, so stored JSON does not depend on implementation
+  classes, with `Id.CLASS`, `MINIMAL_CLASS` and `NAME` (the name registered for the public type); an id naming one
+  of those classes still reads. The collection serializer is a Jackson container serializer, so a `@JsonTypeInfo`
+  collection property types its elements. A tuple writes each component with its declared type narrowed to the
+  runtime class, and the type id of the declared type, as it reads it. The map serializer is a container serializer
+  too, so a `@JsonTypeInfo` map property types its values (reviews of #252).
+- **Type-id corners left as they are (coordinator decision, 2026-10-03, third review of #252)**, each documented in one
+  line of the Jackson page with its workaround: `NAME` on the content of a typed `Option` when no `@JsonSubTypes`
+  names `List` or `LazyList`; a generic root tuple written with `writerFor` under `NON_FINAL_AND_RECORDS`, which plain
+  Jackson gets wrong for any generic record; a tuple holding a component of the wrong type after an unchecked cast,
+  which fails when written.
+- **Ported from vavr-jackson** (Apache 2.0, credited in `NOTICE`): the type modifier, the serializer and deserializer
+  registries and the shape of the collection, map and tuple deserializers. Not ported: its `Settings` (the
+  `["defined", value]` form of `Option`, `null` as an empty collection), the `toString` order of non-`Comparable`
+  keys, the `Either`, `Lazy`, `CharSeq`, `Multimap`, `PriorityQueue` and function formats, and merging into an
+  existing collection.
+
 ---
 
 ## 4. Build, tooling, packaging
@@ -2131,9 +2173,10 @@ unreleased).
   |---|---|---|
   | `zazr-core` | `dev.zazr:zazr-core` | everything in this document |
   | `zazr-test` | `dev.zazr:zazr-test` | property-based testing (`Gen`, `Check`, 3.15) + law suites (below); depends on `zazr-core`. JPMS module `dev.zazr.test`, a real `module-info.java` (decided 2026-09-26, #182): `requires transitive dev.zazr`, exports `dev.zazr.test` and `dev.zazr.test.laws`; its tests run on the module path with `--add-opens` of `dev.zazr`'s collection packages, to look at the layouts they generate. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
+  | `zazr-jackson` | `dev.zazr:zazr-jackson` | the Jackson 3 module (3.16); depends on `zazr-core` and `tools.jackson.core:jackson-databind`. JPMS module `dev.zazr.jackson`: `requires transitive dev.zazr` and `tools.jackson.databind`, exports `dev.zazr.jackson` only (the serializers live in `dev.zazr.jackson.internal`), and `provides tools.jackson.databind.JacksonModule` for `findAndAddModules()` |
   | `zazr-benchmark` | not published | JMH, currently `vavr/src/test/java/io/vavr/JmhRunner.java` behind the `benchmark` profile; moves back to its own module as in the old `vavr-benchmark` |
 
-  Later candidates that a mono-repo makes cheap: `zazr-jackson`, `zazr-gson`, `zazr-jmh-annotations`.
+  Later candidates that a mono-repo makes cheap: `zazr-gson`, `zazr-jmh-annotations`.
   The `match` modules are **not** restored (3.1). Each module keeps its own `generator/Generator.scala`
   as before.
 - **Property-based testing: re-integrate `vavr-test` as `zazr-test` (decided; no jqwik).** Restore it
@@ -2162,7 +2205,8 @@ unreleased).
   loop keep their speed. `make coverage` runs the tests of `zazr-core` and `zazr-test` with the agent and writes one
   aggregated HTML report (generated `src-gen` sources included, `zazr-benchmark` excluded); a CI job on JDK 25
   uploads it as an artifact and puts the line and branch coverage per module and package in the job summary. No
-  threshold fails the build yet; one is chosen from the measured numbers.
+  threshold fails the build yet; one is chosen from the measured numbers. `zazr-jackson` has its own report, from its
+  own tests, and the same 95 % threshold of lines and branches (#243).
 - **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `dev.zazr:zazr-core`
   (parent `dev.zazr:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
   Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`

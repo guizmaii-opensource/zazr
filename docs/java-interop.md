@@ -87,3 +87,8 @@ var fromOptional = Option.ofOptional(java.util.Optional.of(4));  // Option<Integ
 
 `Option` converts to and from `java.util.Optional` with `toOptional()` and `Option.ofOptional`; `Try` to and from
 `CompletableFuture` with `toCompletableFuture()` and `Try.fromCompletableFuture`.
+
+## JSON
+
+The optional `dev.zazr:zazr-jackson` artifact teaches Jackson 3 to read and write the Zazr collections, `Option` and
+the tuples: see [Jackson](jackson.md).

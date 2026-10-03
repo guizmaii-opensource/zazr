@@ -78,6 +78,7 @@ dependencies {
 ```
 
 `dev.zazr:zazr-test` adds property-based testing (`Gen`, `Check`) and ready-made laws.
+`dev.zazr:zazr-jackson` teaches Jackson 3 to read and write the Zazr types as JSON.
 
 ## A short tour
 
