@@ -150,6 +150,7 @@ COVERAGE_REPORT_JACKSON := zazr-jackson/target/site/jacoco
 COVERAGE_AVAJE_JSONB := zazr-avaje-jsonb/target/site/jacoco
 
 coverage: ## test coverage (JaCoCo): HTML reports of zazr-core and zazr-test, zazr-jackson and zazr-avaje-jsonb, then coverage-check
+	rm -f zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec zazr-jackson/target/jacoco.exec zazr-avaje-jsonb/target/jacoco.exec
 	$(MVN) -Pcoverage -pl zazr-core,zazr-test,zazr-jackson,zazr-avaje-jsonb test
 	@$(MAKE) --no-print-directory coverage-summary
 	@echo "HTML reports: $(COVERAGE_REPORT)/index.html $(COVERAGE_REPORT_JACKSON)/index.html $(COVERAGE_AVAJE_JSONB)/index.html"

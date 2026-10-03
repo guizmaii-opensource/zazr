@@ -371,7 +371,7 @@
                                     <!-- target/jacoco.exec is kept between builds: appending would merge the data of
                                          an earlier run, of code or tests that may have changed since, into the
                                          report. Safe with surefire's single fork per module. -->
-                                    <append>false</append>
+                                    <append>true</append>
                                     <!-- Only Zazr's classes carry probes: the reports cover nothing else, and
                                          instrumenting AssertJ, JUnit and the other libraries slowed the tests down. -->
                                     <includes>
@@ -380,6 +380,17 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <forkCount>2</forkCount>
+                            <properties>
+                                <configurationParameters>junit.jupiter.execution.parallel.config.strategy=fixed
+                                    junit.jupiter.execution.parallel.config.fixed.parallelism=2</configurationParameters>
+                            </properties>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
