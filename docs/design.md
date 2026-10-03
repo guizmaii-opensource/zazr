@@ -2116,6 +2116,10 @@ Requested by users, decided by the maintainer: an optional `dev.zazr:zazr-jackso
   as it is written), Jackson's `java.util.Map` serializer on the `asJavaMap()` view for the maps (so
   `ORDER_MAP_ENTRIES_BY_KEYS` and the content `@JsonInclude` apply), `ReferenceTypeSerializer` for `Option` (so
   `NON_ABSENT` and `@JsonUnwrapped` apply).
+- **Type ids** (`@JsonTypeInfo`, default typing) name the public type: `List` for `List.Cons` and `List.Nil`,
+  `LazyList` for its classes in `dev.zazr.collection.internal`, so stored JSON does not depend on implementation
+  classes; an id naming one of those classes still reads. A tuple writes a component with a type id when its declared
+  type takes one, as it reads it (review of #252).
 - **Ported from vavr-jackson** (Apache 2.0, credited in `NOTICE`): the type modifier, the serializer and deserializer
   registries and the shape of the collection, map and tuple deserializers. Not ported: its `Settings` (the
   `["defined", value]` form of `Option`, `null` as an empty collection), the `toString` order of non-`Comparable`

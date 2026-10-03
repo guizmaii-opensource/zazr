@@ -18,14 +18,22 @@ import tools.jackson.databind.jsontype.TypeSerializer;
 import tools.jackson.databind.ser.std.StdSerializer;
 
 /// Writes `Tuple1` to `Tuple8` as a JSON array of their components, in order; each component is written with the
-/// serializer of its runtime class, `null` as `null`.
+/// serializer of its runtime class, `null` as `null`, and with a type id when its declared type takes one.
 ///
 /// Ported from `TupleSerializer` in `src/main/java/io/vavr/jackson/datatype/serialize/TupleSerializer.java` of
 /// vavr-jackson (https://github.com/vavr-io/vavr-jackson).
 public final class TupleSerializer extends StdSerializer<Tuple> {
 
+    private final JavaType type;
+
     TupleSerializer(JavaType type) {
         super(type);
+        this.type = type;
+    }
+
+    /// The declared type of the component at `index`.
+    private JavaType componentType(int index) {
+        return type.containedTypeOrUnknown(index);
     }
 
     @Override
@@ -43,9 +51,18 @@ public final class TupleSerializer extends StdSerializer<Tuple> {
         typeSer.writeTypeSuffix(gen, ctxt, typeId);
     }
 
-    private static void writeComponents(Tuple value, JsonGenerator gen, SerializationContext ctxt) {
-        for (var component : components(value)) {
-            ctxt.writeValue(gen, component);
+    /// Writes each component as [TupleDeserializer] reads it: with a type id when the declared type of the component
+    /// takes one (`@JsonTypeInfo` on it, or default typing), otherwise as `SerializationContext.writeValue` does.
+    private void writeComponents(Tuple value, JsonGenerator gen, SerializationContext ctxt) {
+        var components = components(value);
+        for (var i = 0; i < components.length; i++) {
+            var component = components[i];
+            var typeSerializer = ctxt.findTypeSerializer(componentType(i));
+            if (component == null || typeSerializer == null) {
+                ctxt.writeValue(gen, component);
+            } else {
+                ctxt.findValueSerializer(component.getClass()).serializeWithType(component, gen, ctxt, typeSerializer);
+            }
         }
     }
 

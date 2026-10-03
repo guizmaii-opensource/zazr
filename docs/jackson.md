@@ -97,12 +97,14 @@ To read a property declared as `Traversable`, name the type with `@JsonDeseriali
 - `TreeSet`, `TreeMap`, `NonEmptySortedSet` and `NonEmptySortedMap` use the natural order: their element or key type
   must implement `Comparable`. If it does not, reading fails with a message that names the type.
 - `LinkedHashSet` and `LinkedHashMap` keep the order of the JSON.
+- When a JSON object has the same key twice, the later value wins.
 - `HashSet` and `HashMap` have no order; written to JSON, they follow their iteration order.
 
 ### `Option`
 
 - `None` is written as `null`, and `null` reads as `None`.
-- A record component or a constructor parameter that is absent from the JSON reads as `None`.
+- A record component or a constructor parameter that is absent from the JSON reads as `None`. With Jackson 3.1's
+  `DeserializationFeature.USE_NULL_FOR_MISSING_REFERENCE_VALUES` enabled, it reads as `null` instead.
 - A field or a setter property that is absent keeps its initial value: initialise it with `Option.none()`.
 - `@JsonInclude(JsonInclude.Include.NON_ABSENT)` on a property leaves it out of the JSON when it is `None`.
 
@@ -130,6 +132,18 @@ A collection property that is `null` in the JSON reads as `null`, as a `java.uti
 
 - A value declared as `Object` or as an interface is written by its runtime type.
 - A `LazyList` is written by iterating it, so it must be finite.
+- Jackson 3 writes and reads an enum with its `toString()` by default (`EnumFeature.WRITE_ENUMS_USING_TO_STRING`),
+  as an element and as a map key; an enum that overrides `toString()` appears in the JSON as that string.
+
+## Type ids
+
+With `@JsonTypeInfo` or default typing, the type id of a Zazr collection is its public type: `List` and `LazyList`
+for every list, whatever class holds it. Such JSON reads back, with three exceptions:
+
+- An `Option` is written as its value, with the type id of the value, as Jackson does for `Optional`.
+- A `TreeSet`, `TreeMap`, `NonEmptySortedSet` or `NonEmptySortedMap` in a property declared as `Object` does not read
+  back: its element or key type is then `Object`, which has no natural order.
+- A property declared as `Traversable` reads only with `@JsonDeserialize(as = ...)`.
 
 ## Not covered
 

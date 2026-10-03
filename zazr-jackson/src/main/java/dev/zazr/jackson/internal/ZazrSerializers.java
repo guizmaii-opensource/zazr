@@ -17,8 +17,8 @@ import tools.jackson.databind.type.ReferenceType;
 
 /// The serializers of the Zazr types, matched on the runtime class of the value written.
 ///
-/// - The collections other than maps go to Jackson's own `IterableSerializer`, which writes a JSON array by
-///   iterating the value: a `LazyList` is forced element by element as it is written.
+/// - The collections other than maps go to Jackson's own `IterableSerializer` ([ZazrIterableSerializer]), which
+///   writes a JSON array by iterating the value: a `LazyList` is forced element by element as it is written.
 /// - The maps go to [ZazrMapSerializer], which writes the `asJavaMap()` view with Jackson's map serializer.
 /// - `Option` goes to [OptionSerializer], the tuples to [TupleSerializer].
 ///
@@ -57,8 +57,11 @@ public final class ZazrSerializers extends Serializers.Base {
             JsonFormat.@Nullable Value formatOverrides,
             @Nullable TypeSerializer elementTypeSerializer,
             @Nullable ValueSerializer<Object> elementValueSerializer) {
-        return ZazrTypes.isCollection(type.getRawClass())
-                ? new IterableSerializer(type.getContentType(), staticTyping(config), elementTypeSerializer)
+        var raw = type.getRawClass();
+        return ZazrTypes.isCollection(raw)
+                ? new ZazrIterableSerializer(
+                        new IterableSerializer(type.getContentType(), staticTyping(config), elementTypeSerializer),
+                        ZazrTypes.idType(raw))
                 : null;
     }
 

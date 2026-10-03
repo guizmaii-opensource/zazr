@@ -35,14 +35,16 @@ enum CollectionKind {
     }
 
     /// The kind read for the declared class `raw`, or `null` when `raw` is not a collection this module reads.
+    /// A subclass of `List` (`List.Cons`, `List.Nil`) or of `LazyList` (its implementation classes) reads as
+    /// that type, since a type id may name one.
     static @Nullable CollectionKind of(Class<?> raw) {
         if (raw == Vector.class) {
             return VECTOR;
-        } else if (raw == List.class) {
+        } else if (List.class.isAssignableFrom(raw)) {
             return LIST;
         } else if (raw == Queue.class) {
             return QUEUE;
-        } else if (raw == LazyList.class) {
+        } else if (LazyList.class.isAssignableFrom(raw)) {
             return LAZY_LIST;
         } else if (raw == HashSet.class || raw == Set.class) {
             return HASH_SET;

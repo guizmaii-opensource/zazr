@@ -8,6 +8,8 @@ import dev.zazr.Tuple5;
 import dev.zazr.Tuple6;
 import dev.zazr.Tuple7;
 import dev.zazr.Tuple8;
+import dev.zazr.collection.LazyList;
+import dev.zazr.collection.List;
 import dev.zazr.collection.Map;
 import dev.zazr.collection.NonEmptyMap;
 import dev.zazr.collection.NonEmptySet;
@@ -40,6 +42,19 @@ final class ZazrTypes {
                         || raw == NonEmptyVector.class
                         || raw == NonEmptySet.class
                         || raw == NonEmptySortedSet.class);
+    }
+
+    /// The class to write as the type id of a value of the runtime class `raw`: the public type for the classes of
+    /// `List` (`List.Cons`, `List.Nil`) and of `LazyList` (classes of `dev.zazr.collection.internal`), `raw` itself
+    /// for the other collections, which are final public classes.
+    static Class<?> idType(Class<?> raw) {
+        if (List.class.isAssignableFrom(raw)) {
+            return List.class;
+        } else if (LazyList.class.isAssignableFrom(raw)) {
+            return LazyList.class;
+        } else {
+            return raw;
+        }
     }
 
     /// The number of components of the tuple class `raw`, from 1 to 8, or 0 when `raw` is not one of `Tuple1` to
