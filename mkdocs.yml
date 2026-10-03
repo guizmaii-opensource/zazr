@@ -82,6 +82,7 @@ plugins:
         - Announcements
         - Testing
         - JSON
+        - Error handling
   # the pages that moved keep their old address
   - redirects:
       redirect_maps:
