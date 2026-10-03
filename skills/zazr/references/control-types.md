@@ -117,8 +117,6 @@ var named    = Either.fromPredicate("", s -> !s.isBlank(), _ -> "name is blank")
   `catchSomeWith` returning another `Try`. `mapError` wraps the cause. `ensuring(action)` is a `finally`.
 - Convert: `toEither()` (an `Either<Throwable, A>`), `toValidation()`, `toOption()`, `toVector()`,
   `toCompletableFuture()`; `Try.fromCompletableFuture(future)` waits and captures.
-- `flip()` gives a `Try<Throwable>`: `Success` of the cause of a `Failure`, and for a `Success` a `Failure` of an
-  `UnsupportedOperationException`.
 - Fatal errors are rethrown, never captured: `InterruptedException`, `LinkageError`, `ThreadDeath`,
   `VirtualMachineError`.
 - A computation that returns `null` gives a `Failure` of a `NullPointerException`, a `CompletableFuture<Void>`

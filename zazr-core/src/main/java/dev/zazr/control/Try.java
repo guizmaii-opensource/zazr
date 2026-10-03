@@ -963,28 +963,6 @@ public sealed interface Try<T extends @Nullable Object> permits Try.Success, Try
     }
 
     /**
-     * Turns the cause of a {@code Failure} into the value: a {@code Failure(cause)} becomes {@code Success(cause)}, a
-     * {@code Success} becomes a {@code Failure} of an {@link UnsupportedOperationException}. Useful to run the
-     * operations of a {@code Try} on the cause, or to check that a computation failed.
-     * <p>
-     * Unlike {@link Either#flip()}, the value of a {@code Success} is dropped: the cause of a {@code Failure} is
-     * always a {@code Throwable}, so it cannot hold the value. Flipping twice therefore never gives back the
-     * original {@code Try}: the cause or the value is replaced by an {@code UnsupportedOperationException}.
-     * <pre>{@code
-     * Try.of(() -> Integer.parseInt("x")).flip(); // = Success(NumberFormatException: For input string: "x")
-     * Try.success(1).flip();                      // = Failure(UnsupportedOperationException: flip on Success)
-     * }</pre>
-     *
-     * @return {@code Success} of the cause if this is a {@code Failure}, otherwise a {@code Failure} of an
-     *         {@code UnsupportedOperationException}
-     */
-    default Try<Throwable> flip() {
-        return isFailure()
-                ? new Success<>(getCause())
-                : new Failure<>(new UnsupportedOperationException("flip on Success"));
-    }
-
-    /**
      * Converts this {@code Try} to an {@link Either}.
      * <p>
      * If this is a {@link Try.Success}, the value is wrapped as a {@link Either#right(Object)}.

@@ -455,6 +455,23 @@ public class OptionTest {
         }
 
         @Test
+        public void shouldThrowWhenThePredicateReturnsNull() {
+            assertThatThrownBy(() -> Option.some(1).reject(i -> (Boolean) null))
+                    .isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> Option.some(1).filter(i -> (Boolean) null))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        public void shouldPropagateWhatThePredicateThrows() {
+            IllegalStateException error = new IllegalStateException("boom");
+            assertThatThrownBy(() -> Option.some(1).reject(i -> {
+                        throw error;
+                    }))
+                    .isSameAs(error);
+        }
+
+        @Test
         public void shouldBeTheOppositeOfFilter() {
             for (int value : new int[] {1, 2}) {
                 Option<Integer> some = Option.some(value);
