@@ -234,7 +234,8 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
 
     /// The elements already evaluated, then `<not computed>` where the list is not evaluated yet (or its
     /// evaluation failed), or `<cycle>` where the evaluated cells link back to one already shown: nothing is
-    /// evaluated, and it returns on a cyclic list too.
+    /// evaluated. It shows the cells already evaluated when it reaches them, so it returns on a cyclic or an
+    /// infinite list too, unless another thread keeps evaluating further cells while it runs.
     ///
     /// Ported from `addStringNoForce` of the `LazyList` of the Scala 2.13 collections library, which Scala 3
     /// uses unchanged:

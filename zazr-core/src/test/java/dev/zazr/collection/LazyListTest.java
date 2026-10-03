@@ -990,6 +990,14 @@ public class LazyListTest extends AbstractTraversableTest {
         }
 
         @Test
+        void keepsTheLastCellOfALoopWhenItsHeadIsOnlyEqual() {
+            // a, then b, a again and again: the last head of the loop equals the head before it, but is another
+            // object, so the cell is kept and equals is never called
+            LazyList<String> list = read(loop("b", new String("a")).prepend("a"), 6);
+            assertThat(list.toString()).isEqualTo("LazyList(a, b, a, <cycle>)");
+        }
+
+        @Test
         void showsAFailedCellAsNotComputed() {
             @SuppressWarnings("unchecked")
             LazyList<Integer>[] self = new LazyList[1];

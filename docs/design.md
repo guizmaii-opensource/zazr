@@ -1378,8 +1378,9 @@ infinite generator is fine. The type parameters are `<A, S>`, Scala's order. A n
 cycles included; the messages say `LazyList`.** `toString` follows Scala's `addStringNoForce`: the evaluated
 elements, then `<not computed>` where the list is not evaluated (Scala's text, replacing the `?` of the rename entry
 above, and also used for a cell whose evaluation failed), or `<cycle>` where the evaluated cells loop back, found with
-Floyd's two cursors, so it evaluates nothing and returns on `cycle()`, `appendSelf` and a self-referencing `cons`. A
-fully evaluated list prints as before (`LazyList(1, 2, 3)`, `LazyList()`). One difference from Scala: Scala always
+Floyd's two cursors, so it evaluates nothing and returns on `cycle()`, `appendSelf` and a self-referencing `cons`. It
+shows the cells already evaluated when it reaches them, so it ends unless another thread keeps evaluating further cells
+while it runs, as in Scala. A fully evaluated list prints as before (`LazyList(1, 2, 3)`, `LazyList()`). One difference from Scala: Scala always
 leaves out the last cell of a loop that starts after the first cell, since its loops are closed by a copy of the cell
 before the loop; a Zazr cell can link straight back (`prepend` on a cyclic list), so that cell is left out only when its
 head is the same object as the head of the cell before the loop. `Lazy` keeps `Lazy(?)`. The exceptions of an empty

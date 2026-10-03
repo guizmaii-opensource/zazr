@@ -102,8 +102,9 @@ import org.jspecify.annotations.Nullable;
  * {@code contains} stop at the first element that decides, {@code existsUnique} at the second match, and each
  * {@code ...Option} variant costs what the method it wraps costs. {@code toString} computes nothing: it shows the
  * elements already computed, then {@code <not computed>} for the rest, or {@code <cycle>} where they loop back, as in
- * {@code LazyList(1, 2, 3, <cycle>)} for {@code LazyList.of(1, 2, 3).cycle()} once read past its third element, so it
- * returns on an infinite LazyList too.
+ * {@code LazyList(1, 2, 3, <cycle>)} for {@code LazyList.of(1, 2, 3).cycle()} once read past its third element. It
+ * shows only the elements already computed when it reaches them, so it returns on an infinite LazyList too, unless
+ * another thread keeps computing further elements while it runs: it shows those as well.
  * <p>
  * A LazyList never changes its contents. Each element is computed once and kept; when computing one throws, the
  * exception is kept in its place, and every later read of that place throws the same exception instead of computing
