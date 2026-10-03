@@ -1341,7 +1341,7 @@ public class DocsExamplesTest {
             // seen is empty: nothing is computed yet
             var third = squares.get(2); // 9, and seen is [1, 2, 3]
 
-            assertThat(squares.toString()).isEqualTo("LazyList(1, 4, 9, ?)");
+            assertThat(squares.toString()).isEqualTo("LazyList(1, 4, 9, <not computed>)");
             assertThat(third).isEqualTo(9);
             assertThat(seen).containsExactly(1, 2, 3);
         }

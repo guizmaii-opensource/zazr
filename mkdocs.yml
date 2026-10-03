@@ -81,6 +81,7 @@ plugins:
       categories_allowed:
         - Announcements
         - Testing
+        - JSON
   # the pages that moved keep their old address
   - redirects:
       redirect_maps:
@@ -135,6 +136,8 @@ nav:
       - NonEmptySet and NonEmptyMap: non-empty-set-map.md
       - Builders: builders.md
       - Java interop: java-interop.md
+      - Jackson: jackson.md
+      - avaje-jsonb: avaje-jsonb.md
       - "Zazr in your AI assistant": ai-assistant.md
   - Control types:
       - Overview: control/index.md
@@ -157,5 +160,6 @@ nav:
   - Compared to Vavr: vavr.md
   - Blog:
       - blog/index.md
+  - Roadmap: roadmap.md
   - Releases: https://github.com/guizmaii-opensource/zazr/releases
   - Design: principles.md

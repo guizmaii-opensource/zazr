@@ -22,6 +22,7 @@
   <a href="https://zazr.dev/getting-started/">Getting started</a> ·
   <a href="https://zazr.dev/collections/complexity/">Complexity</a> ·
   <a href="https://zazr.dev/principles/">Design</a> ·
+  <a href="https://zazr.dev/roadmap/">Roadmap</a> ·
   <a href="https://github.com/guizmaii-opensource/zazr/releases">Releases</a>
 </p>
 
@@ -65,7 +66,7 @@ Maven:
 <dependency>
     <groupId>dev.zazr</groupId>
     <artifactId>zazr-core</artifactId>
-    <version>0.1.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
@@ -73,11 +74,12 @@ Gradle:
 
 ```kotlin
 dependencies {
-    implementation("dev.zazr:zazr-core:0.1.0")
+    implementation("dev.zazr:zazr-core:0.3.0")
 }
 ```
 
 `dev.zazr:zazr-test` adds property-based testing (`Gen`, `Check`) and ready-made laws.
+`dev.zazr:zazr-jackson` teaches Jackson 3 to read and write the Zazr types as JSON.
 
 ## A short tour
 

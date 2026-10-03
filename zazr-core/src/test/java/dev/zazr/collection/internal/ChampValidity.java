@@ -7,8 +7,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /// The invariants of the CHAMP tries of `HashMap` and `HashSet`, and the comparisons of two tries, for the tests.
 final class ChampValidity {
 
@@ -44,75 +42,67 @@ final class ChampValidity {
     /// - the cached sizes and hash sums are the recomputed ones.
     static int assertValid(BitmapIndexedMapNode<?, ?> root) {
         int size = assertValidMap(root, 0, 0, 0);
-        assertThat(root.size()).isEqualTo(size);
+        checkEqual(root.size(), size, "size of the root");
         return size;
     }
 
     private static int assertValidMap(MapNode<?, ?> node, int shift, int path, int pathMask) {
         if (node instanceof BitmapIndexedMapNode<?, ?> n) {
-            assertThat(shift).as("bitmap node above the last level").isLessThan(ChampNode.HASH_CODE_LENGTH);
-            assertThat(n.dataMap & n.nodeMap).as("disjoint bitmaps").isZero();
+            check(shift < ChampNode.HASH_CODE_LENGTH, "bitmap node above the last level");
+            checkEqual(n.dataMap & n.nodeMap, 0, "disjoint bitmaps");
             int payload = Integer.bitCount(n.dataMap);
             int children = Integer.bitCount(n.nodeMap);
-            assertThat(n.content.length).isEqualTo(2 * payload + children);
-            assertThat(n.hashes.length).isEqualTo(payload);
+            checkEqual(n.content.length, 2 * payload + children, "length of the content array");
+            checkEqual(n.hashes.length, payload, "length of the hashes array");
             for (int i = 0, bits = n.dataMap; i < payload; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
                 Object key = n.content[2 * i];
                 Object value = n.content[2 * i + 1];
-                assertThat(key).isNotNull().isNotInstanceOf(MapNode.class);
-                assertThat(value).isNotNull().isNotInstanceOf(MapNode.class);
-                assertThat(n.hashes[i]).isEqualTo(Objects.hashCode(key));
-                assertThat(ChampNode.maskFrom(n.hashes[i], shift))
-                        .as("entry in the slot of its fragment")
-                        .isEqualTo(fragment);
-                assertThat(ChampNode.improve(n.hashes[i]) & pathMask)
-                        .as("entry under its path")
-                        .isEqualTo(path);
+                check(key != null && !(key instanceof MapNode), "a key is a non-null element");
+                check(value != null && !(value instanceof MapNode), "a value is a non-null element");
+                checkEqual(n.hashes[i], Objects.hashCode(key), "stored hash of an entry");
+                checkEqual(ChampNode.maskFrom(n.hashes[i], shift), fragment, "entry in the slot of its fragment");
+                checkEqual(ChampNode.improve(n.hashes[i]) & pathMask, path, "entry under its path");
             }
             int[] childSizes = new int[children];
             int[] childHashSums = new int[children];
             for (int i = 0, bits = n.nodeMap; i < children; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
                 Object child = n.content[n.content.length - 1 - i];
-                assertThat(child).isInstanceOf(MapNode.class);
+                check(child instanceof MapNode, "a child is a node");
                 MapNode<?, ?> c = (MapNode<?, ?>) child;
                 int childShift = shift + ChampNode.BIT_PARTITION_SIZE;
                 if (childShift < ChampNode.HASH_CODE_LENGTH) {
-                    assertThat(c).isInstanceOf(BitmapIndexedMapNode.class);
+                    check(c instanceof BitmapIndexedMapNode, "a child above the last level is a bitmap node");
                 } else {
-                    assertThat(c).isInstanceOf(HashCollisionMapNode.class);
+                    check(c instanceof HashCollisionMapNode, "a child at the last level is a collision node");
                 }
                 int childSize = assertValidMap(
                         c, childShift, path | (fragment << shift), pathMask | (ChampNode.BIT_PARTITION_MASK << shift));
-                assertThat(childSize).as("a child holds at least two entries").isGreaterThanOrEqualTo(2);
+                check(childSize >= 2, "a child holds at least two entries");
                 childSizes[i] = childSize;
                 childHashSums[i] = c.keyHashSum();
             }
             int size = payload + IntStream.of(childSizes).sum();
             int hashSum =
                     IntStream.of(n.hashes).sum() + IntStream.of(childHashSums).sum();
-            assertThat(n.size).isEqualTo(size);
-            assertThat(n.keyHashSum).isEqualTo(hashSum);
+            checkEqual(n.size, size, "size field");
+            checkEqual(n.keyHashSum, hashSum, "keyHashSum field");
             return size;
         } else {
             HashCollisionMapNode<?, ?> n = (HashCollisionMapNode<?, ?>) node;
-            assertThat(n.content.length % 2).isZero();
+            checkEqual(n.content.length % 2, 0, "a collision node holds pairs");
             int size = n.content.length / 2;
-            assertThat(size).isGreaterThanOrEqualTo(2);
-            assertThat(ChampNode.improve(n.hash))
-                    .as("collision node under its path")
-                    .isEqualTo(path);
+            check(size >= 2, "a collision node holds at least two entries");
+            checkEqual(ChampNode.improve(n.hash), path, "collision node under its path");
             java.util.Set<Object> keys = new java.util.HashSet<>();
             for (int i = 0; i < size; i++) {
-                assertThat(n.content[2 * i]).isNotNull();
-                assertThat(n.content[2 * i + 1]).isNotNull();
-                assertThat(Objects.hashCode(n.content[2 * i])).isEqualTo(n.hash);
-                assertThat(keys.add(n.content[2 * i]))
-                        .as("distinct keys in a collision node")
-                        .isTrue();
+                check(n.content[2 * i] != null, "a key of a collision node is not null");
+                check(n.content[2 * i + 1] != null, "a value of a collision node is not null");
+                checkEqual(Objects.hashCode(n.content[2 * i]), n.hash, "hash of a key of a collision node");
+                check(keys.add(n.content[2 * i]), "distinct keys in a collision node");
             }
-            assertThat(n.keyHashSum()).isEqualTo(size * n.hash);
+            checkEqual(n.keyHashSum(), size * n.hash, "keyHashSum of a collision node");
             return size;
         }
     }
@@ -120,18 +110,18 @@ final class ChampValidity {
     /// Asserts that two map tries have the same shape and hold the same key and value objects in the same slots; the
     /// order inside a collision node is ignored unless `collisionOrder` is set.
     static void assertSameShape(MapNode<?, ?> expected, MapNode<?, ?> actual, boolean collisionOrder) {
-        assertThat(actual.getClass()).isEqualTo(expected.getClass());
+        check(actual.getClass() == expected.getClass(), "same node class");
         if (expected instanceof BitmapIndexedMapNode<?, ?> e) {
             BitmapIndexedMapNode<?, ?> a = (BitmapIndexedMapNode<?, ?>) actual;
-            assertThat(a.dataMap).isEqualTo(e.dataMap);
-            assertThat(a.nodeMap).isEqualTo(e.nodeMap);
-            assertThat(a.size).isEqualTo(e.size);
-            assertThat(a.keyHashSum).isEqualTo(e.keyHashSum);
-            assertThat(a.hashes).isEqualTo(e.hashes);
-            assertThat(a.content.length).isEqualTo(e.content.length);
+            checkEqual(a.dataMap, e.dataMap, "dataMap");
+            checkEqual(a.nodeMap, e.nodeMap, "nodeMap");
+            checkEqual(a.size, e.size, "size field");
+            checkEqual(a.keyHashSum, e.keyHashSum, "keyHashSum field");
+            check(java.util.Arrays.equals(a.hashes, e.hashes), "hashes");
+            checkEqual(a.content.length, e.content.length, "length of the content array");
             int payload = 2 * Integer.bitCount(e.dataMap);
             for (int i = 0; i < payload; i++) {
-                assertThat(a.content[i]).isSameAs(e.content[i]);
+                checkSame(a.content[i], e.content[i], "key or value object");
             }
             for (int i = payload; i < e.content.length; i++) {
                 assertSameShape((MapNode<?, ?>) e.content[i], (MapNode<?, ?>) a.content[i], collisionOrder);
@@ -139,18 +129,18 @@ final class ChampValidity {
         } else {
             HashCollisionMapNode<?, ?> e = (HashCollisionMapNode<?, ?>) expected;
             HashCollisionMapNode<?, ?> a = (HashCollisionMapNode<?, ?>) actual;
-            assertThat(a.hash).isEqualTo(e.hash);
-            assertThat(a.content.length).isEqualTo(e.content.length);
+            checkEqual(a.hash, e.hash, "hash of a collision node");
+            checkEqual(a.content.length, e.content.length, "length of a collision node");
             if (collisionOrder) {
                 for (int i = 0; i < e.content.length; i++) {
-                    assertThat(a.content[i]).isSameAs(e.content[i]);
+                    checkSame(a.content[i], e.content[i], "key or value object of a collision node");
                 }
             } else {
                 for (int i = 0; i < e.content.length; i += 2) {
                     int j = 2 * a.indexOf(e.content[i]);
-                    assertThat(j).isNotNegative();
-                    assertThat(a.content[j]).isSameAs(e.content[i]);
-                    assertThat(a.content[j + 1]).isSameAs(e.content[i + 1]);
+                    check(j >= 0, "key of a collision node present");
+                    checkSame(a.content[j], e.content[i], "key object of a collision node");
+                    checkSame(a.content[j + 1], e.content[i + 1], "value object of a collision node");
                 }
             }
         }
@@ -230,70 +220,62 @@ final class ChampValidity {
     /// size.
     static int assertValid(BitmapIndexedSetNode<?> root) {
         int size = assertValidSet(root, 0, 0, 0);
-        assertThat(root.size()).isEqualTo(size);
+        checkEqual(root.size(), size, "size of the root");
         return size;
     }
 
     private static int assertValidSet(SetNode<?> node, int shift, int path, int pathMask) {
         if (node instanceof BitmapIndexedSetNode<?> n) {
-            assertThat(shift).as("bitmap node above the last level").isLessThan(ChampNode.HASH_CODE_LENGTH);
-            assertThat(n.dataMap & n.nodeMap).as("disjoint bitmaps").isZero();
+            check(shift < ChampNode.HASH_CODE_LENGTH, "bitmap node above the last level");
+            checkEqual(n.dataMap & n.nodeMap, 0, "disjoint bitmaps");
             int payload = Integer.bitCount(n.dataMap);
             int children = Integer.bitCount(n.nodeMap);
-            assertThat(n.content.length).isEqualTo(payload + children);
-            assertThat(n.hashes.length).isEqualTo(payload);
+            checkEqual(n.content.length, payload + children, "length of the content array");
+            checkEqual(n.hashes.length, payload, "length of the hashes array");
             for (int i = 0, bits = n.dataMap; i < payload; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
                 Object element = n.content[i];
-                assertThat(element).isNotNull().isNotInstanceOf(SetNode.class);
-                assertThat(n.hashes[i]).isEqualTo(Objects.hashCode(element));
-                assertThat(ChampNode.maskFrom(n.hashes[i], shift))
-                        .as("element in the slot of its fragment")
-                        .isEqualTo(fragment);
-                assertThat(ChampNode.improve(n.hashes[i]) & pathMask)
-                        .as("element under its path")
-                        .isEqualTo(path);
+                check(element != null && !(element instanceof SetNode), "an element is a non-null element");
+                checkEqual(n.hashes[i], Objects.hashCode(element), "stored hash of an element");
+                checkEqual(ChampNode.maskFrom(n.hashes[i], shift), fragment, "element in the slot of its fragment");
+                checkEqual(ChampNode.improve(n.hashes[i]) & pathMask, path, "element under its path");
             }
             int[] childSizes = new int[children];
             int[] childHashSums = new int[children];
             for (int i = 0, bits = n.nodeMap; i < children; i++, bits &= bits - 1) {
                 int fragment = Integer.numberOfTrailingZeros(bits);
                 Object child = n.content[n.content.length - 1 - i];
-                assertThat(child).isInstanceOf(SetNode.class);
+                check(child instanceof SetNode, "a child is a node");
                 SetNode<?> c = (SetNode<?>) child;
                 int childShift = shift + ChampNode.BIT_PARTITION_SIZE;
                 if (childShift < ChampNode.HASH_CODE_LENGTH) {
-                    assertThat(c).isInstanceOf(BitmapIndexedSetNode.class);
+                    check(c instanceof BitmapIndexedSetNode, "a child above the last level is a bitmap node");
                 } else {
-                    assertThat(c).isInstanceOf(HashCollisionSetNode.class);
+                    check(c instanceof HashCollisionSetNode, "a child at the last level is a collision node");
                 }
                 int childSize = assertValidSet(
                         c, childShift, path | (fragment << shift), pathMask | (ChampNode.BIT_PARTITION_MASK << shift));
-                assertThat(childSize).as("a child holds at least two elements").isGreaterThanOrEqualTo(2);
+                check(childSize >= 2, "a child holds at least two elements");
                 childSizes[i] = childSize;
                 childHashSums[i] = c.keyHashSum();
             }
             int size = payload + IntStream.of(childSizes).sum();
             int hashSum =
                     IntStream.of(n.hashes).sum() + IntStream.of(childHashSums).sum();
-            assertThat(n.size).isEqualTo(size);
-            assertThat(n.keyHashSum).isEqualTo(hashSum);
+            checkEqual(n.size, size, "size field");
+            checkEqual(n.keyHashSum, hashSum, "keyHashSum field");
             return size;
         } else {
             HashCollisionSetNode<?> n = (HashCollisionSetNode<?>) node;
-            assertThat(n.content.length).isGreaterThanOrEqualTo(2);
-            assertThat(ChampNode.improve(n.hash))
-                    .as("collision node under its path")
-                    .isEqualTo(path);
+            check(n.content.length >= 2, "a collision node holds at least two elements");
+            checkEqual(ChampNode.improve(n.hash), path, "collision node under its path");
             java.util.Set<Object> elements = new java.util.HashSet<>();
             for (Object element : n.content) {
-                assertThat(element).isNotNull();
-                assertThat(Objects.hashCode(element)).isEqualTo(n.hash);
-                assertThat(elements.add(element))
-                        .as("distinct elements in a collision node")
-                        .isTrue();
+                check(element != null, "an element of a collision node is not null");
+                checkEqual(Objects.hashCode(element), n.hash, "hash of an element of a collision node");
+                check(elements.add(element), "distinct elements in a collision node");
             }
-            assertThat(n.keyHashSum()).isEqualTo(n.content.length * n.hash);
+            checkEqual(n.keyHashSum(), n.content.length * n.hash, "keyHashSum of a collision node");
             return n.content.length;
         }
     }
@@ -301,18 +283,18 @@ final class ChampValidity {
     /// Asserts that two set tries have the same shape and hold the same element objects in the same slots; the order
     /// inside a collision node is ignored unless `collisionOrder` is set.
     static void assertSameShape(SetNode<?> expected, SetNode<?> actual, boolean collisionOrder) {
-        assertThat(actual.getClass()).isEqualTo(expected.getClass());
+        check(actual.getClass() == expected.getClass(), "same node class");
         if (expected instanceof BitmapIndexedSetNode<?> e) {
             BitmapIndexedSetNode<?> a = (BitmapIndexedSetNode<?>) actual;
-            assertThat(a.dataMap).isEqualTo(e.dataMap);
-            assertThat(a.nodeMap).isEqualTo(e.nodeMap);
-            assertThat(a.size).isEqualTo(e.size);
-            assertThat(a.keyHashSum).isEqualTo(e.keyHashSum);
-            assertThat(a.hashes).isEqualTo(e.hashes);
-            assertThat(a.content.length).isEqualTo(e.content.length);
+            checkEqual(a.dataMap, e.dataMap, "dataMap");
+            checkEqual(a.nodeMap, e.nodeMap, "nodeMap");
+            checkEqual(a.size, e.size, "size field");
+            checkEqual(a.keyHashSum, e.keyHashSum, "keyHashSum field");
+            check(java.util.Arrays.equals(a.hashes, e.hashes), "hashes");
+            checkEqual(a.content.length, e.content.length, "length of the content array");
             int payload = Integer.bitCount(e.dataMap);
             for (int i = 0; i < payload; i++) {
-                assertThat(a.content[i]).isSameAs(e.content[i]);
+                checkSame(a.content[i], e.content[i], "element object");
             }
             for (int i = payload; i < e.content.length; i++) {
                 assertSameShape((SetNode<?>) e.content[i], (SetNode<?>) a.content[i], collisionOrder);
@@ -320,13 +302,13 @@ final class ChampValidity {
         } else {
             HashCollisionSetNode<?> e = (HashCollisionSetNode<?>) expected;
             HashCollisionSetNode<?> a = (HashCollisionSetNode<?>) actual;
-            assertThat(a.hash).isEqualTo(e.hash);
-            assertThat(a.content.length).isEqualTo(e.content.length);
+            checkEqual(a.hash, e.hash, "hash of a collision node");
+            checkEqual(a.content.length, e.content.length, "length of a collision node");
             for (int i = 0; i < e.content.length; i++) {
                 if (collisionOrder) {
-                    assertThat(a.content[i]).isSameAs(e.content[i]);
+                    checkSame(a.content[i], e.content[i], "element object of a collision node");
                 } else {
-                    assertThat(a.content[a.indexOf(e.content[i])]).isSameAs(e.content[i]);
+                    checkSame(a.content[a.indexOf(e.content[i])], e.content[i], "element object of a collision node");
                 }
             }
         }
@@ -389,6 +371,27 @@ final class ChampValidity {
                 out.append(System.identityHashCode(o)).append(' ');
             }
             out.append(")]");
+        }
+    }
+
+    // -- plain checks: these run for every node and entry of every trie the tests build, so they build no AssertJ
+    // assertion, and their message only on a failure
+
+    private static void check(boolean holds, String invariant) {
+        if (!holds) {
+            throw new AssertionError(invariant);
+        }
+    }
+
+    private static void checkEqual(int actual, int expected, String what) {
+        if (actual != expected) {
+            throw new AssertionError(what + ": " + actual + ", expected " + expected);
+        }
+    }
+
+    private static void checkSame(Object actual, Object expected, String what) {
+        if (actual != expected) {
+            throw new AssertionError(what + ": " + actual + ", expected the instance " + expected);
         }
     }
 }

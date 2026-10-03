@@ -80,7 +80,7 @@ public interface LazyListModule {
         });
     }
 
-    /** Slice searches over a lazy cons stream: the candidate start positions are the successive tails. */
+    /** Slice searches over a LazyList: the candidate start positions are the successive tails. */
     interface Slice {
 
         static <T extends @Nullable Object> int indexOfSlice(
@@ -254,7 +254,7 @@ public interface LazyListModule {
 
     interface DropRight {
 
-        // works with infinite streams by buffering elements
+        // works with infinite LazyLists by buffering elements
         static <T extends @Nullable Object> LazyList<T> apply(
                 dev.zazr.collection.List<T> front, dev.zazr.collection.List<T> rear, LazyList<T> remaining) {
             if (remaining.isEmpty()) {

@@ -510,7 +510,7 @@ class GenTypesTest {
                 LazyList<Integer> stream =
                         Shapes.lazyList(layout, elements(n), DROPPED, new Sampling(seeds.nextLong(), 1000), 100);
                 assertThat(stream)
-                        .as("stream layout %d of %d elements", layout, n)
+                        .as("LazyList layout %d of %d elements", layout, n)
                         .containsExactlyElementsOf(elements(n));
             }
         }
@@ -675,10 +675,14 @@ class GenTypesTest {
     void lazyListReachesEvaluatedAndUnevaluatedTails() {
         List<LazyList<Integer>> streams = samples(Gen.lazyList(Gen.integers()));
         assertSome(
-                streams, s -> !s.isEmpty() && s.toString().matches("LazyList\\([^,]*, \\?\\)"), "an unevaluated tail");
+                streams,
+                s -> !s.isEmpty() && s.toString().matches("LazyList\\([^,]*, <not computed>\\)"),
+                "an unevaluated tail");
         assertSome(
-                streams, s -> !s.isEmpty() && !s.toString().matches("LazyList\\([^,]*, \\?\\)"), "an evaluated tail");
-        assertSome(streams, s -> s.toString().equals("LazyList(?)"), "an unevaluated list");
+                streams,
+                s -> !s.isEmpty() && !s.toString().matches("LazyList\\([^,]*, <not computed>\\)"),
+                "an evaluated tail");
+        assertSome(streams, s -> s.toString().equals("LazyList(<not computed>)"), "an unevaluated list");
     }
 
     @Test

@@ -12,7 +12,7 @@ JDK 25 or later. Zazr has no runtime dependency.
 
 ## Add the dependency
 
-Zazr is on Maven Central. The current version is 0.1.0; the
+Zazr is on Maven Central. The current version is 0.3.0; the
 [releases](https://github.com/guizmaii-opensource/zazr/releases) list what each version changes.
 
 === "Maven"
@@ -21,13 +21,13 @@ Zazr is on Maven Central. The current version is 0.1.0; the
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-core</artifactId>
-        <version>0.1.0</version>
+        <version>0.3.0</version>
     </dependency>
 
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-test</artifactId>
-        <version>0.1.0</version>
+        <version>0.3.0</version>
         <scope>test</scope>
     </dependency>
     ```
@@ -36,8 +36,8 @@ Zazr is on Maven Central. The current version is 0.1.0; the
 
     ```kotlin
     dependencies {
-        implementation("dev.zazr:zazr-core:0.1.0")
-        testImplementation("dev.zazr:zazr-test:0.1.0")
+        implementation("dev.zazr:zazr-core:0.3.0")
+        testImplementation("dev.zazr:zazr-test:0.3.0")
     }
     ```
 
