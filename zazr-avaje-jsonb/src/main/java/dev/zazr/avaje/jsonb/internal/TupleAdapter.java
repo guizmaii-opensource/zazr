@@ -16,7 +16,7 @@ import io.avaje.json.JsonWriter;
 import org.jspecify.annotations.Nullable;
 
 /// The adapter of `Tuple1` to `Tuple8`: a JSON array of exactly as many elements as the arity, each read and written
-/// by the adapter of its own type.
+/// by the adapter of its own type. A tuple holds `null` components, so a `null` element is read as one.
 final class TupleAdapter implements JsonAdapter<Tuple> {
 
     /// The adapters of the elements, in order; their number is the arity.
@@ -42,23 +42,22 @@ final class TupleAdapter implements JsonAdapter<Tuple> {
     }
 
     @Override
+    // a tuple's components are nullable (its type parameters extend `@Nullable Object`), which the inferred type
+    // arguments of the constructor calls below do not say
+    @SuppressWarnings("NullAway")
     public @Nullable Tuple fromJson(JsonReader reader) {
         if (reader.isNullValue()) {
             return null;
         }
         int arity = elements.length;
-        Object[] read = new Object[arity];
+        Reading.expect(reader, JsonReader.Token.BEGIN_ARRAY, "Tuple" + arity);
+        @Nullable Object[] read = new Object[arity];
         reader.beginArray();
         for (int i = 0; i < arity; i++) {
             if (!reader.hasNextElement()) {
                 throw wrongLength(i, reader);
             }
-            Object element = elements[i].fromJson(reader);
-            if (element == null) {
-                throw new JsonDataException("Tuple" + arity + " rejects null elements: the element at index " + i
-                        + " is null, " + reader.location());
-            }
-            read[i] = element;
+            read[i] = elements[i].fromJson(reader);
         }
         if (reader.hasNextElement()) {
             reader.skipValue();
@@ -106,9 +105,9 @@ final class TupleAdapter implements JsonAdapter<Tuple> {
     }
 
     private JsonDataException wrongLength(int length, JsonReader reader) {
-        return new JsonDataException("Tuple" + elements.length + " needs a JSON array of exactly " + elements.length
-                + (elements.length == 1 ? " element" : " elements") + ", but the array has " + length + ", "
-                + reader.location());
+        return new JsonDataException("A Tuple" + elements.length + " is a JSON array of " + elements.length
+                + (elements.length == 1 ? " element" : " elements") + ": this one has " + length + "."
+                + Reading.at(reader));
     }
 
     @Override

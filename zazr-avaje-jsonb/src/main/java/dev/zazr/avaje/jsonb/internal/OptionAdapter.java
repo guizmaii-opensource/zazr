@@ -11,6 +11,9 @@ import org.jspecify.annotations.Nullable;
 /// An `Option` is always written, even when the `Jsonb` leaves out `null` and empty properties: avaje-jsonb gives a
 /// property missing from the JSON the value `null`, so a left-out `None` or `Some` of an empty collection would not
 /// read back as itself. A `null` reference to an `Option` follows the `serializeNulls` setting.
+///
+/// `Some(None)`, an `Option` nested in another, is `null` like `None`: JSON has one `null`, so it reads back as
+/// `None`.
 final class OptionAdapter<T> implements JsonAdapter<Option<T>> {
 
     private final JsonAdapter<T> values;

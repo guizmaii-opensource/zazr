@@ -13,12 +13,16 @@ import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
+import dev.zazr.collection.Map;
 import dev.zazr.collection.NonEmptyMap;
 import dev.zazr.collection.NonEmptySet;
 import dev.zazr.collection.NonEmptySortedMap;
 import dev.zazr.collection.NonEmptySortedSet;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
+import dev.zazr.collection.Set;
+import dev.zazr.collection.SortedMap;
+import dev.zazr.collection.SortedSet;
 import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
@@ -66,6 +70,11 @@ class ConformanceTest {
                         type(HashMap.class, LocalDate.class, integer),
                         HashMap.of(LocalDate.of(2026, 10, 3), 1),
                         "{\"2026-10-03\":1}"),
+                Arguments.of(type(Set.class, integer), HashSet.of(1), "[1]"),
+                Arguments.of(type(SortedSet.class, integer), TreeSet.of(2, 1), "[1,2]"),
+                Arguments.of(type(Map.class, string, integer), HashMap.of("a", 1), "{\"a\":1}"),
+                Arguments.of(type(SortedMap.class, string, integer), TreeMap.of("b", 2, "a", 1), "{\"a\":1,\"b\":2}"),
+                Arguments.of(type(Tuple2.class, integer, integer), Tuple.of(1, null), "[1,null]"),
                 Arguments.of(type(Option.class, integer), Option.some(1), "1"),
                 Arguments.of(type(Option.class, string), Option.some("a"), "\"a\""),
                 Arguments.of(type(Option.class, integer), Option.none(), "null"),

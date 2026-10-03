@@ -5,6 +5,7 @@ import io.avaje.json.JsonDataException;
 import io.avaje.json.JsonReader;
 import io.avaje.jsonb.Jsonb;
 import java.lang.reflect.Type;
+import org.jspecify.annotations.Nullable;
 
 /// Turns the keys of a map into the names of the properties of a JSON object, and back.
 ///
@@ -72,20 +73,22 @@ abstract sealed class KeyCodec<K> {
 
         @Override
         K read(String name, String typeName, JsonReader reader) {
-            K key;
-            try {
-                key = keys.fromJson(new KeyReader(name));
-            } catch (RuntimeException e) {
-                throw new JsonDataException(
-                        typeName + " cannot read the key \"" + name + "\": " + e.getMessage() + ", "
-                                + reader.location(),
-                        e);
-            }
+            K key = parse(name, typeName, reader);
             if (key == null) {
-                throw new JsonDataException(typeName + " rejects null keys: the key \"" + name + "\" is read as null, "
-                        + reader.location());
+                throw Reading.nullIn("The key read from \"" + name + "\"", typeName, reader);
             }
             return key;
+        }
+
+        private @Nullable K parse(String name, String typeName, JsonReader reader) {
+            try {
+                return keys.fromJson(new KeyReader(name));
+            } catch (RuntimeException e) {
+                throw new JsonDataException(
+                        "Cannot read a key of the " + typeName + " from \"" + name + "\": " + e.getMessage()
+                                + Reading.at(reader),
+                        e);
+            }
         }
 
         @Override

@@ -8,6 +8,7 @@ import dev.zazr.Tuple5;
 import dev.zazr.Tuple6;
 import dev.zazr.Tuple7;
 import dev.zazr.Tuple8;
+import dev.zazr.collection.Traversable;
 import dev.zazr.control.Option;
 import io.avaje.json.JsonAdapter;
 import io.avaje.jsonb.AdapterFactory;
@@ -37,12 +38,16 @@ public final class ZazrAdapterFactory implements AdapterFactory {
         }
         SequenceShape sequence = SequenceShape.of(rawType);
         if (sequence != null) {
-            return new SequenceAdapter<>(sequence, jsonb.adapter(typeArgument(type, 0)));
+            Type element = typeArgument(type, 0);
+            return new SequenceAdapter<>(sequence, element, jsonb.adapter(element));
         }
         MapShape map = MapShape.of(rawType);
         if (map != null) {
-            return new MapAdapter<>(
-                    map, KeyCodec.of(typeArgument(type, 0), jsonb), jsonb.adapter(typeArgument(type, 1)));
+            Type key = typeArgument(type, 0);
+            return new MapAdapter<>(map, key, KeyCodec.of(key, jsonb), jsonb.adapter(typeArgument(type, 1)));
+        }
+        if (rawType == Traversable.class) {
+            return new TraversableAdapter(jsonb);
         }
         for (int i = 0; i < TUPLES.length; i++) {
             if (TUPLES[i] == rawType) {

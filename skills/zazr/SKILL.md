@@ -101,5 +101,6 @@ Read the one that matches the task:
 
 For tests, `dev.zazr:zazr-test` adds property-based testing, with assertions that explain a failure
 (`Check.check(gen, value -> assertThat(value, isSome(isGreaterThan(0))))`); see https://zazr.dev/testing/.
-For JSON with avaje-jsonb, adding `dev.zazr:zazr-avaje-jsonb` is enough: records with Zazr fields are read and written
-as arrays, objects and `null` for `None`; see https://zazr.dev/avaje-jsonb/.
+For JSON with avaje-jsonb, adding `dev.zazr:zazr-avaje-jsonb` is enough: the collections, `Option` and the tuples are
+read and written as arrays, objects and `null` for `None` (a `Traversable` field is written only); see
+https://zazr.dev/avaje-jsonb/.

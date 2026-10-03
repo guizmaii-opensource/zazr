@@ -84,12 +84,11 @@ public class DocsAvajeJsonbExamplesTest {
                     var vectors = Types.newParameterizedType(NonEmptyVector.class, Integer.class);
 
                     jsonb.type(vectors).fromJson("[]"); // throws JsonDataException:
-                    // NonEmptyVector needs at least one element, but the JSON array is empty, at position: 2,
-                    // following:
-                    // `[]`
+                    // A NonEmptyVector needs at least one element: the JSON array is empty. (at position: 2,
+                    // following: `[]`)
                 })
                 .isExactlyInstanceOf(JsonDataException.class)
                 .hasMessage(
-                        "NonEmptyVector needs at least one element, but the JSON array is empty, at position: 2, following: `[]`");
+                        "A NonEmptyVector needs at least one element: the JSON array is empty. (at position: 2, following: `[]`)");
     }
 }

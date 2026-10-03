@@ -17,9 +17,15 @@ final class TestKeys {
     /// A key type whose adapter reads every key as `null`.
     record NullKey() {}
 
-    /// A key type whose adapter reads a number as an `Integer` and anything else as a `String`, which cannot be
-    /// compared with each other.
-    record Mixed() {}
+    /// A `Comparable` type whose adapter reads the text of a number as an `Integer` and any other text as a `String`,
+    /// which cannot be compared with each other.
+    record Mixed() implements Comparable<Mixed> {
+
+        @Override
+        public int compareTo(Mixed other) {
+            return 0;
+        }
+    }
 
     static final Jsonb JSONB = Jsonb.builder()
             .add(Unordered.class, new JsonAdapter<Unordered>() {

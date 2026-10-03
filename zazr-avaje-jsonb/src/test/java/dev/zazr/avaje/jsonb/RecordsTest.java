@@ -1,6 +1,7 @@
 package dev.zazr.avaje.jsonb;
 
 import dev.zazr.Tuple;
+import dev.zazr.avaje.jsonb.TestRecords.Escapes;
 import dev.zazr.avaje.jsonb.TestRecords.Everything;
 import dev.zazr.avaje.jsonb.TestRecords.Line;
 import dev.zazr.avaje.jsonb.TestRecords.Order;
@@ -9,6 +10,7 @@ import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.List;
 import dev.zazr.collection.NonEmptySortedMap;
 import dev.zazr.collection.NonEmptyVector;
+import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
@@ -61,6 +63,40 @@ class RecordsTest {
                 Types.newParameterizedType(Option.class, Types.newParameterizedType(Vector.class, Integer.class)));
         assertThat(json.toJson(Option.some(Vector.empty()))).isEqualTo("[]");
         assertThat(json.fromJson("[]")).isEqualTo(Option.some(Vector.empty()));
+    }
+
+    @Test
+    void aNestedSomeOfNoneIsWrittenAsNullAndReadBackAsNone() {
+        // JSON has one null: None and Some(None) are both written as null, and null reads as None
+        JsonType<Option<Option<Integer>>> nested = JSONB.type(
+                Types.newParameterizedType(Option.class, Types.newParameterizedType(Option.class, Integer.class)));
+        assertThat(nested.toJson(Option.some(Option.none()))).isEqualTo("null");
+        assertThat(nested.toJson(Option.none())).isEqualTo("null");
+        assertThat(nested.fromJson("null")).isEqualTo(Option.none());
+        assertThat(nested.toJson(Option.some(Option.some(1)))).isEqualTo("1");
+        assertThat(nested.fromJson("1")).isEqualTo(Option.some(Option.some(1)));
+    }
+
+    @Test
+    void escapedKeysOfAMapInsideARecordAreDecoded() {
+        var escapes = new Escapes(
+                LinkedHashMap.of("a\"b", 1, "c\\d", 2, "é\n\u0001", 3), TreeMap.of("x\"", Vector.of("y\"")));
+        var json = JSONB.toJson(escapes);
+        assertThat(json)
+                .isEqualTo("{\"names\":{\"a\\\"b\":1,\"c\\\\d\":2,\"é\\n\\u0001\":3},"
+                        + "\"sorted\":{\"x\\\"\":[\"y\\\"\"]}}");
+        assertThat(JSONB.type(Escapes.class).fromJson(json)).isEqualTo(escapes);
+    }
+
+    @Test
+    void escapedKeysAreDecodedAfterAFailedReadOnTheSameThread() {
+        // a read that fails inside a record leaves avaje-jsonb's parser of this thread with the record's names
+        var orders = JSONB.type(Order.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> orders.fromJson("{\"lines\":[null]}"))
+                .isInstanceOf(io.avaje.json.JsonDataException.class);
+        JsonType<LinkedHashMap<String, Integer>> map =
+                JSONB.type(Types.newParameterizedType(LinkedHashMap.class, String.class, Integer.class));
+        assertThat(map.fromJson("{\"a\\\"b\":1}")).isEqualTo(LinkedHashMap.of("a\"b", 1));
     }
 
     @Test

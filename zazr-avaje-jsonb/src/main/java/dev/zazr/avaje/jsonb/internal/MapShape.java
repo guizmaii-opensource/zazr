@@ -3,8 +3,10 @@ package dev.zazr.avaje.jsonb.internal;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.LinkedHashMap;
+import dev.zazr.collection.Map;
 import dev.zazr.collection.NonEmptyMap;
 import dev.zazr.collection.NonEmptySortedMap;
+import dev.zazr.collection.SortedMap;
 import dev.zazr.collection.TreeMap;
 import java.util.ArrayList;
 import org.jspecify.annotations.Nullable;
@@ -24,6 +26,21 @@ enum MapShape {
         }
     },
     TREE_MAP("TreeMap", false, true) {
+        @Override
+        Object build(ArrayList<Tuple2<Object, Object>> entries) {
+            return NaturalOrder.treeMap(entries);
+        }
+    },
+    /// A property declared as the `Map` interface: written by iterating the map, whatever its class; read as a
+    /// `HashMap`.
+    MAP("Map", false, false) {
+        @Override
+        Object build(ArrayList<Tuple2<Object, Object>> entries) {
+            return HashMap.newBuilder().putAll(entries).result();
+        }
+    },
+    /// A property declared as the `SortedMap` interface: read as a `TreeMap` in the natural order of the keys.
+    SORTED_MAP("SortedMap", false, true) {
         @Override
         Object build(ArrayList<Tuple2<Object, Object>> entries) {
             return NaturalOrder.treeMap(entries);
@@ -62,7 +79,7 @@ enum MapShape {
     /// keys for a sorted one.
     abstract Object build(ArrayList<Tuple2<Object, Object>> entries);
 
-    /// The shape of `rawType`, or `null` when it is not a Zazr map.
+    /// The shape of `rawType`, or `null` when it is not a Zazr map or one of the `Map` and `SortedMap` interfaces.
     static @Nullable MapShape of(Class<?> rawType) {
         if (rawType == HashMap.class) {
             return HASH_MAP;
@@ -70,6 +87,10 @@ enum MapShape {
             return LINKED_HASH_MAP;
         } else if (rawType == TreeMap.class) {
             return TREE_MAP;
+        } else if (rawType == Map.class) {
+            return MAP;
+        } else if (rawType == SortedMap.class) {
+            return SORTED_MAP;
         } else if (rawType == NonEmptyMap.class) {
             return NON_EMPTY_MAP;
         } else if (rawType == NonEmptySortedMap.class) {

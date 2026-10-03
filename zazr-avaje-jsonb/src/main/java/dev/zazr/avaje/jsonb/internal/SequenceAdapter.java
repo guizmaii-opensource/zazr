@@ -4,6 +4,7 @@ import io.avaje.json.JsonAdapter;
 import io.avaje.json.JsonDataException;
 import io.avaje.json.JsonReader;
 import io.avaje.json.JsonWriter;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Iterator;
 import org.jspecify.annotations.Nullable;
@@ -15,10 +16,15 @@ import org.jspecify.annotations.Nullable;
 final class SequenceAdapter<T> implements JsonAdapter<Iterable<T>> {
 
     private final SequenceShape shape;
+
+    /// The declared type of the elements.
+    private final Type elementType;
+
     private final JsonAdapter<T> elements;
 
-    SequenceAdapter(SequenceShape shape, JsonAdapter<T> elements) {
+    SequenceAdapter(SequenceShape shape, Type elementType, JsonAdapter<T> elements) {
         this.shape = shape;
+        this.elementType = elementType;
         this.elements = elements;
     }
 
@@ -56,32 +62,28 @@ final class SequenceAdapter<T> implements JsonAdapter<Iterable<T>> {
         if (reader.isNullValue()) {
             return null;
         }
+        Reading.expect(reader, JsonReader.Token.BEGIN_ARRAY, shape.typeName);
+        if (shape.sorted) {
+            Reading.requireComparable(shape.typeName, elementType, "elements", reader);
+        }
         ArrayList<T> read = new ArrayList<>();
         reader.beginArray();
         while (reader.hasNextElement()) {
             T element = elements.fromJson(reader);
             if (element == null) {
-                throw new JsonDataException(shape.typeName + " rejects null elements: the element at index "
-                        + read.size() + " is null, " + reader.location());
-            }
-            if (shape.sorted && !(element instanceof Comparable)) {
-                throw new JsonDataException(shape.typeName + " sorts its elements in their natural order, but "
-                        + element.getClass().getName() + " is not Comparable, " + reader.location());
+                throw Reading.nullIn("Element " + read.size(), shape.typeName, reader);
             }
             read.add(element);
         }
         reader.endArray();
         if (shape.nonEmpty && read.isEmpty()) {
-            throw new JsonDataException(
-                    shape.typeName + " needs at least one element, but the JSON array is empty, " + reader.location());
+            throw new JsonDataException("A " + shape.typeName + " needs at least one element: the JSON array is empty."
+                    + Reading.at(reader));
         }
         try {
             return (Iterable<T>) shape.build(read);
         } catch (ClassCastException e) {
-            throw new JsonDataException(
-                    shape.typeName + " sorts its elements in their natural order, but they are not comparable with "
-                            + "each other (" + e.getMessage() + "), " + reader.location(),
-                    e);
+            throw Reading.notMutuallyComparable(shape.typeName, "elements", e, reader);
         }
     }
 

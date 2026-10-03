@@ -8,6 +8,8 @@ import dev.zazr.collection.NonEmptySet;
 import dev.zazr.collection.NonEmptySortedSet;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
+import dev.zazr.collection.Set;
+import dev.zazr.collection.SortedSet;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
 import java.util.ArrayList;
@@ -57,6 +59,21 @@ enum SequenceShape {
             return NaturalOrder.treeSet(elements);
         }
     },
+    /// A property declared as the `Set` interface: written by iterating the set, whatever its class; read as a
+    /// `HashSet`.
+    SET("Set", false, false) {
+        @Override
+        Object build(ArrayList<?> elements) {
+            return HashSet.ofAll(elements);
+        }
+    },
+    /// A property declared as the `SortedSet` interface: read as a `TreeSet` in the natural order.
+    SORTED_SET("SortedSet", false, true) {
+        @Override
+        Object build(ArrayList<?> elements) {
+            return NaturalOrder.treeSet(elements);
+        }
+    },
     NON_EMPTY_VECTOR("NonEmptyVector", true, false) {
         @Override
         Object build(ArrayList<?> elements) {
@@ -97,7 +114,8 @@ enum SequenceShape {
 
     /// The shape of `rawType`, or `null` when it is not written as an array of elements. `List` and `LazyList` are
     /// interfaces: a class implementing them, the class of a value written with `Jsonb.toJson(Object)`, has their
-    /// shape too.
+    /// shape too. `Set` and `SortedSet` are matched only as declared types: each of their implementations has its
+    /// own shape.
     static @Nullable SequenceShape of(Class<?> rawType) {
         if (rawType == Vector.class) {
             return VECTOR;
@@ -113,6 +131,10 @@ enum SequenceShape {
             return LINKED_HASH_SET;
         } else if (rawType == TreeSet.class) {
             return TREE_SET;
+        } else if (rawType == Set.class) {
+            return SET;
+        } else if (rawType == SortedSet.class) {
+            return SORTED_SET;
         } else if (rawType == NonEmptyVector.class) {
             return NON_EMPTY_VECTOR;
         } else if (rawType == NonEmptySet.class) {
