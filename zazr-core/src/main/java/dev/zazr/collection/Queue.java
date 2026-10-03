@@ -3332,8 +3332,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: O(min(n, m)), at most: a size that is not stored is counted only up to the other one; O(1) when the
-     * size of {@code that} is stored. The elements held at the back are counted where they are, not put in order
-     * first, as iterator() does.
+     * size of {@code that} is stored. The elements held at the back, of this queue and of a Queue {@code that}, are
+     * counted where they are, not put in order first, as iterator() does.
      */
     @Override
     public int sizeCompare(Iterable<?> that) {
@@ -3341,6 +3341,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         int thatKnownSize = Collections.knownSize(that);
         if (thatKnownSize >= 0) {
             return sizeCompare(thatKnownSize);
+        }
+        if (that instanceof Queue<?> other) {
+            // the iterator of the other queue would first put the elements held at its back in order
+            return sizeCompareCells(front, rear, other.front, other.rear);
         }
         // the cells of the front, then those of the rear, side by side with the elements of that
         java.util.Iterator<?> those = that.iterator();
@@ -3357,6 +3361,31 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             those.next();
         }
         return those.hasNext() ? -1 : 0;
+    }
+
+    // walks the cells of two queues side by side, each front then rear, until the shorter one ends: -1, 0 or 1 as
+    // the first queue is shorter, as long or longer
+    @SuppressWarnings("Var")
+    private static int sizeCompareCells(List<?> front, List<?> rear, List<?> otherFront, List<?> otherRear) {
+        List<?> these = front;
+        List<?> theseNext = rear;
+        List<?> those = otherFront;
+        List<?> thoseNext = otherRear;
+        while (true) {
+            if (these.isEmpty() && !theseNext.isEmpty()) {
+                these = theseNext;
+                theseNext = List.empty();
+            }
+            if (those.isEmpty() && !thoseNext.isEmpty()) {
+                those = thoseNext;
+                thoseNext = List.empty();
+            }
+            if (these.isEmpty() || those.isEmpty()) {
+                return Boolean.compare(!these.isEmpty(), !those.isEmpty());
+            }
+            these = these.tail();
+            those = those.tail();
+        }
     }
 
     /**

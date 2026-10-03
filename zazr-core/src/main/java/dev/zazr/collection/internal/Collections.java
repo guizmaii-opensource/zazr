@@ -2,6 +2,7 @@ package dev.zazr.collection.internal;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import dev.zazr.collection.HashMap;
 import dev.zazr.collection.HashSet;
 import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
@@ -18,6 +19,8 @@ import dev.zazr.collection.Set;
 import dev.zazr.collection.SortedMap;
 import dev.zazr.collection.SortedSet;
 import dev.zazr.collection.Traversable;
+import dev.zazr.collection.TreeMap;
+import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import java.util.*;
@@ -288,14 +291,20 @@ public final class Collections {
         return known >= 0 ? known : 16;
     }
 
-    /// The size of `iterable` when it is stored, so that reading it is O(1) and computes nothing: a [Vector], a set,
-    /// a map or a non-empty collection. -1 for everything else, whose size takes a walk ([List], [Queue],
-    /// [LazyList]), may never be known (a one-shot `Iterable`), or is not trusted to be cheap (a JDK collection,
-    /// which may be a view of a [LazyList]).
+    /// The size of `iterable` when it is stored, so that reading it is O(1) and computes nothing: a [Vector], one of
+    /// Zazr's sets or maps, or a non-empty collection. -1 for everything else: a [List], a [Queue] or a [LazyList],
+    /// whose size takes a walk; a one-shot `Iterable`, whose size may never be known; a JDK collection, which
+    /// may be a view of a [LazyList]; and any other implementation of [Traversable], [Set] or [Map], which are
+    /// open to them.
     public static int knownSize(Iterable<?> iterable) {
         return switch (iterable) {
-            case List<?> _, Queue<?> _, LazyList<?> _ -> -1;
-            case Traversable<?> traversable -> traversable.size();
+            case Vector<?> vector -> vector.size();
+            case HashSet<?> set -> set.size();
+            case LinkedHashSet<?> set -> set.size();
+            case TreeSet<?> set -> set.size();
+            case HashMap<?, ?> map -> map.size();
+            case LinkedHashMap<?, ?> map -> map.size();
+            case TreeMap<?, ?> map -> map.size();
             case NonEmptyVector<?> vector -> vector.size();
             case NonEmptySet<?> set -> set.size();
             case NonEmptySortedSet<?> set -> set.size();
@@ -322,12 +331,13 @@ public final class Collections {
 
     /// The sign of the size of `self` minus the size of `that`, where `thisKnownSize` is the size of `self` if it
     /// is stored, -1 otherwise: a stored size is compared with the other collection, which counts its elements only
-    /// up to it; when neither size is stored, the two are walked side by side until the shorter one ends.
-    public static int sizeCompare(Iterable<?> self, int thisKnownSize, Iterable<?> that) {
+    /// up to it; when neither size is stored, the two are walked side by side until the shorter one ends. `self`
+    /// compares its own size with a stored one through its own `sizeCompare(int)`.
+    public static int sizeCompare(Traversable<?> self, int thisKnownSize, Iterable<?> that) {
         Objects.requireNonNull(that, "that is null");
         int thatKnownSize = knownSize(that);
         if (thatKnownSize >= 0) {
-            return sizeCompareWith(self, thatKnownSize);
+            return self.sizeCompare(thatKnownSize);
         } else if (thisKnownSize >= 0) {
             return -sizeCompareWith(that, thisKnownSize);
         } else if (that instanceof Queue<?> queue) {
@@ -344,11 +354,15 @@ public final class Collections {
         }
     }
 
-    // the iterable's own sizeCompare where it has one, so that a List walks its cells and a LazyList its computed ones
+    // the cell walk of Zazr's List, Queue and LazyList, which count without an iterator (a Queue's would first put the
+    // elements held at its back in order); any other iterable is counted through its iterator, never asked its size
     private static int sizeCompareWith(Iterable<?> iterable, int otherSize) {
-        return iterable instanceof Traversable<?> traversable
-                ? traversable.sizeCompare(otherSize)
-                : sizeCompare(iterable.iterator(), otherSize);
+        return switch (iterable) {
+            case List<?> list -> list.sizeCompare(otherSize);
+            case Queue<?> queue -> queue.sizeCompare(otherSize);
+            case LazyList<?> lazyList -> lazyList.sizeCompare(otherSize);
+            default -> sizeCompare(iterable.iterator(), otherSize);
+        };
     }
 
     // hashes the elements respecting their order

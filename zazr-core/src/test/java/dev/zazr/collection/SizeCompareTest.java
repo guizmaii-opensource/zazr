@@ -261,6 +261,86 @@ public class SizeCompareTest {
         assertThat(LazyList.from(0).sizeCompare(Queue.of(1).enqueue(2))).isEqualTo(1);
     }
 
+    /// Queues of `size` elements in every layout: all at the front, all at the back, and split between the two.
+    private static java.util.List<Queue<Integer>> queuesOf(int size) {
+        return java.util.List.of(
+                Queue.ofAll(Vector.range(0, size)),
+                Vector.range(0, size).foldLeft(Queue.empty(), Queue::enqueue),
+                queueOfFrontAndRear(size));
+    }
+
+    @Test
+    public void shouldCompareTwoQueuesInEveryLayout() {
+        int[] sizes = {0, 1, 2, 32, 33};
+        for (int size : sizes) {
+            for (int other : sizes) {
+                for (Queue<Integer> queue : queuesOf(size)) {
+                    for (Queue<Integer> that : queuesOf(other)) {
+                        assertThat(queue.sizeCompare(that))
+                                .as("%s against %s", queue, that)
+                                .isEqualTo(Integer.compare(size, other));
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void shouldNotPutTheBackOfAQueueArgumentInOrder() {
+        // a million elements held at the back: putting them in order on each of the calls below would allocate
+        // and walk a million cells per call, ten billion in all, instead of a few
+        Queue<Integer> enqueued = Vector.range(0, 1_000_000).foldLeft(Queue.empty(), Queue::enqueue);
+        Queue<Integer> one = Queue.of(1);
+        Queue<Integer> oneAtTheBack = Queue.<Integer>empty().enqueue(1);
+        org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(java.time.Duration.ofSeconds(60), () -> {
+            for (int i = 0; i < 10_000; i++) {
+                assertThat(one.sizeCompare(enqueued)).isEqualTo(-1);
+                assertThat(oneAtTheBack.sizeCompare(enqueued)).isEqualTo(-1);
+                assertThat(enqueued.sizeCompare(oneAtTheBack)).isEqualTo(1);
+                assertThat(List.of(1).sizeCompare(enqueued)).isEqualTo(-1);
+                assertThat(LazyList.of(1).sizeCompare(enqueued)).isEqualTo(-1);
+            }
+        });
+    }
+
+    /// Another implementation of Traversable, whose size Zazr does not know to be stored: asking it fails. As a
+    /// receiver it walks side by side with a size that is not stored either; against a stored one, its own
+    /// sizeCompare(int) would ask its size.
+    private static final class Counted implements Traversable<Integer> {
+        private final int size;
+
+        Counted(int size) {
+            this.size = size;
+        }
+
+        @Override
+        public java.util.Iterator<Integer> iterator() {
+            return Vector.range(0, size).iterator();
+        }
+
+        @Override
+        public int size() {
+            throw new AssertionError("size() asked");
+        }
+    }
+
+    @Test
+    public void shouldIterateAnotherImplementationOfTraversableInsteadOfAskingItsSize() {
+        for (int size : new int[] {0, 1, 2, 33}) {
+            for (int other : new int[] {0, 1, 2, 32, 33, 34}) {
+                int expected = Integer.compare(size, other);
+                assertThat(Vector.range(0, other).sizeCompare(new Counted(size)))
+                        .isEqualTo(-expected);
+                assertThat(List.range(0, other).sizeCompare(new Counted(size))).isEqualTo(-expected);
+                assertThat(Queue.range(0, other).sizeCompare(new Counted(size))).isEqualTo(-expected);
+                assertThat(NonEmptySet.unsafeFromSet(HashSet.range(0, other + 1))
+                                .sizeCompare(new Counted(size)))
+                        .isEqualTo(Integer.compare(other + 1, size));
+                assertThat(new Counted(size).sizeCompare(List.range(0, other))).isEqualTo(expected);
+            }
+        }
+    }
+
     @Test
     public void shouldIterateAJdkCollectionInsteadOfAskingItsSize() {
         // the size of the view of an infinite LazyList never returns: only its iterator is read
