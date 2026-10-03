@@ -157,5 +157,6 @@ nav:
   - Compared to Vavr: vavr.md
   - Blog:
       - blog/index.md
+  - Roadmap: roadmap.md
   - Releases: https://github.com/guizmaii-opensource/zazr/releases
   - Design: principles.md
