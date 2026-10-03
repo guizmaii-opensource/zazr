@@ -371,30 +371,26 @@ class LazyListLazinessTest {
         for (int round = 0; round < 20; round++) {
             LazyList<Integer> cyclic = LazyList.range(0, length).cycle();
             CountDownLatch start = new CountDownLatch(1);
-            java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean();
-            java.util.concurrent.ConcurrentLinkedQueue<String> shown =
-                    new java.util.concurrent.ConcurrentLinkedQueue<>();
-            java.util.List<Thread> readers = new ArrayList<>();
-            java.util.List<Thread> printers = new ArrayList<>();
+            // the distinct texts shown: at most the states above, so it stays small whatever the scheduling
+            java.util.Set<String> shown = java.util.concurrent.ConcurrentHashMap.newKeySet();
+            java.util.List<Thread> started = new ArrayList<>();
             for (int i = 0; i < 4; i++) {
-                readers.add(Thread.ofVirtual().start(() -> {
+                started.add(Thread.ofVirtual().start(() -> {
                     awaitQuietly(start);
                     cyclic.take(3 * length).toVector();
                 }));
-                printers.add(Thread.ofVirtual().start(() -> {
+                // a fixed number of calls, yielding between them so the readers run on a machine with few cores
+                started.add(Thread.ofVirtual().start(() -> {
                     awaitQuietly(start);
-                    do {
+                    for (int call = 0; call < 200; call++) {
                         shown.add(cyclic.toString());
-                    } while (!done.get());
+                        Thread.yield();
+                    }
                 }));
             }
             start.countDown();
-            for (Thread reader : readers) {
-                reader.join();
-            }
-            done.set(true);
-            for (Thread printer : printers) {
-                printer.join();
+            for (Thread thread : started) {
+                thread.join();
             }
             assertThat(shown).isNotEmpty();
             assertThat(possible).containsAll(shown);
