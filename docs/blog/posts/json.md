@@ -11,8 +11,8 @@ description: "Zazr 0.3.0 reads and writes Zazr types as JSON with Jackson or ava
 # Zazr types in JSON, with Jackson and avaje-jsonb
 
 Zazr 0.3.0 comes with two new modules: `zazr-jackson` for Jackson 3, and `zazr-avaje-jsonb` for avaje-jsonb. With
-either of them, a record that holds Zazr collections, `Option` or tuples becomes JSON and comes back, with no code of
-yours.
+either of them, a record that holds Zazr collections, `Option` or tuples becomes JSON and comes back, without any
+code of your own.
 
 This post shows why a module is needed, how to add each one, the JSON they write, and what they check when they read.
 
