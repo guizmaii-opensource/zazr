@@ -7,11 +7,12 @@ import org.jspecify.annotations.Nullable;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.core.JsonToken;
 import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.JavaType;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.jsontype.TypeSerializer;
 import tools.jackson.databind.ser.jdk.MapSerializer;
-import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.databind.ser.std.StdContainerSerializer;
 import tools.jackson.databind.type.MapLikeType;
 
 /// Writes a Zazr map as a JSON object: its `asJavaMap()` view, which copies nothing, goes to the serializer Jackson
@@ -22,24 +23,64 @@ import tools.jackson.databind.type.MapLikeType;
 /// Ported from `MapSerializer` in `src/main/java/io/vavr/jackson/datatype/serialize/MapSerializer.java` of
 /// vavr-jackson (https://github.com/vavr-io/vavr-jackson), which copies the map into a `java.util.LinkedHashMap` and
 /// serializes the copy the same way.
-public final class ZazrMapSerializer extends StdSerializer<Object> {
+///
+/// It is a container serializer, as Jackson's map serializer is, so that Jackson gives it the type serializer of the
+/// values when a `@JsonTypeInfo` property holds the map; it hands that type serializer on to Jackson's map serializer.
+public final class ZazrMapSerializer extends StdContainerSerializer<Object> {
 
     private final MapLikeType type;
     private final @Nullable ValueSerializer<Object> delegate;
+    private final @Nullable TypeSerializer valueTypeSerializer;
 
     ZazrMapSerializer(MapLikeType type) {
-        this(type, null);
+        this(type, null, null);
     }
 
-    private ZazrMapSerializer(MapLikeType type, @Nullable ValueSerializer<Object> delegate) {
-        super(type);
+    private ZazrMapSerializer(
+            MapLikeType type,
+            @Nullable ValueSerializer<Object> delegate,
+            @Nullable TypeSerializer valueTypeSerializer) {
+        super(type.getRawClass());
         this.type = type;
         this.delegate = delegate;
+        this.valueTypeSerializer = valueTypeSerializer;
     }
 
     @Override
     public ValueSerializer<?> createContextual(SerializationContext ctxt, @Nullable BeanProperty property) {
-        return new ZazrMapSerializer(type, javaMapSerializer(ctxt, property));
+        return new ZazrMapSerializer(
+                type, typed(javaMapSerializer(ctxt, property), valueTypeSerializer), valueTypeSerializer);
+    }
+
+    /// Jackson calls this after `createContextual`, when a `@JsonTypeInfo` property holds the map.
+    @Override
+    protected StdContainerSerializer<?> _withValueTypeSerializer(TypeSerializer valueTypeSerializer) {
+        return new ZazrMapSerializer(type, typed(delegate, valueTypeSerializer), valueTypeSerializer);
+    }
+
+    /// `serializer` with the type serializer of the values, when there is one and `serializer` is a container
+    /// serializer (Jackson's map serializer is; a serializer registered for `java.util.Map` may not be).
+    @SuppressWarnings("unchecked")
+    private static @Nullable ValueSerializer<Object> typed(
+            @Nullable ValueSerializer<Object> serializer, @Nullable TypeSerializer valueTypeSerializer) {
+        return valueTypeSerializer != null && serializer instanceof StdContainerSerializer<?> container
+                ? (ValueSerializer<Object>) container.withValueTypeSerializer(valueTypeSerializer)
+                : serializer;
+    }
+
+    @Override
+    public JavaType getContentType() {
+        return type.getContentType();
+    }
+
+    @Override
+    public @Nullable ValueSerializer<?> getContentSerializer() {
+        return null;
+    }
+
+    @Override
+    public boolean hasSingleElement(Object value) {
+        return view(value).size() == 1;
     }
 
     @Override

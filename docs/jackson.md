@@ -141,15 +141,21 @@ With `@JsonTypeInfo` or default typing, the type id of a Zazr collection names i
 for every list, whatever class holds it. With `use = JsonTypeInfo.Id.NAME`, it is the name that `@JsonSubTypes`
 gives `List` or `LazyList`.
 
-The elements of a collection and the components of a tuple get the type ids that their declared types take, at any
-depth, including the elements of a collection property annotated with `@JsonTypeInfo`.
+The elements of a collection, the values of a map and the components of a tuple get the type ids that their declared
+types take, at any depth. That includes the elements of a collection property and the values of a map property
+annotated with `@JsonTypeInfo`.
 
-Such JSON reads back, with three exceptions:
+Such JSON reads back, with these exceptions:
 
 - An `Option` is written as its value, with the type id of the value, as Jackson does for `Optional`.
 - A `TreeSet`, `TreeMap`, `NonEmptySortedSet` or `NonEmptySortedMap` in a property declared as `Object` does not read
   back: its element or key type is then `Object`, which has no natural order.
 - A property declared as `Traversable` reads only with `@JsonDeserialize(as = ...)`.
+- With `@JsonTypeInfo(use = NAME)` on an `Option` of a `List` or a `LazyList`, the id read is the name of `List` or
+  `LazyList`: name them in `@JsonSubTypes`.
+- A generic tuple written as the root value with `writerFor(...)` under `DefaultTyping.NON_FINAL_AND_RECORDS` does not
+  read back, as for any generic record in Jackson: hold it in a property of a record, or use another `DefaultTyping`.
+- A tuple whose component has another type than its declared one, after an unchecked cast, fails when it is written.
 
 ## Not covered
 

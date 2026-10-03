@@ -140,4 +140,17 @@ class RegistriesTest {
         assertThat(serializer.hasSingleElement(Vector.of(1))).isTrue();
         assertThat(serializer.hasSingleElement(Vector.of(1, 2))).isFalse();
     }
+
+    /// The container contract of the map serializer.
+    @Test
+    void theMapSerializerIsAContainerSerializer() {
+        var type = TYPES.constructMapLikeType(HashMap.class, String.class, Integer.class);
+        var serializer = (ZazrMapSerializer) new ZazrSerializers()
+                .findMapLikeSerializer(MAPPER.serializationConfig(), type, null, null, null, null, null);
+        assertThat(serializer.getContentType()).isEqualTo(TYPES.constructType(Integer.class));
+        assertThat(serializer.getContentSerializer()).isNull();
+        assertThat(serializer.hasSingleElement(HashMap.of("a", 1))).isTrue();
+        assertThat(serializer.hasSingleElement(NonEmptyMap.of(dev.zazr.Tuple.of("a", 1), dev.zazr.Tuple.of("b", 2))))
+                .isFalse();
+    }
 }

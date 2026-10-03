@@ -6,7 +6,13 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.LazyList;
+import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.List;
+import dev.zazr.collection.Map;
+import dev.zazr.collection.NonEmptyMap;
+import dev.zazr.collection.NonEmptySortedMap;
+import dev.zazr.collection.SortedMap;
+import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
 import java.util.stream.Stream;
@@ -14,12 +20,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.DefaultTyping;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /// Type ids inside Zazr values: on the elements of a collection property annotated with `@JsonTypeInfo`, on the
 /// components of a tuple (with and without default typing), and with `@JsonTypeInfo(use = NAME)`.
@@ -158,5 +166,113 @@ class TypedContentTest {
             assertThat(json).isEqualTo(pair._2());
             assertThat(mapper.readValue(json, Named.class)).isEqualTo(new Named(pair._1()));
         }
+    }
+
+    /// Comparable, for the sorted maps.
+    record Rank(int r) implements Comparable<Rank> {
+        @Override
+        public int compareTo(Rank that) {
+            return Integer.compare(r, that.r);
+        }
+    }
+
+    record TypedMaps(
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) HashMap<String, Object> hashMap,
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) LinkedHashMap<String, Object> linkedHashMap,
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) Map<String, Object> map,
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) TreeMap<String, Object> treeMap,
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) SortedMap<String, Object> sortedMap,
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) NonEmptyMap<String, Object> nonEmptyMap,
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) NonEmptySortedMap<String, Object> nonEmptySortedMap,
+
+            @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
+            HashMap<String, Object> minimal,
+
+            @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+            @JsonSubTypes({@JsonSubTypes.Type(value = Rank.class, name = "rank")})
+            TreeMap<String, Object> named,
+
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) java.util.Map<String, Object> jdk) {}
+
+    /// `@JsonTypeInfo` on a map property puts a type id on each value, as for a `java.util.Map`.
+    @Test
+    void theValuesOfATypedMapPropertyCarryTheirTypeId() {
+        var mapper = mapper(null);
+        var value = new TypedMaps(
+                HashMap.of("a", new Pt(1)),
+                LinkedHashMap.of("b", new Pt(2), "a", new Pt(3)),
+                HashMap.of("c", new Pt(4)),
+                TreeMap.of("d", new Pt(5)),
+                TreeMap.of("e", new Pt(6)),
+                NonEmptyMap.of(Tuple.of("f", new Pt(7))),
+                NonEmptySortedMap.of(Tuple.of("g", new Rank(8))),
+                HashMap.of("h", new Pt(9)),
+                TreeMap.of("i", new Rank(10)),
+                java.util.Map.of("j", new Pt(11)));
+        var json = mapper.writeValueAsString(value);
+        var pt = "{\"@class\":\"dev.zazr.jackson.TypedContentTest$Pt\",\"x\":";
+        assertThat(json)
+                .isEqualTo("{\"hashMap\":{\"a\":" + pt + "1}},\"linkedHashMap\":{\"b\":" + pt + "2},\"a\":" + pt
+                        + "3}},\"map\":{\"c\":" + pt + "4}},\"treeMap\":{\"d\":" + pt + "5}},\"sortedMap\":{\"e\":" + pt
+                        + "6}},\"nonEmptyMap\":{\"f\":" + pt + "7}},\"nonEmptySortedMap\":{\"g\":{\"@class\":"
+                        + "\"dev.zazr.jackson.TypedContentTest$Rank\",\"r\":8}},\"minimal\":{\"h\":{\"@c\":"
+                        + "\"dev.zazr.jackson.TypedContentTest$Pt\",\"x\":9}},\"named\":{\"i\":{\"@type\":\"rank\",\"r\":10}},"
+                        + "\"jdk\":{\"j\":" + pt + "11}}}");
+        assertThat(mapper.readValue(json, TypedMaps.class)).isEqualTo(value);
+    }
+
+    record Inner(@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) HashMap<String, Object> values) {}
+
+    record Outer(
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) Vector<Object> items,
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) NonEmptyMap<String, Object> byKey,
+            List<Inner> plain) {}
+
+    /// A typed map property inside a value held by a typed collection or a typed map: every level carries its ids.
+    @Test
+    void typedMapsNestedInTypedContainersReadBack() {
+        var mapper = mapper(null);
+        var inner = new Inner(HashMap.of("a", new Pt(1), "b", Vector.of(2)));
+        var value = new Outer(Vector.of(inner, new Pt(3)), NonEmptyMap.of(Tuple.of("k", inner)), List.of(inner, inner));
+        var json = mapper.writeValueAsString(value);
+        assertThat(json)
+                .contains("{\"@class\":\"dev.zazr.jackson.TypedContentTest$Inner\",\"values\":{")
+                .contains("\"a\":{\"@class\":\"dev.zazr.jackson.TypedContentTest$Pt\",\"x\":1}")
+                .contains("\"b\":[\"dev.zazr.collection.Vector\",[2]]");
+        assertThat(mapper.readValue(json, Outer.class)).isEqualTo(value);
+    }
+
+    record NamedOption(
+            @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+            @JsonSubTypes({
+                @JsonSubTypes.Type(value = List.class, name = "list"),
+                @JsonSubTypes.Type(value = LazyList.class, name = "lazy")
+            })
+            Option<List<Integer>> list,
+
+            @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+            @JsonSubTypes({@JsonSubTypes.Type(value = LazyList.class, name = "lazy")})
+            Option<LazyList<Integer>> lazy) {}
+
+    /// The workaround the Jackson page gives for `NAME` on an `Option` of a list: name the public type.
+    @Test
+    void nameOnAnOptionOfAListReadsBackWhenTheListIsNamed() {
+        var mapper = mapper(null);
+        var value = new NamedOption(Option.some(List.of(1, 2)), Option.some(LazyList.of(3)));
+        var json = mapper.writeValueAsString(value);
+        assertThat(json).isEqualTo("{\"list\":[\"list\",[1,2]],\"lazy\":[\"lazy\",[3]]}");
+        assertThat(mapper.readValue(json, NamedOption.class)).isEqualTo(value);
+    }
+
+    record IntAndString(Tuple2<Integer, String> t) {}
+
+    /// Documented as not covered: a component of another type than its declared one fails when written.
+    @Test
+    @SuppressWarnings("unchecked")
+    void aComponentOfTheWrongTypeFailsWhenWritten() {
+        var polluted = (Tuple2<Integer, String>) (Tuple2<?, ?>) Tuple.of("x", "s");
+        assertThatThrownBy(() -> mapper(null).writeValueAsString(new IntAndString(polluted)))
+                .isInstanceOf(DatabindException.class)
+                .hasMessageContaining("not subtype of");
     }
 }

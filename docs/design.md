@@ -2121,7 +2121,13 @@ Requested by users, decided by the maintainer: an optional `dev.zazr:zazr-jackso
   classes, with `Id.CLASS`, `MINIMAL_CLASS` and `NAME` (the name registered for the public type); an id naming one
   of those classes still reads. The collection serializer is a Jackson container serializer, so a `@JsonTypeInfo`
   collection property types its elements. A tuple writes each component with its declared type narrowed to the
-  runtime class, and the type id of the declared type, as it reads it (reviews of #252).
+  runtime class, and the type id of the declared type, as it reads it. The map serializer is a container serializer
+  too, so a `@JsonTypeInfo` map property types its values (reviews of #252).
+- **Type-id corners left as they are (coordinator decision, 2026-10-03, third review of #252)**, each documented in one
+  line of the Jackson page with its workaround: `NAME` on the content of a typed `Option` when no `@JsonSubTypes`
+  names `List` or `LazyList`; a generic root tuple written with `writerFor` under `NON_FINAL_AND_RECORDS`, which plain
+  Jackson gets wrong for any generic record; a tuple holding a component of the wrong type after an unchecked cast,
+  which fails when written.
 - **Ported from vavr-jackson** (Apache 2.0, credited in `NOTICE`): the type modifier, the serializer and deserializer
   registries and the shape of the collection, map and tuple deserializers. Not ported: its `Settings` (the
   `["defined", value]` form of `Option`, `null` as an empty collection), the `toString` order of non-`Comparable`

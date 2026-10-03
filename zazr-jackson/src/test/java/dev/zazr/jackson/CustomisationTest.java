@@ -177,4 +177,19 @@ class CustomisationTest {
         assertThat(mapper.writeValueAsString(new Typed(dev.zazr.Tuple.of("a"))))
                 .isEqualTo("{\"value\":[\"dev.zazr.Tuple1\",[\"Tuple1\"]]}");
     }
+
+    record TypedMap(
+            @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS) HashMap<String, Object> map) {}
+
+    /// A serializer registered for `java.util.Map` that is not a container serializer writes a typed map property as
+    /// it writes any map: it takes no type serializer for the values.
+    @Test
+    void aSerializerRegisteredForJavaUtilMapWritesATypedMapProperty() {
+        var mapper = JsonMapper.builder()
+                .addModule(new ZazrModule())
+                .addModule(new SimpleModule().addSerializer(java.util.Map.class, new SizeOnly()))
+                .build();
+        assertThat(mapper.writeValueAsString(new TypedMap(HashMap.of("a", 1, "b", 2))))
+                .isEqualTo("{\"map\":2}");
+    }
 }
