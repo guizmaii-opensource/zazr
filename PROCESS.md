@@ -81,10 +81,9 @@ pointer to this section. The implementer follows all of it.
   guizmaii-opensource/zazr` to every `gh` command.
 - Never `pkill` or `killall` by name: other people's builds run on the same machine. Kill only a process you
   started.
-- **Stacked pull requests.** A step that depends on an unmerged pull request branches from it and opens its pull
-  request with `--base <that branch>`. When the base moves, merge it in with a merge commit. When the base is
-  squash-merged, the stacked pull request retargets to `main`. Always merge `main` in and push, which also starts CI
-  (section 9); where a
+- **Stacked pull requests.** A step that depends on an unmerged pull request branches from it and opens its pull request
+  with `--base <that branch>`. When the base moves, merge it in with a merge commit. When the base is squash-merged, the
+  stacked pull request retargets to `main`. Always merge `main` in and push, which also starts CI (section 9); where a
   conflict is "the base's content" against "the base's content plus mine", take your side. Never rebase, never
   force-push. You never merge a pull request.
 - **Correctness first, no benchmarking.** No JMH, no timing or allocation probes. If a rewrite exists only for speed
@@ -100,6 +99,16 @@ pointer to this section. The implementer follows all of it.
 - `make verify` passes before you push. CI is green before you report (for a stacked pull request, `make verify`,
   section 9). Answer every review comment in its thread, including bot comments, after checking them against the code; a
   wrong comment gets a short reply saying why.
+- **No sub-agents** unless the brief allows them: work alone, keep tool output small, run one build at a time.
+- **Report back** in one paragraph: the pull request link, the head commit, what you did, the decisions you took
+  beyond the ticket, and anything the maintainer must decide.
+- **Blog posts** (`docs/blog/posts/`):
+  - the "we" voice, plain words with no jargon, positive and modest, with no comparison with another library unless
+    the ticket says so;
+  - every output a post prints is asserted by the docs example tests, like the website's snippets;
+  - the front matter has an author and a date (`make blog-check`), and a `description` that contains a colon is
+    quoted;
+  - the address is `/blog/<slug>/`.
 - Remove your worktree at the end.
 
 ## 5. Rules for independent reviewers
