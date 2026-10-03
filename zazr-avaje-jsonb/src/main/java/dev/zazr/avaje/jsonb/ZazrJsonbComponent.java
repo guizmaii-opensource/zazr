@@ -18,8 +18,8 @@ import io.avaje.jsonb.spi.JsonbComponent;
 ///   `Comparable`.
 /// - `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap` and `NonEmptySortedMap` are objects. A key that is not a
 ///   `String` is written as the text of its JSON value (`1`, `2026-10-03`), and read back from it.
-/// - `Option` is its value, or `null` for `None`. `None` is written as `null` whatever the `serializeNulls` setting,
-///   so that reading it back gives `None`.
+/// - `Option` is its value, or `null` for `None`. It is written whatever the `serializeNulls` and `serializeEmpty`
+///   settings, so that reading it back gives the same `Option`.
 /// - `Tuple1` to `Tuple8` are arrays of exactly 1 to 8 elements.
 ///
 /// Reading fails with a `JsonDataException` on a `null` element, key or value, on an empty array or object for a

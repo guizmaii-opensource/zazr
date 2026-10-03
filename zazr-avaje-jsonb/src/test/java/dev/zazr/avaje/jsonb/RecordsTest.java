@@ -12,7 +12,9 @@ import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Option;
+import io.avaje.jsonb.JsonType;
 import io.avaje.jsonb.Jsonb;
+import io.avaje.jsonb.Types;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
@@ -50,6 +52,18 @@ class RecordsTest {
     }
 
     @Test
+    void someOfAnEmptyCollectionIsWrittenWhateverSerializeEmpty() {
+        var jsonb = Jsonb.builder().serializeEmpty(false).build();
+        var parent = Option.some(new Order(Vector.empty(), Option.none()));
+        var everything = new Everything(null, null, null, null, null, null, null, parent);
+        assertThat(jsonb.toJson(everything)).isEqualTo("{\"parent\":{\"note\":null}}");
+        JsonType<Option<Vector<Integer>>> json = jsonb.type(
+                Types.newParameterizedType(Option.class, Types.newParameterizedType(Vector.class, Integer.class)));
+        assertThat(json.toJson(Option.some(Vector.empty()))).isEqualTo("[]");
+        assertThat(json.fromJson("[]")).isEqualTo(Option.some(Vector.empty()));
+    }
+
+    @Test
     void anExplicitNullReadsAsNone() {
         assertThat(JSONB.type(Order.class).fromJson("{\"lines\":[],\"note\":null}"))
                 .isEqualTo(new Order(Vector.empty(), Option.none()));
@@ -83,8 +97,9 @@ class RecordsTest {
         assertThat(back.agenda()).isNull();
         assertThat(back.deadline()).isNull();
         assertThat(back.parent()).isEqualTo(Option.none());
+        // with the default serializeNulls(false), a null reference is left out, an Option one included
         assertThat(JSONB.toJson(new Everything(null, null, null, null, null, null, null, null)))
-                .isEqualTo("{\"parent\":null}");
+                .isEqualTo("{}");
     }
 
     @Test

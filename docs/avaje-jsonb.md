@@ -7,7 +7,7 @@ description: zazr-avaje-jsonb reads and writes the Zazr collections, Option and 
 `dev.zazr:zazr-avaje-jsonb` teaches [avaje-jsonb](https://avaje.io/jsonb/) to read and write the Zazr collections,
 `Option` and the tuples. A record with Zazr fields becomes JSON and comes back, with no code of yours.
 
-It is available from Zazr 0.2.0, and is built against avaje-jsonb 3.16.
+It is available from Zazr 0.3.0, and is built against avaje-jsonb 3.16.
 
 === "Maven"
 
@@ -15,7 +15,7 @@ It is available from Zazr 0.2.0, and is built against avaje-jsonb 3.16.
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-avaje-jsonb</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.0</version>
     </dependency>
     ```
 
@@ -23,7 +23,7 @@ It is available from Zazr 0.2.0, and is built against avaje-jsonb 3.16.
 
     ```kotlin
     dependencies {
-        implementation("dev.zazr:zazr-avaje-jsonb:0.2.0")
+        implementation("dev.zazr:zazr-avaje-jsonb:0.3.0")
     }
     ```
 
@@ -88,7 +88,8 @@ var back = jsonb.<HashMap<LocalDate, Vector<String>>>type(type).fromJson(json);
 
 ## `Option` and missing properties
 
-`None` is always written as `null`, even when the `Jsonb` leaves out `null` properties, and `null` is read as `None`.
+An `Option` property is always written, `None` as `null`, even when the `Jsonb` leaves out `null` and empty
+properties. `null` is read as `None`.
 
 A property missing from the JSON is a different case: avaje-jsonb gives it the value `null`, and no adapter is asked.
 So a missing `Option` property is `null`, not `None`. To read it as `None`, give it that default in the record's

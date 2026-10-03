@@ -81,6 +81,12 @@ class KeyWriterReaderTest {
                 "more than one value");
         notAName(w -> w.value((String) null), "null");
         notAName(JsonWriter::nullValue, "null");
+        notAName(w -> w.value((Boolean) null), "null");
+        notAName(w -> w.value((Integer) null), "null");
+        notAName(w -> w.value((Long) null), "null");
+        notAName(w -> w.value((Double) null), "null");
+        notAName(w -> w.value((BigDecimal) null), "null");
+        notAName(w -> w.value((BigInteger) null), "null");
         notAName(w -> w.value(new byte[] {1}), "binary data");
         notAName(
                 w -> w.jsonValue(new Object() {

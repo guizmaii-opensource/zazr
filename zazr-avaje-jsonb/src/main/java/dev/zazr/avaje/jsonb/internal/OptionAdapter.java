@@ -8,8 +8,9 @@ import org.jspecify.annotations.Nullable;
 
 /// The adapter of `Option`: `Some` is its value, `None` is `null`.
 ///
-/// `None` is written as `null` even when the `Jsonb` leaves out `null` properties: avaje-jsonb gives a property
-/// missing from the JSON the value `null`, not `None`, so leaving it out would not read back as `None`.
+/// An `Option` is always written, even when the `Jsonb` leaves out `null` and empty properties: avaje-jsonb gives a
+/// property missing from the JSON the value `null`, so a left-out `None` or `Some` of an empty collection would not
+/// read back as itself. A `null` reference to an `Option` follows the `serializeNulls` setting.
 final class OptionAdapter<T> implements JsonAdapter<Option<T>> {
 
     private final JsonAdapter<T> values;
@@ -20,8 +21,12 @@ final class OptionAdapter<T> implements JsonAdapter<Option<T>> {
 
     @Override
     public void toJson(JsonWriter writer, @Nullable Option<T> value) {
-        if (value == null || value.isEmpty()) {
-            writer.forceSerialize();
+        if (value == null) {
+            writer.nullValue();
+            return;
+        }
+        writer.forceSerialize();
+        if (value.isEmpty()) {
             writer.nullValue();
         } else {
             values.toJson(writer, value.get());

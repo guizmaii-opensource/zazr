@@ -35,6 +35,15 @@ final class KeyWriter implements JsonWriter {
         name = text;
     }
 
+    /// The text of `value`, or the failure of a `null` key.
+    private void setOrNull(@Nullable Object value) {
+        if (value == null) {
+            nullValue();
+        } else {
+            set(value.toString());
+        }
+    }
+
     private JsonDataException notAName(String written) {
         return new JsonDataException("a map key must be written as a JSON string, number or boolean, but the key " + key
                 + " (" + key.getClass().getName() + ") is written as " + written);
@@ -71,32 +80,32 @@ final class KeyWriter implements JsonWriter {
 
     @Override
     public void value(@Nullable Boolean value) {
-        set(String.valueOf(value));
+        setOrNull(value);
     }
 
     @Override
     public void value(@Nullable Integer value) {
-        set(String.valueOf(value));
+        setOrNull(value);
     }
 
     @Override
     public void value(@Nullable Long value) {
-        set(String.valueOf(value));
+        setOrNull(value);
     }
 
     @Override
     public void value(@Nullable Double value) {
-        set(String.valueOf(value));
+        setOrNull(value);
     }
 
     @Override
     public void value(@Nullable BigDecimal value) {
-        set(String.valueOf(value));
+        setOrNull(value);
     }
 
     @Override
     public void value(@Nullable BigInteger value) {
-        set(String.valueOf(value));
+        setOrNull(value);
     }
 
     @Override
