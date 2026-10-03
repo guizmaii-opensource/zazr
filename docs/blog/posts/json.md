@@ -94,7 +94,7 @@ Add `zazr-avaje-jsonb`. It is built against avaje-jsonb 3.16.
     }
     ```
 
-There is no line to add. avaje-jsonb finds the Zazr adapters as a service when it builds a `Jsonb`. Annotate the
+There is no line to add. avaje-jsonb finds the Zazr adapters on its own when it builds a `Jsonb`. Annotate the
 records with `@Json`, as usual with avaje-jsonb:
 
 ```java
@@ -186,8 +186,9 @@ avaje-jsonb writes the same `{"2026-10-04":3}`.
 
 ## What is out of scope
 
-The modules cover the collections, `Option` and the tuples. `Either`, `Try`, `Validation` and `Lazy` have no JSON
-format: map them to a covered type first, for example with `toOption()`.
+The modules cover the collections, `Option` and the tuples. `Either`, `Try`, `Validation`, `Lazy` and `Tuple0` have
+no JSON format: map them to a covered type first, for example with `toOption()` on an `Either`, a `Try` or a
+`Validation`, or `get()` on a `Lazy`.
 
 The two modules differ in two places, each coming from the libraries themselves:
 
@@ -201,7 +202,8 @@ missing `Option` as `None` with avaje-jsonb, the order of sorted collections, ty
 ## Thank you, vavr-jackson
 
 `zazr-jackson` ports parts of [vavr-jackson](https://github.com/vavr-io/vavr-jackson), the Jackson module for Vavr:
-how the types are registered with Jackson, and the shape of the readers for collections, maps and tuples. It gave us
+how the types are registered with Jackson, and the shape of the readers and writers for collections, maps and
+tuples. It gave us
 a tested starting point. Thank you to its authors and contributors.
 
 ## What's next

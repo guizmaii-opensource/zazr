@@ -160,6 +160,6 @@ Such JSON reads back, with these exceptions:
 ## Not covered
 
 - `Either`, `Try`, `Validation`, `Lazy` and `Tuple0` have no JSON format in this module. Map them to a covered type
-  first, for example with `toOption()`.
+  first, for example with `toOption()` on an `Either`, a `Try` or a `Validation`, or `get()` on a `Lazy`.
 - The module works with Jackson 3 (`tools.jackson`), the version Spring Boot 4 uses. Jackson 2
   (`com.fasterxml.jackson`) is out of its scope.
