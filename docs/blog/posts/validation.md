@@ -20,12 +20,12 @@ chain the step that needs a valid value first.
 
 ## Validation, simply
 
-You know the usual ways to report a problem in Java. An exception stops at the first problem: the code that throws
-it never reaches the next check. `Either` stops at the first error too: it is made for steps where each one needs
-the result of the one before.
+The usual way to report a problem in Java is an exception, and an exception stops at the first problem: the code
+that throws it never reaches the next check.
 
-That is right when the steps depend on each other. A form is different: the username, the email address and the age
-don't depend on each other, so all three can be checked, and the user can fix all three at once.
+Stopping at the first problem is right when each step needs the one before. A form is different: the username, the
+email address and the age don't depend on each other, so all three can be checked, and the user can fix all three at
+once.
 
 A `Validation<E, A>` is one of two things:
 
@@ -73,8 +73,8 @@ name and a message.
 Now the whole form. `Validation.zipWith` runs every check, then builds the `SignUp` only if all of them passed:
 
 ```java
-var signUp = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new);
-// Invalid(username 'jo' is too short, email 'jules' has no @, age 9 is under 13)
+var signUp = Validation.zipWith(username("jo"), email("jo.example.com"), age(9), SignUp::new);
+// Invalid(username 'jo' is too short, email 'jo.example.com' has no @, age 9 is under 13)
 
 var welcome = Validation.zipWith(username("ana"), email("ana@example.com"), age(30), SignUp::new);
 // Valid(SignUp[username=ana, email=ana@example.com, age=30])
@@ -96,7 +96,7 @@ var message = switch (signUp) {
     case Valid(var user) -> "welcome, " + user.username();
     case Invalid(var errors) -> "please fix: " + errors.mkString("; ");
 };
-// "please fix: username 'jo' is too short; email 'jules' has no @; age 9 is under 13"
+// "please fix: username 'jo' is too short; email 'jo.example.com' has no @; age 9 is under 13"
 ```
 
 `errors` is the `NonEmptyVector` of errors. Since it can't be empty, `errors.head()` always returns the first one,
@@ -185,7 +185,7 @@ expects one message:
 
 ```java
 var result = signUp.toEitherWith(errors -> errors.mkString("; ")); // Either<String, SignUp>
-// Left(username 'jo' is too short; email 'jules' has no @; age 9 is under 13)
+// Left(username 'jo' is too short; email 'jo.example.com' has no @; age 9 is under 13)
 ```
 
 ## Thank you, zio-prelude

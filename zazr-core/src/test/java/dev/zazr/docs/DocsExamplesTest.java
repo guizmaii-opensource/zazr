@@ -169,32 +169,34 @@ public class DocsExamplesTest {
 
         @Test
         void everyErrorAtOnce() {
-            var signUp = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new);
-            // Invalid(username 'jo' is too short, email 'jules' has no @, age 9 is under 13)
+            var signUp = Validation.zipWith(username("jo"), email("jo.example.com"), age(9), SignUp::new);
+            // Invalid(username 'jo' is too short, email 'jo.example.com' has no @, age 9 is under 13)
 
             var welcome = Validation.zipWith(username("ana"), email("ana@example.com"), age(30), SignUp::new);
             // Valid(SignUp[username=ana, email=ana@example.com, age=30])
 
             Validation<String, SignUp> typed = signUp;
             assertThat(typed)
-                    .hasToString("Invalid(username 'jo' is too short, email 'jules' has no @, age 9 is under 13)");
+                    .hasToString(
+                            "Invalid(username 'jo' is too short, email 'jo.example.com' has no @, age 9 is under 13)");
             assertThat(welcome).hasToString("Valid(SignUp[username=ana, email=ana@example.com, age=30])");
-            assertThat(Validation.zipWith(username("jo"), email("jules"), age(30), SignUp::new))
-                    .hasToString("Invalid(username 'jo' is too short, email 'jules' has no @)");
+            assertThat(Validation.zipWith(username("jo"), email("jo.example.com"), age(30), SignUp::new))
+                    .hasToString("Invalid(username 'jo' is too short, email 'jo.example.com' has no @)");
         }
 
         @Test
         void readingTheResult() {
-            var signUp = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new);
+            var signUp = Validation.zipWith(username("jo"), email("jo.example.com"), age(9), SignUp::new);
 
             var message = switch (signUp) {
                 case Valid(var user) -> "welcome, " + user.username();
                 case Invalid(var errors) -> "please fix: " + errors.mkString("; ");
             };
-            // "please fix: username 'jo' is too short; email 'jules' has no @; age 9 is under 13"
+            // "please fix: username 'jo' is too short; email 'jo.example.com' has no @; age 9 is under 13"
 
             assertThat(message)
-                    .isEqualTo("please fix: username 'jo' is too short; email 'jules' has no @; age 9 is under 13");
+                    .isEqualTo(
+                            "please fix: username 'jo' is too short; email 'jo.example.com' has no @; age 9 is under 13");
         }
 
         @Test
@@ -239,13 +241,14 @@ public class DocsExamplesTest {
 
             // an invalid form keeps its errors, and the lookup is never called
             var lookups = new java.util.concurrent.atomic.AtomicInteger();
-            var rejected = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new)
+            var rejected = Validation.zipWith(username("jo"), email("jo.example.com"), age(9), SignUp::new)
                     .flatMapEither(s -> {
                         lookups.incrementAndGet();
                         return Either.<String, SignUp>right(s);
                     });
             assertThat(rejected)
-                    .hasToString("Invalid(username 'jo' is too short, email 'jules' has no @, age 9 is under 13)");
+                    .hasToString(
+                            "Invalid(username 'jo' is too short, email 'jo.example.com' has no @, age 9 is under 13)");
             assertThat(lookups.get()).isZero();
         }
 
@@ -255,9 +258,9 @@ public class DocsExamplesTest {
             var birthday = Validation.fromOption(form.get("birthday"), () -> "birthday is missing");
             // Invalid(birthday is missing)
 
-            var signUp = Validation.zipWith(username("jo"), email("jules"), age(9), SignUp::new);
+            var signUp = Validation.zipWith(username("jo"), email("jo.example.com"), age(9), SignUp::new);
             var result = signUp.toEitherWith(errors -> errors.mkString("; ")); // Either<String, SignUp>
-            // Left(username 'jo' is too short; email 'jules' has no @; age 9 is under 13)
+            // Left(username 'jo' is too short; email 'jo.example.com' has no @; age 9 is under 13)
 
             HashMap<String, String> formTyped = form;
             Validation<String, String> birthdayTyped = birthday;
@@ -265,7 +268,8 @@ public class DocsExamplesTest {
             assertThat(formTyped).hasSize(2);
             assertThat(birthdayTyped).hasToString("Invalid(birthday is missing)");
             assertThat(resultTyped)
-                    .hasToString("Left(username 'jo' is too short; email 'jules' has no @; age 9 is under 13)");
+                    .hasToString(
+                            "Left(username 'jo' is too short; email 'jo.example.com' has no @; age 9 is under 13)");
         }
     }
 
