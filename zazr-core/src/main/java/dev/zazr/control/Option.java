@@ -202,6 +202,23 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     }
 
     /**
+     * Returns {@code Some} of the value supplied by {@code supplier} if {@code condition} is false,
+     * or {@code None} if {@code condition} is true. The counterpart of {@link #when(boolean, Supplier)}.
+     *
+     * @param <T>       the type of the optional value
+     * @param condition the condition to test
+     * @param supplier  a supplier of the value, must not return {@code null}
+     * @return {@code Some} of the supplied value if {@code condition} is false, otherwise {@code None}
+     * @throws NullPointerException if {@code supplier} is null, or supplies {@code null} when {@code condition} is false
+     */
+    static <T extends @Nullable Object> Option<T> unless(boolean condition, Supplier<? extends T> supplier) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return condition
+                ? none()
+                : some(Objects.requireNonNull(supplier.get(), "Option.unless: supplier returned null"));
+    }
+
+    /**
      * Wraps a {@link java.util.Optional} in a new {@code Option}.
      *
      * @param optional the Java {@code Optional} to wrap
@@ -392,6 +409,19 @@ public sealed interface Option<T extends @Nullable Object> permits Option.Some, 
     default Option<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return isEmpty() || predicate.test(get()) ? this : none();
+    }
+
+    /**
+     * Returns {@code Some(value)} if this {@code Option} is a {@code Some} and the contained value does not satisfy the
+     * given predicate. Otherwise, returns {@code None}. The counterpart of {@link #filter(Predicate)}.
+     *
+     * @param predicate a predicate to test the contained value
+     * @return {@code Some(value)} if the value fails the predicate, otherwise {@code None}
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    default Option<T> reject(Predicate<? super T> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return isEmpty() || !predicate.test(get()) ? this : none();
     }
 
     /**

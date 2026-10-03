@@ -598,9 +598,9 @@ public class RadixVectorTest {
     private static void checkModulo(RadixVector<Integer> v, int base, int shift) {
         Iterator<Integer> it = v.iterator();
         for (int i = 0; i < v.length(); i++) {
-            assertThat(it.hasNext())
-                    .as("iterator ends at %d of %d", i, v.length())
-                    .isTrue();
+            if (!it.hasNext()) {
+                throw new AssertionError("iterator ends at " + i + " of " + v.length());
+            }
             int x = it.next();
             if (x != Math.floorMod(i - shift, base)) {
                 throw new AssertionError("element " + i + " is " + x);
@@ -1103,9 +1103,9 @@ public class RadixVectorTest {
 
         Iterator<Integer> it = v.iterator();
         for (int i = 0; i < v.length(); i++) {
-            assertThat(it.hasNext())
-                    .as("iterator ends at %d of %d", i, v.length())
-                    .isTrue();
+            if (!it.hasNext()) {
+                throw new AssertionError("iterator ends at " + i + " of " + v.length());
+            }
             int x = it.next();
             if (x != blockElement(i, blockSize, base)) {
                 throw new AssertionError("iterator at " + i + ": " + x);
@@ -1611,6 +1611,11 @@ public class RadixVectorTest {
     private static void checkShape(RadixVector<?> r) {
         int c = r.vectorSliceCount();
         int depth = depth(r);
+        // the inner arrays already checked in this call, by level: an array shared in several places is walked once
+        List<java.util.Set<Object[]>> checked = new ArrayList<>();
+        for (int level = 0; level < 6; level++) {
+            checked.add(java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
+        }
         switch (r) {
             case RadixVector.Vector0<?> v0 -> {
                 assertInvariant(
@@ -1683,7 +1688,7 @@ public class RadixVectorTest {
                 assertInvariant(
                         slice.length <= max, r, "slice " + i + " of dimension " + dim + " holds at most " + max);
                 for (Object child : slice) {
-                    checkFull(dim - 1, child, r);
+                    checkFull(dim - 1, child, r, checked);
                 }
             }
             long count = before + ((long) slice.length << (5 * (dim - 1)));
@@ -1711,17 +1716,20 @@ public class RadixVectorTest {
         return 2L * WIDTH + middle + data;
     }
 
-    private static void checkFull(int level, Object a, RadixVector<?> r) {
+    private static void checkFull(int level, Object a, RadixVector<?> r, List<java.util.Set<Object[]>> checked) {
         assertInvariant(
                 a instanceof Object[] array && array.getClass() == Object[].class && array.length == WIDTH,
                 r,
                 "an inner array of level " + level + " is a full Object[]");
         Object[] array = (Object[]) a;
+        if (!checked.get(level).add(array)) {
+            return;
+        }
         if (level == 1) {
             checkLeaf(array, r);
         } else {
             for (Object child : array) {
-                checkFull(level - 1, child, r);
+                checkFull(level - 1, child, r, checked);
             }
         }
     }

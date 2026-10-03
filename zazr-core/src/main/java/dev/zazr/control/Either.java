@@ -132,6 +132,28 @@ public sealed interface Either<L extends @Nullable Object, R extends @Nullable O
     }
 
     /**
+     * Returns the value of either side, when both sides have a common type: {@code Left(a)} and {@code Right(a)} both
+     * give {@code a}. Static, like {@link #flatten(Either)}, because Java cannot demand of an instance method that
+     * the two sides share a type.
+     * <pre>{@code
+     * Either<Integer, Integer> clamped = n > 100 ? Either.left(100) : Either.right(n);
+     * int value = Either.merge(clamped); // = 100 or n
+     * }</pre>
+     *
+     * @param either an {@code Either} whose two sides are both an {@code A}
+     * @param <A>    the common type of the two sides
+     * @return the left value of a {@code Left}, or the right value of a {@code Right}
+     * @throws NullPointerException if {@code either} is null
+     */
+    static <A extends @Nullable Object> A merge(Either<? extends A, ? extends A> either) {
+        Objects.requireNonNull(either, "either is null");
+        return switch (either) {
+            case Left(var value) -> value;
+            case Right(var value) -> value;
+        };
+    }
+
+    /**
      * Tests {@code value} with {@code predicate}: {@code Right(value)} if it holds, {@code Left(ifFalse.apply(value))}
      * if it does not. {@code ifFalse} receives the rejected value, so the error can name it, and is called only when
      * the predicate fails.

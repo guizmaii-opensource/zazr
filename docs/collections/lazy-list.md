@@ -44,6 +44,13 @@ var third = squares.get(2); // 9, and seen is [1, 2, 3]
 `LazyList.cons(head, () -> tail)` takes its first element as a value. `LazyList.defer(() -> ...)` computes the whole
 list, first element included, when it is first read.
 
+`toString` computes nothing either. It shows the elements already computed, then `<not computed>` for the rest:
+`squares` above prints `LazyList(1, 4, 9, <not computed>)`. When the computed elements loop back, it ends with
+`<cycle>` instead: `LazyList.of(1, 2, 3).cycle()`, read past its third element, prints `LazyList(1, 2, 3, <cycle>)`.
+
+It shows the elements computed by the time it reaches them. If another thread keeps computing more of an infinite
+`LazyList` at the same time, `toString` keeps showing them too, and may not return.
+
 ## Costs
 
 `lazy` means the call computes nothing: each element of the result is computed when it is first read. The note
@@ -57,9 +64,12 @@ Every method: [complexity page](complexity.md#lazylist).
 
 ## Sharp edges
 
-- Operations that need the whole sequence compute it and never return on an infinite `LazyList`: `size`,
-  `last`, `reverse`, `sorted`, `max`, `min`, `foldRight`, `groupBy`, `lastIndexOfSlice(that)` and `hashCode`, and
+- Operations that need the whole sequence compute it and never return on an infinite `LazyList`: `size`, `last`,
+  `lastOption`, `findLast`, `endsWith`, `max`, `min`, `reduceLeft`, `reduceRight`, `foldRight`, `groupBy`,
+  `arrangeBy`, `hashCode`, and `lastIndexOf`, `lastIndexWhere` and `lastIndexOfSlice` without an end index. So does
   anything else that reads every element, such as `foldLeft`, `mkString` or `toVector`.
+- `reverse`, `sorted`, `sortBy`, `shuffle`, `scanRight` and `LazyList.transpose` return a `LazyList`, but compute the
+  whole sequence at the call: on an infinite `LazyList` they never return either.
 - `equals` stops at the first difference or at the end of the shorter side, so an infinite `LazyList` compared with a
   finite `List`, `Vector`, `Queue` or `LazyList` returns. Two infinite `LazyList`s with the same elements never do.
 - `filter` and the calls like it (`reject`, `retainAll`, `removeAll`, `collect`, `flatMap`, `distinct`) compute

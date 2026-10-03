@@ -17,6 +17,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /// What each operation evaluates, counted: a call evaluates nothing (or what its note says, for the operations that
@@ -207,6 +208,45 @@ class LazyListLazinessTest {
 
     // -- construction
 
+    /// The operations whose result depends on the whole list: those returning a LazyList compute nothing at the call
+    /// and the whole list on the first read, as their notes say; groupBy computes the whole list at the call.
+    @Test
+    void theOperationsThatNeedTheWholeListComputeItWhenTheirNotesSay() {
+        Comparator<Integer> byParity = Comparator.comparing(x -> x % 2);
+        LinkedHashMap<String, Function<LazyList<Integer>, LazyList<Integer>>> lazyCalls = new LinkedHashMap<>();
+        lazyCalls.put("duplicates()", LazyList::duplicates);
+        lazyCalls.put("duplicatesBy(Function)", l -> l.duplicatesBy(x -> x % 2));
+        lazyCalls.put("distinctByKeepLast(Comparator)", l -> l.distinctByKeepLast(byParity));
+        lazyCalls.put("distinctByKeepLast(Function)", l -> l.distinctByKeepLast(x -> x % 2));
+        lazyCalls.put("dropRightUntil(Predicate)", l -> l.dropRightUntil(x -> x == 3));
+        lazyCalls.put("dropRightWhile(Predicate)", l -> l.dropRightWhile(x -> x > 3));
+        lazyCalls.put("leftPadTo(int, Object)", l -> l.leftPadTo(SIZE + 2, 99));
+        lazyCalls.put("removeLast(Predicate)", l -> l.removeLast(x -> x == 2));
+        lazyCalls.put("rotateLeft(int)", l -> l.rotateLeft(2));
+        lazyCalls.put("rotateRight(int)", l -> l.rotateRight(2));
+        lazyCalls.put("takeRight(int)", l -> l.takeRight(2));
+        lazyCalls.put("takeRightUntil(Predicate)", l -> l.takeRightUntil(x -> x == 3));
+        lazyCalls.put("takeRightWhile(Predicate)", l -> l.takeRightWhile(x -> x > 3));
+        java.util.Map<String, String> counts = new LinkedHashMap<>();
+        lazyCalls.forEach((signature, call) -> {
+            AtomicInteger evaluated = new AtomicInteger();
+            LazyList<Integer> result = call.apply(counted(evaluated));
+            int afterCall = evaluated.get();
+            result.headOption();
+            counts.put(signature, afterCall + "/" + evaluated.get());
+        });
+        AtomicInteger grouped = new AtomicInteger();
+        counted(grouped).groupBy(x -> x % 2);
+        counts.put("groupBy(Function)", grouped.get() + "/-");
+
+        java.util.Map<String, String> expected = new LinkedHashMap<>();
+        lazyCalls.keySet().forEach(signature -> expected.put(signature, "0/" + SIZE));
+        expected.put("groupBy(Function)", SIZE + "/-");
+        assertThat(counts)
+                .as("cells evaluated at the call/after the first read")
+                .containsExactlyEntriesOf(expected);
+    }
+
     @Test
     void theFactoriesEvaluateNothing() {
         AtomicInteger calls = new AtomicInteger();
@@ -239,7 +279,8 @@ class LazyListLazinessTest {
         assertThat(calls.get()).isZero();
         for (var entry : built.entrySet()) {
             // cons is given its head: only its tail waits
-            String expected = entry.getKey().startsWith("cons") ? "LazyList(0, ?)" : "LazyList(?)";
+            String expected =
+                    entry.getKey().startsWith("cons") ? "LazyList(0, <not computed>)" : "LazyList(<not computed>)";
             assertThat(entry.getValue().toString()).as(entry.getKey()).isEqualTo(expected);
         }
     }
@@ -271,11 +312,11 @@ class LazyListLazinessTest {
         AtomicInteger calls = new AtomicInteger();
         LazyList<Integer> list = LazyList.defer(() -> LazyList.cons(calls.incrementAndGet(), LazyList::empty));
         assertThat(calls.get()).isZero();
-        assertThat(list.toString()).isEqualTo("LazyList(?)");
+        assertThat(list.toString()).isEqualTo("LazyList(<not computed>)");
         assertThat(list.isEmpty()).isFalse();
         assertThat(calls.get()).isEqualTo(1);
         assertThat(list.head()).isEqualTo(1);
-        assertThat(list.toString()).isEqualTo("LazyList(1, ?)");
+        assertThat(list.toString()).isEqualTo("LazyList(1, <not computed>)");
         assertThat(list.tail().isEmpty()).isTrue();
         assertThat(list.toString()).isEqualTo("LazyList(1)");
         assertThat(calls.get()).isEqualTo(1);
@@ -354,6 +395,85 @@ class LazyListLazinessTest {
         assertThat(calls.get()).isEqualTo(1);
         assertThat(seen).hasSize(8);
         assertThat(new java.util.HashSet<>(seen)).hasSize(1);
+    }
+
+    // The lists the concurrent toString test reads: a cycle, a cycle behind two cells, and a list with no cycle.
+    private static final java.util.List<java.util.function.Supplier<LazyList<Integer>>> SHOWN_WHILE_EVALUATED =
+            java.util.List.of(
+                    () -> LazyList.range(0, 50).cycle(),
+                    () -> LazyList.range(0, 50).cycle().prepend(-2).prepend(-1),
+                    () -> LazyList.range(0, 50));
+
+    @Test
+    @org.junit.jupiter.api.Timeout(120)
+    void toStringShowsAnEvaluatedPrefixWhileOtherThreadsEvaluateTheList() throws Exception {
+        int depth = 160;
+        java.util.List<java.util.Set<String>> possible = new ArrayList<>();
+        for (var list : SHOWN_WHILE_EVALUATED) {
+            // every text one thread sees while it evaluates the list cell by cell
+            java.util.Set<String> texts = new java.util.HashSet<>();
+            for (int n = 0; n <= depth; n++) {
+                LazyList<Integer> read = list.get();
+                read.take(n).size();
+                texts.add(read.toString());
+            }
+            possible.add(texts);
+        }
+        java.util.List<String> last = java.util.List.of(
+                Vector.range(0, 50).mkString("LazyList(", ", ", ", <cycle>)"),
+                Vector.of(-1, -2).appendAll(Vector.range(0, 50)).mkString("LazyList(", ", ", ", <cycle>)"),
+                Vector.range(0, 50).mkString("LazyList(", ", ", ")"));
+        for (int kind = 0; kind < last.size(); kind++) {
+            assertThat(possible.get(kind)).contains(last.get(kind));
+        }
+        // Four platform threads, kept across the rounds, and no yield, so that a toString runs while another thread
+        // evaluates the cell it reads. A task that does not end within its timeout fails the test instead of hanging
+        // the build; its thread is a daemon, so it does not keep the JVM alive.
+        java.util.concurrent.ExecutorService threads = java.util.concurrent.Executors.newFixedThreadPool(
+                4, Thread.ofPlatform().daemon().factory());
+        try {
+            for (int round = 0; round < 5000; round++) {
+                int kind = round % SHOWN_WHILE_EVALUATED.size();
+                LazyList<Integer> list = SHOWN_WHILE_EVALUATED.get(kind).get();
+                CountDownLatch start = new CountDownLatch(1);
+                CountDownLatch read = new CountDownLatch(2);
+                java.util.Set<String> shown = java.util.concurrent.ConcurrentHashMap.newKeySet();
+                java.util.List<java.util.concurrent.Future<?>> tasks = new ArrayList<>();
+                for (int i = 0; i < 2; i++) {
+                    tasks.add(threads.submit(() -> {
+                        awaitQuietly(start);
+                        list.take(depth).size();
+                        read.countDown();
+                    }));
+                    tasks.add(threads.submit(() -> {
+                        awaitQuietly(start);
+                        // while the readers evaluate the list, and a bounded number of times
+                        for (int call = 0; call < 10_000 && read.getCount() > 0; call++) {
+                            shown.add(list.toString());
+                        }
+                    }));
+                }
+                start.countDown();
+                for (java.util.concurrent.Future<?> task : tasks) {
+                    int current = round;
+                    assertThatCode(() -> task.get(10, java.util.concurrent.TimeUnit.SECONDS))
+                            .as("round %d", current)
+                            .doesNotThrowAnyException();
+                }
+                assertThat(possible.get(kind)).as("round %d", round).containsAll(shown);
+                assertThat(list.toString()).isEqualTo(last.get(kind));
+            }
+        } finally {
+            threads.shutdownNow();
+        }
+    }
+
+    private static void awaitQuietly(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     // -- stack depth of chains built without reading

@@ -148,6 +148,8 @@ Zazr collections do not implement `java.util.List`, `Set` or `Map`. Cross with v
   `new java.util.ArrayList<>(vector.asJava())`.
 - Back: `ofAll(iterable)`, `ofAll(javaStream)`, `collector()`. `stream()` gives a `java.util.stream.Stream`.
 - `Option.ofOptional` and `toOptional()`; `Try.fromCompletableFuture` and `toCompletableFuture()`.
+- JSON: the optional `dev.zazr:zazr-jackson` artifact; register `new ZazrModule()` on a Jackson 3 mapper builder.
+  Full page: https://zazr.dev/jackson/.
 
 ```java
 var names   = Vector.of("Ada", "Grace");
