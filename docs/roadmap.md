@@ -11,11 +11,6 @@ the work and shows where it stands.
 
     Wanna influence this roadmap? Open a ticket here: [GitHub issues](https://github.com/guizmaii-opensource/zazr/issues)
 
-## Released
-
-The latest release is 0.3.0: modules that read and write Zazr types with Jackson and with avaje-jsonb.
-[GitHub Releases](https://github.com/guizmaii-opensource/zazr/releases) lists every release and what it changes.
-
 ## Next releases
 
 - **[0.4.0: Scala 2.13 additions](https://github.com/guizmaii-opensource/zazr/milestone/5).** `groupMap`,
@@ -23,3 +18,13 @@ The latest release is 0.3.0: modules that read and write Zazr types with Jackson
   `zazr-test` generators for the non-empty sets and maps.
 - **[Performance](https://github.com/guizmaii-opensource/zazr/milestone/3).** Benchmarks and optimisations, shipped
   with whichever release comes next.
+
+## Released
+
+- **[0.3.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.3.0).** Modules that read and write Zazr
+  types with Jackson and with avaje-jsonb.
+- **[0.2.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.2.0).** `Option.unless`, `Option.reject` and
+  `Either.merge`, and a `LazyList` that always prints, cycles included.
+- **[0.1.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.1.0).** The first release.
+
+[GitHub Releases](https://github.com/guizmaii-opensource/zazr/releases) lists every release and what it changes.
