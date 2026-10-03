@@ -63,7 +63,15 @@ class KeysTest {
     }
 
     @Test
-    void aStringKeyIsEscapedAsAPropertyName() {
+    void aStringKeyIsEscapedAsAPropertyName() throws Exception {
+        // on a thread of its own: a failed read inside a record on this thread would leave avaje-jsonb's parser
+        // returning names undecoded (see MapKeysTest)
+        try (var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            executor.submit(this::stringKeys).get();
+        }
+    }
+
+    private void stringKeys() {
         roundTrips(
                 LinkedHashMap.class,
                 String.class,

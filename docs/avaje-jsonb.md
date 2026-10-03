@@ -91,6 +91,8 @@ The details:
 - A map key that is not a `String` is written as the text of its JSON value: `{"2026-10-03":1}` for a `LocalDate`,
   `{"42":1}` for an `Integer`, the name of the constant for an enum.
 - Of two equal keys in the same JSON object, the later wins.
+- avaje-jsonb 3.16 decodes the escapes of a key (`\"`, `\\`, `\n`, `\u00e9`) only in a map read at the top level: inside a
+  record, `"b\"c"` reads as `b\"c`, as in avaje-jsonb's own `java.util.Map`.
 
 ```java
 var agenda = HashMap.of(LocalDate.of(2026, 10, 3), Vector.of("standup"));

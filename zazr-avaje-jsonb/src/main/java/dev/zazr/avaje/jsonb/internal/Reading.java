@@ -5,6 +5,7 @@ import io.avaje.json.JsonReader;
 import io.avaje.json.JsonReader.Token;
 import io.avaje.jsonb.Types;
 import java.lang.reflect.Type;
+import org.jspecify.annotations.Nullable;
 
 /// The checks and failure messages shared by the adapters that read a Zazr type. Each message names the type, says
 /// what is wrong, and ends with the position in the JSON.
@@ -14,12 +15,23 @@ final class Reading {
 
     /// Fails unless the next value, which is not `null`, starts with `expected`: names the Zazr type when the JSON
     /// holds another kind of value. A number is left to avaje-jsonb, whose own failure follows: the reader reports
-    /// anything it does not recognise as a number.
+    /// anything it does not recognise as a number. So is any value of a reader that cannot tell the kind of
+    /// the next value: the reader of `JsonType.fromObject` throws `IllegalStateException` from
+    /// `currentToken()`.
     static void expect(JsonReader reader, Token expected, String typeName) {
-        Token actual = reader.currentToken();
-        if (actual != expected && actual != Token.NUMBER) {
+        Token actual = currentToken(reader);
+        if (actual != null && actual != expected && actual != Token.NUMBER) {
             throw new JsonDataException(
                     "A " + typeName + " is a JSON " + kind(expected) + ", not " + article(kind(actual)) + at(reader));
+        }
+    }
+
+    /// The kind of the next value, or `null` when `reader` cannot tell it.
+    private static @Nullable Token currentToken(JsonReader reader) {
+        try {
+            return reader.currentToken();
+        } catch (IllegalStateException | UnsupportedOperationException e) {
+            return null;
         }
     }
 

@@ -117,4 +117,17 @@ class ConformanceTest {
         assertThat(json.toJson(sample)).isEqualTo(expected);
         assertThat(json.fromJson(expected)).isEqualTo(sample);
     }
+
+    /// `JsonType.fromObject` reads the same value from the tree of `java.util` maps, lists and scalars that avaje-jsonb
+    /// reads the JSON into: its reader cannot tell the kind of the next value, and the adapters do not ask it.
+    @ParameterizedTest
+    @MethodSource("samples")
+    <T> void theSampleIsReadFromItsObjectTree(Type type, T sample, String expected) {
+        JsonType<T> json = JSONB.type(type);
+        var tree = JSONB.type(Object.class).fromJson(expected);
+        // avaje-jsonb's tree reader gives a record's null property no value, as when it is absent from the JSON
+        Object expectedValue =
+                sample instanceof Order order && order.note().isEmpty() ? new Order(order.lines(), null) : sample;
+        assertThat(json.fromObject(tree)).isEqualTo(expectedValue);
+    }
 }

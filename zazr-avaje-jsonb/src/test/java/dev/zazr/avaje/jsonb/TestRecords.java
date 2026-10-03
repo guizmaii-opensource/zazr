@@ -59,4 +59,15 @@ final class TestRecords {
     /// Maps whose keys hold characters that JSON escapes.
     @Json
     record Escapes(LinkedHashMap<String, Integer> names, TreeMap<String, Vector<String>> sorted) {}
+
+    @Json
+    record Inner(String v) {}
+
+    /// A map whose values are objects, inside a record with a property after it.
+    @Json
+    record MapOfRecords(LinkedHashMap<String, Inner> m, String after) {}
+
+    /// A map of maps, inside a record with a property after it.
+    @Json
+    record MapOfMaps(LinkedHashMap<String, LinkedHashMap<String, Integer>> m, String after) {}
 }

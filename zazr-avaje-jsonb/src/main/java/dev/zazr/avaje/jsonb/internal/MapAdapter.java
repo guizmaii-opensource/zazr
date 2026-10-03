@@ -56,10 +56,7 @@ final class MapAdapter<K, V> implements JsonAdapter<Iterable<Tuple2<K, V>>> {
             Reading.requireComparable(shape.typeName, keyType, "keys", reader);
         }
         ArrayList<Tuple2<Object, Object>> read = new ArrayList<>();
-        // No property names: avaje-jsonb's parser then decodes the escapes of each name (`\"`, `\\`, `\n`). Inside an
-        // object read with names (a record), `beginObject()` keeps a names table and returns each name as it is
-        // written, escapes included.
-        reader.beginObject(null);
+        reader.beginObject();
         while (reader.hasNextField()) {
             String name = reader.nextField();
             K key = keys.read(name, shape.typeName, reader);

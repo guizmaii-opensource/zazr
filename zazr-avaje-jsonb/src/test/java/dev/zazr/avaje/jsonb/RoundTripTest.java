@@ -38,6 +38,7 @@ import static dev.zazr.avaje.jsonb.JsonTypes.JSONB;
 import static dev.zazr.avaje.jsonb.JsonTypes.json;
 import static dev.zazr.avaje.jsonb.JsonTypes.type;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /// Every type read back from what it writes: empty, one element, and sizes past the leaves and the levels of the tries
 /// and of a JSON parser's buffer; then nested generics, values written by their class, and the order of each type.
@@ -261,6 +262,23 @@ class RoundTripTest {
         assertThat(JSONB.toJson(Tuple.of(1, "a"))).isEqualTo("[1,\"a\"]");
         assertThat(JSONB.toJson(TreeMap.of("a", Vector.of(1)))).isEqualTo("{\"a\":[1]}");
         assertThat(JSONB.toJson(TreeMap.of(1, "a"))).isEqualTo("{\"1\":\"a\"}");
+    }
+
+    @Test
+    void fromObjectReadsJavaListsAndMaps() {
+        JsonType<Vector<Integer>> vector = json(Vector.class, Integer.class);
+        assertThat(vector.fromObject(java.util.List.of(1, 2))).isEqualTo(Vector.of(1, 2));
+        JsonType<HashMap<String, Integer>> map = json(HashMap.class, String.class, Integer.class);
+        assertThat(map.fromObject(java.util.Map.of("a", 1))).isEqualTo(HashMap.of("a", 1));
+        JsonType<Tuple2<String, Integer>> tuple = json(Tuple2.class, String.class, Integer.class);
+        assertThat(tuple.fromObject(java.util.List.of("a", 1))).isEqualTo(Tuple.of("a", 1));
+        JsonType<NonEmptyVector<Integer>> nonEmpty = json(NonEmptyVector.class, Integer.class);
+        assertThatThrownBy(() -> nonEmpty.fromObject(java.util.List.of()))
+                .isInstanceOf(io.avaje.json.JsonDataException.class)
+                .hasMessageStartingWith("A NonEmptyVector needs at least one element: the JSON array is empty.");
+        var order = JSONB.type(dev.zazr.avaje.jsonb.TestRecords.Order.class)
+                .fromObject(java.util.Map.of("lines", java.util.List.of(java.util.Map.of("sku", "a", "quantity", 1))));
+        assertThat(order.lines()).isEqualTo(Vector.of(new dev.zazr.avaje.jsonb.TestRecords.Line("a", 1)));
     }
 
     @Test
