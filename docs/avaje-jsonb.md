@@ -91,8 +91,6 @@ The details:
 - A map key that is not a `String` is written as the text of its JSON value: `{"2026-10-03":1}` for a `LocalDate`,
   `{"42":1}` for an `Integer`, the name of the constant for an enum.
 - Of two equal keys in the same JSON object, the later wins.
-- avaje-jsonb 3.16 decodes the escapes of a key (`\"`, `\\`, `\n`, `\u00e9`) only in a map read at the top level: inside a
-  record, `"b\"c"` reads as `b\"c`, as in avaje-jsonb's own `java.util.Map`.
 
 ```java
 var agenda = HashMap.of(LocalDate.of(2026, 10, 3), Vector.of("standup"));
@@ -163,6 +161,20 @@ The two modules write the same JSON for every type, with two differences that co
 - A missing `Option` property of a record reads as `null` here, and as `None` with `zazr-jackson`.
 - An enum whose class overrides `toString()` can be written differently by avaje-jsonb and Jackson, as a value or a
   map key, with or without these modules.
+
+## Known avaje-jsonb 3.16 issues
+
+These come from avaje-jsonb 3.16 itself, and its own `java.util.List` and `java.util.Map` behave the same:
+
+- **Escaped keys inside a record.** A key's escapes are decoded only in a map that is not inside a record: inside one,
+  `{"m":{"b\"c":1}}` gives the key `b\"c`. No workaround inside a record.
+- **Escaped keys after a failed read.** After a read that failed inside a record, a map read next on the same thread
+  keeps its escapes the same way, even outside a record. No workaround.
+- **Long streams.** Inside a record, read from an `InputStream` or a `Reader`, a key that crosses avaje-jsonb's 4 KB
+  buffer loses its backslashes and its non-ASCII characters (`café` can read as `cafￃﾩ`). Read from a `String` or a
+  `byte[]` instead.
+- **`fromObject`.** `JsonType.fromObject` reads only the first of two nested arrays, or of two nested objects:
+  `[[1,2],[3]]` reads as `[[1,2]]`, and a record loses the property after a map. Read from JSON text with `fromJson`.
 
 ## Native images
 

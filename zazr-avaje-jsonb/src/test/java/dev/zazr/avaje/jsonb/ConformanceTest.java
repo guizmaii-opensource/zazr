@@ -118,8 +118,10 @@ class ConformanceTest {
         assertThat(json.fromJson(expected)).isEqualTo(sample);
     }
 
-    /// `JsonType.fromObject` reads the same value from the tree of `java.util` maps, lists and scalars that avaje-jsonb
-    /// reads the JSON into: its reader cannot tell the kind of the next value, and the adapters do not ask it.
+    /// `JsonType.fromObject` reads each sample from the tree of `java.util` maps, lists and scalars that
+    /// avaje-jsonb reads the JSON into: its reader cannot tell the kind of the next value, and the adapters do not
+    /// ask it. No sample nests two arrays, or two objects, with a value after the first: avaje-jsonb 3.16's tree
+    /// reader reads only the first of those (a known issue the page lists).
     @ParameterizedTest
     @MethodSource("samples")
     <T> void theSampleIsReadFromItsObjectTree(Type type, T sample, String expected) {

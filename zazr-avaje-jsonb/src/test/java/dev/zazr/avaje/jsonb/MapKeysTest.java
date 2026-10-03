@@ -20,10 +20,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /// The property names of a map read from JSON: no key is ever lost or replaced by another, wherever the map is.
 ///
-/// avaje-jsonb 3.16 decodes the escapes of a property name (`\"`, `\\`, `\n`, `é`) only in an object read at the
-/// top level of a fresh parser. Inside an object read with property names (a record), and on a thread whose earlier
-/// read failed inside a record, it returns each name as the JSON writes it, escapes included; its own
-/// `java.util.Map` does the same. These tests pin both, so that a change of avaje-jsonb shows here.
+/// avaje-jsonb 3.16 decodes the escapes of a property name (`\"`, `\\`, `\n`, `é`) only in an object that is not inside
+/// a record, on a parser no failed read has left inside a record. Otherwise, read from a `String` as here, it returns
+/// each name as the JSON writes it, escapes included; its own `java.util.Map` does the same. From a stream, a name
+/// that crosses the parser's 4 KB buffer differs again (a known issue the page lists). These tests pin the `String`
+/// cases, so that a change of avaje-jsonb shows here.
 ///
 /// avaje-jsonb keeps one parser per thread, with the state a failed read leaves: each test runs on a thread of its own.
 class MapKeysTest {
