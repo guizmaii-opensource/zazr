@@ -53,6 +53,7 @@ public abstract class AbstractTraversableTest {
     static final java.util.Set<String> TRAVERSABLE_MEMBERS = java.util.Set.of(
             "iterator",
             "size",
+            "sizeCompare",
             "isEmpty",
             "nonEmpty",
             "contains",
