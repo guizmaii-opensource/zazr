@@ -193,6 +193,20 @@ public class SkillExamplesTest {
         }
 
         @Test
+        void grouping() {
+            var words = List.of("apple", "bob", "avocado");
+            var byChar = words.groupMap(w -> w.charAt(0), String::length); // Map<Character, List<Integer>>
+            var counts = words.groupMapReduce(w -> w.charAt(0), w -> 1, Integer::sum); // Map<Character, Integer>
+            var big = List.range(0, 1_000_000).sizeCompare(3) > 0; // boolean
+            // byChar is LinkedHashMap((a, List(5, 7)), (b, List(3))), counts is LinkedHashMap((a, 2), (b, 1)), big is
+            // true
+
+            assertThat(byChar).hasToString("LinkedHashMap((a, List(5, 7)), (b, List(3)))");
+            assertThat(counts).hasToString("LinkedHashMap((a, 2), (b, 1))");
+            assertThat(big).isTrue();
+        }
+
+        @Test
         void sumsProductsAndAverages() {
             var words = List.of("one", "three", "five");
             var letters = words.sumInt(String::length); // int

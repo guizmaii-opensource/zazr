@@ -39,7 +39,7 @@ Every method: [complexity page](complexity.md#list).
 ## Sharp edges
 
 - `size()` is O(n): the list does not store its size. `equals`, `toArray()` and `stream()` count
-  the elements first too.
+  the elements first too. To compare the size with a number, `sizeCompare(n)` walks at most `n + 1` elements.
 - `append`, `appendAll`, `last`, `init`, `takeRight` and `dropRight` walk the whole list, and all but `last` copy it.
 - `get(i)` walks the list up to position i; `update`, `insert` and `removeAt` also copy the elements before it.
 - `take`, `drop`, `slice` and `splitAt` walk only the elements they take or skip, never the rest of the list.

@@ -57,6 +57,9 @@ On a map, `keySet()` returns a `NonEmptySet` (a `NonEmptySortedSet` on a `NonEmp
 `sliding` and `slideBy` return a `Vector` of them. `toMap` returns a `NonEmptyMap` and `toSortedMap` a
 `NonEmptySortedMap`, on these types and on `NonEmptyVector`: a non-empty source gives at least one entry.
 
+`groupMap` returns a `NonEmptyMap` too, of non-empty groups: a `NonEmptySet` of the values on the sets, a
+`NonEmptyVector` on the maps. `groupMapReduce` returns a `NonEmptyMap` of one value per group.
+
 ```java
 // NonEmptyMap<Integer, NonEmptySet<String>>
 var byLength = NonEmptySet.of("a", "bb", "cc").groupBy(String::length);

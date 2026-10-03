@@ -71,6 +71,44 @@ public interface Traversable<T extends @Nullable Object> extends Iterable<T> {
     int size();
 
     /**
+     * Compares the size of this collection with {@code otherSize}, without counting more elements than it needs:
+     * {@code xs.sizeCompare(3) > 0} tells whether there are more than three elements, also when the size takes a walk
+     * ({@link List}, {@link Queue}) or is infinite ({@link LazyList}).
+     * <pre>{@code
+     * List.of(1, 2, 3).sizeCompare(2);   // 1
+     * List.of(1, 2, 3).sizeCompare(3);   // 0
+     * LazyList.from(1).sizeCompare(5);   // 1: six elements are computed
+     * }</pre>
+     * <p>
+     * Complexity: O(1): the stored size is compared. {@link List}, {@link Queue} and {@link LazyList} count their
+     * elements up to {@code otherSize + 1}.
+     *
+     * @param otherSize the size to compare with; a negative one is smaller than every size
+     * @return -1, 0 or 1 as the size of this collection is smaller than, equal to or greater than {@code otherSize}
+     */
+    default int sizeCompare(int otherSize) {
+        return Integer.compare(size(), otherSize);
+    }
+
+    /**
+     * Compares the size of this collection with the size of {@code that}, without counting more elements than it
+     * needs: a stored size is compared with the other as {@link #sizeCompare(int)} does, and two sizes that both take
+     * a walk are counted side by side until the shorter one ends. A one-shot {@code that} is iterated once.
+     * <p>
+     * Complexity: O(min(n, m)), at most: a size that is not stored is counted only up to the other one; O(1) when both
+     * are stored ({@link Vector}, the sets, the maps and the non-empty collections store theirs). A JDK collection is
+     * iterated, not asked its size, which may cost a walk or never return.
+     *
+     * @param that the collection whose size this one is compared with
+     * @return -1, 0 or 1 as the size of this collection is smaller than, equal to or greater than the size of
+     *     {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    default int sizeCompare(Iterable<?> that) {
+        return Collections.sizeCompare(this, Collections.knownSize(this), that);
+    }
+
+    /**
      * Whether this collection has no elements.
      *
      * @return {@code true} if there is no element, {@code false} otherwise

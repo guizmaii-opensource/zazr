@@ -47,7 +47,9 @@ val documented: Set[String] = Set(
   "cycle", "extend", "appendSelf",
   // the rows of the complexity page that are not positional: lookups, updates and the set algebra
   "contains", "concat", "add", "addAll", "put", "putAll", "min", "max", "union", "intersect", "diff", "containsKey",
-  "keySet", "values"
+  "keySet", "values",
+  // the grouping and size comparisons that every collection has
+  "groupMap", "groupMapReduce", "sizeCompare"
 )
 
 /** The complexity classes of the legend, cheapest first. */
@@ -79,6 +81,7 @@ val vocabulary: Map[String, Cost] = Map(
   "O(n + m)" -> Cost.Linear,
   "O(n + k)" -> Cost.Linear,
   "O(min(n, m))" -> Cost.Linear,
+  "O(min(n, k))" -> Cost.Linear,
   "O(max(n, m))" -> Cost.Linear,
   "O(min(i, n - i))" -> Cost.Linear,
   "O(m + min(i, n - i))" -> Cost.Linear,
@@ -323,7 +326,7 @@ val families: List[Family] = List(
       "operations compute their result as it is read.",
     List("Vector", "List", "Queue", "LazyList", "NonEmptyVector"),
     List("head", "tail", "last", "init", "get", "update", "prepend", "append", "prependAll", "appendAll", "insert",
-      "removeAt", "take", "drop", "slice", "splitAt", "reverse", "sorted", "size", "contains", "indexOf",
+      "removeAt", "take", "drop", "slice", "splitAt", "reverse", "sorted", "size", "sizeCompare", "contains", "indexOf",
       "zip", "sliding", "grouped", "distinct", "concat")
   ),
   Family(

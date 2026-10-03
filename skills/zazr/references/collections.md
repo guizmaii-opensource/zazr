@@ -47,13 +47,25 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 ## What every collection shares
 
 Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their `Sorted` variants)
-implements `Traversable<T>`: iteration, `size()`, `isEmpty()`,
+implements `Traversable<T>`: iteration, `size()`, `sizeCompare(n)` (counts at most n + 1 elements, so it returns on an
+infinite `LazyList`), `isEmpty()`,
 `contains`, `exists`, `forAll`, `count`, `find` (an `Option`), `foldLeft`, `mkString`, `toVector`, `toList`,
 `toSet`, `stream()`, `toArray`, `asJava()`.
 
 `map`, `filter`, `flatMap` and the rest are declared by each type and return that type: `grouped` on a `List` is a
 `List` of `List`s. `partitionMap` splits in one pass with a function returning an `Either` (sequences and hash
-sets). `groupBy` returns a `Map` of groups. The static `flatten` removes one level of nesting.
+sets). `groupBy` returns a `Map` of groups, keyed in the order of their first element; `groupMap(key, value)` maps the
+elements as it groups them, and `groupMapReduce(key, value, reduce)` combines each group into one value. A map groups
+the values of its entries in a `Vector`, a `TreeSet` in a `HashSet`, and a non-empty collection returns a
+`NonEmptyMap`. The static `flatten` removes one level of nesting.
+
+```java
+var words  = List.of("apple", "bob", "avocado");
+var byChar = words.groupMap(w -> w.charAt(0), String::length);              // Map<Character, List<Integer>>
+var counts = words.groupMapReduce(w -> w.charAt(0), w -> 1, Integer::sum);  // Map<Character, Integer>
+var big    = List.range(0, 1_000_000).sizeCompare(3) > 0;                   // boolean
+// byChar is LinkedHashMap((a, List(5, 7)), (b, List(3))), counts is LinkedHashMap((a, 2), (b, 1)), big is true
+```
 
 ```java
 var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>

@@ -58,8 +58,9 @@ Every method: [complexity page](complexity.md#lazylist).
 ## Sharp edges
 
 - Operations that need the whole sequence compute it and never return on an infinite `LazyList`: `size`,
-  `last`, `reverse`, `sorted`, `max`, `min`, `foldRight`, `groupBy`, `lastIndexOfSlice(that)` and `hashCode`, and
-  anything else that reads every element, such as `foldLeft`, `mkString` or `toVector`.
+  `last`, `reverse`, `sorted`, `max`, `min`, `foldRight`, `groupBy`, `groupMap`, `groupMapReduce`,
+  `lastIndexOfSlice(that)` and `hashCode`, and anything else that reads every element, such as `foldLeft`, `mkString`
+  or `toVector`. `sizeCompare(n)` computes at most `n + 1` elements, so it returns.
 - `equals` stops at the first difference or at the end of the shorter side, so an infinite `LazyList` compared with a
   finite `List`, `Vector`, `Queue` or `LazyList` returns. Two infinite `LazyList`s with the same elements never do.
 - `filter` and the calls like it (`reject`, `retainAll`, `removeAll`, `collect`, `flatMap`, `distinct`) compute

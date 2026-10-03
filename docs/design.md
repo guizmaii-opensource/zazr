@@ -385,6 +385,7 @@ duplication is cheaper than a god interface).
 | `Lazy.filter -> Option` | delete | |
 | `isAsync`, `isLazy`, `isSingleValued`, `isTraversableAgain`, `hasDefiniteSize`, `isSequential`, `isOrdered`, `isDistinct` | delete | reflection-on-the-type flags that no caller should branch on |
 | `sum()`, `product()` → `Number`; `average()` → `Option<Double>`, all picking the arithmetic from the first element's class at run time | `sumInt(ToIntFunction)`, `sumLong(ToLongFunction)`, `sumDouble(ToDoubleFunction)`, `productInt`, `productLong`, `productDouble` with the same arguments, returning the primitive; `average(ToDoubleFunction)` → `Option<Double>` on the sequences and the sets, `double` on `NonEmptyVector`, `NonEmptySet`, `NonEmptySortedSet`. The untyped ones are deleted (decided 2026-09-28, #194) | the old forms summed `Integer`s into a `Long`, truncated a mixed `[1, 2.5]`, overflowed `long` silently and threw `UnsupportedOperationException` on non-numbers; Scala types them by `Numeric` at compile time, Java by the mapper, as `IntStream.sum`/`mapToInt`. **Overflow**: the `int` and `long` sums and products are exact and throw `ArithmeticException` when, and only when, the exact result does not fit: a partial result may leave the range if the later elements bring it back (`[MAX_VALUE, 1, -1]` gives `MAX_VALUE` in every order), so a set's result never depends on its iteration order. `sumInt` accumulates in a `long`, `sumLong` counts the carries out of 64 bits, the products keep the magnitude (unsigned for `long`) and the sign apart and become `0` on a zero factor whatever came before. The JDK's silent wrap-around was rejected (a wrong total is worse than an exception), and so was `Math.addExact` on the running total (it throws on `[MAX_VALUE, 1, -1]` and not on `[1, -1, MAX_VALUE]`). **Doubles**: `sumDouble` and `average` use Neumaier's compensated summation (NaN when a value is NaN or both infinities appear, the infinity when one is infinite or a partial sum overflows); `productDouble` multiplies in iteration order, compensation does not apply to products. **Empty**: `0`/`0L`/`0.0` and `1`/`1L`/`1.0`, the identities, as Scala and `IntStream`; `average` is `None`. **`Option<Double>` rather than `OptionalDouble`**: it is the library's absence type (pattern matching, `map`, `getOrElse`), what `max`/`min`/`reduceOption` already return, and 3.12 keeps primitive options out of v1; the one boxed `Double` per call is not a per-element cost. No `BigInteger`/`BigDecimal` forms: `foldLeft(BigInteger.ZERO, BigInteger::add)` says the same thing |
+| (none: `groupBy(key)` then a `map` of each group; `size()` compared with a number) | `groupMap(key, value)`, `groupMapReduce(key, value, reduce)`, `sizeCompare(int)`, `sizeCompare(Iterable)` (Scala 2.13 `IterableOps.groupMap`, `groupMapReduce`, `sizeCompare`; added 2026-10-03, #197) | **Placement** follows `groupBy`: `groupMap` and `groupMapReduce` are declared by each sequence, by `Set` and `Map` (implemented by each concrete set and map) and by the five non-empty types, each naming itself in its messages. `sizeCompare` is a default of `Traversable` comparing the stored size, overridden by `List`, `Queue` and `LazyList`, which count at most `otherSize + 1` elements (Scala's `LinearSeq.lengthCompare`), so it returns on an infinite `LazyList`; the non-empty types delegate to the collection they wrap. **Result types**: the keys keep the order of their first element, in a `LinkedHashMap` as `groupBy`'s (Scala returns an unordered `immutable.Map`), and a `NonEmptyMap` on the non-empty types. The groups are of the receiver's own type, as Scala's `CC[B]`: a sequence groups into its own type, `HashSet` and `LinkedHashSet` into their own; a `TreeSet` into `HashSet`s, as Scala's `TreeSet` (whose `iterableFactory` is `Set`), so that the values need not be comparable and no comparator overload is needed; a map into `Vector`s in its iteration order, as `values()` (Scala: `Iterable`). `NonEmptySortedSet` groups into `NonEmptySet`s, the maps into `NonEmptyVector`s. **`sizeCompare` returns -1, 0 or 1** (Scala promises only the sign, and `i - otherSize` can be any negative number); **a size is "known"** only where it is stored (`Vector`, the sets, the maps, the non-empty types): a JDK collection is iterated, not asked its `size()`, which on the view of a `LazyList` never returns (Scala's Java wrappers report -1 too). **Nulls**: a `key`, `value` or `reduce` that returns null is rejected by name (`List.groupMap: value returned null`), a deliberate extension of 3.9, which leaves a plain value to the collection's own check: a reduce result is fed back to `reduce` before it reaches a map, and a JDK map's `merge` treats null as removal |
 
 Things ZIO does that **do not** port and should not be imitated:
 - `Par` suffix: there is no parallelism in pure data. Do **not** name `Validation`'s accumulating zip
@@ -734,7 +735,9 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   `NonEmptyMap.ofMapped`/`ofMappedEntries` (and their `NonEmptySortedMap` twins), one builder pass that puts keys and
   values without an intermediate `Tuple2` and reports a null key, value or entry under the calling method's name
   (`NonEmptySet.toMap: keyMapper returned null`), as `NonEmptyVector` already did. This changes 3.6's
-  `groupBy as HashMap<K, NonEmptyVector<A>>`.
+  `groupBy as HashMap<K, NonEmptyVector<A>>`. `groupMap` and `groupMapReduce` (added 2026-10-03, 3.3) follow the same
+  rule: a `NonEmptyMap` of non-empty groups (`NonEmptyVector`, `NonEmptySet`; `NonEmptySet` on `NonEmptySortedSet` and
+  `NonEmptyVector` on the maps, as on their plain types) or of one value per group.
 
 ### 3.7 Removing the `Seq` abstraction
 
@@ -965,7 +968,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   maps, and no kind equals another.
 - **What `Set` keeps** (decided): the set algebra (`add`, `addAll`, `remove`, `removeAll(Iterable)`, `union`,
   `intersect`, `diff`, `contains`), `filter`, `reject`, `map`, `flatMap`, `collect(Function)`, `as`, `partition`,
-  `groupBy`, `orElse` ×2, `tap`, `replace`, `replaceAll` (the same thing on a set), `retainAll`, `existsUnique`,
+  `groupBy`, `groupMap`, `groupMapReduce` (added 2026-10-03, 3.3), `orElse` ×2, `tap`, `replace`, `replaceAll` (the same thing on a set), `retainAll`, `existsUnique`,
   `max`/`maxBy` ×2/`min`/`minBy` ×2, `sum`/`product`/`average` (typed since #194, 3.3), `fold`/`reduce`/`reduceOption`, `single`/
   `singleOption`, `arrangeBy`, `collect(Collector)` ×2, the `toJava*` and `to*` conversions, `toJavaSet()`;
   `SortedSet` adds `comparator()` and the comparator-taking `map`/`flatMap`/`collect`. **What it drops**: `head`,
@@ -981,7 +984,8 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `Predicate` and the `BiPredicate` form, `filterKeys`/`rejectKeys`/`filterValues`/`rejectValues`, the deprecated
   `removeKeys`/`removeValues`, `map(BiFunction)`, `mapBoth`, `mapKeys` ×2, `mapValues`, `flatMap(BiFunction)`,
   `collect(BiFunction)`, `merge` ×2, `replace(K, V, V)`, `replaceValue`, `replaceAll(BiFunction)`, the entry-typed
-  `replace`/`replaceAll`, `retainAll`, `partition`, `groupBy`, `orElse` ×2, `tap`, `forEach(BiConsumer)`,
+  `replace`/`replaceAll`, `retainAll`, `partition`, `groupBy`, `groupMap` (groups in `Vector`s), `groupMapReduce` (added
+  2026-10-03, 3.3), `orElse` ×2, `tap`, `forEach(BiConsumer)`,
   `computeIfAbsent`/`computeIfPresent`, `toJavaMap()`), plus `existsUnique`, `max`/`maxBy` ×2/`min`/`minBy` ×2 over
   the entries, `fold`/`reduce`/`reduceOption`, `single`/`singleOption`, `arrangeBy`, `collect(Collector)` ×2 and
   the conversions; `SortedMap` adds `comparator()` and the comparator-taking forms. **What it drops**: the same
@@ -1824,7 +1828,8 @@ deleted. Attribution in `NOTICE`.
   value (`Option`, `Either`, `Try`, `Validation`, `Lazy`, a tuple, a collection or an iterable of elements: the
   functions of `flatMap`, `collect`, `partitionMap`, `unzip`, `unfold*`, `toMap(f)`, `orElse(Supplier)`, the map
   `map`/`fill`/`tabulate`/`ofAll(stream, entryMapper)`, `Stream.cons`/`iterate`/`appendSelf`), the key a `groupBy` or
-  `arrangeBy` classifier produces, and the value a control type stores in a case (`Option.map`, `Either.map`,
+  `arrangeBy` classifier produces, the three functions of `groupMap`/`groupMapReduce` (`key`, `value`, `reduce`, added
+  2026-10-03, 3.3), and the value a control type stores in a case (`Option.map`, `Either.map`,
   `mapLeft`, `mapBoth`, `filterOrElse`, `toEither`/`toTry`/`toValidation`). The result is checked where the function
   is called: `NullPointerException("<Type>.<method>: <parameter> returned null")` (`Option.flatMap: mapper returned
   null`). A default method shared by several types names the interface that declares it (`Set.toMap`, `Map.toMap`).

@@ -41,7 +41,7 @@ Several structures are ported from the Scala 2.13 collections library, which Sca
 ## What they share
 
 Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their sorted variants)
-implements `Traversable<T>`. It has what works the same way on every type: iterating, `size`,
+implements `Traversable<T>`. It has what works the same way on every type: iterating, `size`, `sizeCompare`,
 `contains`, `find`, `foldLeft`, `mkString`, the conversions such as `toVector` and `stream()`, and the
 [`asJava()` view](../java-interop.md).
 
@@ -71,6 +71,43 @@ var same       = Vector.of(1, 2, 3).equals(sortedList);
 A `Vector`, `List`, `Queue` or `LazyList` equals another of these four when they hold equal elements in the same
 order. Sets equal sets and maps equal maps. A `NonEmptyVector` equals only another `NonEmptyVector`; a non-empty set
 equals only a non-empty set, and a non-empty map only a non-empty map.
+
+## Grouping
+
+`groupBy` splits a collection into groups by a key. Two variants change the elements as they group them, in one pass:
+
+- `groupMap(key, value)` keeps what `value` returns for each element.
+- `groupMapReduce(key, value, reduce)` combines the values of each group into one, without building the groups.
+
+The keys come in the order of their first element. The groups are of the collection's own type; a map groups its
+entries' values in a `Vector`, and a `TreeSet` in a `HashSet`, since the values may not be comparable. On a non-empty
+collection, the result is a `NonEmptyMap`.
+
+```java
+var words   = List.of("apple", "bob", "avocado", "cherry", "banana");
+var lengths = words.groupMap(w -> w.charAt(0), String::length);              // Map<Character, List<Integer>>
+var counts  = words.groupMapReduce(w -> w.charAt(0), w -> 1, Integer::sum);  // Map<Character, Integer>
+// lengths is LinkedHashMap((a, List(5, 7)), (b, List(3, 6)), (c, List(6)))
+// counts is LinkedHashMap((a, 2), (b, 2), (c, 1))
+```
+
+## Comparing sizes
+
+`sizeCompare(n)` returns -1, 0 or 1 as a collection has fewer than, as many as, or more than `n` elements. It counts
+at most `n + 1` of them. So it stays cheap on a `List` or a `Queue`, whose `size()` counts every element, and it
+returns on an infinite `LazyList`.
+
+`sizeCompare(other)` compares with the size of another collection the same way: it counts no further than the
+shorter of the two.
+
+```java
+var many     = List.range(0, 1_000_000);
+var naturals = LazyList.from(1);
+var big      = many.sizeCompare(3) > 0;                // boolean
+var atLeast  = naturals.sizeCompare(10);               // int
+var shorter  = Vector.of(1, 2).sizeCompare(naturals);  // int
+// true, 1, -1
+```
 
 ## Sums, products and averages
 
@@ -105,7 +142,8 @@ var firstEven = Vector.of(1, 3, 4).find(n -> n % 2 == 0);  // Option<Integer>
 
 A function that returns `null` where a collection needs an `Option`, a tuple or an iterable, such as the mapper of
 `flatMap` or the function of `toMap`, throws a `NullPointerException` naming the method:
-`Vector.flatMap: mapper returned null`. So does a `groupBy` classifier. A function that returns a plain element, such
+`Vector.flatMap: mapper returned null`. So do a `groupBy` classifier and the functions of `groupMap` and
+`groupMapReduce` (`List.groupMap: value returned null`). A function that returns a plain element, such
 as the mapper of `map`, is rejected like any other `null` element: `Vector: element is null`. A `LazyList` throws when
 it reaches that element.
 

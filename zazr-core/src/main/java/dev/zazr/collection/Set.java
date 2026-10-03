@@ -221,6 +221,45 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     <C extends @Nullable Object> Map<C, ? extends Set<T>> groupBy(Function<? super T, ? extends C> classifier);
 
     /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value} returns,
+     * in a map ordered by the first occurrence of each key, in this set's iteration order. The same as
+     * {@code groupBy(key).mapValues(group -> group.map(value))}, in one pass: two elements of a group with equal values
+     * leave one value in it.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per element, and each group built from its values.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <U>   the type of the grouped values
+     * @return a map from each key to the set of the values of the elements with that key
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    <K extends @Nullable Object, U extends @Nullable Object> Map<K, ? extends Set<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value);
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined with {@code reduce} in this set's iteration order, in a map ordered by the first occurrence of
+     * each key. The same as {@code groupMap(key, value).mapValues(group -> group.reduce(reduce))} without dropping equal
+     * values, in one pass and without building the groups.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce);
+
+    /**
      * This set if it is non-empty, otherwise a set of the elements of {@code other}.
      *
      * @param other the elements to fall back on

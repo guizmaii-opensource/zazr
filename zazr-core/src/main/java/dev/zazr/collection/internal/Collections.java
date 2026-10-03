@@ -8,6 +8,11 @@ import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
 import dev.zazr.collection.Map;
+import dev.zazr.collection.NonEmptyMap;
+import dev.zazr.collection.NonEmptySet;
+import dev.zazr.collection.NonEmptySortedMap;
+import dev.zazr.collection.NonEmptySortedSet;
+import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
 import dev.zazr.collection.Set;
 import dev.zazr.collection.SortedMap;
@@ -177,6 +182,179 @@ public final class Collections {
             results.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
         }
         return results.entrySet();
+    }
+
+    /// The elements of `source` grouped by `key`, each element replaced by what `value` returns, in a map ordered
+    /// by the first occurrence of each key; each group keeps the iteration order of `source`. `method` names the
+    /// public method in the message of a function that returns null (`Vector.groupMap: key returned null`).
+    public static <T extends @Nullable Object, K extends @Nullable Object, U extends @Nullable Object>
+            java.util.LinkedHashMap<K, ArrayList<U>> groupMap(
+                    Iterable<T> source,
+                    Function<? super T, ? extends K> key,
+                    Function<? super T, ? extends U> value,
+                    String method) {
+        Objects.requireNonNull(key, "key is null");
+        Objects.requireNonNull(value, "value is null");
+        java.util.LinkedHashMap<K, ArrayList<U>> groups = new java.util.LinkedHashMap<>(initialCapacity(source));
+        for (T element : source) {
+            K k = key.apply(element);
+            if (k == null) {
+                throw new NullPointerException(method + ": key returned null");
+            }
+            U v = value.apply(element);
+            if (v == null) {
+                throw new NullPointerException(method + ": value returned null");
+            }
+            groups.computeIfAbsent(k, ignored -> new ArrayList<>()).add(v);
+        }
+        return groups;
+    }
+
+    /// [#groupMap(Iterable, Function, Function, String)] as a [LinkedHashMap] whose groups `group` builds.
+    public static <
+                    T extends @Nullable Object,
+                    K extends @Nullable Object,
+                    U extends @Nullable Object,
+                    R extends @Nullable Object>
+            Map<K, R> groupMap(
+                    Iterable<T> source,
+                    Function<? super T, ? extends K> key,
+                    Function<? super T, ? extends U> value,
+                    Function<? super Iterable<U>, ? extends R> group,
+                    String method) {
+        LinkedHashMap.Builder<K, R> result = LinkedHashMap.newBuilder();
+        for (java.util.Map.Entry<K, ArrayList<U>> entry :
+                Collections.<T, K, U>groupMap(source, key, value, method).entrySet()) {
+            result.put(entry.getKey(), group.apply(entry.getValue()));
+        }
+        return result.result();
+    }
+
+    /// The elements of `source` grouped by `key`, each group's values (what `value` returns for its elements, in
+    /// the iteration order of `source`) combined from the left with `reduce`, in a map ordered by the first
+    /// occurrence of each key. `method` names the public method in the message of a function that returns null.
+    public static <T extends @Nullable Object, K extends @Nullable Object, U extends @Nullable Object>
+            java.util.LinkedHashMap<K, U> groupMapReduce(
+                    Iterable<T> source,
+                    Function<? super T, ? extends K> key,
+                    Function<? super T, ? extends U> value,
+                    BiFunction<? super U, ? super U, ? extends U> reduce,
+                    String method) {
+        Objects.requireNonNull(key, "key is null");
+        Objects.requireNonNull(value, "value is null");
+        Objects.requireNonNull(reduce, "reduce is null");
+        java.util.LinkedHashMap<K, U> results = new java.util.LinkedHashMap<>(initialCapacity(source));
+        // one function for the whole call; a null result must not reach merge, which would remove the key
+        BiFunction<U, U, U> combine = (previous, next) -> {
+            U combined = reduce.apply(previous, next);
+            if (combined == null) {
+                throw new NullPointerException(method + ": reduce returned null");
+            }
+            return combined;
+        };
+        for (T element : source) {
+            K k = key.apply(element);
+            if (k == null) {
+                throw new NullPointerException(method + ": key returned null");
+            }
+            U v = value.apply(element);
+            if (v == null) {
+                throw new NullPointerException(method + ": value returned null");
+            }
+            results.merge(k, v, combine);
+        }
+        return results;
+    }
+
+    /// [#groupMapReduce(Iterable, Function, Function, BiFunction, String)] as a [LinkedHashMap].
+    public static <T extends @Nullable Object, K extends @Nullable Object, U extends @Nullable Object>
+            Map<K, U> groupMapReduceToMap(
+                    Iterable<T> source,
+                    Function<? super T, ? extends K> key,
+                    Function<? super T, ? extends U> value,
+                    BiFunction<? super U, ? super U, ? extends U> reduce,
+                    String method) {
+        LinkedHashMap.Builder<K, U> result = LinkedHashMap.newBuilder();
+        for (java.util.Map.Entry<K, U> entry : Collections.<T, K, U>groupMapReduce(source, key, value, reduce, method)
+                .entrySet()) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result.result();
+    }
+
+    // the capacity of a JDK map that receives at most one entry per element of source
+    private static int initialCapacity(Iterable<?> source) {
+        int known = knownSize(source);
+        return known >= 0 ? known : 16;
+    }
+
+    /// The size of `iterable` when it is stored, so that reading it is O(1) and computes nothing: a [Vector], a set,
+    /// a map or a non-empty collection. -1 for everything else, whose size takes a walk ([List], [Queue],
+    /// [LazyList]), may never be known (a one-shot `Iterable`), or is not trusted to be cheap (a JDK collection,
+    /// which may be a view of a [LazyList]).
+    public static int knownSize(Iterable<?> iterable) {
+        return switch (iterable) {
+            case List<?> _, Queue<?> _, LazyList<?> _ -> -1;
+            case Traversable<?> traversable -> traversable.size();
+            case NonEmptyVector<?> vector -> vector.size();
+            case NonEmptySet<?> set -> set.size();
+            case NonEmptySortedSet<?> set -> set.size();
+            case NonEmptyMap<?, ?> map -> map.size();
+            case NonEmptySortedMap<?, ?> map -> map.size();
+            default -> -1;
+        };
+    }
+
+    /// The sign of the number of elements of `iterator` minus `otherSize`, as -1, 0 or 1. It reads at most
+    /// `otherSize + 1` elements.
+    public static int sizeCompare(java.util.Iterator<?> iterator, int otherSize) {
+        if (otherSize < 0) {
+            return 1;
+        }
+        @SuppressWarnings("Var")
+        int count = 0;
+        while (iterator.hasNext()) {
+            if (count == otherSize) {
+                return 1;
+            }
+            iterator.next();
+            count++;
+        }
+        return count == otherSize ? 0 : -1;
+    }
+
+    /// The sign of the size of `self` minus the size of `that`, where `thisKnownSize` is the size of `self` if it
+    /// is stored, -1 otherwise: a stored size is compared with the other collection, which counts its elements only
+    /// up to it; when neither size is stored, the two are walked side by side until the shorter one ends.
+    public static int sizeCompare(Iterable<?> self, int thisKnownSize, Iterable<?> that) {
+        Objects.requireNonNull(that, "that is null");
+        int thatKnownSize = knownSize(that);
+        if (thatKnownSize >= 0) {
+            return sizeCompareWith(self, thatKnownSize);
+        } else if (thisKnownSize >= 0) {
+            return -sizeCompareWith(that, thisKnownSize);
+        } else {
+            java.util.Iterator<?> these = self.iterator();
+            java.util.Iterator<?> those = that.iterator();
+            while (these.hasNext() && those.hasNext()) {
+                these.next();
+                those.next();
+            }
+            return Boolean.compare(these.hasNext(), those.hasNext());
+        }
+    }
+
+    // the iterable's own sizeCompare where it has one, so that a List walks its cells and a LazyList its computed ones
+    private static int sizeCompareWith(Iterable<?> iterable, int otherSize) {
+        return switch (iterable) {
+            case Traversable<?> traversable -> traversable.sizeCompare(otherSize);
+            case NonEmptyVector<?> vector -> vector.sizeCompare(otherSize);
+            case NonEmptySet<?> set -> set.sizeCompare(otherSize);
+            case NonEmptySortedSet<?> set -> set.sizeCompare(otherSize);
+            case NonEmptyMap<?, ?> map -> map.sizeCompare(otherSize);
+            case NonEmptySortedMap<?, ?> map -> map.sizeCompare(otherSize);
+            default -> sizeCompare(iterable.iterator(), otherSize);
+        };
     }
 
     // hashes the elements respecting their order

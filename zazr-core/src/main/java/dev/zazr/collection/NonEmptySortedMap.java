@@ -715,6 +715,78 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
         return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
+    /**
+     * The entries grouped by the key {@code key} computes, each replaced in its group by what {@code value}
+     * returns; each group is a non-empty vector in this
+     * map's key order, as {@link TreeMap#groupMap} does.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per entry.
+     *
+     * @param key   the key of an entry
+     * @param value what an entry becomes in its group
+     * @param <K2>  the key type
+     * @param <U>   the type of the grouped values
+     * @return the groups, each non-empty, in a non-empty map
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K2 extends @Nullable Object, U extends @Nullable Object> NonEmptyMap<K2, NonEmptyVector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value) {
+        return NonEmptyModule.groupMap(
+                map,
+                key,
+                value,
+                values -> NonEmptyVector.unsafeFromVector(Vector.ofAll(values)),
+                "NonEmptySortedMap.groupMap");
+    }
+
+    /**
+     * The entries grouped by the key {@code key} computes, the values {@code value} returns for the entries of a
+     * group combined from the left with {@code reduce} in this map's key order, as {@link TreeMap#groupMapReduce} does.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per entry.
+     *
+     * @param key    the key of an entry
+     * @param value  what an entry contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next entry
+     * @param <K2>   the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key, in a non-empty map
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K2 extends @Nullable Object, U extends @Nullable Object> NonEmptyMap<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return NonEmptyModule.groupMapReduce(map, key, value, reduce, "NonEmptySortedMap.groupMapReduce");
+    }
+
+    /**
+     * Compares the size of this map with {@code otherSize}, as {@link TreeMap#sizeCompare(int)} does.
+     * <p>
+     * Complexity: O(1): the stored size is compared.
+     *
+     * @param otherSize the size to compare with; a negative one is smaller than every size
+     * @return -1, 0 or 1 as the size of this map is smaller than, equal to or greater than {@code otherSize}
+     */
+    public int sizeCompare(int otherSize) {
+        return map.sizeCompare(otherSize);
+    }
+
+    /**
+     * Compares the size of this map with the size of {@code that}, as {@link TreeMap#sizeCompare(Iterable)} does:
+     * a size that is not stored is counted only up to this one, and a one-shot {@code that} is iterated once.
+     * <p>
+     * Complexity: O(min(n, m)), at most; O(1) when the size of {@code that} is stored.
+     *
+     * @param that the collection whose size this one is compared with
+     * @return -1, 0 or 1 as the size of this map is smaller than, equal to or greater than the size of
+     *     {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int sizeCompare(Iterable<?> that) {
+        return map.sizeCompare(that);
+    }
+
     /* the plain operations that cannot empty a non-empty map return the same instance when nothing changes */
     private NonEmptySortedMap<K, V> wrap(TreeMap<K, V> result) {
         return result == map ? this : new NonEmptySortedMap<>(result);
