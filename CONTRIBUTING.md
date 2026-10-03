@@ -119,3 +119,5 @@ Only the maintainer cuts a release. A release is automatic once the GitHub relea
    [Maven Central](https://repo1.maven.org/maven2/dev/zazr/).
 4. Bump `main` to the next snapshot version
    (`./mvnw versions:set -DnewVersion=0.2.0-SNAPSHOT -DgenerateBackupPoms=false`) in a pull request.
+5. Update the [Roadmap](docs/roadmap.md) page in a pull request: drop the release that shipped from "Next releases",
+   and add the themes decided since.
