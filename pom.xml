@@ -372,6 +372,11 @@
                                          an earlier run, of code or tests that may have changed since, into the
                                          report. Safe with surefire's single fork per module. -->
                                     <append>false</append>
+                                    <!-- Only Zazr's classes carry probes: the reports cover nothing else, and
+                                         instrumenting AssertJ, JUnit and the other libraries slowed the tests down. -->
+                                    <includes>
+                                        <include>dev.zazr.*</include>
+                                    </includes>
                                 </configuration>
                             </execution>
                         </executions>

@@ -202,8 +202,9 @@ public class MapPutAllTest {
             java.util.List<Object[]> after = identities(receiver.plain().apply(built));
             assertThat(after).hasSameSizeAs(before);
             for (int i = 0; i < before.size(); i++) {
-                assertThat(after.get(i)[0]).isSameAs(before.get(i)[0]);
-                assertThat(after.get(i)[1]).isSameAs(before.get(i)[1]);
+                if (after.get(i)[0] != before.get(i)[0] || after.get(i)[1] != before.get(i)[1]) {
+                    throw new AssertionError(receiver.name() + ": the receiver's entry " + i + " changed");
+                }
             }
         }
         // the inputs are never changed: the lists hold the same objects
@@ -226,13 +227,14 @@ public class MapPutAllTest {
             actualIds.sort(byId);
             expectedIds.sort(byId);
         }
+        // a plain check per entry: no AssertJ assertion or description is built unless it fails
         for (int i = 0; i < expectedIds.size(); i++) {
-            assertThat(actualIds.get(i)[0])
-                    .as(scenario + " key " + i)
-                    .isSameAs(expectedIds.get(i)[0]);
-            assertThat(actualIds.get(i)[1])
-                    .as(scenario + " value " + i)
-                    .isSameAs(expectedIds.get(i)[1]);
+            if (actualIds.get(i)[0] != expectedIds.get(i)[0]) {
+                throw new AssertionError(scenario + ": key " + i + " is not the expected instance");
+            }
+            if (actualIds.get(i)[1] != expectedIds.get(i)[1]) {
+                throw new AssertionError(scenario + ": value " + i + " is not the expected instance");
+            }
         }
     }
 
