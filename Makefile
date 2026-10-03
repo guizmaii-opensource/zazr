@@ -16,8 +16,10 @@ help: ## list the targets
 clean: ## delete target/ and the generated sources
 	$(MVN) clean
 
-generate: ## regenerate src-gen from generator/Generator.scala
-	$(MVN) generate-sources
+# compile, not generate-sources: zazr-test's generator needs zazr-core on its classpath, and Maven takes it from the
+# reactor only once zazr-core has reached the compile phase; before that it looks in the local and remote repositories.
+generate: ## regenerate src-gen from generator/Generator.scala (compiles the main sources too)
+	$(MVN) compile -Dspotless.check.skip=true
 
 compile: ## compile main sources (runs the generator first)
 	$(MVN) compile
@@ -28,9 +30,15 @@ test-compile: ## compile main and test sources
 test: ## run the whole test suite
 	$(MVN) test
 
-test-one: ## run one test class or method: make test-one TEST=VectorTest [MODULE=zazr-core]  |  TEST='VectorTest#shouldAppend*'
-	@test -n "$(TEST)" || { echo "usage: make test-one TEST=ClassName[#method] [MODULE=zazr-core]"; exit 1; }
+# Surefire's failIfNoSpecifiedTests=false lets the modules without a matching test pass; the reports are deleted first
+# and counted after, so the target fails when no test ran at all. Make expands `$`: a nested class is written `$$`.
+test-one: ## run one test class or method, fail if none ran: make test-one TEST=VectorTest [MODULE=zazr-core]  |  TEST='VectorTest#shouldAppend*'  |  TEST='DocsExamplesTest$$ValidationPage'
+	@test -n "$(TEST)" || { echo 'usage: make test-one TEST=ClassName[#method] [MODULE=zazr-core]; a nested class is Outer$$$$Inner'; exit 1; }
+	rm -rf */target/surefire-reports
 	$(MVN) $(PL) test -Dtest='$(TEST)' -Dsurefire.failIfNoSpecifiedTests=false
+	@ran=$$(cat */target/surefire-reports/TEST-*.xml 2>/dev/null | grep -c '<testcase '); \
+	echo "test-one: $$ran test(s) ran for TEST="'$(TEST)'; \
+	test "$$ran" -gt 0 || { echo 'no test matched TEST=$(TEST) (a nested class is written Outer$$$$Inner)'; exit 1; }
 
 package: ## build the jars (runs tests)
 	$(MVN) package

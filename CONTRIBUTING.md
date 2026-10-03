@@ -26,6 +26,7 @@ You need JDK 25 or later. Everything goes through the Makefile; `make help` list
 ```bash
 make verify                                   # what CI runs: tests, formatting, nullness and the checks below
 make test-one TEST=VectorTest MODULE=zazr-core
+make test-one TEST='DocsExamplesTest$$ValidationPage'  # a nested class: Make needs the $ doubled
 make fmt                                      # format the sources (Palantir Java Format)
 make site-serve                               # preview the website at http://127.0.0.1:8000/
 make coverage                                 # test coverage report, in zazr-test/target/site/jacoco-aggregate
