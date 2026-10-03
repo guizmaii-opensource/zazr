@@ -357,44 +357,64 @@ class LazyListLazinessTest {
         assertThat(new java.util.HashSet<>(seen)).hasSize(1);
     }
 
+    // The lists the concurrent toString test reads: a cycle, a cycle behind two cells, and a list with no cycle.
+    private static final java.util.List<java.util.function.Supplier<LazyList<Integer>>> SHOWN_WHILE_EVALUATED =
+            java.util.List.of(
+                    () -> LazyList.range(0, 50).cycle(),
+                    () -> LazyList.range(0, 50).cycle().prepend(-2).prepend(-1),
+                    () -> LazyList.range(0, 50));
+
     @Test
-    void toStringShowsAnEvaluatedPrefixWhileOtherThreadsEvaluateACycle() throws Exception {
-        int length = 50;
-        Vector<String> elements = Vector.range(0, length).map(String::valueOf);
-        java.util.Set<String> possible = new java.util.HashSet<>();
-        possible.add("LazyList(<not computed>)");
-        for (int n = 1; n <= length; n++) {
-            possible.add(elements.take(n).append("<not computed>").mkString("LazyList(", ", ", ")"));
+    @org.junit.jupiter.api.Timeout(120)
+    void toStringShowsAnEvaluatedPrefixWhileOtherThreadsEvaluateTheList() throws Exception {
+        int depth = 160;
+        java.util.List<java.util.Set<String>> possible = new ArrayList<>();
+        for (var list : SHOWN_WHILE_EVALUATED) {
+            // every text one thread sees while it evaluates the list cell by cell
+            java.util.Set<String> texts = new java.util.HashSet<>();
+            for (int n = 0; n <= depth; n++) {
+                LazyList<Integer> read = list.get();
+                read.take(n).size();
+                texts.add(read.toString());
+            }
+            possible.add(texts);
         }
-        String cycle = elements.append("<cycle>").mkString("LazyList(", ", ", ")");
-        possible.add(cycle);
-        for (int round = 0; round < 20; round++) {
-            LazyList<Integer> cyclic = LazyList.range(0, length).cycle();
+        java.util.List<String> last = java.util.List.of(
+                Vector.range(0, 50).mkString("LazyList(", ", ", ", <cycle>)"),
+                Vector.of(-1, -2).appendAll(Vector.range(0, 50)).mkString("LazyList(", ", ", ", <cycle>)"),
+                Vector.range(0, 50).mkString("LazyList(", ", ", ")"));
+        for (int kind = 0; kind < last.size(); kind++) {
+            assertThat(possible.get(kind)).contains(last.get(kind));
+        }
+        // Platform threads and no yield, so that a toString runs while another thread evaluates the cell it reads.
+        // A round that does not end within its timeout fails the test instead of hanging the build.
+        for (int round = 0; round < 5000; round++) {
+            int kind = round % SHOWN_WHILE_EVALUATED.size();
+            LazyList<Integer> list = SHOWN_WHILE_EVALUATED.get(kind).get();
             CountDownLatch start = new CountDownLatch(1);
-            // the distinct texts shown: at most the states above, so it stays small whatever the scheduling
             java.util.Set<String> shown = java.util.concurrent.ConcurrentHashMap.newKeySet();
             java.util.List<Thread> started = new ArrayList<>();
             for (int i = 0; i < 4; i++) {
-                started.add(Thread.ofVirtual().start(() -> {
+                started.add(Thread.ofPlatform().daemon().start(() -> {
                     awaitQuietly(start);
-                    cyclic.take(3 * length).toVector();
+                    list.take(depth).size();
                 }));
-                // a fixed number of calls, yielding between them so the readers run on a machine with few cores
-                started.add(Thread.ofVirtual().start(() -> {
+                started.add(Thread.ofPlatform().daemon().start(() -> {
                     awaitQuietly(start);
-                    for (int call = 0; call < 200; call++) {
-                        shown.add(cyclic.toString());
-                        Thread.yield();
+                    for (int call = 0; call < 20; call++) {
+                        shown.add(list.toString());
                     }
                 }));
             }
             start.countDown();
             for (Thread thread : started) {
-                thread.join();
+                thread.join(java.time.Duration.ofSeconds(10));
+                assertThat(thread.isAlive())
+                        .as("round %d still running after 10 s", round)
+                        .isFalse();
             }
-            assertThat(shown).isNotEmpty();
-            assertThat(possible).containsAll(shown);
-            assertThat(cyclic.toString()).isEqualTo(cycle);
+            assertThat(possible.get(kind)).as("round %d", round).containsAll(shown);
+            assertThat(list.toString()).isEqualTo(last.get(kind));
         }
     }
 

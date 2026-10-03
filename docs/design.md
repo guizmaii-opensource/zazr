@@ -1374,8 +1374,8 @@ element-first and forward, though its javadoc said right-to-left. There is now o
 infinite generator is fine. The type parameters are `<A, S>`, Scala's order. A null from `f` is rejected by name
 (`<Type>.unfold: f returned null`), on `LazyList` when the list reaches it; a null element as any null element.
 
-**2026-10-03, #206 and #213 (for the maintainer to confirm on the pull request): `LazyList.toString` is Scala's,
-cycles included; the messages say `LazyList`.** `toString` follows Scala's `addStringNoForce`: the evaluated
+**Decided 2026-10-03, #206 and #213 (coordinator decision; the maintainer may overrule): `LazyList.toString` is
+Scala's, cycles included; the messages say `LazyList`.** `toString` follows Scala's `addStringNoForce`: the evaluated
 elements, then `<not computed>` where the list is not evaluated (Scala's text, replacing the `?` of the rename entry
 above, and also used for a cell whose evaluation failed), or `<cycle>` where the evaluated cells loop back, found with
 Floyd's two cursors, so it evaluates nothing and returns on `cycle()`, `appendSelf` and a self-referencing `cons`. It
