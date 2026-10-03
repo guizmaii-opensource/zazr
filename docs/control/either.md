@@ -61,14 +61,15 @@ var total = Either.<String, Integer>right(2)
 ### Rejecting a value
 
 `filterOrElse` turns a `Right` that fails a test into a `Left`, built from the rejected value. `flip` swaps the two
-sides.
+sides. When both sides have the same type, `Either.merge` gives the value of whichever side is present.
 
 ```java
 var adult = Either.<String, Integer>right(15)
     .filterOrElse(n -> n >= 18, n -> n + " is under 18"); // Either<String, Integer>
 var message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n);  // String
 var flipped = adult.flip();                                                      // Either<Integer, String>
-// Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18)
+var merged  = Either.merge(adult.map(n -> "accepted: " + n));                    // String
+// Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18), "15 is under 18"
 ```
 
 ### Other members
