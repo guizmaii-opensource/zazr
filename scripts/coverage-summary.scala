@@ -4,10 +4,12 @@
 // Prints the line and branch coverage of the last `make coverage` as Markdown: one table per module, one per package,
 // and the ten source files with the most missed lines. CI appends the output to the job summary.
 //
-//   scala-cli run scripts/coverage-summary.scala -- zazr-test/target/site/jacoco-aggregate/jacoco.xml
+//   scala-cli run scripts/coverage-summary.scala -- zazr-test/target/site/jacoco-aggregate/jacoco.xml \
+//     zazr-avaje-jsonb/target/site/jacoco/jacoco.xml
 //
-// The input is the XML report of JaCoCo's report-aggregate goal: a group per module, holding its packages, each holding
-// its classes and source files, and every element carries its own counters. The numbers are those counters, never
+// Each input is an XML report of JaCoCo: of its report-aggregate goal, a group per module, holding its packages, each
+// holding its classes and source files; or of its report goal, the packages of one module, named by the report. Every
+// element carries its own counters. The numbers are those counters, never
 // sums of the class counters: JaCoCo counts lines per class, so a line holding code of a method and of an anonymous
 // or lambda class counts once in each class but once in its source file, package, group and report. The source file
 // is also the page a reader opens in the HTML report, and its counters are the ones that page shows.
@@ -58,18 +60,26 @@ def counts(element: Element): Counts = {
   Counts(lm, lc, bm, bc)
 }
 
-@main def coverageSummary(xml: String): Unit = {
-  val path = Path.of(xml)
-  if (!Files.isRegularFile(path)) {
-    System.err.println(s"$xml not found: run make coverage first")
-    sys.exit(1)
-  }
+@main def coverageSummary(xmls: String*): Unit = {
   val factory = DocumentBuilderFactory.newInstance()
   // jacoco.xml declares a DOCTYPE whose report.dtd is not next to it.
   factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-  val report = factory.newDocumentBuilder().parse(path.toFile).getDocumentElement
+  val reports = xmls.map { xml =>
+    val path = Path.of(xml)
+    if (!Files.isRegularFile(path)) {
+      System.err.println(s"$xml not found: run make coverage first")
+      sys.exit(1)
+    }
+    factory.newDocumentBuilder().parse(path.toFile).getDocumentElement
+  }
 
-  val modules = children(report, "group")
+  // a report of one module has no group: the report is the module
+  val modules = reports.flatMap { report =>
+    children(report, "group") match {
+      case Seq() => Seq(report)
+      case groups => groups
+    }
+  }
   val packages = for {
     module <- modules
     pkg <- children(module, "package")
@@ -78,12 +88,16 @@ def counts(element: Element): Counts = {
     (_, pkgName, pkg) <- packages
     file <- children(pkg, "sourcefile")
   } yield s"$pkgName.${file.getAttribute("name").stripSuffix(".java")}" -> counts(file)
+  val total = reports.map(counts).reduce { (a, b) =>
+    Counts(a.lineMissed + b.lineMissed, a.lineCovered + b.lineCovered, a.branchMissed + b.branchMissed,
+      a.branchCovered + b.branchCovered)
+  }
 
   println("## Test coverage")
   println()
   table(
     "Module",
-    modules.map(m => m.getAttribute("name") -> counts(m)).sortBy(_._1) :+ ("total" -> counts(report))
+    modules.map(m => m.getAttribute("name") -> counts(m)).sortBy(_._1) :+ ("total" -> total)
   )
   table(
     "Package (least covered lines first)",

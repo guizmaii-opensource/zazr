@@ -51,7 +51,7 @@ verify: ## what CI runs: full build with tests, formatting, nullness, reassignme
 	$(MAKE) blog-check
 
 vocabulary: ## fail on category-theory vocabulary in the code, the site and the skill (not docs/design.md) (CLAUDE.md: use the ZIO names)
-	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark docs skills ':!docs/design.md')"; \
+	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark zazr-avaje-jsonb docs skills ':!docs/design.md')"; \
 	if [ -n "$$hits" ]; then echo "$$hits"; echo "category-theory vocabulary found; use the ZIO names (see CLAUDE.md)"; exit 1; fi
 
 # The files whose positional and size-sensitive methods must document their cost (design.md 3.7), and the
@@ -83,7 +83,8 @@ DOCS_EXAMPLES_TESTS := \
 	zazr-core/src/test/java/dev/zazr/docs/DocsExamplesTest.java \
 	zazr-core/src/test/java/dev/zazr/docs/SkillExamplesTest.java \
 	zazr-core/src/test/java/dev/zazr/docs/SkillFunctionalJavaExamplesTest.java \
-	zazr-test/src/test/java/dev/zazr/test/docs/DocsTestingExamplesTest.java
+	zazr-test/src/test/java/dev/zazr/test/docs/DocsTestingExamplesTest.java \
+	zazr-avaje-jsonb/src/test/java/dev/zazr/avaje/jsonb/docs/DocsAvajeJsonbExamplesTest.java
 
 docs-examples: ## fail when a java block of the site or the skill is not in a docs example test (they compile and run every snippet)
 	@scala-cli run scripts/check-docs-examples.scala -- --docs docs --docs skills --exclude docs/design.md $(DOCS_EXAMPLES_TESTS)
@@ -124,7 +125,7 @@ fmt: ## format the sources with the Palantir Java Format (spotless apply)
 fmt-check: ## fail if sources are not formatted with the Palantir Java Format (spotless check)
 	$(MVN) spotless:check
 
-nullness: ## NullAway / JSpecify nullness check of zazr-core's main sources (classes in zazr-core/target/nullaway)
+nullness: ## NullAway / JSpecify nullness check of the main sources of zazr-core and zazr-avaje-jsonb (classes in <module>/target/nullaway)
 	$(MVN) -Pnullaway compile
 
 reassignment: ## fail when a local variable or a parameter is assigned after its declaration (Error Prone Var, main and test sources)
@@ -133,13 +134,14 @@ reassignment: ## fail when a local variable or a parameter is assigned after its
 bench: ## run the JMH benchmarks (dev.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
-# zazr-benchmark has no tests and stays out of the report.
+# zazr-benchmark has no tests and stays out of the report. zazr-avaje-jsonb has its own report and threshold.
 COVERAGE_REPORT := zazr-test/target/site/jacoco-aggregate
+COVERAGE_AVAJE_JSONB := zazr-avaje-jsonb/target/site/jacoco
 
-coverage: ## test coverage of zazr-core and zazr-test (JaCoCo): HTML report in zazr-test/target/site/jacoco-aggregate, then coverage-check
-	$(MVN) -Pcoverage -pl zazr-core,zazr-test test
+coverage: ## test coverage of zazr-core and zazr-test, then of zazr-avaje-jsonb (JaCoCo, HTML reports), then coverage-check
+	$(MVN) -Pcoverage -pl zazr-core,zazr-test,zazr-avaje-jsonb test
 	@$(MAKE) --no-print-directory coverage-summary
-	@echo "HTML report: $(COVERAGE_REPORT)/index.html"
+	@echo "HTML reports: $(COVERAGE_REPORT)/index.html $(COVERAGE_AVAJE_JSONB)/index.html"
 	@$(MAKE) --no-print-directory coverage-check
 
 # The check reads the execution data and the classes of the last make coverage. JaCoCo skips a merge whose data is
@@ -155,12 +157,12 @@ coverage-check: ## fail when zazr-core is below 95 % of lines or 95 % of branche
 	$(MVN) -Pcoverage -pl zazr-core jacoco:merge@coverage-merge jacoco:check@coverage-check
 
 coverage-summary: ## print the line and branch coverage per module and package of the last make coverage, in Markdown
-	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml
+	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml $(COVERAGE_AVAJE_JSONB)/jacoco.xml
 
 # javadoc-no-fork after compile, not javadoc:javadoc: the forked lifecycle of javadoc:javadoc stops at generate-sources,
 # so on a fresh checkout the plugin finds no module-info.class in zazr-core and refuses the named module.
 # Output: <module>/target/reports/apidocs, emptied first (clean-apidocs in pom.xml) so a dropped class loses its pages.
-javadoc: ## build the javadoc of zazr-core and zazr-test (doclint: fails on a broken reference or malformed tag)
+javadoc: ## build the javadoc of zazr-core, zazr-test and zazr-avaje-jsonb (doclint: fails on a broken reference or malformed tag)
 	$(MVN) compile clean:clean@clean-apidocs javadoc:javadoc-no-fork
 
 deps-updates: ## list newer versions of dependencies and plugins

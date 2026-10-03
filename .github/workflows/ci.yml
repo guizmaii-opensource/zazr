@@ -155,7 +155,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report
-          path: zazr-test/target/site/jacoco-aggregate
+          path: |
+            zazr-test/target/site/jacoco-aggregate
+            zazr-avaje-jsonb/target/site/jacoco
           if-no-files-found: error
 
   nullness:
