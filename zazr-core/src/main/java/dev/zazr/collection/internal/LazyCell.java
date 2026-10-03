@@ -265,6 +265,9 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
             ended = !knownNonEmpty(scout);
             if (!ended) {
                 scout = tailOf(scout);
+                // Each state is read once: a cell another thread evaluates after the scout stopped at it is not
+                // stepped over later, so the scout is always twice as far as the cursor, which the search for the
+                // start of a loop below needs to end.
                 while (cursor != scout) {
                     if (!knownNonEmpty(scout)) {
                         ended = true;
@@ -273,9 +276,11 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
                     builder.append(", ").append(headOf(cursor));
                     cursor = tailOf(cursor);
                     scout = tailOf(scout);
-                    if (knownNonEmpty(scout)) {
-                        scout = tailOf(scout);
+                    if (!knownNonEmpty(scout)) {
+                        ended = true;
+                        break;
                     }
+                    scout = tailOf(scout);
                 }
             }
         }
