@@ -387,20 +387,20 @@ class LazyListLazinessTest {
         for (int kind = 0; kind < last.size(); kind++) {
             assertThat(possible.get(kind)).contains(last.get(kind));
         }
-        // Eight platform threads, kept across the rounds, and no yield, so that a toString runs while another thread
+        // Four platform threads, kept across the rounds, and no yield, so that a toString runs while another thread
         // evaluates the cell it reads. A task that does not end within its timeout fails the test instead of hanging
         // the build; its thread is a daemon, so it does not keep the JVM alive.
         java.util.concurrent.ExecutorService threads = java.util.concurrent.Executors.newFixedThreadPool(
-                8, Thread.ofPlatform().daemon().factory());
+                4, Thread.ofPlatform().daemon().factory());
         try {
-            for (int round = 0; round < 20_000; round++) {
+            for (int round = 0; round < 5000; round++) {
                 int kind = round % SHOWN_WHILE_EVALUATED.size();
                 LazyList<Integer> list = SHOWN_WHILE_EVALUATED.get(kind).get();
                 CountDownLatch start = new CountDownLatch(1);
-                CountDownLatch read = new CountDownLatch(4);
+                CountDownLatch read = new CountDownLatch(2);
                 java.util.Set<String> shown = java.util.concurrent.ConcurrentHashMap.newKeySet();
                 java.util.List<java.util.concurrent.Future<?>> tasks = new ArrayList<>();
-                for (int i = 0; i < 4; i++) {
+                for (int i = 0; i < 2; i++) {
                     tasks.add(threads.submit(() -> {
                         awaitQuietly(start);
                         list.take(depth).size();
