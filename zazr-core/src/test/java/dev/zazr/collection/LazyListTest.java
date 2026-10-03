@@ -785,7 +785,7 @@ public class LazyListTest extends AbstractTraversableTest {
     @Disabled
     @Test
     public void shouldReturnSameInstanceIfTakeAll() {
-        // the size of a possibly infinite stream is unknown
+        // the size of a possibly infinite LazyList is unknown
     }
 
     @Nested
@@ -807,16 +807,16 @@ public class LazyListTest extends AbstractTraversableTest {
     @Test
     public void shouldStringifyNonNil() {
         LazyList<Integer> list = of(1, 2, 3);
-        assertThat(list.toString()).isEqualTo("LazyList(?)");
+        assertThat(list.toString()).isEqualTo("LazyList(<not computed>)");
         list.head(); // evaluates the first cell
-        assertThat(list.toString()).isEqualTo("LazyList(1, ?)");
+        assertThat(list.toString()).isEqualTo("LazyList(1, <not computed>)");
     }
 
     @Test
     public void shouldStringifyNonNilEvaluatingFirstTail() {
         LazyList<Integer> stream = this.of(1, 2, 3);
         stream.tail().head(); // evaluates the first two cells
-        assertThat(stream.toString()).isEqualTo("LazyList(1, 2, ?)");
+        assertThat(stream.toString()).isEqualTo("LazyList(1, 2, <not computed>)");
     }
 
     @Test
@@ -824,6 +824,224 @@ public class LazyListTest extends AbstractTraversableTest {
         LazyList<Integer> stream = this.of(1);
         stream.tail(); // evaluates empty tail
         assertThat(stream.toString()).isEqualTo("LazyList(1)");
+    }
+
+    @Nested
+    class ToStringTests {
+
+        // a list whose cells, once evaluated, loop back to its first cell: each cell links straight to the next one,
+        // with no copy of a cell closing the loop
+        @SafeVarargs
+        private static <T> LazyList<T> loop(T... elements) {
+            return loop(Vector.of(elements));
+        }
+
+        private static <T> LazyList<T> loop(Vector<T> elements) {
+            @SuppressWarnings("unchecked")
+            LazyList<T>[] self = new LazyList[1];
+            self[0] = LazyList.defer(() -> elements.foldRight(self[0], (e, list) -> list.prepend(e)));
+            return self[0];
+        }
+
+        // the first n elements of list, evaluated
+        private static <T> LazyList<T> read(LazyList<T> list, int n) {
+            list.take(n).size();
+            return list;
+        }
+
+        private static String shown(Vector<String> parts) {
+            return parts.mkString("LazyList(", ", ", ")");
+        }
+
+        @Test
+        void showsAFiniteListAsItIsEvaluated() {
+            LazyList<Integer> list = LazyList.of(1, 2, 3);
+            assertThat(list.toString()).isEqualTo("LazyList(<not computed>)");
+            read(list, 1);
+            assertThat(list.toString()).isEqualTo("LazyList(1, <not computed>)");
+            read(list, 2);
+            assertThat(list.toString()).isEqualTo("LazyList(1, 2, <not computed>)");
+            read(list, 3);
+            assertThat(list.toString()).isEqualTo("LazyList(1, 2, 3, <not computed>)");
+            list.size();
+            assertThat(list.toString()).isEqualTo("LazyList(1, 2, 3)");
+        }
+
+        @Test
+        void showsEveryLengthEvaluatedOrNot() {
+            // odd and even lengths: the scout stops at the end on either of its two steps
+            for (int n = 1; n <= 12; n++) {
+                for (int evaluated = 0; evaluated <= n; evaluated++) {
+                    LazyList<Integer> list = read(LazyList.range(0, n), evaluated);
+                    Vector<String> elements = Vector.range(0, evaluated).map(String::valueOf);
+                    String expected =
+                            evaluated == 0 ? "LazyList(<not computed>)" : shown(elements.append("<not computed>"));
+                    assertThat(list.toString()).as("%d of %d", evaluated, n).isEqualTo(expected);
+                }
+                LazyList<Integer> whole = LazyList.range(0, n);
+                whole.size();
+                assertThat(whole.toString()).isEqualTo(LazyList.range(0, n).mkString("LazyList(", ", ", ")"));
+            }
+        }
+
+        @Test
+        void showsTheEmptyList() {
+            assertThat(LazyList.empty().toString()).isEqualTo("LazyList()");
+            LazyList<Integer> deferred = LazyList.defer(LazyList::empty);
+            assertThat(deferred.toString()).isEqualTo("LazyList(<not computed>)");
+            assertThat(deferred.isEmpty()).isTrue();
+            assertThat(deferred.toString()).isEqualTo("LazyList()");
+        }
+
+        @Test
+        void showsTheEvaluatedPrefixOfAnInfiniteList() {
+            assertThat(read(LazyList.from(1), 5).toString()).isEqualTo("LazyList(1, 2, 3, 4, 5, <not computed>)");
+            AtomicInteger next = new AtomicInteger();
+            LazyList<Integer> continually = read(LazyList.continually(next::incrementAndGet), 4);
+            assertThat(continually.toString()).isEqualTo("LazyList(1, 2, 3, 4, <not computed>)");
+            assertThat(read(LazyList.iterate(1, i -> i * 2), 3).toString())
+                    .isEqualTo("LazyList(1, 2, 4, <not computed>)");
+        }
+
+        @Test
+        void showsACycleAsTheIssueReportsIt() {
+            LazyList<Integer> cyclic = LazyList.of(1, 2, 3).cycle();
+            cyclic.drop(5).head();
+            assertThat(cyclic.toString()).isEqualTo("LazyList(1, 2, 3, <cycle>)");
+        }
+
+        @Test
+        void showsACycleOnceItIsClosed() {
+            LazyList<Integer> cyclic = LazyList.of(1, 2, 3).cycle();
+            assertThat(cyclic.toString()).isEqualTo("LazyList(<not computed>)");
+            read(cyclic, 2);
+            assertThat(cyclic.toString()).isEqualTo("LazyList(1, 2, <not computed>)");
+            read(cyclic, 3);
+            assertThat(cyclic.toString()).isEqualTo("LazyList(1, 2, 3, <not computed>)");
+            read(cyclic, 4);
+            assertThat(cyclic.toString()).isEqualTo("LazyList(1, 2, 3, <cycle>)");
+        }
+
+        @Test
+        void showsCyclesOfLengthOneAndTwo() {
+            assertThat(read(LazyList.of(1).cycle(), 3).toString()).isEqualTo("LazyList(1, <cycle>)");
+            assertThat(read(LazyList.of(1, 2).cycle(), 5).toString()).isEqualTo("LazyList(1, 2, <cycle>)");
+            assertThat(read(loop(1), 1).toString()).isEqualTo("LazyList(1, <cycle>)");
+            assertThat(read(loop(1, 2), 2).toString()).isEqualTo("LazyList(1, 2, <cycle>)");
+            assertThat(read(LazyList.continually(7).take(1).cycle(), 3).toString())
+                    .isEqualTo("LazyList(7, <cycle>)");
+        }
+
+        @Test
+        void showsASelfReferencingCons() {
+            @SuppressWarnings("unchecked")
+            LazyList<Integer>[] self = new LazyList[1];
+            self[0] = LazyList.cons(1, () -> self[0]);
+            assertThat(self[0].toString()).isEqualTo("LazyList(1, <not computed>)");
+            read(self[0], 3);
+            assertThat(self[0].toString()).isEqualTo("LazyList(1, <cycle>)");
+        }
+
+        @Test
+        void showsAppendSelf() {
+            LazyList<Integer> cyclic = read(LazyList.of(1, 2, 3).appendSelf(s -> s), 10);
+            assertThat(cyclic.toString()).isEqualTo("LazyList(1, 2, 3, <cycle>)");
+            // 1, 2, 3, then 2, 3 again and again: the loop is 2, 3
+            LazyList<Integer> fromSecond = read(LazyList.of(1, 2, 3).appendSelf(LazyList::tail), 10);
+            assertThat(fromSecond.toString()).isEqualTo("LazyList(1, 2, 3, <cycle>)");
+            assertThat(fromSecond.take(7)).isEqualTo(LazyList.of(1, 2, 3, 2, 3, 2, 3));
+        }
+
+        @Test
+        void showsCyclesOfManyLengthsAfterPrefixesOfManyLengths() {
+            for (int length = 1; length <= 20; length++) {
+                for (int prefix = 0; prefix <= 20; prefix++) {
+                    Vector<String> cycle = Vector.range(0, length).map(i -> "c" + i);
+                    Vector<String> before = Vector.range(0, prefix).map(i -> "p" + i);
+                    String expected = shown(before.appendAll(cycle).append("<cycle>"));
+                    // a loop closed by a straight link back, behind prefix cells that each link to the next
+                    LazyList<String> straight = before.foldRight(loop(cycle), (e, l) -> l.prepend(e));
+                    assertThat(read(straight, 2 * (prefix + length) + 2).toString())
+                            .as("straight loop of %d after %d", length, prefix)
+                            .isEqualTo(expected);
+                    // a loop closed by a copy of its first cell, as cycle() builds it, appended to a prefix
+                    LazyList<String> copied = LazyList.ofAll(before)
+                            .appendAll(LazyList.ofAll(cycle).cycle());
+                    assertThat(read(copied, 2 * (prefix + length) + 2).toString())
+                            .as("cycle() of %d after %d", length, prefix)
+                            .isEqualTo(expected);
+                }
+            }
+        }
+
+        @Test
+        void keepsTheLastCellOfALoopThatLinksStraightBack() {
+            // 9, then 1, 0 again and again: the loop starts at the second cell and its last cell links straight back
+            LazyList<Integer> list = read(loop(1, 0).prepend(9), 6);
+            assertThat(list.toString()).isEqualTo("LazyList(9, 1, 0, <cycle>)");
+        }
+
+        @Test
+        void leavesOutTheLastCellOfALoopWhenItShowsTheSameElements() {
+            // a, then b, a again and again: the same elements as a, b again and again
+            String a = "a";
+            LazyList<String> list = read(loop("b", a).prepend(a), 6);
+            assertThat(list.toString()).isEqualTo("LazyList(a, b, <cycle>)");
+        }
+
+        @Test
+        void keepsTheLastCellOfALoopWhenItsHeadIsOnlyEqual() {
+            // a, then b, a again and again: the last head of the loop equals the head before it, but is another
+            // object, so the cell is kept and equals is never called
+            LazyList<String> list = read(loop("b", new String("a")).prepend("a"), 6);
+            assertThat(list.toString()).isEqualTo("LazyList(a, b, a, <cycle>)");
+        }
+
+        @Test
+        void showsAFailedCellAsNotComputed() {
+            @SuppressWarnings("unchecked")
+            LazyList<Integer>[] self = new LazyList[1];
+            self[0] = LazyList.defer(() -> self[0]);
+            assertThatThrownBy(() -> self[0].isEmpty()).isInstanceOf(IllegalStateException.class);
+            assertThat(self[0].toString()).isEqualTo("LazyList(<not computed>)");
+            LazyList<Integer> failedTail = LazyList.cons(1, () -> {
+                throw new IllegalArgumentException("boom");
+            });
+            assertThatThrownBy(() -> failedTail.tail().isEmpty()).isInstanceOf(IllegalArgumentException.class);
+            assertThat(failedTail.toString()).isEqualTo("LazyList(1, <not computed>)");
+        }
+
+        @Test
+        void evaluatesNothing() {
+            AtomicInteger computed = new AtomicInteger();
+            LazyList<Integer> counted = LazyList.continually(computed::incrementAndGet);
+            LazyList<Integer> cyclic = counted.take(3).cycle();
+            LazyList<Integer> mapped = cyclic.map(i -> i * 10);
+            for (int reads = 0; reads <= 8; reads++) {
+                read(mapped, reads);
+                int before = computed.get();
+                String unused = mapped.toString() + cyclic.toString() + counted.toString();
+                assertThat(unused).isNotEmpty();
+                assertThat(computed.get()).as("after %d reads", reads).isEqualTo(before);
+            }
+            assertThat(cyclic.toString()).isEqualTo("LazyList(1, 2, 3, <cycle>)");
+            assertThat(counted.toString()).isEqualTo("LazyList(1, 2, 3, <not computed>)");
+            assertThat(computed.get()).isEqualTo(3);
+        }
+    }
+
+    @Test
+    public void shouldNameLazyListInTheMessagesOfAnEmptyList() {
+        LazyList<Integer> empty = LazyList.defer(LazyList::empty);
+        assertThatThrownBy(empty::head)
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("head of empty LazyList");
+        assertThatThrownBy(empty::tail)
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage("tail of empty LazyList");
+        assertThatThrownBy(empty::init)
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessage("init of empty LazyList");
     }
 
     @Nested
@@ -6913,7 +7131,7 @@ public class LazyListTest extends AbstractTraversableTest {
             }
         }
 
-        /** Reads the stream (and the streams in it) to the end: the elements read, then what stopped the walk. */
+        /** Reads the LazyList (and the LazyLists in it) to the end: the elements read, then what stopped the walk. */
         private Tuple2<Vector<Object>, Throwable> walk(LazyList<?> stream) {
             java.util.List<Object> read = new ArrayList<>();
             try {
@@ -7108,7 +7326,7 @@ public class LazyListTest extends AbstractTraversableTest {
             });
             LazyList<Integer> tail = stream.tail();
             assertThatThrownBy(tail::isEmpty).isInstanceOf(StackOverflowError.class);
-            assertThat(stream.toString()).isEqualTo("LazyList(1, ?)");
+            assertThat(stream.toString()).isEqualTo("LazyList(1, <not computed>)");
             assertThat(tail).isEqualTo(LazyList.of(2));
             assertThat(stream.tail()).isSameAs(stream.tail());
             assertThat(calls.get()).isEqualTo(2);
@@ -7148,7 +7366,7 @@ public class LazyListTest extends AbstractTraversableTest {
         public void toStringShowsAFailedTailAsNotComputed() {
             LazyList<Integer> stream = LazyList.ofAll(() -> new FailingSource(3));
             walk(stream);
-            assertThat(stream.toString()).isEqualTo("LazyList(0, 1, ?)");
+            assertThat(stream.toString()).isEqualTo("LazyList(0, 1, <not computed>)");
         }
 
         @Test

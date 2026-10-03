@@ -35,6 +35,12 @@ jobs:
           directory: 'zazr-core/target'
           java-version: '25'
 
+      - name: Verify the zazr-jackson jar
+        uses: pivovarit/verify-jar-action@v1.4.0
+        with:
+          directory: 'zazr-jackson/target'
+          java-version: '25'
+
   javadoc:
     runs-on: ubuntu-latest
     name: Javadoc (doclint)
@@ -150,13 +156,14 @@ jobs:
           else
             gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$body" > /dev/null
           fi
-      - name: Upload the HTML report
+      - name: Upload the HTML reports
         if: success() || failure()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: |
             zazr-test/target/site/jacoco-aggregate
+            zazr-jackson/target/site/jacoco
             zazr-avaje-jsonb/target/site/jacoco
           if-no-files-found: error
 

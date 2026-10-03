@@ -194,7 +194,7 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
     @Override
     public final T head() {
         if (force() == EMPTY) {
-            throw new NoSuchElementException("head of empty stream");
+            throw new NoSuchElementException("head of empty LazyList");
         }
         return evaluatedHead();
     }
@@ -202,7 +202,7 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
     @Override
     public final LazyList<T> tail() {
         if (force() == EMPTY) {
-            throw new UnsupportedOperationException("tail of empty stream");
+            throw new UnsupportedOperationException("tail of empty LazyList");
         }
         return evaluatedTail();
     }
@@ -232,27 +232,104 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
         return Collections.hashOrdered(this);
     }
 
-    /// The elements already evaluated, and `?` where the list is not evaluated yet (or its evaluation failed): nothing
-    /// is evaluated.
+    /// The elements already evaluated, then `<not computed>` where the list is not evaluated yet (or its
+    /// evaluation failed), or `<cycle>` where the evaluated cells link back to one already shown: nothing is
+    /// evaluated. It shows the cells already evaluated when it reaches them, so it returns on a cyclic or an
+    /// infinite list too, unless another thread keeps evaluating further cells while it runs.
+    ///
+    /// Ported from `addStringNoForce` of the `LazyList` of the Scala 2.13 collections library, which Scala 3
+    /// uses unchanged:
+    /// [source](https://github.com/scala/scala/blob/2.13.x/src/library/scala/collection/immutable/LazyList.scala).
+    /// A cursor and a scout going twice as fast walk the evaluated cells (Floyd's cycle detection), so a loop
+    /// is found with no extra memory. Scala then leaves out the last cell of a loop that does not start at the
+    /// first cell, since its lists close a loop with a copy of the cell before the loop. Here a cell can also
+    /// link straight back (`prepend` on a cyclic list), so that last cell is left out only when its head is the
+    /// same object as the head of the cell before the loop: the elements shown are the same then.
     @Override
+    @SuppressWarnings("Var")
     public final String toString() {
         StringBuilder builder = new StringBuilder("LazyList(");
-        @SuppressWarnings("Var")
-        LazyList<T> list = this;
-        @SuppressWarnings("Var")
-        boolean first = true;
-        while (true) {
-            if (!(list instanceof LazyCell<T> cell) || cell.state != CONS && cell.state != EMPTY) {
-                builder.append(first ? "?" : ", ?");
-                break;
-            } else if (cell.state == EMPTY) {
-                break;
-            }
-            builder.append(first ? "" : ", ").append(cell.head);
-            first = false;
-            list = Objects.requireNonNull(cell.tail);
+        Object first = state;
+        if (first != CONS) {
+            return builder.append(first == EMPTY ? ")" : "<not computed>)").toString();
         }
-        return builder.append(")").toString();
+        builder.append(head);
+        // the cursor is the next cell to show; the scout runs ahead, two cells per step, over the cells evaluated
+        LazyList<T> cursor = this;
+        LazyList<T> scout = evaluatedTail();
+        boolean ended;
+        if (cursor == scout) {
+            ended = false;
+        } else {
+            cursor = scout;
+            ended = !knownNonEmpty(scout);
+            if (!ended) {
+                scout = tailOf(scout);
+                // Each state is read once: a cell another thread evaluates after the scout stopped at it is not
+                // stepped over later, so the scout is always twice as far as the cursor, which the search for the
+                // start of a loop below needs to end.
+                while (cursor != scout) {
+                    if (!knownNonEmpty(scout)) {
+                        ended = true;
+                        break;
+                    }
+                    builder.append(", ").append(headOf(cursor));
+                    cursor = tailOf(cursor);
+                    scout = tailOf(scout);
+                    if (!knownNonEmpty(scout)) {
+                        ended = true;
+                        break;
+                    }
+                    scout = tailOf(scout);
+                }
+            }
+        }
+        if (ended) {
+            // no loop: the scout stopped at the first cell not known to be non-empty, and every cell before it is
+            while (cursor != scout) {
+                builder.append(", ").append(headOf(cursor));
+                cursor = tailOf(cursor);
+            }
+            return (knownIsEmpty(scout) ? builder : builder.append(", <not computed>"))
+                    .append(")")
+                    .toString();
+        }
+        // a loop, where the scout met the cursor: it starts where a runner from this cell meets the scout. When it
+        // starts at this cell, the cursor has gone round it once and every cell of it is shown.
+        if (cursor != this) {
+            LazyList<T> runner = this;
+            LazyList<T> beforeLoop = this;
+            while (runner != scout) {
+                beforeLoop = runner;
+                runner = tailOf(runner);
+                scout = tailOf(scout);
+            }
+            do {
+                LazyList<T> next = tailOf(cursor);
+                if (next != scout || headOf(cursor) != headOf(beforeLoop)) {
+                    builder.append(", ").append(headOf(cursor));
+                }
+                cursor = next;
+            } while (cursor != scout);
+        }
+        return builder.append(", <cycle>)").toString();
+    }
+
+    // whether list is a cell already evaluated as non-empty: nothing is evaluated
+    private static boolean knownNonEmpty(LazyList<?> list) {
+        return list instanceof LazyCell<?> cell && cell.state == CONS;
+    }
+
+    // the head of a cell known to be non-empty
+    @SuppressWarnings("unchecked")
+    private static <T extends @Nullable Object> T headOf(LazyList<T> list) {
+        return ((LazyCell<T>) list).evaluatedHead();
+    }
+
+    // the tail of a cell known to be non-empty
+    @SuppressWarnings("unchecked")
+    private static <T extends @Nullable Object> LazyList<T> tailOf(LazyList<T> list) {
+        return ((LazyCell<T>) list).evaluatedTail();
     }
 
     // -- the kinds of cells

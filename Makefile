@@ -16,8 +16,10 @@ help: ## list the targets
 clean: ## delete target/ and the generated sources
 	$(MVN) clean
 
-generate: ## regenerate src-gen from generator/Generator.scala
-	$(MVN) generate-sources
+# compile, not generate-sources: zazr-test's generator needs zazr-core on its classpath, and Maven takes it from the
+# reactor only once zazr-core has reached the compile phase; before that it looks in the local and remote repositories.
+generate: ## regenerate src-gen from generator/Generator.scala (compiles the main sources too)
+	$(MVN) compile -Dspotless.check.skip=true
 
 compile: ## compile main sources (runs the generator first)
 	$(MVN) compile
@@ -28,9 +30,15 @@ test-compile: ## compile main and test sources
 test: ## run the whole test suite
 	$(MVN) test
 
-test-one: ## run one test class or method: make test-one TEST=VectorTest [MODULE=zazr-core]  |  TEST='VectorTest#shouldAppend*'
-	@test -n "$(TEST)" || { echo "usage: make test-one TEST=ClassName[#method] [MODULE=zazr-core]"; exit 1; }
+# Surefire's failIfNoSpecifiedTests=false lets the modules without a matching test pass; the reports are deleted first
+# and counted after, so the target fails when no test ran at all. Make expands `$`: a nested class is written `$$`.
+test-one: ## run one test class or method, fail if none ran: make test-one TEST=VectorTest [MODULE=zazr-core]  |  TEST='VectorTest#shouldAppend*'  |  TEST='DocsExamplesTest$$ValidationPage'
+	@test -n "$(TEST)" || { echo 'usage: make test-one TEST=ClassName[#method] [MODULE=zazr-core]; a nested class is Outer$$$$Inner'; exit 1; }
+	rm -rf */target/surefire-reports
 	$(MVN) $(PL) test -Dtest='$(TEST)' -Dsurefire.failIfNoSpecifiedTests=false
+	@ran=$$(cat */target/surefire-reports/TEST-*.xml 2>/dev/null | grep -c '<testcase '); \
+	echo "test-one: $$ran test(s) ran for TEST="'$(TEST)'; \
+	test "$$ran" -gt 0 || { echo 'no test matched TEST=$(TEST) (a nested class is written Outer$$$$Inner)'; exit 1; }
 
 package: ## build the jars (runs tests)
 	$(MVN) package
@@ -51,7 +59,7 @@ verify: ## what CI runs: full build with tests, formatting, nullness, reassignme
 	$(MAKE) blog-check
 
 vocabulary: ## fail on category-theory vocabulary in the code, the site and the skill (not docs/design.md) (CLAUDE.md: use the ZIO names)
-	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-benchmark zazr-avaje-jsonb docs skills ':!docs/design.md')"; \
+	@hits="$$(git grep -n -i --untracked -E 'monad|functor|applicative|semigroup|monoid' -- zazr-core zazr-test zazr-jackson zazr-avaje-jsonb zazr-benchmark docs skills ':!docs/design.md')"; \
 	if [ -n "$$hits" ]; then echo "$$hits"; echo "category-theory vocabulary found; use the ZIO names (see CLAUDE.md)"; exit 1; fi
 
 # The files whose positional and size-sensitive methods must document their cost (design.md 3.7), and the
@@ -78,12 +86,13 @@ docs-complexity-check: docs-complexity ## fail when the committed complexity pag
 		echo "the complexity page is stale or untracked: run make docs-complexity and commit the result"; exit 1; fi
 
 # The tests that compile and run every fenced java block of the site and of the Agent Skill under skills/ (zazr-test's
-# own, since zazr-core cannot depend on it).
+# and zazr-jackson's own, since zazr-core cannot depend on them).
 DOCS_EXAMPLES_TESTS := \
 	zazr-core/src/test/java/dev/zazr/docs/DocsExamplesTest.java \
 	zazr-core/src/test/java/dev/zazr/docs/SkillExamplesTest.java \
 	zazr-core/src/test/java/dev/zazr/docs/SkillFunctionalJavaExamplesTest.java \
 	zazr-test/src/test/java/dev/zazr/test/docs/DocsTestingExamplesTest.java \
+	zazr-jackson/src/test/java/dev/zazr/jackson/docs/DocsJacksonExamplesTest.java \
 	zazr-avaje-jsonb/src/test/java/dev/zazr/avaje/jsonb/docs/DocsAvajeJsonbExamplesTest.java
 
 docs-examples: ## fail when a java block of the site or the skill is not in a docs example test (they compile and run every snippet)
@@ -125,7 +134,7 @@ fmt: ## format the sources with the Palantir Java Format (spotless apply)
 fmt-check: ## fail if sources are not formatted with the Palantir Java Format (spotless check)
 	$(MVN) spotless:check
 
-nullness: ## NullAway / JSpecify nullness check of the main sources of zazr-core and zazr-avaje-jsonb (classes in <module>/target/nullaway)
+nullness: ## NullAway / JSpecify nullness check of the main sources of zazr-core, zazr-jackson and zazr-avaje-jsonb (classes in <module>/target/nullaway)
 	$(MVN) -Pnullaway compile
 
 reassignment: ## fail when a local variable or a parameter is assigned after its declaration (Error Prone Var, main and test sources)
@@ -134,35 +143,39 @@ reassignment: ## fail when a local variable or a parameter is assigned after its
 bench: ## run the JMH benchmarks (dev.zazr.JmhRunner, zazr-benchmark module)
 	$(MVN) -Pbenchmark -pl zazr-benchmark -am -DskipTests test
 
-# zazr-benchmark has no tests and stays out of the report. zazr-avaje-jsonb has its own report and threshold.
+# zazr-benchmark has no tests and stays out of the reports. zazr-core and zazr-test share one report, from the tests of
+# both; zazr-jackson and zazr-avaje-jsonb each have their own, from their tests.
 COVERAGE_REPORT := zazr-test/target/site/jacoco-aggregate
+COVERAGE_REPORT_JACKSON := zazr-jackson/target/site/jacoco
 COVERAGE_AVAJE_JSONB := zazr-avaje-jsonb/target/site/jacoco
 
-coverage: ## test coverage of zazr-core and zazr-test, then of zazr-avaje-jsonb (JaCoCo, HTML reports), then coverage-check
-	$(MVN) -Pcoverage -pl zazr-core,zazr-test,zazr-avaje-jsonb test
+coverage: ## test coverage (JaCoCo): HTML reports of zazr-core and zazr-test, zazr-jackson and zazr-avaje-jsonb, then coverage-check
+	$(MVN) -Pcoverage -pl zazr-core,zazr-test,zazr-jackson,zazr-avaje-jsonb test
 	@$(MAKE) --no-print-directory coverage-summary
-	@echo "HTML reports: $(COVERAGE_REPORT)/index.html $(COVERAGE_AVAJE_JSONB)/index.html"
+	@echo "HTML reports: $(COVERAGE_REPORT)/index.html $(COVERAGE_REPORT_JACKSON)/index.html $(COVERAGE_AVAJE_JSONB)/index.html"
 	@$(MAKE) --no-print-directory coverage-check
 
 # The check reads the execution data and the classes of the last make coverage. JaCoCo skips a merge whose data is
 # missing or empty and a check without data, and it passes a bundle of 0 classes (after a failed compile); so data
 # and at least one class file are required here, and the merged file of an earlier run is deleted first, so that a
 # skipped merge cannot leave it to be checked again.
-coverage-check: ## fail when zazr-core is below 95 % of lines or 95 % of branches in the last make coverage
-	@for f in zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec; do \
+coverage-check: ## fail when zazr-core or zazr-jackson is below 95 % of lines or 95 % of branches in the last make coverage
+	@for f in zazr-core/target/jacoco.exec zazr-test/target/jacoco.exec zazr-jackson/target/jacoco.exec; do \
 		test -s $$f || { echo "$$f is missing or empty: run make coverage first"; exit 1; }; done
-	@find zazr-core/target/classes -name '*.class' -print -quit 2>/dev/null | grep -q . \
-		|| { echo "no class file in zazr-core/target/classes: run make coverage first"; exit 1; }
+	@for m in zazr-core zazr-jackson; do \
+		find $$m/target/classes -name '*.class' -print -quit 2>/dev/null | grep -q . \
+			|| { echo "no class file in $$m/target/classes: run make coverage first"; exit 1; }; done
 	@rm -f zazr-core/target/jacoco-merged.exec
 	$(MVN) -Pcoverage -pl zazr-core jacoco:merge@coverage-merge jacoco:check@coverage-check
+	$(MVN) -Pcoverage -pl zazr-jackson jacoco:check@coverage-check
 
 coverage-summary: ## print the line and branch coverage per module and package of the last make coverage, in Markdown
-	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml $(COVERAGE_AVAJE_JSONB)/jacoco.xml
+	@scala-cli run scripts/coverage-summary.scala -- $(COVERAGE_REPORT)/jacoco.xml $(COVERAGE_REPORT_JACKSON)/jacoco.xml $(COVERAGE_AVAJE_JSONB)/jacoco.xml
 
 # javadoc-no-fork after compile, not javadoc:javadoc: the forked lifecycle of javadoc:javadoc stops at generate-sources,
 # so on a fresh checkout the plugin finds no module-info.class in zazr-core and refuses the named module.
 # Output: <module>/target/reports/apidocs, emptied first (clean-apidocs in pom.xml) so a dropped class loses its pages.
-javadoc: ## build the javadoc of zazr-core, zazr-test and zazr-avaje-jsonb (doclint: fails on a broken reference or malformed tag)
+javadoc: ## build the javadoc of zazr-core, zazr-test, zazr-jackson and zazr-avaje-jsonb (doclint: fails on a broken reference or malformed tag)
 	$(MVN) compile clean:clean@clean-apidocs javadoc:javadoc-no-fork
 
 deps-updates: ## list newer versions of dependencies and plugins

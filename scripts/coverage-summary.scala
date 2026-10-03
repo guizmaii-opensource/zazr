@@ -5,14 +5,15 @@
 // and the ten source files with the most missed lines. CI appends the output to the job summary.
 //
 //   scala-cli run scripts/coverage-summary.scala -- zazr-test/target/site/jacoco-aggregate/jacoco.xml \
-//     zazr-avaje-jsonb/target/site/jacoco/jacoco.xml
+//     zazr-jackson/target/site/jacoco/jacoco.xml
 //
-// Each input is an XML report of JaCoCo: of its report-aggregate goal, a group per module, holding its packages, each
-// holding its classes and source files; or of its report goal, the packages of one module, named by the report. Every
-// element carries its own counters. The numbers are those counters, never
+// The inputs are XML reports of JaCoCo: the one of the report-aggregate goal has a group per module, and the one of the
+// report goal is a single module, named by the report's title. A module holds its packages, each holding
+// its classes and source files, and every element carries its own counters. The numbers are those counters, never
 // sums of the class counters: JaCoCo counts lines per class, so a line holding code of a method and of an anonymous
 // or lambda class counts once in each class but once in its source file, package, group and report. The source file
-// is also the page a reader opens in the HTML report, and its counters are the ones that page shows.
+// is also the page a reader opens in the HTML report, and its counters are the ones that page shows. The total of
+// several reports is the sum of their totals: no class is in two reports.
 
 import java.nio.file.{Files, Path}
 import javax.xml.parsers.DocumentBuilderFactory
@@ -60,20 +61,31 @@ def counts(element: Element): Counts = {
   Counts(lm, lc, bm, bc)
 }
 
-@main def coverageSummary(xmls: String*): Unit = {
+def parse(xml: String): Element = {
+  val path = Path.of(xml)
+  if (!Files.isRegularFile(path)) {
+    System.err.println(s"$xml not found: run make coverage first")
+    sys.exit(1)
+  }
   val factory = DocumentBuilderFactory.newInstance()
   // jacoco.xml declares a DOCTYPE whose report.dtd is not next to it.
   factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
-  val reports = xmls.map { xml =>
-    val path = Path.of(xml)
-    if (!Files.isRegularFile(path)) {
-      System.err.println(s"$xml not found: run make coverage first")
-      sys.exit(1)
-    }
-    factory.newDocumentBuilder().parse(path.toFile).getDocumentElement
-  }
+  factory.newDocumentBuilder().parse(path.toFile).getDocumentElement
+}
 
-  // a report of one module has no group: the report is the module
+def sum(all: Seq[Counts]): Counts = all.foldLeft(Counts(0, 0, 0, 0)) { (a, c) =>
+  Counts(a.lineMissed + c.lineMissed, a.lineCovered + c.lineCovered, a.branchMissed + c.branchMissed,
+    a.branchCovered + c.branchCovered)
+}
+
+@main def coverageSummary(xmls: String*): Unit = {
+  if (xmls.isEmpty) {
+    System.err.println("usage: coverage-summary.scala JACOCO_XML...")
+    sys.exit(1)
+  }
+  val reports = xmls.map(parse)
+
+  // a report-aggregate report holds a group per module; a single-module report is the module
   val modules = reports.flatMap { report =>
     children(report, "group") match {
       case Seq() => Seq(report)
@@ -88,16 +100,12 @@ def counts(element: Element): Counts = {
     (_, pkgName, pkg) <- packages
     file <- children(pkg, "sourcefile")
   } yield s"$pkgName.${file.getAttribute("name").stripSuffix(".java")}" -> counts(file)
-  val total = reports.map(counts).reduce { (a, b) =>
-    Counts(a.lineMissed + b.lineMissed, a.lineCovered + b.lineCovered, a.branchMissed + b.branchMissed,
-      a.branchCovered + b.branchCovered)
-  }
 
   println("## Test coverage")
   println()
   table(
     "Module",
-    modules.map(m => m.getAttribute("name") -> counts(m)).sortBy(_._1) :+ ("total" -> total)
+    modules.map(m => m.getAttribute("name") -> counts(m)).sortBy(_._1) :+ ("total" -> sum(reports.map(counts)))
   )
   table(
     "Package (least covered lines first)",

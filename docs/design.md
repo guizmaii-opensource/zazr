@@ -365,10 +365,12 @@ duplication is cheaper than a god interface).
 | `collect(PartialFunction)` on collections, `Option`, `Try`, `Iterator`; `PartialFunction` itself; `Function1.partial` | `collect(Function<? super A, Option<? extends B>>)`: one pass, match-and-transform, no double evaluation; the `case` ergonomics come from a `switch` inside the lambda (`collect(s -> switch (s) { case Circle c -> Option.some(c.radius()); default -> Option.none(); })`). `PartialFunction` is deleted (decided): Java has no pattern literal that produces one, so it was two hand-written methods bundling `filter` and `map`. Added in the naming pass (#20); absent between #13 and #20. | Java 21 `switch` + `Option` replace Scala's partial-function literal |
 | `Try.of` / `ofSupplier` / `ofCallable` / `run` / `runRunnable` | `Try.of(Callable<A>)`, `Try.run(CheckedRunnable)` | ZIO: `attempt` is one method; `Callable` is the JDK's checked supplier |
 | javadoc: "monadic container type", "behave like a monad", "applicative functor, not a Monad", "more like a Functor than a Monad", `// Monad implementation`, "For-comprehension" | rewritten in plain English: "a value that may be absent", "a computation that either fails with `L` or succeeds with `R`", "`Validation` keeps *all* errors: combining two invalid values with `zip` concatenates their errors, whereas `Either` stops at the first". No mention of Monad/Functor/Applicative anywhere in the repo, generator included (`monadicTypesFor` etc.). | Principle 1 applies to prose too; a grep for `monad\|functor\|applicative` in CI keeps it that way |
-| `Option.of(nullable)` / `Option.some` / `Option.when` | `Option.ofNullable`, `Option.some` (**rejects null**), `Option.when(boolean, Supplier)` | see 3.9 |
+| `Option.of(nullable)` / `Option.some` / `Option.when` | `Option.ofNullable`, `Option.some` (**rejects null**), `Option.when(boolean, Supplier)`, and its counterpart `Option.unless(boolean, Supplier)` (Scala 2.13 `Option.unless`, added 2026-09-27, #199) | see 3.9 |
+| `Option.filter` | `filter(Predicate)` and its counterpart `reject(Predicate)` (Scala's `filterNot`, named `reject` as on the collections; added 2026-09-27, #199) | ZIO's `reject` takes a partial function and fails the effect, which has no meaning on `Option` |
+| `Either.fold(l -> l, r -> r)` | static `Either.merge(Either<? extends A, ? extends A>)` (Scala's `MergeableEither.merge`, added 2026-09-27, #199) | static, like `flatten`, because an instance method cannot demand that the two sides share a type; the wildcards let an `Either<Integer, Long>` merge to a `Number`, as Scala's covariant `Either` does |
 | `Validation.valid/invalid`, `Either.right/left`, `Try.success/failure` | keep | already purpose-named |
 | `Validation.cond`, `Either.cond` | `Either.fromPredicate(A, Predicate<A>, Function<A, L>)`; `Validation.fromPredicate(A, Predicate<A>, Function<A, E>)` | prelude name; reads as what it does. Both take the rejected value (3.5) so the error can name it, the everyday case for a field check |
-| `Try.failed()` | `Try.flip()`? no. Delete; use `fold`. | |
+| `Try.failed()` | `Try.flip()`? no. Delete; use `fold`. (confirmed by the maintainer, 2026-10-03) | |
 | `Try.recover(Class<X>, Function)` ×4 / `recoverWith` ×3 / `recoverAllAndTry` / `recoverAndTry` | `catchAll(Function<Throwable,A>)`, `catchSome(Class<X>, Function<X,A>)`, `catchAllWith(Function<Throwable,Try<A>>)`, `catchSomeWith(Class<X>, ...)` | ZIO `catchAll`/`catchSome` |
 | `Try.mapFailure(Case...)` | `mapError(Function<Throwable,Throwable>)` | Match API is gone |
 | `Try.andFinally`, `andFinallyTry` | `ensuring(CheckedRunnable)` only | ZIO name. One overload, not two: `ensuring(Runnable)` next to `ensuring(CheckedRunnable)` is ambiguous for every lambda (javac: both `void` functional interfaces match), and a `Runnable` lambda already is a `CheckedRunnable` lambda; a `Runnable` variable is passed as `r::run` (decided, #20) |
@@ -1374,6 +1376,19 @@ element-first and forward, though its javadoc said right-to-left. There is now o
 infinite generator is fine. The type parameters are `<A, S>`, Scala's order. A null from `f` is rejected by name
 (`<Type>.unfold: f returned null`), on `LazyList` when the list reaches it; a null element as any null element.
 
+**Decided 2026-10-03, #206 and #213 (coordinator decision; the maintainer may overrule): `LazyList.toString` is
+Scala's, cycles included; the messages say `LazyList`.** `toString` follows Scala's `addStringNoForce`: the evaluated
+elements, then `<not computed>` where the list is not evaluated (Scala's text, replacing the `?` of the rename entry
+above, and also used for a cell whose evaluation failed), or `<cycle>` where the evaluated cells loop back, found with
+Floyd's two cursors, so it evaluates nothing and returns on `cycle()`, `appendSelf` and a self-referencing `cons`. It
+shows the cells already evaluated when it reaches them, so it ends unless another thread keeps evaluating further cells
+while it runs, as in Scala. A fully evaluated list prints as before (`LazyList(1, 2, 3)`, `LazyList()`). One difference from Scala: Scala always
+leaves out the last cell of a loop that starts after the first cell, since its loops are closed by a copy of the cell
+before the loop; a Zazr cell can link straight back (`prepend` on a cyclic list), so that cell is left out only when its
+head is the same object as the head of the cell before the loop. `Lazy` keeps `Lazy(?)`. The exceptions of an empty
+`LazyList` say `head of empty LazyList`, `tail of empty LazyList` and `init of empty LazyList`, naming the type as
+`Vector`, `Queue` and the sorted and linked collections do (Scala says `lazy list`, Zazr's `List` says `list`).
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
@@ -2092,6 +2107,48 @@ unreleased).
   `Laws.assertSatisfied` names every failing law, its counterexample and the seed. Every law of a set runs with the
   same configuration, so one seed replays them all.
 
+### 3.16 `zazr-jackson`: Jackson 3 support (decided 2026-10-03, #243)
+
+Requested by users, decided by the maintainer: an optional `dev.zazr:zazr-jackson` artifact with one public class,
+`ZazrModule`; `zazr-core` does not depend on Jackson.
+
+- **Jackson 3 only** (`tools.jackson`), checked on 2026-10-03: `jackson-databind` 3.2.3 is the latest release on Maven
+  Central (3.0.0 went GA in 2025; the 2.x line is at 2.22.3), and Spring Boot 4.1.1's `spring-boot-jackson` depends on
+  `tools.jackson.core:jackson-databind` 3.1.5. The parent pins 3.2.3; the module uses only API that 3.0 already has,
+  and its tests pass against 3.0.3, 3.1.5 and 3.2.3, since Spring Boot's dependency management picks the version.
+- **Formats.** Sequences and sets are JSON arrays, maps JSON objects whose keys go through Jackson's key serializers
+  and key deserializers, `Option` its value or `null`, `Tuple1` to `Tuple8` arrays. `Either`, `Try`, `Validation`,
+  `Lazy` and `Tuple0` have no format: each would be a format to keep stable.
+- **Reading.** The declared type picks the collection: `Set`, `SortedSet`, `Map` and `SortedMap` read as `HashSet`,
+  `TreeSet`, `HashMap` and `TreeMap`. The sorted types use the natural order and fail, when the reader is built, on an
+  element or key type that is not `Comparable` (`Object` included). `null` reads as `None`, and so does an absent
+  creator property, as Jackson does for `Optional` (`DeserializationFeature.USE_NULL_FOR_MISSING_REFERENCE_VALUES`, from
+  Jackson 3.1, still turns it into `null`). A `null` element, key or value of a collection fails, unless its type reads
+  `null` as a value (`Option`); a tuple holds `null` components, as 3.9 decides, so `[1,null]` reads as
+  `Tuple.of(1, null)`. A `null` collection property reads as `null`, as for `java.util`; `@JsonSetter(nulls =
+  AS_EMPTY)` gives the empty collection.
+- **Writing** reuses Jackson's own serializers: `IterableSerializer` for the sequences and sets (a `LazyList` is forced
+  as it is written), Jackson's `java.util.Map` serializer on the `asJavaMap()` view for the maps (so
+  `ORDER_MAP_ENTRIES_BY_KEYS` and the content `@JsonInclude` apply), `ReferenceTypeSerializer` for `Option` (so
+  `NON_ABSENT` and `@JsonUnwrapped` apply).
+- **Type ids** (`@JsonTypeInfo`, default typing) name the public type: `List` for `List.Cons` and `List.Nil`,
+  `LazyList` for its classes in `dev.zazr.collection.internal`, so stored JSON does not depend on implementation
+  classes, with `Id.CLASS`, `MINIMAL_CLASS` and `NAME` (the name registered for the public type); an id naming one
+  of those classes still reads. The collection serializer is a Jackson container serializer, so a `@JsonTypeInfo`
+  collection property types its elements. A tuple writes each component with its declared type narrowed to the
+  runtime class, and the type id of the declared type, as it reads it. The map serializer is a container serializer
+  too, so a `@JsonTypeInfo` map property types its values (reviews of #252).
+- **Type-id corners left as they are (coordinator decision, 2026-10-03, third review of #252)**, each documented in one
+  line of the Jackson page with its workaround: `NAME` on the content of a typed `Option` when no `@JsonSubTypes`
+  names `List` or `LazyList`; a generic root tuple written with `writerFor` under `NON_FINAL_AND_RECORDS`, which plain
+  Jackson gets wrong for any generic record; a tuple holding a component of the wrong type after an unchecked cast,
+  which fails when written.
+- **Ported from vavr-jackson** (Apache 2.0, credited in `NOTICE`): the type modifier, the serializer and deserializer
+  registries and the shape of the collection, map and tuple deserializers. Not ported: its `Settings` (the
+  `["defined", value]` form of `Option`, `null` as an empty collection), the `toString` order of non-`Comparable`
+  keys, the `Either`, `Lazy`, `CharSeq`, `Multimap`, `PriorityQueue` and function formats, and merging into an
+  existing collection.
+
 ---
 
 ## 4. Build, tooling, packaging
@@ -2116,10 +2173,11 @@ unreleased).
   |---|---|---|
   | `zazr-core` | `dev.zazr:zazr-core` | everything in this document |
   | `zazr-test` | `dev.zazr:zazr-test` | property-based testing (`Gen`, `Check`, 3.15) + law suites (below); depends on `zazr-core`. JPMS module `dev.zazr.test`, a real `module-info.java` (decided 2026-09-26, #182): `requires transitive dev.zazr`, exports `dev.zazr.test` and `dev.zazr.test.laws`; its tests run on the module path with `--add-opens` of `dev.zazr`'s collection packages, to look at the layouts they generate. `zazr-core`'s tests cannot use it: Maven rejects a test-scope dependency back on `zazr-test` as a reactor cycle (`ProjectCycleException`, checked 2026-09-25), so the `*LawsTest` classes live in `zazr-test`'s own test sources |
+  | `zazr-jackson` | `dev.zazr:zazr-jackson` | the Jackson 3 module (3.16); depends on `zazr-core` and `tools.jackson.core:jackson-databind`. JPMS module `dev.zazr.jackson`: `requires transitive dev.zazr` and `tools.jackson.databind`, exports `dev.zazr.jackson` only (the serializers live in `dev.zazr.jackson.internal`), and `provides tools.jackson.databind.JacksonModule` for `findAndAddModules()` |
   | `zazr-benchmark` | not published | JMH, currently `vavr/src/test/java/io/vavr/JmhRunner.java` behind the `benchmark` profile; moves back to its own module as in the old `vavr-benchmark` |
   | `zazr-avaje-jsonb` | `dev.zazr:zazr-avaje-jsonb` | avaje-jsonb adapters for the collections, `Option` and `Tuple1`..`Tuple8` (decided 2026-10-03, #244), with the JSON of `zazr-jackson` (#243). Built against avaje-jsonb 3.16. JPMS module `dev.zazr.avaje.jsonb`: exports only `ZazrJsonbComponent`, a `JsonbComponent` that avaje-jsonb's service loader finds (`provides io.avaje.jsonb.spi.JsonbExtension`, and `META-INF/services` on the class path), so adding the dependency is enough. An `Option` is always written (`None` as `null`) whatever `serializeNulls` and `serializeEmpty` say, since avaje-jsonb gives a missing property `null` with no adapter call: a left-out `None` would read back as `null`; a `null` reference follows `serializeNulls`. Elements of arrays and values of objects are always written, `null` and empty ones included. A non-`String` key is the text of the string, number or boolean its adapter writes, through a key-only writer and reader (avaje-jsonb reuses one generator and parser per thread, so a nested `Jsonb` call would reset the outer one). Of two equal keys, the later wins. Map keys are read with avaje-jsonb's `nextField()`: avaje-jsonb 3.16 leaves the escapes of a name undecoded inside a record (its own `java.util.Map` too), which the page states; a workaround passing `null` names to `beginObject` was dropped, because it unbalanced the parser's names stack and could swap a key for a property name of the record on a hash collision. The type check before an array or object is skipped for a reader whose `currentToken()` throws (`JsonType.fromObject`). A property declared as `Set`, `SortedSet`, `Map` or `SortedMap` is written by iterating its value and read as `HashSet`, `TreeSet`, `HashMap` or `TreeMap`; one declared as `Traversable` is written by its value's class and reading it fails, naming the types to declare (as in `zazr-jackson`). Tuples read `null` components. A sorted type is read only when the declared type of its elements or keys implements `Comparable` (`TreeSet<Object>` and raw types fail before reading), and the failure messages follow `zazr-jackson`'s wording (decided 2026-10-03, aligning the two modules after the review of #252). Its tests run on the class path, as most applications do; `JpmsTest` checks the module path in a module layer. Coverage: its own 95 % threshold of lines and branches |
 
-  Later candidates that a mono-repo makes cheap: `zazr-jackson`, `zazr-gson`, `zazr-jmh-annotations`.
+  Later candidates that a mono-repo makes cheap: `zazr-gson`, `zazr-jmh-annotations`.
   The `match` modules are **not** restored (3.1). Each module keeps its own `generator/Generator.scala`
   as before.
 - **Property-based testing: re-integrate `vavr-test` as `zazr-test` (decided; no jqwik).** Restore it
@@ -2148,7 +2206,8 @@ unreleased).
   loop keep their speed. `make coverage` runs the tests of `zazr-core` and `zazr-test` with the agent and writes one
   aggregated HTML report (generated `src-gen` sources included, `zazr-benchmark` excluded); a CI job on JDK 25
   uploads it as an artifact and puts the line and branch coverage per module and package in the job summary. No
-  threshold fails the build yet; one is chosen from the measured numbers.
+  threshold fails the build yet; one is chosen from the measured numbers. `zazr-jackson` has its own report, from its
+  own tests, and the same 95 % threshold of lines and branches (#243).
 - **Publishing (decided)**, same recipe as `guizmaii-opensource/vavr-test`: coordinates `dev.zazr:zazr-core`
   (parent `dev.zazr:zazr-parent`), version `0.1.0-SNAPSHOT` on `main`; snapshots deployed to the Central
   Portal on every push to `main`; a release is made by publishing a GitHub release whose tag is `vX.Y.Z`
