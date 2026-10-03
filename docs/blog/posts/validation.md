@@ -20,8 +20,6 @@ chain the step that needs a valid value first.
 
 ## Validation, simply
 
-`Validation` is a way to check input and get back every error at once.
-
 You know the usual ways to report a problem in Java. An exception stops at the first problem: the code that throws
 it never reaches the next check. `Either` stops at the first error too: it is made for steps where each one needs
 the result of the one before.
@@ -85,8 +83,8 @@ var welcome = Validation.zipWith(username("ana"), email("ana@example.com"), age(
 The first form has three mistakes, and the result has three errors, in the order of the checks. The second form is
 correct, so the result holds the new `SignUp`. `SignUp::new` is called only in that case.
 
-`zipWith` takes from 2 to 8 checks and a function that receives their values. The same `zip` and `zipWith` exist on
-`Option`, `Either`, `Try` and `Lazy`; the [zip](../../zip.md) page shows them all.
+`zipWith` takes from 2 to 8 checks and a function that receives their values. The [zip](../../zip.md) page has the
+details.
 
 ## Reading the result
 
@@ -130,7 +128,7 @@ var same   = Validation.collectAll(checks);  // Validation<String, Vector<String
 ```
 
 Sometimes one bad address should not block the others: send the good invitations, and report the bad ones.
-`Validation.partition` does that. It never fails, and returns the errors and the valid values side by side:
+`Validation.partition` does that. It always succeeds, and returns the errors and the valid values side by side:
 
 ```java
 var split = Validation.partition(invites, a -> email(a)); // Tuple2<Vector<String>, Vector<String>>
@@ -154,8 +152,8 @@ var account = Validation.zipWith(username("ana"), email("ana@example.com"), age(
 // Invalid(username 'ana' is taken)
 ```
 
-When the form is invalid, the lookup doesn't run, and the result keeps the form's errors. With the form of `jo`, the
-result is the same three errors as before.
+When the form is invalid, the lookup doesn't run, and the result keeps the form's errors. With the first form, the
+one with `jo`, the result is the same three errors as before.
 
 `flatMap` is the same, for a step that returns a `Validation`. Both stop at the first error, as `Either` does, since
 the next step has no value to work on.
