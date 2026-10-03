@@ -239,7 +239,8 @@ class LazyListLazinessTest {
         assertThat(calls.get()).isZero();
         for (var entry : built.entrySet()) {
             // cons is given its head: only its tail waits
-            String expected = entry.getKey().startsWith("cons") ? "LazyList(0, ?)" : "LazyList(?)";
+            String expected =
+                    entry.getKey().startsWith("cons") ? "LazyList(0, <not computed>)" : "LazyList(<not computed>)";
             assertThat(entry.getValue().toString()).as(entry.getKey()).isEqualTo(expected);
         }
     }
@@ -271,11 +272,11 @@ class LazyListLazinessTest {
         AtomicInteger calls = new AtomicInteger();
         LazyList<Integer> list = LazyList.defer(() -> LazyList.cons(calls.incrementAndGet(), LazyList::empty));
         assertThat(calls.get()).isZero();
-        assertThat(list.toString()).isEqualTo("LazyList(?)");
+        assertThat(list.toString()).isEqualTo("LazyList(<not computed>)");
         assertThat(list.isEmpty()).isFalse();
         assertThat(calls.get()).isEqualTo(1);
         assertThat(list.head()).isEqualTo(1);
-        assertThat(list.toString()).isEqualTo("LazyList(1, ?)");
+        assertThat(list.toString()).isEqualTo("LazyList(1, <not computed>)");
         assertThat(list.tail().isEmpty()).isTrue();
         assertThat(list.toString()).isEqualTo("LazyList(1)");
         assertThat(calls.get()).isEqualTo(1);
@@ -354,6 +355,59 @@ class LazyListLazinessTest {
         assertThat(calls.get()).isEqualTo(1);
         assertThat(seen).hasSize(8);
         assertThat(new java.util.HashSet<>(seen)).hasSize(1);
+    }
+
+    @Test
+    void toStringShowsAnEvaluatedPrefixWhileOtherThreadsEvaluateACycle() throws Exception {
+        int length = 50;
+        Vector<String> elements = Vector.range(0, length).map(String::valueOf);
+        java.util.Set<String> possible = new java.util.HashSet<>();
+        possible.add("LazyList(<not computed>)");
+        for (int n = 1; n <= length; n++) {
+            possible.add(elements.take(n).append("<not computed>").mkString("LazyList(", ", ", ")"));
+        }
+        String cycle = elements.append("<cycle>").mkString("LazyList(", ", ", ")");
+        possible.add(cycle);
+        for (int round = 0; round < 20; round++) {
+            LazyList<Integer> cyclic = LazyList.range(0, length).cycle();
+            CountDownLatch start = new CountDownLatch(1);
+            java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean();
+            java.util.concurrent.ConcurrentLinkedQueue<String> shown =
+                    new java.util.concurrent.ConcurrentLinkedQueue<>();
+            java.util.List<Thread> readers = new ArrayList<>();
+            java.util.List<Thread> printers = new ArrayList<>();
+            for (int i = 0; i < 4; i++) {
+                readers.add(Thread.ofVirtual().start(() -> {
+                    awaitQuietly(start);
+                    cyclic.take(3 * length).toVector();
+                }));
+                printers.add(Thread.ofVirtual().start(() -> {
+                    awaitQuietly(start);
+                    do {
+                        shown.add(cyclic.toString());
+                    } while (!done.get());
+                }));
+            }
+            start.countDown();
+            for (Thread reader : readers) {
+                reader.join();
+            }
+            done.set(true);
+            for (Thread printer : printers) {
+                printer.join();
+            }
+            assertThat(shown).isNotEmpty();
+            assertThat(possible).containsAll(shown);
+            assertThat(cyclic.toString()).isEqualTo(cycle);
+        }
+    }
+
+    private static void awaitQuietly(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     // -- stack depth of chains built without reading

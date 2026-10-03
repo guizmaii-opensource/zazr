@@ -44,6 +44,10 @@ var third = squares.get(2); // 9, and seen is [1, 2, 3]
 `LazyList.cons(head, () -> tail)` takes its first element as a value. `LazyList.defer(() -> ...)` computes the whole
 list, first element included, when it is first read.
 
+`toString` computes nothing either. It shows the elements already computed, then `<not computed>` for the rest:
+`squares` above prints `LazyList(1, 4, 9, <not computed>)`. When the computed elements loop back, it ends with
+`<cycle>` instead: `LazyList.of(1, 2, 3).cycle()`, read past its third element, prints `LazyList(1, 2, 3, <cycle>)`.
+
 ## Costs
 
 `lazy` means the call computes nothing: each element of the result is computed when it is first read. The note

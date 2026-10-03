@@ -1374,6 +1374,18 @@ element-first and forward, though its javadoc said right-to-left. There is now o
 infinite generator is fine. The type parameters are `<A, S>`, Scala's order. A null from `f` is rejected by name
 (`<Type>.unfold: f returned null`), on `LazyList` when the list reaches it; a null element as any null element.
 
+**2026-10-03, #206 and #213 (for the maintainer to confirm on the pull request): `LazyList.toString` is Scala's,
+cycles included; the messages say `LazyList`.** `toString` follows Scala's `addStringNoForce`: the evaluated
+elements, then `<not computed>` where the list is not evaluated (Scala's text, replacing the `?` of the rename entry
+above, and also used for a cell whose evaluation failed), or `<cycle>` where the evaluated cells loop back, found with
+Floyd's two cursors, so it evaluates nothing and returns on `cycle()`, `appendSelf` and a self-referencing `cons`. A
+fully evaluated list prints as before (`LazyList(1, 2, 3)`, `LazyList()`). One difference from Scala: Scala always
+leaves out the last cell of a loop that starts after the first cell, since its loops are closed by a copy of the cell
+before the loop; a Zazr cell can link straight back (`prepend` on a cyclic list), so that cell is left out only when its
+head is the same object as the head of the cell before the loop. `Lazy` keeps `Lazy(?)`. The exceptions of an empty
+`LazyList` say `head of empty LazyList`, `tail of empty LazyList` and `init of empty LazyList`, naming the type as
+`Vector`, `Queue` and the sorted and linked collections do (Scala says `lazy list`, Zazr's `List` says `list`).
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.

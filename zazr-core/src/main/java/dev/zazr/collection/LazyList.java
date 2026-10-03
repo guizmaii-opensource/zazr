@@ -100,8 +100,10 @@ import org.jspecify.annotations.Nullable;
  * finite, but never on two infinite
  * LazyLists with the same elements; {@code exists}, {@code forAll}, {@code find} and
  * {@code contains} stop at the first element that decides, {@code existsUnique} at the second match, and each
- * {@code ...Option} variant costs what the method it wraps costs. {@code toString} shows only the elements already
- * computed.
+ * {@code ...Option} variant costs what the method it wraps costs. {@code toString} computes nothing: it shows the
+ * elements already computed, then {@code <not computed>} for the rest, or {@code <cycle>} where they loop back, as in
+ * {@code LazyList(1, 2, 3, <cycle>)} for {@code LazyList.of(1, 2, 3).cycle()} once read past its third element, so it
+ * returns on an infinite LazyList too.
  * <p>
  * A LazyList never changes its contents. Each element is computed once and kept; when computing one throws, the
  * exception is kept in its place, and every later read of that place throws the same exception instead of computing
@@ -362,13 +364,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * by performing a type-safe cast. This is eligible because immutable/read-only
      * collections are covariant.
      *
-     * @param stream A {@code LazyList}.
-     * @param <T>    Component type of the {@code LazyList}.
-     * @return the given {@code stream} instance as narrowed type {@code LazyList<T>}.
+     * @param lazyList A {@code LazyList}.
+     * @param <T>      Component type of the {@code LazyList}.
+     * @return the given {@code lazyList} instance as narrowed type {@code LazyList<T>}.
      */
     @SuppressWarnings("unchecked")
-    static <T extends @Nullable Object> LazyList<T> narrow(LazyList<? extends T> stream) {
-        return (LazyList<T>) stream;
+    static <T extends @Nullable Object> LazyList<T> narrow(LazyList<? extends T> lazyList) {
+        return (LazyList<T>) lazyList;
     }
 
     /**
@@ -1473,7 +1475,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * An unmodifiable {@link java.util.List} view of this LazyList, in its order: nothing is copied, reads go through
      * to this LazyList, which never changes, and every mutator of the view (including those of its iterators and
      * sub-lists) throws {@link UnsupportedOperationException}. {@code reversed()} and {@code subList} are views too.
-     * A mutable copy is {@code new java.util.ArrayList<>(stream.asJava())}; {@code LazyList.ofAll} given the view
+     * A mutable copy is {@code new java.util.ArrayList<>(lazyList.asJava())}; {@code LazyList.ofAll} given the view
      * returns this LazyList without copying.
      * <p>
      * Complexity: O(1); the view computes no element before a read needs it: {@code get(i)} computes the first
@@ -1950,7 +1952,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default LazyList<T> init() {
         if (isEmpty()) {
-            throw new UnsupportedOperationException("init of empty stream");
+            throw new UnsupportedOperationException("init of empty LazyList");
         } else {
             return LazyListModule.initOf(this);
         }
@@ -2890,7 +2892,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         return n <= 0 || !stream.drop(n - 1).isEmpty();
     }
 
-    // The first n > 0 elements of a non-empty stream, lazily; throws once the traversal passes the end of the stream.
+    // The first n > 0 elements of a non-empty LazyList, lazily; throws once the traversal passes its end.
     private static <T extends @Nullable Object> LazyList<T> takeExactly(LazyList<T> stream, int n) {
         if (n == 1) {
             return cons(stream.head(), LazyList::empty);
