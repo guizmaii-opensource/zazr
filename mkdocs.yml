@@ -136,6 +136,7 @@ nav:
       - Builders: builders.md
       - Java interop: java-interop.md
       - Jackson: jackson.md
+      - avaje-jsonb: avaje-jsonb.md
       - "Zazr in your AI assistant": ai-assistant.md
   - Control types:
       - Overview: control/index.md

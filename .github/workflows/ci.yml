@@ -164,6 +164,7 @@ jobs:
           path: |
             zazr-test/target/site/jacoco-aggregate
             zazr-jackson/target/site/jacoco
+            zazr-avaje-jsonb/target/site/jacoco
           if-no-files-found: error
 
   nullness:

@@ -12,6 +12,7 @@
         <module>zazr-test</module>
         <module>zazr-jackson</module>
         <module>zazr-benchmark</module>
+        <module>zazr-avaje-jsonb</module>
     </modules>
     <url>https://github.com/guizmaii-opensource/zazr</url>
     <licenses>
@@ -40,6 +41,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <assertj.core.version>3.27.7</assertj.core.version>
+        <avaje.jsonb.version>3.16</avaje.jsonb.version>
         <eclipse.lifecycle.mapping.version>1.0.0</eclipse.lifecycle.mapping.version>
         <java.version>25</java.version>
         <!-- zazr-jackson is compiled against this version and uses only API that Jackson 3.0 has (docs/design.md 3.16) -->
@@ -76,6 +78,11 @@
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.avaje</groupId>
+                <artifactId>avaje-jsonb</artifactId>
+                <version>${avaje.jsonb.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
