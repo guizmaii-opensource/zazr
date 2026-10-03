@@ -99,6 +99,8 @@ Other members:
 - `mapTry` and `flatMapTry` take a function that throws checked exceptions.
 - `andThen` and `andThenTry` run a side effect on a success; if it throws, the result is a `Failure`.
 - `tap` runs an action on the value; `tapError` on the cause, optionally only for one exception type.
+- `flip()` turns a `Failure` into a `Success` of its cause, to work on the cause or to check that something failed. A
+  `Success` becomes a `Failure` of an `UnsupportedOperationException`.
 - `zip` and `zipWith` combine several `Try`s and stop at the first `Failure`; see [zip at arity N](../zip.md).
 
 ## Conversions

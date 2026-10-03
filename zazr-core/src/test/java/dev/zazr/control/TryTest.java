@@ -888,6 +888,52 @@ public class TryTest {
     }
 
     @Nested
+    class FlipTests {
+        @Test
+        public void shouldTurnAFailureIntoASuccessOfTheCause() {
+            RuntimeException cause = error();
+            Try<Throwable> flipped = Try.failure(cause).flip();
+            assertThat(flipped.isSuccess()).isTrue();
+            assertThat(flipped.get()).isSameAs(cause);
+        }
+
+        @Test
+        public void shouldTurnASuccessIntoAFailureOfUnsupportedOperationException() {
+            Try<Throwable> flipped = success().flip();
+            assertThat(flipped.isFailure()).isTrue();
+            assertThat(flipped.getCause())
+                    .isExactlyInstanceOf(UnsupportedOperationException.class)
+                    .hasMessage("flip on Success");
+        }
+
+        @Test
+        public void shouldNotTakeTheValueOfASuccessOfAThrowableAsTheCause() {
+            RuntimeException value = error();
+            Try<Throwable> flipped = Try.<Throwable>success(value).flip();
+            assertThat(flipped.isFailure()).isTrue();
+            assertThat(flipped.getCause()).isNotSameAs(value).isExactlyInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        public void shouldLoseTheOriginalWhenFlippedTwice() {
+            RuntimeException cause = error();
+            Try<Throwable> failureTwice = Try.failure(cause).flip().flip();
+            assertThat(failureTwice.isFailure()).isTrue();
+            assertThat(failureTwice.getCause()).isExactlyInstanceOf(UnsupportedOperationException.class);
+            Try<Throwable> successTwice = success().flip().flip();
+            assertThat(successTwice.isSuccess()).isTrue();
+            assertThat(successTwice.get()).isExactlyInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        public void shouldMatchEitherFlipOnAFailure() {
+            RuntimeException cause = error();
+            Try<Object> failure = Try.failure(cause);
+            assertThat(failure.flip().toEither()).isEqualTo(failure.toEither().flip());
+        }
+    }
+
+    @Nested
     class ToeitherTests {
         @Test
         public void shouldConvertFailureToEitherLeftOfTheCause() {

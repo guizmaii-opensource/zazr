@@ -109,6 +109,62 @@ public class OptionTest {
     }
 
     @Nested
+    class UnlessTests {
+        @Test
+        public void shouldWrapIfFalse() {
+            assertThat(Option.unless(false, () -> 1)).isEqualTo(Option.some(1));
+        }
+
+        @Test
+        public void shouldNotWrapIfTrue() {
+            assertThat(Option.unless(true, () -> 1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldCallTheSupplierOnceIfFalse() {
+            AtomicInteger calls = new AtomicInteger();
+            assertThat(Option.unless(false, calls::incrementAndGet)).isEqualTo(Option.some(1));
+            assertThat(calls.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldNotCallTheSupplierIfTrue() {
+            AtomicInteger calls = new AtomicInteger();
+            assertThat(Option.unless(true, calls::incrementAndGet)).isEqualTo(Option.none());
+            assertThat(calls.get()).isZero();
+        }
+
+        @Test
+        public void shouldRejectNullIfFalse() {
+            assertThatThrownBy(() -> Option.unless(false, () -> null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("Option.unless: supplier returned null");
+        }
+
+        @Test
+        public void shouldAcceptASupplierOfNullIfTrue() {
+            assertThat(Option.unless(true, () -> null)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldRejectANullSupplierWhateverTheCondition() {
+            assertThatThrownBy(() -> Option.unless(true, (Supplier<?>) null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("supplier is null");
+            assertThatThrownBy(() -> Option.unless(false, (Supplier<?>) null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("supplier is null");
+        }
+
+        @Test
+        public void shouldBeTheOppositeOfWhen() {
+            for (boolean condition : new boolean[] {true, false}) {
+                assertThat(Option.unless(condition, () -> 1)).isEqualTo(Option.when(!condition, () -> 1));
+            }
+        }
+    }
+
+    @Nested
     class CollectAllTests {
         @Test
         public void shouldConvertListOfNonEmptyOptionsToOptionOfList() {
@@ -357,6 +413,53 @@ public class OptionTest {
         @Test
         public void shouldReturnNoneOnFilterWhenValueIsNotDefinedAndPredicateNotMatches() {
             assertThat(Option.<Integer>none().filter(i -> i == 1)).isEqualTo(Option.none());
+        }
+    }
+
+    @Nested
+    class RejectTests {
+        @Test
+        public void shouldReturnSomeWhenValueIsDefinedAndPredicateNotMatches() {
+            Option<Integer> some = Option.some(1);
+            assertThat(some.reject(i -> i == 2)).isSameAs(some);
+        }
+
+        @Test
+        public void shouldReturnNoneWhenValueIsDefinedAndPredicateMatches() {
+            assertThat(Option.some(1).reject(i -> i == 1)).isEqualTo(Option.none());
+        }
+
+        @Test
+        public void shouldReturnNoneAndNotTestOnNone() {
+            AtomicInteger calls = new AtomicInteger();
+            assertThat(Option.<Integer>none().reject(i -> calls.incrementAndGet() > 0))
+                    .isEqualTo(Option.none());
+            assertThat(calls.get()).isZero();
+        }
+
+        @Test
+        public void shouldTestTheValueOnce() {
+            AtomicInteger calls = new AtomicInteger();
+            Option.some(1).reject(i -> calls.incrementAndGet() > 0);
+            assertThat(calls.get()).isEqualTo(1);
+        }
+
+        @Test
+        public void shouldRejectANullPredicateOnSomeAndNone() {
+            assertThatThrownBy(() -> Option.some(1).reject(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("predicate is null");
+            assertThatThrownBy(() -> Option.<Integer>none().reject(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("predicate is null");
+        }
+
+        @Test
+        public void shouldBeTheOppositeOfFilter() {
+            for (int value : new int[] {1, 2}) {
+                Option<Integer> some = Option.some(value);
+                assertThat(some.reject(i -> i == 1)).isEqualTo(some.filter(i -> i != 1));
+            }
         }
     }
 

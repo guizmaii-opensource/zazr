@@ -913,6 +913,44 @@ public class EitherTest {
         }
     }
 
+    // -- merge
+
+    @Nested
+    class MergeTests {
+
+        @Test
+        public void shouldReturnTheLeftValue() {
+            assertThat(Either.merge(Either.<String, String>left("l"))).isEqualTo("l");
+        }
+
+        @Test
+        public void shouldReturnTheRightValue() {
+            assertThat(Either.merge(Either.<String, String>right("r"))).isEqualTo("r");
+        }
+
+        @Test
+        public void shouldReturnTheSameInstance() {
+            Object value = new Object();
+            assertThat(Either.merge(Either.left(value))).isSameAs(value);
+            assertThat(Either.merge(Either.right(value))).isSameAs(value);
+        }
+
+        @Test
+        public void shouldMergeToTheCommonSupertype() {
+            Number fromLeft = Either.merge(Either.<Integer, Long>left(1));
+            Number fromRight = Either.merge(Either.<Integer, Long>right(2L));
+            assertThat(fromLeft).isEqualTo(1);
+            assertThat(fromRight).isEqualTo(2L);
+        }
+
+        @Test
+        public void shouldRejectNull() {
+            assertThatThrownBy(() -> Either.merge(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("either is null");
+        }
+    }
+
     // -- flatten
 
     @Nested

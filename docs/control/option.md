@@ -20,11 +20,12 @@ var some         = Option.some(1);                   // Option<Integer>
 var none         = Option.<Integer>none();           // Option<Integer>
 var fromNullable = Option.<String>ofNullable(null);  // Option<String>
 var when         = Option.when(3 > 2, () -> 3);      // Option<Integer>
-// Some(1), None, None, Some(3)
+var unless       = Option.unless(3 > 2, () -> 3);    // Option<Integer>
+// Some(1), None, None, Some(3), None
 ```
 
 `Option.some(null)` throws: use `Option.ofNullable` for a value that may be `null`. `Option.when` calls its supplier
-only when the condition holds.
+only when the condition holds, `Option.unless` only when it does not.
 
 ## Pattern matching over the cases
 
@@ -71,6 +72,7 @@ Other members:
 - `isDefined()` and `isEmpty()` test the case.
 - `tap` runs an action on the value; `tapNone` runs one when there is none.
 - `orElse` gives another `Option` when this one is `None`.
+- `reject` keeps the value only when it fails the test, the opposite of `filter`.
 - `collect` is `flatMap` spelled the way the collections spell it.
 - `zip` and `zipWith` combine several options; see [zip at arity N](../zip.md).
 

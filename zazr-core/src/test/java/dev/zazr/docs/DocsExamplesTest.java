@@ -482,9 +482,11 @@ public class DocsExamplesTest {
             var none = Option.<Integer>none(); // Option<Integer>
             var fromNullable = Option.<String>ofNullable(null); // Option<String>
             var when = Option.when(3 > 2, () -> 3); // Option<Integer>
-            // Some(1), None, None, Some(3)
+            var unless = Option.unless(3 > 2, () -> 3); // Option<Integer>
+            // Some(1), None, None, Some(3), None
 
-            assertThat(Vector.of(some, none, fromNullable, when)).hasToString("Vector(Some(1), None, None, Some(3))");
+            assertThat(Vector.of(some, none, fromNullable, when, unless))
+                    .hasToString("Vector(Some(1), None, None, Some(3), None)");
         }
 
         @Test
@@ -583,12 +585,14 @@ public class DocsExamplesTest {
                     .filterOrElse(n -> n >= 18, n -> n + " is under 18"); // Either<String, Integer>
             var message = adult.fold(error -> "rejected: " + error, n -> "accepted: " + n); // String
             var flipped = adult.flip(); // Either<Integer, String>
-            // Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18)
+            var merged = Either.merge(adult.map(n -> "accepted: " + n)); // String
+            // Left(15 is under 18), "rejected: 15 is under 18", Right(15 is under 18), "15 is under 18"
 
             assertThat(total).hasToString("Right(20)");
             assertThat(adult).hasToString("Left(15 is under 18)");
             assertThat(message).isEqualTo("rejected: 15 is under 18");
             assertThat(flipped).hasToString("Right(15 is under 18)");
+            assertThat(merged).isEqualTo("15 is under 18");
         }
 
         @Test

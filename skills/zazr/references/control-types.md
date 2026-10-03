@@ -72,9 +72,9 @@ var all = Option.collectAll(Vector.of(Option.some(1), Option.some(2))); // Optio
 ## `Option`
 
 - Build: `Option.some(v)`, `Option.none()`, `Option.ofNullable(v)`, `Option.when(condition, supplier)`,
-  `Option.ofOptional(optional)`. There is no `Option.of`.
-- `filter`, `map`, `flatMap`, `getOrElse`, `isDefined()`, `isEmpty()`, `orElse`, `mapTry` (a function that throws,
-  returning a `Try`).
+  `Option.unless(condition, supplier)`, `Option.ofOptional(optional)`. There is no `Option.of`.
+- `filter`, `reject` (keeps a value that fails the test), `map`, `flatMap`, `getOrElse`, `isDefined()`,
+  `isEmpty()`, `orElse`, `mapTry` (a function that throws, returning a `Try`).
 - Convert: `toEither(Supplier)`, `toTry(Supplier)`, `toValidation(Supplier)`, `toVector()`, `toList()`,
   `toOptional()`, `stream()`.
 - `map` to `null` throws a `NullPointerException`, where `Optional.map` gives empty. Map to something that may be
@@ -92,7 +92,8 @@ var shell = Option.some("SHELL").flatMap(key -> Option.ofNullable(env.get(key)))
 - Build: `Either.right(v)`, `Either.left(e)`, and `Either.fromPredicate(value, test, v -> error)`, which builds the
   error from the rejected value (`_ -> error` when it is not needed).
 - `mapLeft` transforms the error, `mapBoth` both sides, `flip` swaps them, `filterOrElse(test, value -> error)`
-  rejects a `Right` (there is no `filter`).
+  rejects a `Right` (there is no `filter`). `Either.merge(either)` gives the value of either side when both have
+  the same type.
 - Convert: `toOption()`, `toTry(Function<L, Throwable>)` (pass `t -> t` when the left side is already a
   `Throwable`), `toValidation()`, `toVector()`.
 
@@ -116,6 +117,8 @@ var named    = Either.fromPredicate("", s -> !s.isBlank(), _ -> "name is blank")
   `catchSomeWith` returning another `Try`. `mapError` wraps the cause. `ensuring(action)` is a `finally`.
 - Convert: `toEither()` (an `Either<Throwable, A>`), `toValidation()`, `toOption()`, `toVector()`,
   `toCompletableFuture()`; `Try.fromCompletableFuture(future)` waits and captures.
+- `flip()` gives a `Try<Throwable>`: `Success` of the cause of a `Failure`, and for a `Success` a `Failure` of an
+  `UnsupportedOperationException`.
 - Fatal errors are rethrown, never captured: `InterruptedException`, `LinkageError`, `ThreadDeath`,
   `VirtualMachineError`.
 - A computation that returns `null` gives a `Failure` of a `NullPointerException`, a `CompletableFuture<Void>`
