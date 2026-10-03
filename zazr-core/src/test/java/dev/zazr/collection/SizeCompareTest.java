@@ -243,6 +243,25 @@ public class SizeCompareTest {
     }
 
     @Test
+    public void shouldCompareAQueueHeldAtTheBackWithASizeThatIsNotStored() {
+        for (int size : new int[] {0, 1, 2, 33}) {
+            Queue<Integer> enqueued = Vector.range(0, size).foldLeft(Queue.empty(), Queue::enqueue);
+            for (int other : new int[] {0, 1, 2, 32, 33, 34}) {
+                int expected = Integer.compare(size, other);
+                assertThat(enqueued.sizeCompare(List.range(0, other))).isEqualTo(expected);
+                assertThat(enqueued.sizeCompare(oneShot(Vector.range(0, other))))
+                        .isEqualTo(expected);
+                assertThat(enqueued.sizeCompare(LazyList.range(0, other))).isEqualTo(expected);
+                assertThat(List.range(0, other).sizeCompare(enqueued)).isEqualTo(-expected);
+                assertThat(LazyList.range(0, other).sizeCompare(enqueued)).isEqualTo(-expected);
+                assertThat(Vector.range(0, other).sizeCompare(enqueued)).isEqualTo(-expected);
+            }
+        }
+        assertThat(Queue.of(1).enqueue(2).sizeCompare(LazyList.from(0))).isEqualTo(-1);
+        assertThat(LazyList.from(0).sizeCompare(Queue.of(1).enqueue(2))).isEqualTo(1);
+    }
+
+    @Test
     public void shouldIterateAJdkCollectionInsteadOfAskingItsSize() {
         // the size of the view of an infinite LazyList never returns: only its iterator is read
         assertThat(Vector.range(0, 10).sizeCompare(LazyList.from(0).asJava())).isEqualTo(-1);

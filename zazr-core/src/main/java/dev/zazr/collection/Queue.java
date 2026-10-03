@@ -3329,6 +3329,37 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)), at most: a size that is not stored is counted only up to the other one; O(1) when the
+     * size of {@code that} is stored. The elements held at the back are counted where they are, not put in order
+     * first, as iterator() does.
+     */
+    @Override
+    public int sizeCompare(Iterable<?> that) {
+        Objects.requireNonNull(that, "that is null");
+        int thatKnownSize = Collections.knownSize(that);
+        if (thatKnownSize >= 0) {
+            return sizeCompare(thatKnownSize);
+        }
+        // the cells of the front, then those of the rear, side by side with the elements of that
+        java.util.Iterator<?> those = that.iterator();
+        for (List<T> cell = front; !cell.isEmpty(); cell = cell.tail()) {
+            if (!those.hasNext()) {
+                return 1;
+            }
+            those.next();
+        }
+        for (List<T> cell = rear; !cell.isEmpty(); cell = cell.tail()) {
+            if (!those.hasNext()) {
+                return 1;
+            }
+            those.next();
+        }
+        return those.hasNext() ? -1 : 0;
+    }
+
+    /**
      * Collects the elements with {@code collector}, as {@code stream().collect(collector)} does.
      *
      * @param <A>       the collector's accumulation type

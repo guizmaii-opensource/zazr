@@ -305,12 +305,9 @@ public final class Collections {
         };
     }
 
-    /// The sign of the number of elements of `iterator` minus `otherSize`, as -1, 0 or 1. It reads at most
-    /// `otherSize + 1` elements.
+    /// The sign of the number of elements of `iterator` minus `otherSize`, which is not negative, as -1, 0 or 1.
+    /// It reads at most `otherSize` elements, then asks whether there is one more.
     public static int sizeCompare(java.util.Iterator<?> iterator, int otherSize) {
-        if (otherSize < 0) {
-            return 1;
-        }
         @SuppressWarnings("Var")
         int count = 0;
         while (iterator.hasNext()) {
@@ -333,6 +330,9 @@ public final class Collections {
             return sizeCompareWith(self, thatKnownSize);
         } else if (thisKnownSize >= 0) {
             return -sizeCompareWith(that, thisKnownSize);
+        } else if (that instanceof Queue<?> queue) {
+            // a Queue counts its cells; its iterator would first put the elements held at the back in order
+            return -queue.sizeCompare(self);
         } else {
             java.util.Iterator<?> these = self.iterator();
             java.util.Iterator<?> those = that.iterator();
@@ -346,15 +346,9 @@ public final class Collections {
 
     // the iterable's own sizeCompare where it has one, so that a List walks its cells and a LazyList its computed ones
     private static int sizeCompareWith(Iterable<?> iterable, int otherSize) {
-        return switch (iterable) {
-            case Traversable<?> traversable -> traversable.sizeCompare(otherSize);
-            case NonEmptyVector<?> vector -> vector.sizeCompare(otherSize);
-            case NonEmptySet<?> set -> set.sizeCompare(otherSize);
-            case NonEmptySortedSet<?> set -> set.sizeCompare(otherSize);
-            case NonEmptyMap<?, ?> map -> map.sizeCompare(otherSize);
-            case NonEmptySortedMap<?, ?> map -> map.sizeCompare(otherSize);
-            default -> sizeCompare(iterable.iterator(), otherSize);
-        };
+        return iterable instanceof Traversable<?> traversable
+                ? traversable.sizeCompare(otherSize)
+                : sizeCompare(iterable.iterator(), otherSize);
     }
 
     // hashes the elements respecting their order
