@@ -2118,8 +2118,10 @@ Requested by users, decided by the maintainer: an optional `dev.zazr:zazr-jackso
   `NON_ABSENT` and `@JsonUnwrapped` apply).
 - **Type ids** (`@JsonTypeInfo`, default typing) name the public type: `List` for `List.Cons` and `List.Nil`,
   `LazyList` for its classes in `dev.zazr.collection.internal`, so stored JSON does not depend on implementation
-  classes; an id naming one of those classes still reads. A tuple writes a component with a type id when its declared
-  type takes one, as it reads it (review of #252).
+  classes, with `Id.CLASS`, `MINIMAL_CLASS` and `NAME` (the name registered for the public type); an id naming one
+  of those classes still reads. The collection serializer is a Jackson container serializer, so a `@JsonTypeInfo`
+  collection property types its elements. A tuple writes each component with its declared type narrowed to the
+  runtime class, and the type id of the declared type, as it reads it (reviews of #252).
 - **Ported from vavr-jackson** (Apache 2.0, credited in `NOTICE`): the type modifier, the serializer and deserializer
   registries and the shape of the collection, map and tuple deserializers. Not ported: its `Settings` (the
   `["defined", value]` form of `Option`, `null` as an empty collection), the `toString` order of non-`Comparable`

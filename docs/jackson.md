@@ -137,8 +137,14 @@ A collection property that is `null` in the JSON reads as `null`, as a `java.uti
 
 ## Type ids
 
-With `@JsonTypeInfo` or default typing, the type id of a Zazr collection is its public type: `List` and `LazyList`
-for every list, whatever class holds it. Such JSON reads back, with three exceptions:
+With `@JsonTypeInfo` or default typing, the type id of a Zazr collection names its public type: `List` and `LazyList`
+for every list, whatever class holds it. With `use = JsonTypeInfo.Id.NAME`, it is the name that `@JsonSubTypes`
+gives `List` or `LazyList`.
+
+The elements of a collection and the components of a tuple get the type ids that their declared types take, at any
+depth, including the elements of a collection property annotated with `@JsonTypeInfo`.
+
+Such JSON reads back, with three exceptions:
 
 - An `Option` is written as its value, with the type id of the value, as Jackson does for `Optional`.
 - A `TreeSet`, `TreeMap`, `NonEmptySortedSet` or `NonEmptySortedMap` in a property declared as `Object` does not read

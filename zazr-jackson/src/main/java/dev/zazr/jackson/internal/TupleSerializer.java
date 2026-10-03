@@ -57,11 +57,19 @@ public final class TupleSerializer extends StdSerializer<Tuple> {
         var components = components(value);
         for (var i = 0; i < components.length; i++) {
             var component = components[i];
-            var typeSerializer = ctxt.findTypeSerializer(componentType(i));
-            if (component == null || typeSerializer == null) {
-                ctxt.writeValue(gen, component);
+            if (component == null) {
+                ctxt.defaultSerializeNullValue(gen);
             } else {
-                ctxt.findValueSerializer(component.getClass()).serializeWithType(component, gen, ctxt, typeSerializer);
+                // the declared type, narrowed to the runtime class: its type parameters stay, so the nested values
+                // get the type ids the reader expects, at any depth
+                var specialized = ctxt.constructSpecializedType(componentType(i), component.getClass());
+                var typeSerializer = ctxt.findTypeSerializer(componentType(i));
+                if (typeSerializer == null) {
+                    // keeps a type id the runtime class takes on its own (a class-level @JsonTypeInfo)
+                    ctxt.findTypedValueSerializer(specialized, true).serialize(component, gen, ctxt);
+                } else {
+                    ctxt.findValueSerializer(specialized).serializeWithType(component, gen, ctxt, typeSerializer);
+                }
             }
         }
     }

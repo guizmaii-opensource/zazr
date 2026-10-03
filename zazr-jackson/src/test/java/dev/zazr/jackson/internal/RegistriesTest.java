@@ -128,4 +128,16 @@ class RegistriesTest {
         assertThat(ZazrTypes.mapSupertype(HashMap.class)).isEqualTo(Map.class);
         assertThat(ZazrTypes.mapSupertype(NonEmptyMap.class)).isEqualTo(NonEmptyMap.class);
     }
+
+    /// The container contract of the collection serializer delegates to Jackson's `IterableSerializer`.
+    @Test
+    void theCollectionSerializerIsAContainerSerializer() {
+        var type = TYPES.constructCollectionLikeType(Vector.class, Integer.class);
+        var serializer = (ZazrIterableSerializer) new ZazrSerializers()
+                .findCollectionLikeSerializer(MAPPER.serializationConfig(), type, null, null, null, null);
+        assertThat(serializer.getContentType()).isEqualTo(TYPES.constructType(Integer.class));
+        assertThat(serializer.getContentSerializer()).isNull();
+        assertThat(serializer.hasSingleElement(Vector.of(1))).isTrue();
+        assertThat(serializer.hasSingleElement(Vector.of(1, 2))).isFalse();
+    }
 }
