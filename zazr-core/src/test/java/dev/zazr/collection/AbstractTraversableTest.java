@@ -673,7 +673,7 @@ public abstract class AbstractTraversableTest {
     public void shouldConformNonEmptyStringRepresentation() {
         Traversable<Object> testee = of("a", "b", "c");
         if (!hasDefiniteSize()) {
-            assertThat(testee.toString()).isEqualTo(stringPrefix() + "(?)");
+            assertThat(testee.toString()).isEqualTo(stringPrefix() + "(<not computed>)");
             testee.size(); // evaluates all elements of lazy collections
         }
         assertThat(testee.toString()).isEqualTo(toString(testee));
