@@ -250,4 +250,22 @@ class GenericsTest {
         var read = read("{\"dates\":[\"2026-10-03\"]}", AsVector.class);
         assertThat(read.dates()).isInstanceOf(Vector.class).isEqualTo(Vector.of(LocalDate.of(2026, 10, 3)));
     }
+
+    record AllAbsent(
+            @JsonInclude(value = JsonInclude.Include.NON_EMPTY, content = JsonInclude.Include.NON_ABSENT)
+            HashMap<String, Option<Integer>> zazr,
+
+            @JsonInclude(value = JsonInclude.Include.NON_EMPTY, content = JsonInclude.Include.NON_ABSENT)
+            java.util.Map<String, java.util.Optional<Integer>> jdk) {}
+
+    /// A map whose every entry the content inclusion leaves out counts as empty, as Jackson does for a java.util.Map.
+    @Test
+    void aMapOfOnlyExcludedEntriesIsEmpty() {
+        assertThat(write(new AllAbsent(
+                        HashMap.of("a", Option.none()), java.util.Map.of("a", java.util.Optional.empty()))))
+                .isEqualTo("{}");
+        assertThat(write(new AllAbsent(
+                        HashMap.of("a", Option.some(1)), java.util.Map.of("a", java.util.Optional.of(1)))))
+                .isEqualTo("{\"zazr\":{\"a\":1},\"jdk\":{\"a\":1}}");
+    }
 }

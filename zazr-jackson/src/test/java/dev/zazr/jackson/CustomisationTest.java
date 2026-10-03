@@ -151,4 +151,30 @@ class CustomisationTest {
                 .hasMessageContaining("CustomisationTest$SizeOnly");
         assertThat(write(HashMap.of("a", 1))).isEqualTo("{\"a\":1}");
     }
+
+    /// Writes the simple name of the class of the generator's current value: the container being written.
+    static final class CurrentValue extends StdSerializer<String> {
+        CurrentValue() {
+            super(String.class);
+        }
+
+        @Override
+        public void serialize(String value, JsonGenerator gen, SerializationContext ctxt) {
+            gen.writeString(gen.currentValue().getClass().getSimpleName());
+        }
+    }
+
+    @Test
+    void aComponentSerializerSeesTheTupleAsTheCurrentValue() {
+        var mapper = JsonMapper.builder()
+                .addModule(new ZazrModule())
+                .addModule(new SimpleModule().addSerializer(String.class, new CurrentValue()))
+                .polymorphicTypeValidator(BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("dev.zazr.")
+                        .build())
+                .build();
+        assertThat(mapper.writeValueAsString(dev.zazr.Tuple.of("a"))).isEqualTo("[\"Tuple1\"]");
+        assertThat(mapper.writeValueAsString(new Typed(dev.zazr.Tuple.of("a"))))
+                .isEqualTo("{\"value\":[\"dev.zazr.Tuple1\",[\"Tuple1\"]]}");
+    }
 }

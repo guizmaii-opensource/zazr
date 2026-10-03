@@ -37,6 +37,7 @@ public final class TupleSerializer extends StdSerializer<Tuple> {
 
     @Override
     public void serializeWithType(Tuple value, JsonGenerator gen, SerializationContext ctxt, TypeSerializer typeSer) {
+        gen.assignCurrentValue(value);
         var typeId = typeSer.writeTypePrefix(gen, ctxt, typeSer.typeId(value, JsonToken.START_ARRAY));
         writeComponents(value, gen, ctxt);
         typeSer.writeTypeSuffix(gen, ctxt, typeId);

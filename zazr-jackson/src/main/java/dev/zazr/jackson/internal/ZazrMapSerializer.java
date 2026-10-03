@@ -62,9 +62,10 @@ public final class ZazrMapSerializer extends StdSerializer<Object> {
         }
     }
 
+    /// Empty as Jackson's map serializer sees the view: no entry, or, with a content `@JsonInclude`, no entry left.
     @Override
     public boolean isEmpty(SerializationContext ctxt, Object value) {
-        return view(value).isEmpty();
+        return delegate(ctxt).isEmpty(ctxt, view(value));
     }
 
     private ValueSerializer<Object> delegate(SerializationContext ctxt) {

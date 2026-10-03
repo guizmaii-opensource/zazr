@@ -9,7 +9,7 @@ description: Read and write the Zazr collections, Option and the tuples as JSON 
 
 ## Add the dependency
 
-`zazr-jackson` ships from Zazr 0.2.0. It depends on `zazr-core` and on Jackson 3
+`zazr-jackson` ships from Zazr 0.3.0. It depends on `zazr-core` and on Jackson 3
 (`tools.jackson.core:jackson-databind`), which your project already has if it uses Jackson 3.
 
 === "Maven"
@@ -18,7 +18,7 @@ description: Read and write the Zazr collections, Option and the tuples as JSON 
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-jackson</artifactId>
-        <version>0.2.0</version>
+        <version>0.3.0</version>
     </dependency>
     ```
 
@@ -26,7 +26,7 @@ description: Read and write the Zazr collections, Option and the tuples as JSON 
 
     ```kotlin
     dependencies {
-        implementation("dev.zazr:zazr-jackson:0.2.0")
+        implementation("dev.zazr:zazr-jackson:0.3.0")
     }
     ```
 
