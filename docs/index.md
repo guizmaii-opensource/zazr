@@ -213,6 +213,7 @@ JDK 25 or later, no runtime dependencies. Zazr is on Maven Central.
     ```
 
 `dev.zazr:zazr-test` adds property-based testing; see [Testing with zazr-test](testing.md).
+`dev.zazr:zazr-jackson` reads and writes the Zazr types as JSON with Jackson 3; see [Jackson](jackson.md).
 
 [Get started :octicons-arrow-right-24:](getting-started.md){ .md-button .md-button--primary }
 

@@ -29,13 +29,14 @@ make test-one TEST=VectorTest MODULE=zazr-core
 make test-one TEST='DocsExamplesTest$$ValidationPage'  # a nested class: Make needs the $ doubled
 make fmt                                      # format the sources (Palantir Java Format)
 make site-serve                               # preview the website at http://127.0.0.1:8000/
-make coverage                                 # test coverage report, in zazr-test/target/site/jacoco-aggregate
+make coverage                                 # test coverage reports, in <module>/target/site
 ```
 
 `make verify` must pass before you open a pull request.
 
 `zazr-core` must keep at least 95 % of its lines and 95 % of its branches covered, counting the tests of `zazr-core`
-and `zazr-test` together. `make coverage` fails below either figure, and so does the CI `coverage` job. The threshold
+and `zazr-test` together, and `zazr-jackson` the same, counting its own tests. `make coverage` fails below either
+figure, and so does the CI `coverage` job. The threshold
 is on the module as a whole, not per file: JaCoCo never marks a line covered when the method it calls throws, such
 as `return sneakyThrow(t);`, so a small class with such a line can stay below 95 % however well it is tested.
 On a pull request, the `coverage` job posts the summary of `make coverage-summary` as a comment and edits that
