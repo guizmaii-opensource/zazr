@@ -554,6 +554,14 @@ public class NonEmptyMapTest {
             calls.put("keySet()", m -> java.util.List.of(m.keySet()));
             calls.put("values()", m -> java.util.List.of(m.values()));
             calls.put("groupBy(Function)", m -> java.util.List.of(m.groupBy(t -> 0), m.groupBy(Tuple2::_1)));
+            calls.put(
+                    "groupMap(Function, Function)",
+                    m -> java.util.List.of(m.groupMap(t -> 0, Tuple2::_2), m.groupMap(Tuple2::_1, Tuple2::_2)));
+            calls.put(
+                    "groupMapReduce(Function, Function, BiFunction)",
+                    m -> java.util.List.of(
+                            m.groupMapReduce(t -> 0, Tuple2::_2, (a, b) -> a),
+                            m.groupMapReduce(Tuple2::_1, Tuple2::_2, (a, b) -> b)));
             // conversions to maps: a non-empty source gives a non-empty map, even when every key is the same
             calls.put("toMap(Function, Function)", m -> java.util.List.of(m.toMap(t -> 0, t -> t)));
             calls.put("toMap(Function)", m -> java.util.List.of(m.toMap(t -> Tuple.of(0, t))));

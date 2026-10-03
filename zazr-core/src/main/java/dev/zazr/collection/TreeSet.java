@@ -916,6 +916,26 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
                 "TreeSet.groupBy: classifier returned null");
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The groups are {@link HashSet}s: the values need not be comparable, and this set's comparator orders elements,
+     * not the values they become. {@link #groupBy(Function)} keeps this comparator, as its groups hold elements.
+     */
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, HashSet<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, HashSet::ofAll, "TreeSet.groupMap");
+    }
+
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "TreeSet.groupMapReduce");
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public TreeSet<T> intersect(Set<? extends T> elements) {

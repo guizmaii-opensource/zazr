@@ -540,6 +540,14 @@ public class NonEmptySortedSetTest {
             calls.put("tap(Consumer)", s -> java.util.List.of(s.tap(i -> {})));
             // non-empty collections inside another type
             calls.put("groupBy(Function)", s -> java.util.List.of(s.groupBy(i -> 0), s.groupBy(i -> i)));
+            calls.put(
+                    "groupMap(Function, Function)",
+                    s -> java.util.List.of(s.groupMap(i -> 0, i -> i), s.groupMap(i -> i, i -> i)));
+            calls.put(
+                    "groupMapReduce(Function, Function, BiFunction)",
+                    s -> java.util.List.of(
+                            s.groupMapReduce(i -> 0, i -> i, (a, b) -> a),
+                            s.groupMapReduce(i -> i, i -> i, (a, b) -> b)));
             calls.put("grouped(int)", s -> java.util.List.of(s.grouped(1), s.grouped(Integer.MAX_VALUE)));
             calls.put("sliding(int)", s -> java.util.List.of(s.sliding(1), s.sliding(Integer.MAX_VALUE)));
             calls.put(

@@ -1189,6 +1189,32 @@ public class DocsExamplesTest {
         }
 
         @Test
+        void grouping() {
+            var words = List.of("apple", "bob", "avocado", "cherry", "banana");
+            var lengths = words.groupMap(w -> w.charAt(0), String::length); // Map<Character, List<Integer>>
+            var counts = words.groupMapReduce(w -> w.charAt(0), w -> 1, Integer::sum); // Map<Character, Integer>
+            // lengths is LinkedHashMap((a, List(5, 7)), (b, List(3, 6)), (c, List(6)))
+            // counts is LinkedHashMap((a, 2), (b, 2), (c, 1))
+
+            assertThat(lengths).hasToString("LinkedHashMap((a, List(5, 7)), (b, List(3, 6)), (c, List(6)))");
+            assertThat(counts).hasToString("LinkedHashMap((a, 2), (b, 2), (c, 1))");
+        }
+
+        @Test
+        void comparingSizes() {
+            var many = List.range(0, 1_000_000);
+            var naturals = LazyList.from(1);
+            var big = many.sizeCompare(3) > 0; // boolean
+            var atLeast = naturals.sizeCompare(10); // int
+            var shorter = Vector.of(1, 2).sizeCompare(naturals); // int
+            // true, 1, -1
+
+            assertThat(big).isTrue();
+            assertThat(atLeast).isEqualTo(1);
+            assertThat(shorter).isEqualTo(-1);
+        }
+
+        @Test
         void sumsProductsAndAverages() {
             var words = List.of("one", "three", "five");
             var letters = words.sumInt(String::length); // int

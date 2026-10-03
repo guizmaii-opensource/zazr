@@ -340,6 +340,74 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
         return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
+    /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value}
+     * returns; each group is a set, as
+     * {@link HashSet#groupMap} does.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per element.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <B>   the type of the grouped values
+     * @return the groups, each non-empty, in a non-empty map
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K extends @Nullable Object, B extends @Nullable Object> NonEmptyMap<K, NonEmptySet<B>> groupMap(
+            Function<? super A, ? extends K> key, Function<? super A, ? extends B> value) {
+        return NonEmptyModule.groupMap(
+                set, key, value, values -> new NonEmptySet<>(HashSet.ofAll(values)), "NonEmptySet.groupMap");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined from the left with {@code reduce} in this set's iteration order, as {@link HashSet#groupMapReduce} does.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <B>    the type of the values and of their combination
+     * @return the combined value of each group, by key, in a non-empty map
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K extends @Nullable Object, B extends @Nullable Object> NonEmptyMap<K, B> groupMapReduce(
+            Function<? super A, ? extends K> key,
+            Function<? super A, ? extends B> value,
+            BiFunction<? super B, ? super B, ? extends B> reduce) {
+        return NonEmptyModule.groupMapReduce(set, key, value, reduce, "NonEmptySet.groupMapReduce");
+    }
+
+    /**
+     * Compares the size of this set with {@code otherSize}, as {@link HashSet#sizeCompare(int)} does.
+     * <p>
+     * Complexity: O(1): the stored size is compared.
+     *
+     * @param otherSize the size to compare with; a negative one is smaller than every size
+     * @return -1, 0 or 1 as the size of this set is smaller than, equal to or greater than {@code otherSize}
+     */
+    public int sizeCompare(int otherSize) {
+        return set.sizeCompare(otherSize);
+    }
+
+    /**
+     * Compares the size of this set with the size of {@code that}, as {@link HashSet#sizeCompare(Iterable)} does:
+     * a size that is not stored is counted only up to this one, and a one-shot {@code that} is iterated once.
+     * <p>
+     * Complexity: O(min(n, m)), at most; O(1) when the size of {@code that} is stored.
+     *
+     * @param that the collection whose size this one is compared with
+     * @return -1, 0 or 1 as the size of this set is smaller than, equal to or greater than the size of
+     *     {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int sizeCompare(Iterable<?> that) {
+        return set.sizeCompare(that);
+    }
+
     /* the plain operations that cannot empty a non-empty set return the same instance when nothing changes */
     private NonEmptySet<A> wrap(HashSet<A> result) {
         return result == set ? this : new NonEmptySet<>(result);

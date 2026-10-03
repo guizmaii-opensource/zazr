@@ -67,6 +67,8 @@ Every method: [complexity page](complexity.md#sets).
 
 - Do not rely on the iteration order of a `HashSet`: it depends on the hashes and may change between versions.
   `fold` and `reduce` see the elements in that order, so give them an operation where the order does not matter.
+- `TreeSet.groupMap` puts the values of each group in a `HashSet`: they need not be comparable, and the set's
+  comparator orders elements, not values. `groupBy` keeps the comparator, since its groups hold elements.
 - `max()` and `min()` use the natural order of the elements, which must be `Comparable`, and walk them all, even on a
   `TreeSet`. The least and greatest elements in a `TreeSet`'s own order are `head()` and `last()`, in O(log n).
 - `TreeSet` decides membership with its comparator, not `equals`, in `contains`, `add`, `remove` and `union`.

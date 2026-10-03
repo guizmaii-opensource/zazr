@@ -1498,6 +1498,48 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value} returns,
+     * in a map ordered by the first occurrence of each key; each group keeps the order of this Queue. The same as
+     * {@code groupBy(key).mapValues(group -> group.map(value))}, in one pass.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per element.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <U>   the type of the grouped values
+     * @return the groups by key
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, Queue<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, Queue::ofAll, "Queue.groupMap");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined from the left with {@code reduce}, in a map ordered by the first occurrence of each key. The same
+     * as {@code groupMap(key, value).mapValues(group -> group.reduceLeft(reduce))}, in one pass and without building
+     * the groups: {@code words.groupMapReduce(word -> word, word -> 1, Integer::sum)} counts the words.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "Queue.groupMapReduce");
+    }
+
+    /**
      * Returns the first element of this non-empty {@code Queue}.
      * <p>
      * Complexity: O(1).
@@ -3255,6 +3297,95 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     @Override
     public int size() {
         return front.size() + rear.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, k)) for k = {@code otherSize}: at most k + 1 elements are counted, where size() counts
+     * them all.
+     */
+    @Override
+    public int sizeCompare(int otherSize) {
+        if (otherSize < 0) {
+            return 1;
+        }
+        // the cells of the front, then those of the rear: its reversed order does not matter to a count
+        @SuppressWarnings("Var")
+        int count = 0;
+        for (List<T> cell = front; !cell.isEmpty(); cell = cell.tail()) {
+            if (count == otherSize) {
+                return 1;
+            }
+            count++;
+        }
+        for (List<T> cell = rear; !cell.isEmpty(); cell = cell.tail()) {
+            if (count == otherSize) {
+                return 1;
+            }
+            count++;
+        }
+        return count == otherSize ? 0 : -1;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, m)), at most: a size that is not stored is counted only up to the other one; O(1) when the
+     * size of {@code that} is stored. The elements held at the back, of this queue and of a Queue {@code that}, are
+     * counted where they are, not put in order first, as iterator() does.
+     */
+    @Override
+    public int sizeCompare(Iterable<?> that) {
+        Objects.requireNonNull(that, "that is null");
+        int thatKnownSize = Collections.knownSize(that);
+        if (thatKnownSize >= 0) {
+            return sizeCompare(thatKnownSize);
+        }
+        if (that instanceof Queue<?> other) {
+            // the iterator of the other queue would first put the elements held at its back in order
+            return sizeCompareCells(front, rear, other.front, other.rear);
+        }
+        // the cells of the front, then those of the rear, side by side with the elements of that
+        java.util.Iterator<?> those = that.iterator();
+        for (List<T> cell = front; !cell.isEmpty(); cell = cell.tail()) {
+            if (!those.hasNext()) {
+                return 1;
+            }
+            those.next();
+        }
+        for (List<T> cell = rear; !cell.isEmpty(); cell = cell.tail()) {
+            if (!those.hasNext()) {
+                return 1;
+            }
+            those.next();
+        }
+        return those.hasNext() ? -1 : 0;
+    }
+
+    // walks the cells of two queues side by side, each front then rear, until the shorter one ends: -1, 0 or 1 as
+    // the first queue is shorter, as long or longer
+    @SuppressWarnings("Var")
+    private static int sizeCompareCells(List<?> front, List<?> rear, List<?> otherFront, List<?> otherRear) {
+        List<?> these = front;
+        List<?> theseNext = rear;
+        List<?> those = otherFront;
+        List<?> thoseNext = otherRear;
+        while (true) {
+            if (these.isEmpty() && !theseNext.isEmpty()) {
+                these = theseNext;
+                theseNext = List.empty();
+            }
+            if (those.isEmpty() && !thoseNext.isEmpty()) {
+                those = thoseNext;
+                thoseNext = List.empty();
+            }
+            if (these.isEmpty() || those.isEmpty()) {
+                return Boolean.compare(!these.isEmpty(), !those.isEmpty());
+            }
+            these = these.tail();
+            those = those.tail();
+        }
     }
 
     /**

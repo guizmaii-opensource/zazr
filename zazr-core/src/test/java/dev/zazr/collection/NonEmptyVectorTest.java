@@ -1690,6 +1690,14 @@ public class NonEmptyVectorTest {
                     v -> java.util.List.of(v.sliding(1, Integer.MAX_VALUE), v.sliding(Integer.MAX_VALUE, 1)));
             calls.put("slideBy(Function)", v -> java.util.List.of(v.slideBy(i -> 0), v.slideBy(i -> i)));
             calls.put("groupBy(Function)", v -> java.util.List.of(v.groupBy(i -> 0), v.groupBy(i -> i)));
+            calls.put(
+                    "groupMap(Function, Function)",
+                    v -> java.util.List.of(v.groupMap(i -> 0, i -> i), v.groupMap(i -> i, i -> i)));
+            calls.put(
+                    "groupMapReduce(Function, Function, BiFunction)",
+                    v -> java.util.List.of(
+                            v.groupMapReduce(i -> 0, i -> i, (a, b) -> a),
+                            v.groupMapReduce(i -> i, i -> i, (a, b) -> b)));
             // conversions to maps: a non-empty source gives a non-empty map, even when every key is the same
             calls.put("toMap(Function, Function)", v -> java.util.List.of(v.toMap(i -> 0, i -> i)));
             calls.put("toMap(Function)", v -> java.util.List.of(v.toMap(i -> Tuple.of(0, i))));

@@ -755,6 +755,20 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
                 this, classifier, LinkedHashSet::ofAll, "LinkedHashSet.groupBy: classifier returned null");
     }
 
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, LinkedHashSet<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, LinkedHashSet::ofAll, "LinkedHashSet.groupMap");
+    }
+
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "LinkedHashSet.groupMapReduce");
+    }
+
     /**
      * {@inheritDoc}
      * <p>

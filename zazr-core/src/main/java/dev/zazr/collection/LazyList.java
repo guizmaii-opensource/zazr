@@ -1920,6 +1920,50 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value} returns,
+     * in a map ordered by the first occurrence of each key; each group keeps the order of this LazyList. The same as
+     * {@code groupBy(key).mapValues(group -> group.map(value))}, in one pass.
+     * <p>
+     * Complexity: O(n): the whole LazyList is computed now, so it never returns on an infinite LazyList; one key, one
+     * value and one hash lookup per element.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <U>   the type of the grouped values
+     * @return the groups by key
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    default <K extends @Nullable Object, U extends @Nullable Object> Map<K, LazyList<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, LazyList::ofAll, "LazyList.groupMap");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined from the left with {@code reduce}, in a map ordered by the first occurrence of each key. The same
+     * as {@code groupMap(key, value).mapValues(group -> group.reduceLeft(reduce))}, in one pass and without building
+     * the groups: {@code words.groupMapReduce(word -> word, word -> 1, Integer::sum)} counts the words.
+     * <p>
+     * Complexity: O(n): the whole LazyList is computed now, so it never returns on an infinite LazyList; one key, one
+     * value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    default <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "LazyList.groupMapReduce");
+    }
+
+    /**
      * The index of the first occurrence of {@code element} at or after {@code from}, or -1. A negative {@code from}
      * counts as 0.
      * <p>
@@ -3819,6 +3863,27 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     @Override
     default int size() {
         return foldLeft(0, (n, ignored) -> n + 1);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, k)) for k = {@code otherSize}: at most k + 1 elements are computed, so it returns on an infinite LazyList, where size() never does.
+     */
+    @Override
+    default int sizeCompare(int otherSize) {
+        if (otherSize < 0) {
+            return 1;
+        }
+        @SuppressWarnings("Var")
+        int count = 0;
+        for (LazyList<T> cell = this; !cell.isEmpty(); cell = cell.tail()) {
+            if (count == otherSize) {
+                return 1;
+            }
+            count++;
+        }
+        return count == otherSize ? 0 : -1;
     }
 
     /**

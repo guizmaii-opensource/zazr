@@ -1139,7 +1139,80 @@ public class NullResultTest {
                 "TreeMap.arrangeBy",
                 "Map.arrangeBy: getKey returned null",
                 () -> TreeMap.of(1, "a").arrangeBy(e -> null)));
+        // groupMap and groupMapReduce name the function that returned null: the key, the value or the reduce
+        for (Grouping grouping : groupings()) {
+            String type = grouping.type();
+            java.util.function.Function<Object, Object> zero = x -> 0;
+            cases.add(throwing(
+                    type + ".groupMap",
+                    type + ".groupMap: key returned null",
+                    () -> grouping.groupMap().call(x -> null, x -> x)));
+            cases.add(throwing(
+                    type + ".groupMap",
+                    type + ".groupMap: value returned null",
+                    () -> grouping.groupMap().call(zero, x -> null)));
+            cases.add(throwing(
+                    type + ".groupMapReduce",
+                    type + ".groupMapReduce: key returned null",
+                    () -> grouping.groupMapReduce().call(x -> null, x -> x, (a, b) -> a)));
+            cases.add(throwing(
+                    type + ".groupMapReduce",
+                    type + ".groupMapReduce: value returned null",
+                    () -> grouping.groupMapReduce().call(zero, x -> null, (a, b) -> a)));
+            cases.add(throwing(
+                    type + ".groupMapReduce",
+                    type + ".groupMapReduce: reduce returned null",
+                    () -> grouping.groupMapReduce().call(zero, x -> x, (a, b) -> null)));
+        }
         return cases;
+    }
+
+    @FunctionalInterface
+    private interface GroupMapCall {
+        void call(java.util.function.Function<Object, Object> key, java.util.function.Function<Object, Object> value);
+    }
+
+    @FunctionalInterface
+    private interface GroupMapReduceCall {
+        void call(
+                java.util.function.Function<Object, Object> key,
+                java.util.function.Function<Object, Object> value,
+                java.util.function.BiFunction<Object, Object, Object> reduce);
+    }
+
+    /** A collection type and its {@code groupMap} and {@code groupMapReduce}, called on two elements or entries. */
+    private record Grouping(String type, GroupMapCall groupMap, GroupMapReduceCall groupMapReduce) {}
+
+    private static java.util.List<Grouping> groupings() {
+        return java.util.List.of(
+                new Grouping("Vector", Vector.of(1, 2)::groupMap, Vector.of(1, 2)::groupMapReduce),
+                new Grouping("List", List.of(1, 2)::groupMap, List.of(1, 2)::groupMapReduce),
+                new Grouping("Queue", Queue.of(1, 2)::groupMap, Queue.of(1, 2)::groupMapReduce),
+                new Grouping("LazyList", LazyList.of(1, 2)::groupMap, LazyList.of(1, 2)::groupMapReduce),
+                new Grouping("HashSet", HashSet.of(1, 2)::groupMap, HashSet.of(1, 2)::groupMapReduce),
+                new Grouping("LinkedHashSet", LinkedHashSet.of(1, 2)::groupMap, LinkedHashSet.of(1, 2)::groupMapReduce),
+                new Grouping("TreeSet", TreeSet.of(1, 2)::groupMap, TreeSet.of(1, 2)::groupMapReduce),
+                new Grouping("HashMap", HashMap.of(1, 1, 2, 2)::groupMap, HashMap.of(1, 1, 2, 2)::groupMapReduce),
+                new Grouping(
+                        "LinkedHashMap",
+                        LinkedHashMap.of(1, 1, 2, 2)::groupMap,
+                        LinkedHashMap.of(1, 1, 2, 2)::groupMapReduce),
+                new Grouping("TreeMap", TreeMap.of(1, 1, 2, 2)::groupMap, TreeMap.of(1, 1, 2, 2)::groupMapReduce),
+                new Grouping(
+                        "NonEmptyVector", NonEmptyVector.of(1, 2)::groupMap, NonEmptyVector.of(1, 2)::groupMapReduce),
+                new Grouping("NonEmptySet", NonEmptySet.of(1, 2)::groupMap, NonEmptySet.of(1, 2)::groupMapReduce),
+                new Grouping(
+                        "NonEmptySortedSet",
+                        NonEmptySortedSet.of(1, 2)::groupMap,
+                        NonEmptySortedSet.of(1, 2)::groupMapReduce),
+                new Grouping(
+                        "NonEmptyMap",
+                        NonEmptyMap.of(Tuple.of(1, 1), Tuple.of(2, 2))::groupMap,
+                        NonEmptyMap.of(Tuple.of(1, 1), Tuple.of(2, 2))::groupMapReduce),
+                new Grouping(
+                        "NonEmptySortedMap",
+                        NonEmptySortedMap.of(Tuple.of(1, 1), Tuple.of(2, 2))::groupMap,
+                        NonEmptySortedMap.of(Tuple.of(1, 1), Tuple.of(2, 2))::groupMapReduce));
     }
 
     @TestFactory

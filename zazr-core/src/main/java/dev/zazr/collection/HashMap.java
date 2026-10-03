@@ -788,6 +788,20 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.groupBy(this, this::createFromEntries, classifier, "HashMap.groupBy: classifier returned null");
     }
 
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, Vector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value) {
+        return Collections.groupMap(this, key, value, Vector::ofAll, "HashMap.groupMap");
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "HashMap.groupMapReduce");
+    }
+
     /**
      * {@inheritDoc}
      * <p>

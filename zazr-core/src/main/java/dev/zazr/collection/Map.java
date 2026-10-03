@@ -521,6 +521,44 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
             Function<? super Tuple2<K, V>, ? extends C> classifier);
 
     /**
+     * The entries grouped by the key {@code key} computes, each replaced in its group by what {@code value} returns,
+     * in a map ordered by the first occurrence of each key; each group is a {@link Vector} in this map's iteration
+     * order, as {@link #values()} is.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per entry.
+     *
+     * @param key   the group key of an entry
+     * @param value what an entry becomes in its group
+     * @param <K2>  the group key type
+     * @param <U>   the type of the grouped values
+     * @return a map from each group key to the values of the entries with that key
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, Vector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value);
+
+    /**
+     * The entries grouped by the key {@code key} computes, the values {@code value} returns for the entries of a
+     * group combined from the left with {@code reduce}, in this map's iteration order, in a map ordered by the first
+     * occurrence of each key. The same as {@code groupMap(key, value).mapValues(group -> group.reduceLeft(reduce))},
+     * in one pass and without building the groups.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per entry.
+     *
+     * @param key    the group key of an entry
+     * @param value  what an entry contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next entry
+     * @param <K2>   the group key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by group key
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce);
+
+    /**
      * This map if it is non-empty, otherwise a map of the entries of {@code other}.
      *
      * @param other the entries to fall back on

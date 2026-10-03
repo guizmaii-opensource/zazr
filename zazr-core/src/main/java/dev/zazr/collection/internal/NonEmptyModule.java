@@ -1,5 +1,8 @@
 package dev.zazr.collection.internal;
 
+import dev.zazr.collection.HashMap;
+import dev.zazr.collection.NonEmptyMap;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -13,6 +16,44 @@ import org.jspecify.annotations.Nullable;
  * iteration order, as on the plain collections.
  */
 public interface NonEmptyModule {
+
+    /// [Collections#groupMap(Iterable, Function, Function, String)] of `nonEmpty`, whose groups `group`
+    /// builds, as a [NonEmptyMap]: there is at least one element, so at least one group.
+    static <
+                    T extends @Nullable Object,
+                    K extends @Nullable Object,
+                    U extends @Nullable Object,
+                    R extends @Nullable Object>
+            NonEmptyMap<K, R> groupMap(
+                    Iterable<T> nonEmpty,
+                    Function<? super T, ? extends K> key,
+                    Function<? super T, ? extends U> value,
+                    Function<? super ArrayList<U>, ? extends R> group,
+                    String method) {
+        HashMap.Builder<K, R> groups = HashMap.newBuilder();
+        for (java.util.Map.Entry<K, ArrayList<U>> entry :
+                Collections.<T, K, U>groupMap(nonEmpty, key, value, method).entrySet()) {
+            groups.put(entry.getKey(), group.apply(entry.getValue()));
+        }
+        return NonEmptyMap.unsafeFromMap(groups.result());
+    }
+
+    /// [Collections#groupMapReduce(Iterable, Function, Function, BiFunction, String)] of `nonEmpty`, as a
+    /// [NonEmptyMap].
+    static <T extends @Nullable Object, K extends @Nullable Object, U extends @Nullable Object>
+            NonEmptyMap<K, U> groupMapReduce(
+                    Iterable<T> nonEmpty,
+                    Function<? super T, ? extends K> key,
+                    Function<? super T, ? extends U> value,
+                    BiFunction<? super U, ? super U, ? extends U> reduce,
+                    String method) {
+        HashMap.Builder<K, U> groups = HashMap.newBuilder();
+        for (java.util.Map.Entry<K, U> entry : Collections.<T, K, U>groupMapReduce(nonEmpty, key, value, reduce, method)
+                .entrySet()) {
+            groups.put(entry.getKey(), entry.getValue());
+        }
+        return NonEmptyMap.unsafeFromMap(groups.result());
+    }
 
     static <T extends @Nullable Object> T max(Iterable<T> nonEmpty, Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");

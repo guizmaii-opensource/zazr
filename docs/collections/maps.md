@@ -89,3 +89,5 @@ Every method: [complexity page](complexity.md#maps).
 - `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries; the `java.util.Map` view is `asJavaMap()`
   ([Java interop](../java-interop.md)).
 - Neither keys nor values can be `null`.
+- `groupMap` groups what its function returns for each entry in a `Vector`, in the map's iteration order, as
+  `values()` does; `groupBy` groups whole entries in maps of the same type.

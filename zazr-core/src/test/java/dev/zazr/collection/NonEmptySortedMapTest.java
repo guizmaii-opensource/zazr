@@ -580,6 +580,14 @@ public class NonEmptySortedMapTest {
             calls.put("values()", m -> java.util.List.of(m.values()));
             calls.put("zipWithIndex()", m -> java.util.List.of(m.zipWithIndex()));
             calls.put("groupBy(Function)", m -> java.util.List.of(m.groupBy(t -> 0), m.groupBy(Tuple2::_1)));
+            calls.put(
+                    "groupMap(Function, Function)",
+                    m -> java.util.List.of(m.groupMap(t -> 0, Tuple2::_2), m.groupMap(Tuple2::_1, Tuple2::_2)));
+            calls.put(
+                    "groupMapReduce(Function, Function, BiFunction)",
+                    m -> java.util.List.of(
+                            m.groupMapReduce(t -> 0, Tuple2::_2, (a, b) -> a),
+                            m.groupMapReduce(Tuple2::_1, Tuple2::_2, (a, b) -> b)));
             calls.put("grouped(int)", m -> java.util.List.of(m.grouped(1), m.grouped(Integer.MAX_VALUE)));
             calls.put("sliding(int)", m -> java.util.List.of(m.sliding(1), m.sliding(Integer.MAX_VALUE)));
             calls.put(
