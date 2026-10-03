@@ -208,6 +208,45 @@ class LazyListLazinessTest {
 
     // -- construction
 
+    /// The operations whose result depends on the whole list: those returning a LazyList compute nothing at the call
+    /// and the whole list on the first read, as their notes say; groupBy computes the whole list at the call.
+    @Test
+    void theOperationsThatNeedTheWholeListComputeItWhenTheirNotesSay() {
+        Comparator<Integer> byParity = Comparator.comparing(x -> x % 2);
+        LinkedHashMap<String, Function<LazyList<Integer>, LazyList<Integer>>> lazyCalls = new LinkedHashMap<>();
+        lazyCalls.put("duplicates()", LazyList::duplicates);
+        lazyCalls.put("duplicatesBy(Function)", l -> l.duplicatesBy(x -> x % 2));
+        lazyCalls.put("distinctByKeepLast(Comparator)", l -> l.distinctByKeepLast(byParity));
+        lazyCalls.put("distinctByKeepLast(Function)", l -> l.distinctByKeepLast(x -> x % 2));
+        lazyCalls.put("dropRightUntil(Predicate)", l -> l.dropRightUntil(x -> x == 3));
+        lazyCalls.put("dropRightWhile(Predicate)", l -> l.dropRightWhile(x -> x > 3));
+        lazyCalls.put("leftPadTo(int, Object)", l -> l.leftPadTo(SIZE + 2, 99));
+        lazyCalls.put("removeLast(Predicate)", l -> l.removeLast(x -> x == 2));
+        lazyCalls.put("rotateLeft(int)", l -> l.rotateLeft(2));
+        lazyCalls.put("rotateRight(int)", l -> l.rotateRight(2));
+        lazyCalls.put("takeRight(int)", l -> l.takeRight(2));
+        lazyCalls.put("takeRightUntil(Predicate)", l -> l.takeRightUntil(x -> x == 3));
+        lazyCalls.put("takeRightWhile(Predicate)", l -> l.takeRightWhile(x -> x > 3));
+        java.util.Map<String, String> counts = new LinkedHashMap<>();
+        lazyCalls.forEach((signature, call) -> {
+            AtomicInteger evaluated = new AtomicInteger();
+            LazyList<Integer> result = call.apply(counted(evaluated));
+            int afterCall = evaluated.get();
+            result.headOption();
+            counts.put(signature, afterCall + "/" + evaluated.get());
+        });
+        AtomicInteger grouped = new AtomicInteger();
+        counted(grouped).groupBy(x -> x % 2);
+        counts.put("groupBy(Function)", grouped.get() + "/-");
+
+        java.util.Map<String, String> expected = new LinkedHashMap<>();
+        lazyCalls.keySet().forEach(signature -> expected.put(signature, "0/" + SIZE));
+        expected.put("groupBy(Function)", SIZE + "/-");
+        assertThat(counts)
+                .as("cells evaluated at the call/after the first read")
+                .containsExactlyEntriesOf(expected);
+    }
+
     @Test
     void theFactoriesEvaluateNothing() {
         AtomicInteger calls = new AtomicInteger();

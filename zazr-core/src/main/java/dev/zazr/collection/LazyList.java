@@ -1906,8 +1906,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * The elements grouped by the key {@code classifier} computes, in a map ordered by the first occurrence of each
      * key; each group keeps the order of this LazyList.
      * <p>
-     * Complexity: lazy; nothing is computed now. Reading the first element computes the whole LazyList, O(n) with one key
-     * and one hash lookup per element.
+     * Complexity: O(n): the whole LazyList is computed now, so it never returns on an infinite LazyList; one key and one
+     * hash lookup per element.
      *
      * @param classifier the key of an element
      * @param <C>        the key type
