@@ -2,6 +2,7 @@ package dev.zazr.collection;
 
 import dev.zazr.Tuple2;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,30 @@ public class MapFunctionArgumentTest {
                 HashMap.empty(), HashMap.of(1, "a"),
                 LinkedHashMap.empty(), LinkedHashMap.of(1, "a"),
                 TreeMap.empty(), TreeMap.of(1, "a"));
+    }
+
+    @Test
+    public void shouldRejectANullRemappingFunctionInComputeIfPresent() {
+        for (Map<Integer, String> map : maps()) {
+            for (int key : new int[] {1, 2}) {
+                assertThatNullPointerException()
+                        .as(map + ", key " + key)
+                        .isThrownBy(() -> map.computeIfPresent(key, (BiFunction<Integer, String, String>) null))
+                        .withMessage("remappingFunction is null");
+            }
+        }
+    }
+
+    @Test
+    public void shouldRejectANullMappingFunctionInComputeIfAbsent() {
+        for (Map<Integer, String> map : maps()) {
+            for (int key : new int[] {1, 2}) {
+                assertThatNullPointerException()
+                        .as(map + ", key " + key)
+                        .isThrownBy(() -> map.computeIfAbsent(key, (Function<Integer, String>) null))
+                        .withMessage("mappingFunction is null");
+            }
+        }
     }
 
     @Test

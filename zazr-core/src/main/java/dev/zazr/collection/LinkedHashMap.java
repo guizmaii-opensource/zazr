@@ -695,6 +695,27 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is absent.
+     */
+    @Override
+    public Tuple2<V, LinkedHashMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        return Maps.computeIfAbsent(this, key, mappingFunction);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is present.
+     */
+    @Override
+    public Tuple2<Option<V>, LinkedHashMap<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        return Maps.computeIfPresent(this, key, remappingFunction);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: effectively O(1): one lookup of the key, then its value is compared.
      */
     @Override
