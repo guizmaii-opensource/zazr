@@ -3,6 +3,7 @@ package dev.zazr.test;
 import dev.zazr.CheckedFunction1;
 import dev.zazr.Tuple;
 import dev.zazr.control.Option;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Runs the checks of {@link Check}: generates the samples of a run and checks each one.
@@ -102,13 +103,15 @@ final class Runner {
 
     private static final class State {
         int samples;
+
+        @Nullable
         CheckResult failure;
     }
 
     /// The failure of one sample, or null when it passed. A `Boolean` or a `TestResult` is judged; any other value
     /// passes, since the body completed without throwing (an AssertJ chain returns its `Assert`); `null` is
     /// erroneous.
-    private static <T extends Tuple> CheckResult evaluate(
+    private static <T extends Tuple> @Nullable CheckResult evaluate(
             int sampleNumber, long seed, T sample, CheckedFunction1<? super T, ?> body) {
         try {
             return switch (body.apply(sample)) {
