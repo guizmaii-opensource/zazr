@@ -217,50 +217,95 @@ public interface RedBlackTreeModule {
                 Node<T> node = (Node<T>) tree;
                 int comparison = node.comparator().compare(value, node.value);
                 if (comparison < 0) {
-                    Tuple2<? extends RedBlackTree<T>, Boolean> deleted = delete(node.left, value);
-                    RedBlackTree<T> l = deleted._1();
-                    boolean d = deleted._2();
-                    if (d) {
-                        return Node.unbalancedRight(
-                                node.color, node.blackHeight - 1, l, node.value, node.right, node.empty);
-                    } else {
-                        Node<T> newNode =
-                                new Node<>(node.color, node.blackHeight, l, node.value, node.right, node.empty);
-                        return Tuple.of(newNode, false);
-                    }
+                    return deletedLeft(node, delete(node.left, value));
                 } else if (comparison > 0) {
-                    Tuple2<? extends RedBlackTree<T>, Boolean> deleted = delete(node.right, value);
-                    RedBlackTree<T> r = deleted._1();
-                    boolean d = deleted._2();
-                    if (d) {
-                        return Node.unbalancedLeft(
-                                node.color, node.blackHeight - 1, node.left, node.value, r, node.empty);
-                    } else {
-                        Node<T> newNode =
-                                new Node<>(node.color, node.blackHeight, node.left, node.value, r, node.empty);
-                        return Tuple.of(newNode, false);
-                    }
+                    return deletedRight(node, delete(node.right, value));
                 } else {
-                    if (node.right.isEmpty()) {
-                        if (node.color == BLACK) {
-                            return blackify(node.left);
-                        } else {
-                            return Tuple.of(node.left, false);
-                        }
-                    } else {
-                        Node<T> nodeRight = (Node<T>) node.right;
-                        Tuple3<? extends RedBlackTree<T>, Boolean, T> newRight = deleteMin(nodeRight);
-                        RedBlackTree<T> r = newRight._1();
-                        boolean d = newRight._2();
-                        T m = newRight._3();
-                        if (d) {
-                            return Node.unbalancedLeft(node.color, node.blackHeight - 1, node.left, m, r, node.empty);
-                        } else {
-                            RedBlackTree<T> newNode =
-                                    new Node<>(node.color, node.blackHeight, node.left, m, r, node.empty);
-                            return Tuple.of(newNode, false);
-                        }
-                    }
+                    return deleteRoot(node);
+                }
+            }
+        }
+
+        /// `tree` without the element whose key equals `key`, or `tree` itself when there is none: a deletion
+        /// by key, with no probe element. `key` is the first argument of each comparison, as in [#findByKey];
+        /// an empty tree compares nothing. One walk down the tree, then the rebalancing of
+        /// [#delete(RedBlackTree, Object)] on the way back up when the key is found, O(log n); nothing is
+        /// allocated when it is not.
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> deleteByKey(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            Tuple2<? extends RedBlackTree<E>, Boolean> deleted = doDeleteByKey(tree, key, comparator, entries);
+            return deleted == null ? tree : color(deleted._1(), BLACK);
+        }
+
+        // as `delete`, but `null` when no key equals `key`, passed up unchanged so that no level is rebuilt; the depth
+        // of the recursion is the height of the tree, at most 2 log2(n + 1)
+        private static <E extends @Nullable Object, K extends @Nullable Object> @Nullable
+                Tuple2<? extends RedBlackTree<E>, Boolean> doDeleteByKey(
+                        RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return null;
+            }
+            int c = compareKey(comparator, entries, key, node.value);
+            if (c < 0) {
+                Tuple2<? extends RedBlackTree<E>, Boolean> deleted = doDeleteByKey(node.left, key, comparator, entries);
+                return deleted == null ? null : deletedLeft(node, deleted);
+            } else if (c > 0) {
+                Tuple2<? extends RedBlackTree<E>, Boolean> deleted =
+                        doDeleteByKey(node.right, key, comparator, entries);
+                return deleted == null ? null : deletedRight(node, deleted);
+            } else {
+                return deleteRoot(node);
+            }
+        }
+
+        // `node` with its left subtree replaced by `deleted`, the result of a deletion from it, and whether the black
+        // height of the result dropped
+        private static <T extends @Nullable Object> Tuple2<? extends RedBlackTree<T>, Boolean> deletedLeft(
+                Node<T> node, Tuple2<? extends RedBlackTree<T>, Boolean> deleted) {
+            RedBlackTree<T> l = deleted._1();
+            boolean d = deleted._2();
+            if (d) {
+                return Node.unbalancedRight(node.color, node.blackHeight - 1, l, node.value, node.right, node.empty);
+            } else {
+                Node<T> newNode = new Node<>(node.color, node.blackHeight, l, node.value, node.right, node.empty);
+                return Tuple.of(newNode, false);
+            }
+        }
+
+        // `node` with its right subtree replaced by `deleted`, the result of a deletion from it, and whether the black
+        // height of the result dropped
+        private static <T extends @Nullable Object> Tuple2<? extends RedBlackTree<T>, Boolean> deletedRight(
+                Node<T> node, Tuple2<? extends RedBlackTree<T>, Boolean> deleted) {
+            RedBlackTree<T> r = deleted._1();
+            boolean d = deleted._2();
+            if (d) {
+                return Node.unbalancedLeft(node.color, node.blackHeight - 1, node.left, node.value, r, node.empty);
+            } else {
+                Node<T> newNode = new Node<>(node.color, node.blackHeight, node.left, node.value, r, node.empty);
+                return Tuple.of(newNode, false);
+            }
+        }
+
+        // `node` without its own element, and whether the black height of the result dropped
+        private static <T extends @Nullable Object> Tuple2<? extends RedBlackTree<T>, Boolean> deleteRoot(
+                Node<T> node) {
+            if (node.right.isEmpty()) {
+                if (node.color == BLACK) {
+                    return blackify(node.left);
+                } else {
+                    return Tuple.of(node.left, false);
+                }
+            } else {
+                Node<T> nodeRight = (Node<T>) node.right;
+                Tuple3<? extends RedBlackTree<T>, Boolean, T> newRight = deleteMin(nodeRight);
+                RedBlackTree<T> r = newRight._1();
+                boolean d = newRight._2();
+                T m = newRight._3();
+                if (d) {
+                    return Node.unbalancedLeft(node.color, node.blackHeight - 1, node.left, m, r, node.empty);
+                } else {
+                    RedBlackTree<T> newNode = new Node<>(node.color, node.blackHeight, node.left, m, r, node.empty);
+                    return Tuple.of(newNode, false);
                 }
             }
         }

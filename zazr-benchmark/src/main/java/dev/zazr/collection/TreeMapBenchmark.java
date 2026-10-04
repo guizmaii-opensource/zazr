@@ -16,9 +16,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Benchmarks the key lookups of {@link TreeMap} through its public API only: one lookup per invocation, so that the
- * bytes allocated per operation ({@code -prof gc}) are the bytes of one lookup. The keys are boxed once, in the
- * setup; a miss looks up an odd key, between two stored ones or, for the largest, above them all.
+ * Benchmarks the key lookups and removals of {@link TreeMap} through its public API only: one lookup or removal per
+ * invocation, so that the bytes allocated per operation ({@code -prof gc}) are the bytes of one of them. The keys are
+ * boxed once, in the setup; a miss looks up an odd key, between two stored ones or, for the largest, above them all.
  *
  * <p>Run via {@code dev.zazr.JmhRunner}, or {@code org.openjdk.jmh.Main} for {@code -prof gc}.
  */
@@ -91,5 +91,16 @@ public class TreeMapBenchmark {
     @Benchmark
     public boolean containsKeyMiss() {
         return map.containsKey(nextMiss());
+    }
+
+    // a removal of a stored key rebuilds the path to it; the result is returned so that it is not discarded
+    @Benchmark
+    public TreeMap<Integer, Integer> removeHit() {
+        return map.remove(nextHit());
+    }
+
+    @Benchmark
+    public TreeMap<Integer, Integer> removeMiss() {
+        return map.remove(nextMiss());
     }
 }
