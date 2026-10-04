@@ -49,7 +49,9 @@ val documented: Set[String] = Set(
   "contains", "concat", "add", "addAll", "put", "putAll", "min", "max", "union", "intersect", "diff", "containsKey",
   "keySet", "values",
   // the grouping and size comparisons that every collection has
-  "groupMap", "groupMapReduce", "sizeCompare"
+  "groupMap", "groupMapReduce", "sizeCompare",
+  // the ranges of the sorted sets and maps
+  "rangeFrom", "rangeUntil", "rangeTo", "rangeFromUntil", "minAfter", "maxBefore", "iteratorFrom"
 )
 
 /** The complexity classes of the legend, cheapest first. */

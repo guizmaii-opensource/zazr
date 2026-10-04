@@ -1142,6 +1142,51 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
     }
 
+    // -- Ranges, by element in the comparator's order
+
+    @Override
+    public TreeSet<T> rangeFrom(T from) {
+        Objects.requireNonNull(from, "from is null");
+        return withTree(RedBlackTreeModule.Node.rangeFrom(tree, from, tree.comparator(), false));
+    }
+
+    @Override
+    public TreeSet<T> rangeUntil(T until) {
+        Objects.requireNonNull(until, "until is null");
+        return withTree(RedBlackTreeModule.Node.rangeUntil(tree, until, tree.comparator(), false));
+    }
+
+    @Override
+    public TreeSet<T> rangeTo(T to) {
+        Objects.requireNonNull(to, "to is null");
+        return withTree(RedBlackTreeModule.Node.rangeTo(tree, to, tree.comparator(), false));
+    }
+
+    @Override
+    public TreeSet<T> rangeFromUntil(T from, T until) {
+        Objects.requireNonNull(from, "from is null");
+        Objects.requireNonNull(until, "until is null");
+        return withTree(RedBlackTreeModule.Node.range(tree, from, until, tree.comparator(), false));
+    }
+
+    @Override
+    public Option<T> minAfter(T element) {
+        Objects.requireNonNull(element, "element is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.minAfter(tree, element, tree.comparator(), false));
+    }
+
+    @Override
+    public Option<T> maxBefore(T element) {
+        Objects.requireNonNull(element, "element is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.maxBefore(tree, element, tree.comparator(), false));
+    }
+
+    @Override
+    public java.util.Iterator<T> iteratorFrom(T start) {
+        Objects.requireNonNull(start, "start is null");
+        return RedBlackTreeModule.Node.iteratorFrom(tree, start, tree.comparator(), false);
+    }
+
     // -- Positional operations, in the comparator's order
 
     @Override

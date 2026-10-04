@@ -5,6 +5,7 @@ import dev.zazr.Tuple3;
 import dev.zazr.collection.HashMap;
 import dev.zazr.collection.List;
 import dev.zazr.collection.NonEmptyVector;
+import dev.zazr.collection.TreeMap;
 import dev.zazr.collection.TreeSet;
 import dev.zazr.collection.Vector;
 import dev.zazr.control.Either;
@@ -219,6 +220,21 @@ public class SkillExamplesTest {
             assertThat(big).isEqualTo(2_147_483_648L);
             assertThatThrownBy(() -> Vector.of(Integer.MAX_VALUE, 1).sumInt(n -> n))
                     .isInstanceOf(ArithmeticException.class);
+        }
+
+        @Test
+        void sortedRanges() {
+            var scores = TreeSet.of(10, 20, 30, 40);
+            var middle = scores.rangeFromUntil(20, 40); // TreeSet<Integer>
+            var next = scores.minAfter(20); // Option<Integer>
+            var before = scores.maxBefore(20); // Option<Integer>
+            var later = TreeMap.of(1, "a", 2, "b", 3, "c").rangeFrom(2); // TreeMap<Integer, String>
+            // middle is TreeSet(20, 30), next is Some(20), before is Some(10), later is TreeMap((2, b), (3, c))
+
+            assertThat(middle).hasToString("TreeSet(20, 30)");
+            assertThat(next).hasToString("Some(20)");
+            assertThat(before).hasToString("Some(10)");
+            assertThat(later).hasToString("TreeMap((2, b), (3, c))");
         }
 
         @Test

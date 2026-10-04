@@ -95,6 +95,101 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     <U extends @Nullable Object> SortedSet<U> map(
             Comparator<? super U> comparator, Function<? super T, ? extends U> mapper);
 
+    // -- Ranges, by element in the comparator's order
+
+    /**
+     * The elements greater than or equal to {@code from} in the comparator's order, with the same comparator: this set
+     * itself when no element is below {@code from}. {@code from} need not be an element.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the path of {@code from} without visiting the other elements, and
+     * the result shares the rest of the tree.
+     *
+     * @param from the lower bound, inclusive
+     * @return the elements from {@code from} on
+     * @throws NullPointerException if {@code from} is null
+     */
+    SortedSet<T> rangeFrom(T from);
+
+    /**
+     * The elements less than {@code until} in the comparator's order, with the same comparator: this set itself when
+     * no element is at or above {@code until}. {@code until} need not be an element.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the path of {@code until} without visiting the other elements, and
+     * the result shares the rest of the tree.
+     *
+     * @param until the upper bound, exclusive
+     * @return the elements before {@code until}
+     * @throws NullPointerException if {@code until} is null
+     */
+    SortedSet<T> rangeUntil(T until);
+
+    /**
+     * The elements less than or equal to {@code to} in the comparator's order, with the same comparator: this set
+     * itself when no element is above {@code to}. {@code to} need not be an element.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the path of {@code to} without visiting the other elements, and the
+     * result shares the rest of the tree.
+     *
+     * @param to the upper bound, inclusive
+     * @return the elements up to {@code to}
+     * @throws NullPointerException if {@code to} is null
+     */
+    SortedSet<T> rangeTo(T to);
+
+    /**
+     * The elements greater than or equal to {@code from} and less than {@code until} in the comparator's order, with
+     * the same comparator: this set itself when every element is in the range. The range is empty, and so is the
+     * result, when {@code from} is not less than {@code until}; unlike
+     * {@link java.util.TreeSet#subSet(Object, Object)}, this does not throw. Neither bound need be an element.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the paths of the two bounds without visiting the other elements,
+     * and the result shares the rest of the tree.
+     *
+     * @param from  the lower bound, inclusive
+     * @param until the upper bound, exclusive
+     * @return the elements from {@code from} to {@code until}
+     * @throws NullPointerException if {@code from} or {@code until} is null
+     */
+    SortedSet<T> rangeFromUntil(T from, T until);
+
+    /**
+     * The least element greater than or equal to {@code element} in the comparator's order: {@code element} itself,
+     * as stored in this set, when this set contains it. The same as {@code rangeFrom(element).headOption()}, without
+     * building the range.
+     * <p>
+     * Complexity: O(log n): one walk down the tree.
+     *
+     * @param element the lower bound, inclusive
+     * @return {@code Some} of that element, or {@code None} if every element is less than {@code element}
+     * @throws NullPointerException if {@code element} is null
+     */
+    Option<T> minAfter(T element);
+
+    /**
+     * The greatest element strictly less than {@code element} in the comparator's order: unlike
+     * {@link #minAfter(Object)}, the bound is excluded. The same as {@code rangeUntil(element).lastOption()}, without
+     * building the range.
+     * <p>
+     * Complexity: O(log n): one walk down the tree.
+     *
+     * @param element the upper bound, exclusive
+     * @return {@code Some} of that element, or {@code None} if no element is less than {@code element}
+     * @throws NullPointerException if {@code element} is null
+     */
+    Option<T> maxBefore(T element);
+
+    /**
+     * An iterator over the elements greater than or equal to {@code start}, in the comparator's order: the same
+     * elements as {@code rangeFrom(start).iterator()}, without building the range.
+     * <p>
+     * Complexity: O(log n) to create, then O(1) per step on average; a whole walk is O(k + log n) for k elements.
+     *
+     * @param start the lower bound, inclusive
+     * @return an iterator from {@code start} on
+     * @throws NullPointerException if {@code start} is null
+     */
+    java.util.Iterator<T> iteratorFrom(T start);
+
     // -- Positional operations, in the comparator's order
 
     /**
