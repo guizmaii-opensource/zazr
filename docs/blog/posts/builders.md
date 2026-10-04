@@ -47,8 +47,7 @@ collection from scratch, and nobody looks at it before the end.
 
 ## A builder
 
-A builder is made for this case. It fills the collection in place, inside the builder, where no other code can see
-it. When you are done, `result()` hands over the finished collection, once.
+A builder is made for this case. It fills the collection inside the builder, where no other code can see it. When you are done, `result()` hands over the finished collection, once.
 
 ```java
 var builder = Vector.<Order>newBuilder(); // Vector.Builder<Order>
@@ -106,7 +105,7 @@ collections, it refuses `null`: adding `null` throws a `NullPointerException`.
 Often, you don't need to write the loop at all. Many factories that take all the elements at once fill a builder for
 you, such as `Vector.ofAll`, `HashSet.ofAll` and `HashMap.ofEntries`.
 
-When the elements come from a Java stream, every collection has a `collector()`. On the collections that have a
+When the elements come from a Java stream, each of these collections has a `collector()`. On the collections that have a
 builder, the collector fills one:
 
 ```java
@@ -129,8 +128,8 @@ Eight collections have a builder, and `newBuilder()` creates one:
 | `HashSet` | `HashSet.Builder` | of equal elements, the one added first stays |
 | `LinkedHashMap` | `LinkedHashMap.Builder` | a key keeps the position where it was first put |
 | `LinkedHashSet` | `LinkedHashSet.Builder` | an element keeps the position where it was first added |
-| `TreeMap` | `TreeMap.Builder` | sorts once, in `result()`; `newBuilder(comparator)` sets the order |
-| `TreeSet` | `TreeSet.Builder` | sorts once, in `result()`; `newBuilder(comparator)` sets the order |
+| `TreeMap` | `TreeMap.Builder` | sorts once, at the first `size()` or `result()`; `newBuilder(comparator)` sets the order |
+| `TreeSet` | `TreeSet.Builder` | sorts once, at the first `size()` or `result()`; `newBuilder(comparator)` sets the order |
 
 `Queue` has no builder yet. Its `ofAll` factories take any `Iterable` or Java stream.
 
