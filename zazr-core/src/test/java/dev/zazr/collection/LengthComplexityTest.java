@@ -11,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 /**
  * {@code List.Cons.size()} walks the list (a record has no field for a cached size), so every caller
  * must measure a length once, never per element. These costs are walks over the cells of a List or a Queue, which no
- * count can observe, so each case is timed: its workload is sized so that the code that measures a length per element
- * needs over a minute and the fixed code well under a second, both measured with the same workload; the bound sits
- * between the two. The class runs alone, so that the bound does not measure the other test classes running in
+ * count can observe, so each case is timed: its workload is sized so that the slow path its comment names needs over a
+ * minute and the fixed code well under a second, both measured with the same workload; the bound sits between the
+ * two. The class runs alone, so that the bound does not measure the other test classes running in
  * parallel.
  */
 @Isolated
