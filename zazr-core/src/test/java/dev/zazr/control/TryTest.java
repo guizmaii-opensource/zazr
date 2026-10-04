@@ -999,30 +999,42 @@ public class TryTest {
             AtomicReference<Try<String>> result = new AtomicReference<>();
             CountDownLatch returned = new CountDownLatch(1);
             Thread caller = Thread.ofPlatform().daemon().start(() -> {
-                result.set(Try.fromCompletableFuture(future));
-                returned.countDown();
+                try {
+                    result.set(Try.fromCompletableFuture(future));
+                } finally {
+                    returned.countDown();
+                }
             });
-            awaitWaitingOrReturned(future, returned);
+            Thread.State parked = awaitParkedOrReturned(future, caller, returned);
             assertThat(returned.getCount())
                     .as("Try.fromCompletableFuture returned before the future was completed: %s", result.get())
                     .isEqualTo(1);
+            // a wait with a timeout parks as TIMED_WAITING, and would return without the future
+            assertThat(parked).isEqualTo(Thread.State.WAITING);
             future.complete("done");
             assertThat(returned.await(1, TimeUnit.MINUTES)).isTrue();
             caller.join();
             assertThat(result.get()).isEqualTo(Try.success("done"));
         }
 
-        // A thread blocked in join() or get() on a pending future is one of the future's dependents. The deadline
-        // only stops a hang: the loop ends as soon as the caller waits on the future or returns.
-        private static void awaitWaitingOrReturned(CompletableFuture<?> future, CountDownLatch returned)
-                throws InterruptedException {
-            for (long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
-                    future.getNumberOfDependents() == 0 && returned.getCount() > 0;
-                    Thread.sleep(1)) {
+        // A thread blocked in join() or get() on a pending future is one of the future's dependents, and parked once
+        // it has stopped spinning. Returns the state the caller was seen parked in, or null if it returned. The
+        // deadline only stops a hang: the loop ends as soon as the caller is parked on the future or returns.
+        private static Thread.State awaitParkedOrReturned(
+                CompletableFuture<?> future, Thread caller, CountDownLatch returned) throws InterruptedException {
+            long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
+            while (returned.getCount() > 0) {
+                Thread.State state = caller.getState();
+                if (future.getNumberOfDependents() > 0
+                        && (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING)) {
+                    return state;
+                }
                 assertThat(System.nanoTime() - deadline)
                         .as("the caller neither waited on the future nor returned")
                         .isNegative();
+                Thread.sleep(1);
             }
+            return null;
         }
 
         @Test
