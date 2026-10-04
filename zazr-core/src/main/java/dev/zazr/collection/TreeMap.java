@@ -1213,17 +1213,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return mapBoth(this, EntryComparator.of(keyComparator), keyMapper, valueMapper);
     }
 
-    @Override
-    public Tuple2<V, TreeMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
-        return Maps.computeIfAbsent(this, key, mappingFunction);
-    }
-
-    @Override
-    public Tuple2<Option<V>, TreeMap<K, V>> computeIfPresent(
-            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        return Maps.computeIfPresent(this, key, remappingFunction);
-    }
-
     /**
      * Creates a lookup-only entry for the given key.
      * <p>

@@ -26,6 +26,7 @@ and zio-prelude, and `Using` follows Scala's `scala.util.Using`. It is not a dro
 | `Try.withResources` | [`Using`](control/using.md) |
 | the public `Iterator` type, `reverseIterator()`, `iterator(int)` | `iterator()`, a `java.util.Iterator`; `reverse().iterator()`, `drop(n).iterator()` |
 | `toJavaList`, `toJavaSet`, `toJavaMap`..., `asJavaMutable` | the view `asJava()` or `asJavaMap()`; copy with `new ArrayList<>(vector.asJava())` |
+| `computeIfAbsent`, `computeIfPresent` on the maps | `updateWith(key, f)`; `getOrElse(key, () -> value)` for a value computed only when the key is absent |
 | `unfoldLeft`, `unfoldRight` | `unfold` (see below) |
 
 ## Renamed

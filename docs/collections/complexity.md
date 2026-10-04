@@ -1176,8 +1176,6 @@ Lookups, insertions and removals by key are effectively O(1); an insertion or a 
 
 | Method | Cost | Note |
 |---|---|---|
-| `computeIfAbsent(K, Function<? super K, ? extends V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup, and one put when the key is absent.">effectively O(1)</abbr> | effectively O(1): one lookup, and one put when the key is absent. |
-| `computeIfPresent(K, BiFunction<? super K, ? super V, ? extends V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup, and one put when the key is present.">effectively O(1)</abbr> | effectively O(1): one lookup, and one put when the key is present. |
 | `contains(Tuple2<K, V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup of the key, then its value is compared.">effectively O(1)</abbr> | effectively O(1): one lookup of the key, then its value is compared. |
 | `containsKey(K)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
 | `filter(BiPredicate<? super K, ? super V>)` | <abbr class="cx cx-linear" title="O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied.">O(n)</abbr> | O(n), one call of the predicate per entry; the parts that lose no entry are shared, not copied. |
@@ -1234,8 +1232,6 @@ Lookups and insertions are effectively O(1). Removing an entry makes a gap in th
 
 | Method | Cost | Note |
 |---|---|---|
-| `computeIfAbsent(K, Function<? super K, ? extends V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup, and one put when the key is absent.">effectively O(1)</abbr> | effectively O(1): one lookup, and one put when the key is absent. |
-| `computeIfPresent(K, BiFunction<? super K, ? super V, ? extends V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup, and one put when the key is present.">effectively O(1)</abbr> | effectively O(1): one lookup, and one put when the key is present. |
 | `contains(Tuple2<K, V>)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one lookup of the key, then its value is compared.">effectively O(1)</abbr> | effectively O(1): one lookup of the key, then its value is compared. |
 | `containsKey(K)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
 | `get(K)` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1): one hash lookup.">effectively O(1)</abbr> | effectively O(1): one hash lookup. |
@@ -1375,8 +1371,6 @@ The methods without a note of their own are O(n) at most, one walk over the entr
 | `headOption()` (from `SortedMap`) | <abbr class="cx cx-logarithmic" title="O(log n), as head.">O(log n)</abbr> | O(log n), as head. |
 | `lastOption()` (from `SortedMap`) | <abbr class="cx cx-logarithmic" title="O(log n), as last.">O(log n)</abbr> | O(log n), as last. |
 | `mapBoth(Function<? super K, ? extends K2>, Function<? super V, ? extends V2>)` (from `SortedMap`) | <abbr class="cx cx-linearithmic" title="O(n log n): the new entries are sorted, then the new tree is built in one pass; O(n) when the new keys come out in order.">O(n log n)</abbr> | O(n log n): the new entries are sorted, then the new tree is built in one pass; O(n) when the new keys come out in order. |
-| `computeIfAbsent(K, Function<? super K, ? extends V>)` (from `SortedMap`) | <abbr class="cx cx-logarithmic" title="O(log n): one lookup, then one insertion when the key is absent.">O(log n)</abbr> | O(log n): one lookup, then one insertion when the key is absent. |
-| `computeIfPresent(K, BiFunction<? super K, ? super V, ? extends V>)` (from `SortedMap`) | <abbr class="cx cx-logarithmic" title="O(log n): one lookup, then one insertion when the key is present.">O(log n)</abbr> | O(log n): one lookup, then one insertion when the key is present. |
 | `removeKeys(Predicate<? super K>)` (from `SortedMap`) | <abbr class="cx cx-linear" title="O(n): the new tree is built from the kept entries, which come in order, in one pass.">O(n)</abbr> | O(n): the new tree is built from the kept entries, which come in order, in one pass. |
 | `removeValues(Predicate<? super V>)` (from `SortedMap`) | <abbr class="cx cx-linear" title="O(n): the new tree is built from the kept entries, which come in order, in one pass.">O(n)</abbr> | O(n): the new tree is built from the kept entries, which come in order, in one pass. |
 | `flatMap(BiFunction<? super K, ? super V, ? extends Iterable<Tuple2<K2, V2>>>)` (from `SortedMap`) | <abbr class="cx cx-linearithmic" title="O(n + k log k) for k entries produced by mapper: they are sorted, then the new tree is built in one pass; O(n + k) when their keys come out in order.">O(n + k log k)</abbr> | O(n + k log k) for k entries produced by mapper: they are sorted, then the new tree is built in one pass; O(n + k) when their keys come out in order. |
