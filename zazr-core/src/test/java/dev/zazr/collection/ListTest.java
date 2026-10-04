@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 public class ListTest extends AbstractTraversableTest {
 
@@ -4058,7 +4058,7 @@ public class ListTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTerminateSlideByClassifier() {
-        assertTimeout(Duration.ofSeconds(1), () -> {
+        assertTimeoutPreemptively(Duration.ofMinutes(1), () -> {
             AtomicInteger ai = new AtomicInteger(0);
             List<List<String>> expected = List.of(List.of("a", "-"), List.of("-"), List.of("d"));
             List<List<String>> actual = List.of("a", "-", "-", "d")

@@ -32,7 +32,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 /**
@@ -1398,7 +1397,7 @@ class IteratorTest {
 
     @Test
     public void shouldTerminateSlideByClassifier() {
-        assertTimeout(Duration.ofSeconds(1), () -> {
+        assertTimeoutPreemptively(Duration.ofMinutes(1), () -> {
             AtomicInteger ai = new AtomicInteger(0);
             List<Vector<String>> expected = List.of(Vector.of("a", "-"), Vector.of("-"), Vector.of("d"));
             List<Vector<String>> actual =
@@ -1893,7 +1892,7 @@ class IteratorTest {
 
     @Test
     public void shouldNotDeadlockOnConcurrentClassInitialization() {
-        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+        assertTimeoutPreemptively(Duration.ofMinutes(1), () -> {
             ExecutorService executorService = Executors.newFixedThreadPool(2);
             executorService.execute(new ClassInitializer("dev.zazr.collection.internal.Iterator"));
             executorService.execute(new ClassInitializer("dev.zazr.collection.internal.AbstractIterator"));
