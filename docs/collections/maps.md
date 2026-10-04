@@ -114,8 +114,9 @@ Every method: [complexity page](complexity.md#maps).
   ([Java interop](../java-interop.md)).
 - Neither keys nor values can be `null`. A function or a supplier that returns `null` fails with a
   `NullPointerException` naming the method.
-- With two `getOrElse` overloads, `getOrElse(key, null)` does not compile: cast the `null` to the value type,
-  `getOrElse(key, (Integer) null)`. On a `Map<K, Object>`, a `Supplier` passed as the default is called, not
-  returned.
+- With two `getOrElse` overloads, a `null` default needs a cast to the value type: `getOrElse(key, (Integer) null)`.
+  Without it, `getOrElse(key, null)` does not compile on most maps, and on a `Map<K, Object>` it picks the `Supplier`
+  overload and throws `supplier is null`, even when the key is present. On a `Map<K, Object>`, a `Supplier` passed
+  as the default is called, not returned.
 - `groupMap` groups what its function returns for each entry in a `Vector`, in the map's iteration order, as
   `values()` does; `groupBy` groups whole entries in maps of the same type.

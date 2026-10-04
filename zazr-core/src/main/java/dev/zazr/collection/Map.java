@@ -252,8 +252,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * var port = settings.getOrElse("port", () -> defaultPort()); // defaultPort() runs only if "port" is absent
      * }</pre>
      * <p>
-     * As on {@link dev.zazr.control.Option}, the two {@code getOrElse} overloads make {@code getOrElse(key, null)}
-     * ambiguous: a {@code null} default is cast to the value type, as in {@code getOrElse(key, (String) null)}.
+     * As on {@link dev.zazr.control.Option}, a {@code null} default is cast to the value type, as in
+     * {@code getOrElse(key, (String) null)}: without the cast, {@code getOrElse(key, null)} is ambiguous, or, on a
+     * {@code Map<K, Object>}, calls this overload and throws.
      * <p>
      * Complexity: effectively O(1) on HashMap and LinkedHashMap, O(log n) on TreeMap: one lookup of the key, as
      * {@link #getOrElse(Object, Object)}. Each of them states its own cost.

@@ -97,10 +97,10 @@ and `values()` a `Vector`.
 `putAll(entries)` puts many entries as successive `put`s would, the argument's value winning on a shared key (Scala's
 `++`); `merge(that)` keeps this map's value and adds only the keys it lacks.
 `updateWith(key, f)` (Scala's `updatedWith`) reads and writes one key: `f` gets the value as an `Option` (`None` if
-absent) and returns `Some` of the new value, or `None` to remove the key; the same map comes back when nothing changes,
+absent) and returns `Some` of the new value, or `None` to remove the key; the receiver comes back when nothing changes (on a non-empty map, the map it wraps),
 and a `LinkedHashMap` key keeps its position. On `NonEmptyMap` and `NonEmptySortedMap` it returns the plain map, as
-`remove` does. `getOrElse(key, () -> ...)` runs the supplier only when the key is absent; `getOrElse(key, null)` is
-ambiguous, so cast the `null` (`(Integer) null`). A function or supplier returning `null` throws.
+`remove` does. `getOrElse(key, () -> ...)` runs the supplier only when the key is absent; always cast a `null` default
+(`(Integer) null`): `getOrElse(key, null)` is ambiguous, or picks the supplier overload and throws on a `Map<K, Object>`. A function or supplier returning `null` throws.
 
 ```java
 var counts = HashMap.of("apple", 2);
