@@ -9,6 +9,10 @@ import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
+import dev.zazr.collection.NonEmptyMap;
+import dev.zazr.collection.NonEmptySet;
+import dev.zazr.collection.NonEmptySortedMap;
+import dev.zazr.collection.NonEmptySortedSet;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
 import dev.zazr.collection.Traversable;
@@ -136,6 +140,10 @@ class GenTypesTest {
         gens.put("hashMap", Gen.hashMap(ints, ints));
         gens.put("linkedHashMap", Gen.linkedHashMap(ints, ints));
         gens.put("treeMap", Gen.treeMap(ints, ints));
+        gens.put("nonEmptySet", Gen.nonEmptySet(ints));
+        gens.put("nonEmptySortedSet", Gen.nonEmptySortedSet(ints));
+        gens.put("nonEmptyMap", Gen.nonEmptyMap(ints, ints));
+        gens.put("nonEmptySortedMap", Gen.nonEmptySortedMap(ints, ints));
         return gens;
     }
 
@@ -427,6 +435,212 @@ class GenTypesTest {
                 .containsOnly(NonEmptyVector.single(5));
     }
 
+    // -- non-empty sets and maps
+
+    /// The size of each non-empty set and map generator, over the elements, keys and values given.
+    private static java.util.Map<String, Gen<Integer>> nonEmptySizes(Gen<Long> elements) {
+        java.util.Map<String, Gen<Integer>> sizes = new java.util.LinkedHashMap<>();
+        sizes.put("nonEmptySet", Gen.nonEmptySet(elements).map(NonEmptySet::size));
+        sizes.put("nonEmptySortedSet", Gen.nonEmptySortedSet(elements).map(NonEmptySortedSet::size));
+        sizes.put("nonEmptyMap", Gen.nonEmptyMap(elements, elements).map(NonEmptyMap::size));
+        sizes.put("nonEmptySortedMap", Gen.nonEmptySortedMap(elements, elements).map(NonEmptySortedMap::size));
+        return sizes;
+    }
+
+    @Test
+    void nonEmptySetsAndMapsHaveOneToTheSizeElements() {
+        nonEmptySizes(distinct()).forEach((name, gen) -> {
+            assertThat(gen.withSize(100).runCollectN(1_000, config(1)))
+                    .as(name)
+                    .allMatch(n -> n >= 1 && n <= 100)
+                    .contains(1, 100);
+            assertThat(gen.withSize(2).runCollectN(200, config(1)))
+                    .as(name + " at size 2")
+                    .allMatch(n -> n >= 1 && n <= 2)
+                    .contains(1, 2);
+            for (int size = 0; size <= 1; size++) {
+                assertThat(gen.withSize(size).runCollectN(50, config(1)))
+                        .as(name + " at size " + size)
+                        .containsOnly(1);
+            }
+        });
+    }
+
+    @Test
+    void nonEmptySetsAndMapsAreNeverEmptyWhenEveryDrawRepeats() {
+        Gen<Integer> five = Gen.constant(5);
+        for (int size : new int[] {0, 1, 2, 100}) {
+            CheckConfig config = config(size);
+            assertThat(Gen.nonEmptySet(five).withSize(size).runCollectN(100, config))
+                    .as("nonEmptySet at size %d", size)
+                    .containsOnly(NonEmptySet.single(5));
+            assertThat(Gen.nonEmptySortedSet(five).withSize(size).runCollectN(100, config))
+                    .as("nonEmptySortedSet at size %d", size)
+                    .containsOnly(NonEmptySortedSet.single(5));
+            assertThat(Gen.nonEmptyMap(five, five).withSize(size).runCollectN(100, config))
+                    .as("nonEmptyMap at size %d", size)
+                    .containsOnly(NonEmptyMap.single(5, 5));
+            assertThat(Gen.nonEmptySortedMap(five, five).withSize(size).runCollectN(100, config))
+                    .as("nonEmptySortedMap at size %d", size)
+                    .containsOnly(NonEmptySortedMap.single(5, 5));
+            // two keys at most: never more entries than distinct keys, never fewer than one
+            assertThat(Gen.nonEmptyMap(Gen.integers(0, 1), distinct())
+                            .withSize(size)
+                            .runCollectN(100, config))
+                    .as("nonEmptyMap of two keys at size %d", size)
+                    .allMatch(m -> m.size() >= 1 && m.size() <= 2);
+        }
+    }
+
+    @Test
+    void nonEmptySetsAndMapsAreSmallestFirst() {
+        // the size grows from 0 for the first sample to 100 for the last
+        nonEmptySizes(distinct()).forEach((name, gen) -> {
+            List<Integer> sizes = gen.runCollectN(200, config(5));
+            assertThat(sizes.head()).as(name).isEqualTo(1);
+            for (int i = 0; i < sizes.size(); i++) {
+                assertThat(sizes.get(i)).as("%s sample %d", name, i).isBetween(1, Math.max(1, (100 * i + 198) / 199));
+            }
+        });
+    }
+
+    @Test
+    void nonEmptySortedSetsAndMapsKeepTheNaturalOrder() {
+        List<NonEmptySortedSet<Integer>> sets = samples(Gen.nonEmptySortedSet(Gen.integers()));
+        assertThat(sets).allSatisfy(set -> {
+            assertThat(set.comparator().compare(1, 2)).isNegative();
+            assertThat(set.comparator().compare(2, 1)).isPositive();
+            assertThat(set.toList().asJava()).isSorted();
+        });
+        List<NonEmptySortedMap<Integer, Integer>> maps = samples(Gen.nonEmptySortedMap(Gen.integers(), Gen.integers()));
+        assertThat(maps).allSatisfy(map -> {
+            assertThat(map.comparator().compare(1, 2)).isNegative();
+            assertThat(map.comparator().compare(2, 1)).isPositive();
+            assertThat(map.keySet().toList().asJava()).isSorted();
+        });
+    }
+
+    @Test
+    void nonEmptySetsAndMapsReachOneAndMoreThanALeaf() {
+        List<NonEmptySet<Integer>> sets = samples(Gen.nonEmptySet(Gen.integers()));
+        assertSome(sets, s -> s.size() == 1, "a single element");
+        assertSome(sets, s -> s.size() > 32, "more than one leaf");
+        List<NonEmptyMap<Integer, Integer>> maps = samples(Gen.nonEmptyMap(Gen.integers(), Gen.integers()));
+        assertSome(maps, m -> m.size() == 1, "a single entry");
+        assertSome(maps, m -> m.size() > 32, "more than one leaf");
+    }
+
+    @Test
+    void everyNonEmptySetLayoutHoldsTheHeadAndTheTail() {
+        // the extra elements overlap the kept ones, as in everySetLayoutHoldsTheElements
+        Gen<Integer> extra = Gen.integers(0, 2_000);
+        // a distinct seed for each shape
+        java.util.Random seeds = new java.util.Random(0);
+        for (int n : BOUNDARIES) {
+            // every element twice
+            ArrayList<Integer> drawn = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                drawn.add(i / 2);
+            }
+            // a head the tail holds too (except when it is empty), and one it does not hold
+            for (int head : new int[] {0, -1}) {
+                java.util.Set<Integer> expected = new java.util.HashSet<>(drawn);
+                expected.add(head);
+                for (int tailLayout = 0; tailLayout < Shapes.SET_LAYOUTS; tailLayout++) {
+                    HashSet<Integer> hashTail = Shapes.set(
+                            tailLayout,
+                            new ArrayList<>(drawn),
+                            extra,
+                            Shapes.hashSetOps(),
+                            new Sampling(seeds.nextLong(), 1000),
+                            100);
+                    TreeSet<Integer> treeTail = Shapes.set(
+                            tailLayout,
+                            new ArrayList<>(drawn),
+                            extra,
+                            Shapes.treeSetOps(),
+                            new Sampling(seeds.nextLong(), 1000),
+                            100);
+                    for (int layout = 0; layout < Shapes.NON_EMPTY_SET_LAYOUTS; layout++) {
+                        NonEmptySet<Integer> set = Shapes.nonEmptySet(layout, head, hashTail);
+                        assertThat(set)
+                                .as(
+                                        "non-empty set layout %d, head %d, tail layout %d of %d draws",
+                                        layout, head, tailLayout, n)
+                                .containsExactlyInAnyOrderElementsOf(expected);
+                        assertThat(set.size()).isEqualTo(expected.size());
+                        NonEmptySortedSet<Integer> sorted = Shapes.nonEmptySortedSet(layout, head, treeTail);
+                        assertThat(sorted)
+                                .as(
+                                        "non-empty sorted set layout %d, head %d, tail layout %d of %d draws",
+                                        layout, head, tailLayout, n)
+                                .containsExactlyElementsOf(new java.util.TreeSet<>(expected));
+                        assertThat(sorted.size()).isEqualTo(expected.size());
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void everyNonEmptyMapLayoutKeepsTheLastValueOfEachKey() {
+        // the extra keys are not among the kept ones
+        Gen<Integer> extraKeys = Gen.integers(1_000_000, 2_000_000);
+        // a distinct seed for each shape
+        java.util.Random seeds = new java.util.Random(0);
+        for (int n : BOUNDARIES) {
+            // every key twice, the second time with another value
+            ArrayList<Tuple2<Integer, Integer>> entries = new ArrayList<>();
+            java.util.Map<Integer, Integer> tailEntries = new java.util.HashMap<>();
+            for (int i = 0; i < n; i++) {
+                entries.add(Tuple.of(i / 2, i));
+                tailEntries.put(i / 2, i);
+            }
+            // a head key the tail holds too (except when it is empty), whose value the tail's replaces, and one it
+            // does not hold
+            for (Tuple2<Integer, Integer> head : java.util.List.of(Tuple.of(0, -5), Tuple.of(-1, -5))) {
+                java.util.Map<Integer, Integer> expected = new java.util.HashMap<>();
+                expected.put(head._1(), head._2());
+                expected.putAll(tailEntries);
+                for (int tailLayout = 0; tailLayout < Shapes.MAP_LAYOUTS; tailLayout++) {
+                    HashMap<Integer, Integer> hashTail = Shapes.map(
+                            tailLayout,
+                            new ArrayList<>(entries),
+                            extraKeys,
+                            DROPPED,
+                            Shapes.hashMapOps(),
+                            new Sampling(seeds.nextLong(), 1000),
+                            100);
+                    TreeMap<Integer, Integer> treeTail = Shapes.map(
+                            tailLayout,
+                            new ArrayList<>(entries),
+                            extraKeys,
+                            DROPPED,
+                            Shapes.treeMapOps(),
+                            new Sampling(seeds.nextLong(), 1000),
+                            100);
+                    for (int layout = 0; layout < Shapes.NON_EMPTY_MAP_LAYOUTS; layout++) {
+                        NonEmptyMap<Integer, Integer> map = Shapes.nonEmptyMap(layout, head, hashTail);
+                        assertThat(toJava(map))
+                                .as(
+                                        "non-empty map layout %d, head %s, tail layout %d of %d entries",
+                                        layout, head, tailLayout, n)
+                                .isEqualTo(expected);
+                        assertThat(map.size()).isEqualTo(expected.size());
+                        NonEmptySortedMap<Integer, Integer> sorted = Shapes.nonEmptySortedMap(layout, head, treeTail);
+                        assertThat(toJava(sorted))
+                                .as(
+                                        "non-empty sorted map layout %d, head %s, tail layout %d of %d entries",
+                                        layout, head, tailLayout, n)
+                                .isEqualTo(expected);
+                        assertThat(sorted.keySet())
+                                .containsExactlyElementsOf(new java.util.TreeSet<>(expected.keySet()));
+                    }
+                }
+            }
+        }
+    }
+
     @Test
     void setsAndMapsHoldAtMostTheDrawnElements() {
         Gen<Integer> small = Gen.integers(0, 9);
@@ -450,14 +664,22 @@ class GenTypesTest {
     @Test
     void everyCollectionHasItsRuntimeClass() {
         java.util.Map<String, Class<?>> classes = java.util.Map.ofEntries(
-                java.util.Map.entry("vector", Vector.class), java.util.Map.entry("vectorN", Vector.class),
-                java.util.Map.entry("nonEmptyVector", NonEmptyVector.class), java.util.Map.entry("list", List.class),
-                java.util.Map.entry("queue", Queue.class), java.util.Map.entry("lazyList", LazyList.class),
+                java.util.Map.entry("vector", Vector.class),
+                java.util.Map.entry("vectorN", Vector.class),
+                java.util.Map.entry("nonEmptyVector", NonEmptyVector.class),
+                java.util.Map.entry("list", List.class),
+                java.util.Map.entry("queue", Queue.class),
+                java.util.Map.entry("lazyList", LazyList.class),
                 java.util.Map.entry("hashSet", HashSet.class),
-                        java.util.Map.entry("linkedHashSet", LinkedHashSet.class),
-                java.util.Map.entry("treeSet", TreeSet.class), java.util.Map.entry("hashMap", HashMap.class),
+                java.util.Map.entry("linkedHashSet", LinkedHashSet.class),
+                java.util.Map.entry("treeSet", TreeSet.class),
+                java.util.Map.entry("hashMap", HashMap.class),
                 java.util.Map.entry("linkedHashMap", LinkedHashMap.class),
-                        java.util.Map.entry("treeMap", TreeMap.class));
+                java.util.Map.entry("treeMap", TreeMap.class),
+                java.util.Map.entry("nonEmptySet", NonEmptySet.class),
+                java.util.Map.entry("nonEmptySortedSet", NonEmptySortedSet.class),
+                java.util.Map.entry("nonEmptyMap", NonEmptyMap.class),
+                java.util.Map.entry("nonEmptySortedMap", NonEmptySortedMap.class));
         collections().forEach((name, gen) -> {
             List<?> values = gen.runCollectN(100, config(1));
             assertThat(values).as(name).hasSize(100).allMatch(classes.get(name)::isInstance);
@@ -475,6 +697,8 @@ class GenTypesTest {
         assertThat(Shapes.NON_EMPTY_VECTOR_LAYOUTS).isEqualTo(3);
         assertThat(Shapes.SET_LAYOUTS).isEqualTo(4);
         assertThat(Shapes.MAP_LAYOUTS).isEqualTo(4);
+        assertThat(Shapes.NON_EMPTY_SET_LAYOUTS).isEqualTo(3);
+        assertThat(Shapes.NON_EMPTY_MAP_LAYOUTS).isEqualTo(3);
     }
 
     /// Elements for the prefixes and suffixes dropped again: none of them is one of the kept elements.
@@ -625,7 +849,7 @@ class GenTypesTest {
         return Shapes.map(layout, xs, keys, DROPPED, ops, sampling, 100);
     }
 
-    private static <K, V> java.util.Map<K, V> toJava(Traversable<Tuple2<K, V>> map) {
+    private static <K, V> java.util.Map<K, V> toJava(Iterable<Tuple2<K, V>> map) {
         java.util.Map<K, V> javaMap = new java.util.HashMap<>();
         for (Tuple2<K, V> entry : map) {
             javaMap.put(entry._1(), entry._2());
@@ -742,6 +966,12 @@ class GenTypesTest {
         gens.put("linkedHashMap with null values", Gen.linkedHashMap(Gen.integers(), NULLS));
         gens.put("treeMap with null keys", Gen.treeMap(NULLS, Gen.integers()));
         gens.put("treeMap with null values", Gen.treeMap(Gen.integers(), NULLS));
+        gens.put("nonEmptySet", Gen.nonEmptySet(NULLS));
+        gens.put("nonEmptySortedSet", Gen.nonEmptySortedSet(NULLS));
+        gens.put("nonEmptyMap with null keys", Gen.nonEmptyMap(NULLS, Gen.integers()));
+        gens.put("nonEmptyMap with null values", Gen.nonEmptyMap(Gen.integers(), NULLS));
+        gens.put("nonEmptySortedMap with null keys", Gen.nonEmptySortedMap(NULLS, Gen.integers()));
+        gens.put("nonEmptySortedMap with null values", Gen.nonEmptySortedMap(Gen.integers(), NULLS));
         gens.forEach((name, gen) -> {
             assertThatThrownBy(() -> gen.runCollectN(50, config)).as(name).isInstanceOf(NullPointerException.class);
             CheckResult result = Check.evaluate(config.withSamples(50), gen, value -> true);
@@ -817,7 +1047,13 @@ class GenTypesTest {
                 () -> Gen.linkedHashMap(n, g),
                 () -> Gen.linkedHashMap(g, n),
                 () -> Gen.treeMap(n, g),
-                () -> Gen.treeMap(g, n));
+                () -> Gen.treeMap(g, n),
+                () -> Gen.nonEmptySet(n),
+                () -> Gen.nonEmptySortedSet(n),
+                () -> Gen.nonEmptyMap(n, g),
+                () -> Gen.nonEmptyMap(g, n),
+                () -> Gen.nonEmptySortedMap(n, g),
+                () -> Gen.nonEmptySortedMap(g, n));
         for (int i = 0; i < calls.size(); i++) {
             assertThatThrownBy(calls.get(i)).as("call %d", i).isInstanceOf(NullPointerException.class);
         }
@@ -900,7 +1136,9 @@ class GenTypesTest {
                 Gen.lazyList(size),
                 Gen.hashSet(size),
                 Gen.linkedHashSet(size),
-                Gen.treeSet(size));
+                Gen.treeSet(size),
+                Gen.nonEmptySet(size),
+                Gen.nonEmptySortedSet(size));
         for (Gen<? extends Iterable<?>> gen : gens) {
             assertThat(gen.withSize(7).runCollectN(100, config(1)))
                     .anyMatch(c -> c.iterator().hasNext())
@@ -912,6 +1150,12 @@ class GenTypesTest {
             assertThat(gen.withSize(7).runCollectN(100, config(1)))
                     .anyMatch(m -> !m.isEmpty())
                     .allMatch(m -> m.forAll(e -> e.equals(Tuple.of(7, 7))));
+        }
+        java.util.List<Gen<? extends Iterable<Tuple2<Integer, Integer>>>> nonEmptyMaps =
+                java.util.List.of(Gen.nonEmptyMap(size, size), Gen.nonEmptySortedMap(size, size));
+        for (Gen<? extends Iterable<Tuple2<Integer, Integer>>> gen : nonEmptyMaps) {
+            assertThat(gen.withSize(7).runCollectN(100, config(1)))
+                    .allMatch(m -> toJava(m).equals(java.util.Map.of(7, 7)));
         }
         assertThat(Gen.option(size).withSize(7).runCollectN(100, config(1)))
                 .contains(Option.some(7))

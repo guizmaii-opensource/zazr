@@ -9,6 +9,10 @@ import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
+import dev.zazr.collection.NonEmptyMap;
+import dev.zazr.collection.NonEmptySet;
+import dev.zazr.collection.NonEmptySortedMap;
+import dev.zazr.collection.NonEmptySortedSet;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
 import dev.zazr.collection.TreeMap;
@@ -41,6 +45,8 @@ final class Shapes {
     static final int NON_EMPTY_VECTOR_LAYOUTS = 3;
     static final int SET_LAYOUTS = 4;
     static final int MAP_LAYOUTS = 4;
+    static final int NON_EMPTY_SET_LAYOUTS = 3;
+    static final int NON_EMPTY_MAP_LAYOUTS = 3;
 
     private Shapes() {}
 
@@ -296,6 +302,47 @@ final class Shapes {
         };
     }
 
+    // -- non-empty sets
+
+    /// Joins a head and a tail into a non-empty collection, along the layout given.
+    @FunctionalInterface
+    interface NonEmptyLayout<H, C, N> {
+
+        N build(int layout, H head, C tail);
+    }
+
+    /// A head, then a tail of up to the size minus one draws built along one of the {@link #set} layouts, joined
+    /// along one of the non-empty layouts. The head is always in the result, so it is never empty, even when every
+    /// draw repeats.
+    static <T, S, N> Gen<N> nonEmptySet(Gen<T> gen, SetOps<T, S> ops, NonEmptyLayout<T, S, N> join) {
+        return Gen.fromPass((sampling, size, sink) -> {
+            T head = gen.draw(sampling, size);
+            ArrayList<T> xs = draw(gen, Length.BELOW_SIZE.draw(sampling, size), sampling, size);
+            S tail = set(sampling.draw().nextInt(SET_LAYOUTS), xs, gen, ops, sampling, size);
+            return sink.accept(join.build(sampling.draw().nextInt(NON_EMPTY_SET_LAYOUTS), head, tail));
+        });
+    }
+
+    /// `addAll` on a single element, `fromIterable` of the head and the tail, and `fromSet` of the tail with the head
+    /// added.
+    static <T> NonEmptySet<T> nonEmptySet(int layout, T head, HashSet<T> tail) {
+        return switch (layout) {
+            case 0 -> NonEmptySet.single(head).addAll(tail);
+            case 1 -> NonEmptySet.fromIterable(head, tail);
+            default -> NonEmptySet.fromSet(tail.add(head)).get();
+        };
+    }
+
+    /// As {@link #nonEmptySet(int, Object, HashSet)}, in the natural order.
+    static <T extends Comparable<? super T>> NonEmptySortedSet<T> nonEmptySortedSet(
+            int layout, T head, TreeSet<T> tail) {
+        return switch (layout) {
+            case 0 -> NonEmptySortedSet.single(head).addAll(tail);
+            case 1 -> NonEmptySortedSet.fromIterable(head, tail);
+            default -> NonEmptySortedSet.fromSortedSet(tail.add(head)).get();
+        };
+    }
+
     // -- maps
 
     /// The operations one map type offers to the map layouts.
@@ -383,6 +430,47 @@ final class Shapes {
                                 (map, entry) -> ops.put().apply(map, entry._1(), values.draw(sampling, size)));
                 yield putAll(drawnValues, xs, ops);
             }
+        };
+    }
+
+    // -- non-empty maps
+
+    /// A head entry, then a tail of up to the size minus one drawn entries built along one of the {@link #map}
+    /// layouts, joined along one of the non-empty layouts. The head key is always in the result, so it is never
+    /// empty, even when every key repeats; when the tail holds the head key too, the tail's value is kept, the last
+    /// one drawn, as in {@link #map}.
+    static <K, V, M, N> Gen<N> nonEmptyMap(
+            Gen<K> keys, Gen<V> values, MapOps<K, V, M> ops, NonEmptyLayout<Tuple2<K, V>, M, N> join) {
+        return Gen.fromPass((sampling, size, sink) -> {
+            K headKey = keys.draw(sampling, size);
+            Tuple2<K, V> head = Tuple.of(headKey, values.draw(sampling, size));
+            ArrayList<Tuple2<K, V>> xs = entries(keys, values, Length.BELOW_SIZE.draw(sampling, size), sampling, size);
+            M tail = map(sampling.draw().nextInt(MAP_LAYOUTS), xs, keys, values, ops, sampling, size);
+            return sink.accept(join.build(sampling.draw().nextInt(NON_EMPTY_MAP_LAYOUTS), head, tail));
+        });
+    }
+
+    /// `putAll` on a single entry, `fromIterable` of the head and the tail, and `fromMap` of the tail with the head
+    /// put when its key is absent.
+    static <K, V> NonEmptyMap<K, V> nonEmptyMap(int layout, Tuple2<K, V> head, HashMap<K, V> tail) {
+        return switch (layout) {
+            case 0 -> NonEmptyMap.single(head._1(), head._2()).putAll(tail);
+            case 1 -> NonEmptyMap.fromIterable(head, tail);
+            default ->
+                NonEmptyMap.fromMap(tail.containsKey(head._1()) ? tail : tail.put(head))
+                        .get();
+        };
+    }
+
+    /// As {@link #nonEmptyMap(int, Tuple2, HashMap)}, in the natural order of the keys.
+    static <K extends Comparable<? super K>, V> NonEmptySortedMap<K, V> nonEmptySortedMap(
+            int layout, Tuple2<K, V> head, TreeMap<K, V> tail) {
+        return switch (layout) {
+            case 0 -> NonEmptySortedMap.single(head._1(), head._2()).putAll(tail);
+            case 1 -> NonEmptySortedMap.fromIterable(head, tail);
+            default ->
+                NonEmptySortedMap.fromSortedMap(tail.containsKey(head._1()) ? tail : tail.put(head))
+                        .get();
         };
     }
 

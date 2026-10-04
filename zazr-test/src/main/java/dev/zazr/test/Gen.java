@@ -21,6 +21,10 @@ import dev.zazr.collection.LazyList;
 import dev.zazr.collection.LinkedHashMap;
 import dev.zazr.collection.LinkedHashSet;
 import dev.zazr.collection.List;
+import dev.zazr.collection.NonEmptyMap;
+import dev.zazr.collection.NonEmptySet;
+import dev.zazr.collection.NonEmptySortedMap;
+import dev.zazr.collection.NonEmptySortedSet;
 import dev.zazr.collection.NonEmptyVector;
 import dev.zazr.collection.Queue;
 import dev.zazr.collection.TreeMap;
@@ -1932,6 +1936,37 @@ public final class Gen<A> {
     }
 
     /**
+     * A random non-empty hash set of one to {@code max(1, size)} drawn elements of {@code gen} (fewer when draws
+     * repeat, never none): a head, then a tail as {@link #hashSet(Gen)} of up to the size minus one draws. Each element
+     * is the first value of one pass of {@code gen}. The head is always in the set, so it is never empty, even when
+     * every draw repeats. The head and the tail are joined by {@code addAll}, {@code fromIterable} or {@code fromSet},
+     * each as likely.
+     *
+     * @param gen the generator of the elements; a null element makes the collection throw
+     * @param <A> the type of the elements
+     * @return a random generator of non-empty sets
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A> Gen<NonEmptySet<A>> nonEmptySet(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.nonEmptySet(gen, Shapes.hashSetOps(), Shapes::nonEmptySet);
+    }
+
+    /**
+     * A random non-empty sorted set in the natural order of the elements, built as {@link #nonEmptySet(Gen)} over a
+     * tail built as {@link #treeSet(Gen)}.
+     *
+     * @param gen the generator of the elements; a null element makes the collection throw
+     * @param <A> the type of the elements
+     * @return a random generator of non-empty sorted sets
+     * @throws NullPointerException if {@code gen} is null
+     */
+    public static <A extends Comparable<? super A>> Gen<NonEmptySortedSet<A>> nonEmptySortedSet(Gen<A> gen) {
+        Objects.requireNonNull(gen, "gen is null");
+        return Shapes.nonEmptySet(gen, Shapes.treeSetOps(), Shapes::nonEmptySortedSet);
+    }
+
+    /**
      * A random hash map of up to the current size drawn entries (fewer when keys repeat), the number of draws
      * favouring 0, 1, the size and the size minus one. Each entry is a key then a value, each the first value of one
      * pass of its generator. The map is built by {@code ofAll} of a JDK map, by one {@code put} at a time, after
@@ -1981,6 +2016,45 @@ public final class Gen<A> {
         Objects.requireNonNull(keys, "keys is null");
         Objects.requireNonNull(values, "values is null");
         return Shapes.map(keys, values, Shapes.treeMapOps());
+    }
+
+    /**
+     * A random non-empty hash map of one to {@code max(1, size)} drawn entries (fewer when keys repeat, never none): a
+     * head entry, then a tail as {@link #hashMap(Gen, Gen)} of up to the size minus one draws. Each entry is a key
+     * then a value, each the first value of one pass of its generator. The head key is always in the map, so it is
+     * never empty, even when every key repeats; when the tail holds the head key too, the map keeps the tail's value,
+     * the last one drawn. The head and the tail are joined by {@code putAll}, {@code fromIterable} or {@code fromMap},
+     * each as likely.
+     *
+     * @param keys   the generator of the keys; a null key makes the map throw
+     * @param values the generator of the values; a null value makes the map throw
+     * @param <K>    the type of the keys
+     * @param <V>    the type of the values
+     * @return a random generator of non-empty maps
+     * @throws NullPointerException if an argument is null
+     */
+    public static <K, V> Gen<NonEmptyMap<K, V>> nonEmptyMap(Gen<K> keys, Gen<V> values) {
+        Objects.requireNonNull(keys, "keys is null");
+        Objects.requireNonNull(values, "values is null");
+        return Shapes.nonEmptyMap(keys, values, Shapes.hashMapOps(), Shapes::nonEmptyMap);
+    }
+
+    /**
+     * A random non-empty sorted map in the natural order of the keys, built as {@link #nonEmptyMap(Gen, Gen)} over a
+     * tail built as {@link #treeMap(Gen, Gen)}.
+     *
+     * @param keys   the generator of the keys; a null key makes the map throw
+     * @param values the generator of the values; a null value makes the map throw
+     * @param <K>    the type of the keys
+     * @param <V>    the type of the values
+     * @return a random generator of non-empty sorted maps
+     * @throws NullPointerException if an argument is null
+     */
+    public static <K extends Comparable<? super K>, V> Gen<NonEmptySortedMap<K, V>> nonEmptySortedMap(
+            Gen<K> keys, Gen<V> values) {
+        Objects.requireNonNull(keys, "keys is null");
+        Objects.requireNonNull(values, "values is null");
+        return Shapes.nonEmptyMap(keys, values, Shapes.treeMapOps(), Shapes::nonEmptySortedMap);
     }
 
     // -- running outside a check
