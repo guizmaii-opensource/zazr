@@ -7,5 +7,6 @@
 | `put` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashMap.put.">effectively O(1)</abbr> | effectively O(1), as HashMap.put. |
 | `putAll` | <abbr class="cx cx-linear" title="O(m) for m entries, as HashMap.putAll; O(n + m) when they are a HashMap, merged part by part.">O(m)</abbr> | O(m) for m entries, as HashMap.putAll; O(n + m) when they are a HashMap, merged part by part. |
 | `remove` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashMap.remove.">effectively O(1)</abbr> | effectively O(1), as HashMap.remove. |
+| `updateWith` | <abbr class="cx cx-effectivelyconstant" title="effectively O(1), as HashMap.updateWith.">effectively O(1)</abbr> | effectively O(1), as HashMap.updateWith. |
 | `keySet` | <abbr class="cx cx-linear" title="O(n), the keys copied into a new set, as HashMap.keySet.">O(n)</abbr> | O(n), the keys copied into a new set, as HashMap.keySet. |
 | `values` | <abbr class="cx cx-linear" title="O(n), as HashMap.values.">O(n)</abbr> | O(n), as HashMap.values. |

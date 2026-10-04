@@ -245,6 +245,28 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     V getOrElse(K key, V defaultValue);
 
     /**
+     * Returns the value associated with a key, or the value {@code supplier} gives if the key is not contained in the
+     * map. This is Scala's {@code getOrElse(key, default: => V)}: {@code supplier} runs only when the key is absent,
+     * once, and never when it is present.
+     * <pre>{@code
+     * var port = settings.getOrElse("port", () -> defaultPort()); // defaultPort() runs only if "port" is absent
+     * }</pre>
+     * <p>
+     * As on {@link dev.zazr.control.Option}, a {@code null} default is cast to the value type, as in
+     * {@code getOrElse(key, (String) null)}: without the cast, {@code getOrElse(key, null)} is ambiguous, or, on a
+     * {@code Map<K, Object>}, calls this overload and throws.
+     * <p>
+     * Complexity: effectively O(1) on HashMap and LinkedHashMap, O(log n) on TreeMap: one lookup of the key, as
+     * {@link #getOrElse(Object, Object)}. Each of them states its own cost.
+     *
+     * @param key      the key
+     * @param supplier gives the result when the key is absent
+     * @return the value associated with key if it exists, otherwise the value {@code supplier} gives
+     * @throws NullPointerException if {@code supplier} is null, or returns null
+     */
+    V getOrElse(K key, Supplier<? extends V> supplier);
+
+    /**
      * Returns the keys contained in this map.
      *
      * @return {@code Set} of the keys contained in this map.
@@ -414,6 +436,32 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * specified by that key.
      */
     Map<K, V> remove(K key);
+
+    /**
+     * Updates, adds or removes the mapping of {@code key} with what {@code f} makes of its current value. {@code f}
+     * receives the {@code Some} of the value of {@code key}, or {@code None} if the key is absent, and returns the
+     * {@code Some} of the value to put, or {@code None} to remove the key (or leave it absent). This is Scala's
+     * {@code updatedWith}.
+     * <pre>{@code
+     * var counts = HashMap.of("apple", 2);
+     * var more   = counts.updateWith("apple", count -> Option.some(count.getOrElse(0) + 1)); // apple=3
+     * var less   = counts.updateWith("apple", count -> Option.none());                     // empty
+     * }</pre>
+     * <p>
+     * {@code f} runs once. This map itself is returned when nothing changes: when {@code f} returns {@code None} for an
+     * absent key, or the {@code Some} of the very value the key holds (the same instance). Otherwise the result is
+     * that of {@link #put(Object, Object)} or {@link #remove(Object)}: a key already present takes the key object
+     * given here, and keeps its position in a map with an insertion order.
+     * <p>
+     * Complexity: effectively O(1) on HashMap and LinkedHashMap, O(log n) on TreeMap: one lookup of the key, then at
+     * most one {@link #put(Object, Object)} or {@link #remove(Object)}. Each of them states its own cost.
+     *
+     * @param key the key to update
+     * @param f   the new value of the key, given its current one
+     * @return this map with the mapping of {@code key} updated, added or removed
+     * @throws NullPointerException if {@code f} is null, or returns null
+     */
+    Map<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f);
 
     /**
      * Returns a new Map consisting of all elements which do not satisfy the given predicate.

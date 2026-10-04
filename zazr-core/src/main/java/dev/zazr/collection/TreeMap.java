@@ -1410,6 +1410,25 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return get(key).getOrElse(defaultValue);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n), as {@link #get(Object)}.
+     */
+    @Override
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return getOrElse(key, supplier, "TreeMap.getOrElse: supplier returned null");
+    }
+
+    // also NonEmptySortedMap's, whose message names it
+    V getOrElse(K key, Supplier<? extends V> supplier, String nullResult) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        return switch (get(key)) {
+            case Option.Some<V>(var value) -> value;
+            case Option.None<V> _ -> Objects.requireNonNull(supplier.get(), nullResult);
+        };
+    }
+
     @Override
     public <C extends @Nullable Object> Map<C, TreeMap<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
@@ -1641,6 +1660,21 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         } else {
             return this;
         }
+    }
+
+    @Override
+    public TreeMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return updateWith(key, f, "TreeMap.updateWith: f returned null");
+    }
+
+    // also NonEmptySortedMap's, whose message names it; the Option of the lookup is the one f receives, so no second
+    // one is made from the value
+    @SuppressWarnings("unchecked")
+    TreeMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f, String nullResult) {
+        Objects.requireNonNull(f, "f is null");
+        Option<V> previous = get(key);
+        V current = previous instanceof Option.Some<V>(var value) ? value : (V) Maps.ABSENT;
+        return Maps.updateWith(this, key, previous, current, f, nullResult);
     }
 
     @Override

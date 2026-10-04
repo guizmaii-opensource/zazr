@@ -793,7 +793,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @SuppressWarnings("NullAway")
     private @Nullable Slot<K, V> slotOrNull(K key) {
-        return map.getOrElse(key, null);
+        return map.getOrElse(key, (Slot<K, V>) null);
     }
 
     /**
@@ -816,6 +816,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public V getOrElse(K key, V defaultValue) {
         Slot<K, V> slot = slotOrNull(key);
         return slot == null ? defaultValue : slot.entry()._2();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one hash lookup.
+     */
+    @Override
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return Maps.getOrElse(this, key, supplier, "LinkedHashMap.getOrElse: supplier returned null");
     }
 
     @Override
@@ -1162,6 +1172,19 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         K tombstone = tombstone();
         Vector<K> newList = list.update(existing.index() - offset, tombstone);
         return normalized(newList, newMap, offset, tombstones + 1);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * A key already present keeps its position in the insertion order; a new key goes to the end.
+     * <p>
+     * Complexity: effectively O(1): one hash lookup, then at most one {@link #put(Object, Object)}, or one
+     * {@link #remove(Object)}, which is amortised O(1).
+     */
+    @Override
+    public LinkedHashMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return Maps.updateWith(this, key, f, "LinkedHashMap.updateWith: f returned null");
     }
 
     /**
@@ -2060,7 +2083,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         private void putEntry(Tuple2<K, V> entry) {
             unadopt();
             K key = entry._1();
-            @Nullable Slot<K, V> existing = slots.getOrElse(key, null);
+            @Nullable Slot<K, V> existing = slots.getOrElse(key, (Slot<K, V>) null);
             if (existing == null) {
                 slots = slots.put(key, new Slot<>(entry, offset + keys.size()));
                 keys.add(key);

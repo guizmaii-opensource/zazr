@@ -49,7 +49,9 @@ val documented: Set[String] = Set(
   "contains", "concat", "add", "addAll", "put", "putAll", "min", "max", "union", "intersect", "diff", "containsKey",
   "keySet", "values",
   // the grouping and size comparisons that every collection has
-  "groupMap", "groupMapReduce", "sizeCompare"
+  "groupMap", "groupMapReduce", "sizeCompare",
+  // the lookup with a default and the update of one key of the maps
+  "getOrElse", "updateWith"
 )
 
 /** The complexity classes of the legend, cheapest first. */
@@ -342,7 +344,7 @@ val families: List[Family] = List(
     "As for the sets, only the ordered maps have positional methods. `NonEmptyMap` and `NonEmptySortedMap` wrap a " +
       "`HashMap` and a `TreeMap`, so their costs are those of the map they wrap.",
     List("HashMap", "LinkedHashMap", "TreeMap", "NonEmptyMap", "NonEmptySortedMap"),
-    List("get", "containsKey", "put", "putAll", "remove", "keySet", "values", "head", "take", "drop")
+    List("get", "containsKey", "put", "putAll", "remove", "updateWith", "keySet", "values", "head", "take", "drop")
   )
 )
 
