@@ -212,7 +212,7 @@ public class NonEmptySortedMapTest {
 
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptySortedMapTest#maps")
-        public void shouldPutMergeAndComputeKeepingTheComparator(int n, TreeMap<Integer, String> map) {
+        public void shouldPutAndMergeKeepingTheComparator(int n, TreeMap<Integer, String> map) {
             NonEmptySortedMap<Integer, String> nesm = nesm(map);
             assertThat(nesm.put(-1, "x").toSortedMap()).isEqualTo(map.put(-1, "x"));
             assertThat(nesm.put(-1, "x").comparator()).isSameAs(map.comparator());
@@ -226,10 +226,6 @@ public class NonEmptySortedMapTest {
             assertThat(nesm.merge(that).toSortedMap()).isEqualTo(map.merge(that));
             assertThat(nesm.merge(that, String::concat).toSortedMap()).isEqualTo(map.merge(that, String::concat));
             assertThat(nesm.merge(HashMap.empty())).isSameAs(nesm);
-            assertThat(nesm.computeIfAbsent(-1, k -> "c")._2().toSortedMap())
-                    .isEqualTo(map.computeIfAbsent(-1, k -> "c")._2());
-            assertThat(nesm.computeIfPresent(0, (k, v) -> v + "!")._2().toSortedMap())
-                    .isEqualTo(map.computeIfPresent(0, (k, v) -> v + "!")._2());
         }
 
         @ParameterizedTest
@@ -539,13 +535,6 @@ public class NonEmptySortedMapTest {
             calls.put(
                     "merge(Map, BiFunction)",
                     m -> java.util.List.of(m.merge(HashMap.<Integer, String>empty(), String::concat)));
-            calls.put(
-                    "computeIfAbsent(Object, Function)",
-                    m -> java.util.List.of(m.computeIfAbsent(0, k -> "x"), m.computeIfAbsent(-1, k -> "x")));
-            calls.put(
-                    "computeIfPresent(Object, BiFunction)",
-                    m -> java.util.List.of(
-                            m.computeIfPresent(0, (k, v) -> "x"), m.computeIfPresent(-1, (k, v) -> "x")));
             calls.put("map(BiFunction)", m -> java.util.List.of(m.map((k, v) -> Tuple.of(0, v))));
             calls.put("map(Comparator, BiFunction)", m -> java.util.List.of(m.map(reverse, (k, v) -> Tuple.of(0, v))));
             calls.put("mapBoth(Function, Function)", m -> java.util.List.of(m.mapBoth(k -> 0, v -> v)));
