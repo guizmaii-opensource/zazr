@@ -18,7 +18,7 @@ import org.openjdk.jmh.annotations.Warmup;
 /**
  * Benchmarks the key lookups of {@link TreeMap} through its public API only: one lookup per invocation, so that the
  * bytes allocated per operation ({@code -prof gc}) are the bytes of one lookup. The keys are boxed once, in the
- * setup; a miss looks up a key between two stored ones.
+ * setup; a miss looks up an odd key, between two stored ones or, for the largest, above them all.
  *
  * <p>Run via {@code dev.zazr.JmhRunner}, or {@code org.openjdk.jmh.Main} for {@code -prof gc}.
  */
