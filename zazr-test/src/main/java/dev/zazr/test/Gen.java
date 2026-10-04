@@ -144,7 +144,10 @@ public final class Gen<A> {
     }
 
     private static final class Holder<A> {
+        // read only once found is true, so after the sink wrote it
+        @SuppressWarnings("NullAway.Init")
         A value;
+
         boolean found;
     }
 

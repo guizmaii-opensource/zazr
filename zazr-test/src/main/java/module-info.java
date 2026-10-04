@@ -4,6 +4,7 @@
  */
 module dev.zazr.test {
     requires transitive dev.zazr;
+    requires static org.jspecify;
 
     exports dev.zazr.test;
     exports dev.zazr.test.laws;
