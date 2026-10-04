@@ -477,6 +477,23 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
+     * Complexity: O(log n): one lookup, then one insertion when the key is absent.
+     */
+    @Override
+    Tuple2<V, ? extends SortedMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n): one lookup, then one insertion when the key is present.
+     */
+    @Override
+    Tuple2<Option<V>, ? extends SortedMap<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
      */
     @Override

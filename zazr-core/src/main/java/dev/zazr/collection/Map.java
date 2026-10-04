@@ -94,6 +94,31 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     }
 
     /**
+     * If the specified key is not already associated with a value,
+     * attempts to compute its value using the given mapping
+     * function and enters it into this map.
+     *
+     * @param key             key whose presence in this map is to be tested
+     * @param mappingFunction mapping function
+     * @return the {@link Tuple2} of the existing or computed value associated with the specified key, and the current or modified map
+     */
+    Tuple2<V, ? extends Map<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
+
+    /**
+     * If the value for the specified key is present, attempts to
+     * compute a new mapping given the key and its current mapped value.
+     *
+     * @param key               key whose presence in this map is to be tested
+     * @param remappingFunction remapping function
+     * @return the {@link Tuple2} of the {@code Some} of the value associated with the specified key
+     * (or {@code None} if none), and the current or modified map
+     * @throws NullPointerException if the key is present and {@code remappingFunction} returns {@code null}: the new
+     *                              value is handed back as {@code Some}, which cannot hold {@code null}
+     */
+    Tuple2<Option<V>, ? extends Map<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
+
+    /**
      * Returns <code>true</code> if this map contains a mapping for the specified key.
      *
      * @param key key whose presence in this map is to be tested
