@@ -1856,14 +1856,14 @@ deleted. Attribution in `NOTICE`.
   they did before: a deterministic function fails the same way, a stateful one may not (the general case of a
   re-forced `Stream` after a failure is #175).
   A function that produces a plain element, key or value of a collection (`map`, `scan*`, `zipWith`, sequence
-  `fill`/`tabulate`, `mapValues`, `mapKeys`, `computeIfAbsent`, `merge`, `replaceAll`, the `keyMapper`/`valueMapper`
+  `fill`/`tabulate`, `mapValues`, `mapKeys`, `merge`, `replaceAll`, the `keyMapper`/`valueMapper`
   of `toMap`) is not checked by name: the collection's own null check rejects it (`Vector: element is null`,
   `HashMap: value is null`), and on a lazy `Stream` a re-force after such a failure may go on past the element.
   `fold`, `reduce` and `getOrElse`-style methods return the caller's own value and are not checked. The check is a
   constant message on the failure path only. `NullResultTest` holds one row per overload and a reflective guard over
   the exported types that fails when a public method taking a function whose result is a Zazr type has no row. A
   null function *argument* is `<parameter> is null` at once, even where the function would not be called (an empty
-  map's `replaceAll`, a non-empty collection's `orElse(Supplier)`, a missing key's `computeIfPresent`).
+  map's `replaceAll`, a non-empty collection's `orElse(Supplier)`, a missing key's `updateWith`).
 - **Slice searches read the slice as the type documents (decided in #163).** `Vector`, `NonEmptyVector` and a
   non-empty `List`/`Queue` copy the slice first, so a null element in it throws. A `Stream` compares the slice
   lazily and reads it only as far as the comparisons go: a null they reach throws, a null past them is not seen, and
