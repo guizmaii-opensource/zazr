@@ -93,7 +93,7 @@ A `TreeMap` cuts out the entries whose keys lie between two bounds. The bounds n
 - `rangeFrom(from)` keeps the keys at or after `from`.
 - `rangeUntil(until)` keeps those before `until`, and `rangeTo(to)` those at or before `to`.
 - `rangeFromUntil(from, until)` keeps those at or after `from` and before `until`. It is empty when `from` is not
-  before `until`, where `java.util.TreeMap.subMap` throws.
+  before `until`; for `from` after `until`, `java.util.TreeMap.subMap` throws instead.
 
 Each result is a `TreeMap` with the same comparator, built in O(log n): it shares the rest of the tree with the map
 it came from, and is that map itself when nothing is cut.

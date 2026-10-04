@@ -140,7 +140,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * The elements greater than or equal to {@code from} and less than {@code until} in the comparator's order, with
      * the same comparator: this set itself when every element is in the range. The range is empty, and so is the
      * result, when {@code from} is not less than {@code until}; unlike
-     * {@link java.util.TreeSet#subSet(Object, Object)}, this does not throw. Neither bound need be an element.
+     * {@link java.util.TreeSet#subSet(Object, Object)}, this does not throw when {@code from} is greater. Neither
+     * bound need be an element.
      * <p>
      * Complexity: O(log n): the tree is cut along the paths of the two bounds without visiting the other elements,
      * and the result shares the rest of the tree.

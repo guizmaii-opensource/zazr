@@ -70,7 +70,7 @@ A `TreeSet` cuts out the elements between two bounds in its comparator's order. 
 - `rangeFrom(from)` keeps the elements at or after `from`.
 - `rangeUntil(until)` keeps those before `until`, and `rangeTo(to)` those at or before `to`.
 - `rangeFromUntil(from, until)` keeps those at or after `from` and before `until`. It is empty when `from` is not
-  before `until`, where `java.util.TreeSet.subSet` throws.
+  before `until`; for `from` after `until`, `java.util.TreeSet.subSet` throws instead.
 
 Each result is a `TreeSet` with the same comparator, built in O(log n): it shares the rest of the tree with the set
 it came from, and is that set itself when nothing is cut.

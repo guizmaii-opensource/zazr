@@ -178,7 +178,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
      * The entries whose key is greater than or equal to {@code from} and less than {@code until}, with the same key
      * comparator: this map itself when every key is in the range. The range is empty, and so is the result, when
      * {@code from} is not less than {@code until}; unlike {@link java.util.TreeMap#subMap(Object, Object)}, this does
-     * not throw. Neither bound need be a key.
+     * not throw when {@code from} is greater. Neither bound need be a key.
      * <p>
      * Complexity: O(log n): the tree is cut along the paths of the two bounds without visiting the other entries, and
      * the result shares the rest of the tree.

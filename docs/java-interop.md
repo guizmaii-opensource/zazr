@@ -42,8 +42,8 @@ The views of `TreeSet` and `TreeMap` navigate the tree: `ceiling`, `floor`, `fir
 O(log n). `subSet`, `headMap`, `descendingSet` and the like are views too.
 
 To keep a range as a `TreeSet` or a `TreeMap`, use `rangeFrom`, `rangeUntil`, `rangeTo` and `rangeFromUntil`, and
-`minAfter` and `maxBefore` in place of `ceiling` and `lower` ([sets](collections/sets.md#ranges),
-[maps](collections/maps.md#ranges)).
+`minAfter` and `maxBefore` in place of `ceiling` and `lower` (`ceilingEntry` and `lowerEntry` on a map)
+([sets](collections/sets.md#ranges), [maps](collections/maps.md#ranges)).
 
 ```java
 var scores    = TreeSet.of(10, 20, 30, 40).asJava();             // java.util.NavigableSet<Integer>
