@@ -7,6 +7,7 @@ import dev.zazr.collection.Vector;
 import dev.zazr.collection.internal.RedBlackTreeModule.Empty;
 import dev.zazr.collection.internal.RedBlackTreeModule.Node;
 import dev.zazr.control.Option;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -694,6 +695,166 @@ public interface RedBlackTreeModule {
             }
         }
 
+        // -- ranges by key
+
+        // The range operations compare a bound with the key of an element: the element itself for a set
+        // (`entries` false), the first component of a `Tuple2` entry for a map (`entries` true), so that no probe
+        // element is built. They are ports of `from`, `until`, `to`, `range`, `minAfter` and `maxBefore` (and their
+        // `doFrom`, `doUntil`, `doTo`, `doRange` helpers) in `scala.collection.immutable.RedBlackTree` of the Scala
+        // 2.13 collections library, which Scala 3 uses unchanged: the walk follows the path of the bound, every
+        // subtree wholly inside the range is kept as it is, and the kept parts are rejoined with [#join], so the result
+        // shares every untouched subtree and is `tree` itself when nothing is cut.
+
+        @SuppressWarnings("unchecked")
+        private static <E extends @Nullable Object, K extends @Nullable Object> int compareKey(
+                Comparator<? super K> comparator, boolean entries, K key, E element) {
+            K other = entries ? ((Tuple2<K, ?>) element)._1() : (K) element;
+            return comparator.compare(key, other);
+        }
+
+        // `tree` itself when nothing is cut, otherwise the result with a black root
+        private static <E extends @Nullable Object> RedBlackTree<E> blackRoot(
+                RedBlackTree<E> tree, RedBlackTree<E> cut) {
+            return cut == tree ? tree : color(cut, BLACK);
+        }
+
+        /// The elements whose key is greater than or equal to `from`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> rangeFrom(
+                RedBlackTree<E> tree, K from, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doFrom(tree, from, comparator, entries));
+        }
+
+        /// The elements whose key is less than `until`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> rangeUntil(
+                RedBlackTree<E> tree, K until, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doUntil(tree, until, comparator, entries));
+        }
+
+        /// The elements whose key is less than or equal to `to`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> rangeTo(
+                RedBlackTree<E> tree, K to, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doTo(tree, to, comparator, entries));
+        }
+
+        /// The elements whose key is greater than or equal to `from` and less than `until`; none when `from` is not
+        /// less than `until`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> range(
+                RedBlackTree<E> tree, K from, K until, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doRange(tree, from, until, comparator, entries));
+        }
+
+        // the depth of the recursion of the four walks below is the height of the tree, at most 2 log2(n + 1)
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doFrom(
+                RedBlackTree<E> tree, K from, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, from, node.value) > 0) {
+                return doFrom(node.right, from, comparator, entries);
+            }
+            RedBlackTree<E> left = doFrom(node.left, from, comparator, entries);
+            return left == node.left ? node : join(left, node.value, node.right);
+        }
+
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doUntil(
+                RedBlackTree<E> tree, K until, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, until, node.value) <= 0) {
+                return doUntil(node.left, until, comparator, entries);
+            }
+            RedBlackTree<E> right = doUntil(node.right, until, comparator, entries);
+            return right == node.right ? node : join(node.left, node.value, right);
+        }
+
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doTo(
+                RedBlackTree<E> tree, K to, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, to, node.value) < 0) {
+                return doTo(node.left, to, comparator, entries);
+            }
+            RedBlackTree<E> right = doTo(node.right, to, comparator, entries);
+            return right == node.right ? node : join(node.left, node.value, right);
+        }
+
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doRange(
+                RedBlackTree<E> tree, K from, K until, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, from, node.value) > 0) {
+                return doRange(node.right, from, until, comparator, entries);
+            } else if (compareKey(comparator, entries, until, node.value) <= 0) {
+                return doRange(node.left, from, until, comparator, entries);
+            }
+            RedBlackTree<E> left = doFrom(node.left, from, comparator, entries);
+            RedBlackTree<E> right = doUntil(node.right, until, comparator, entries);
+            return left == node.left && right == node.right ? node : join(left, node.value, right);
+        }
+
+        /// The least element whose key is greater than or equal to `key`, or `null` when there is none. One walk
+        /// down the tree, O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E minAfter(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
+            E result = null;
+            while (t instanceof Node<E> node) {
+                int c = compareKey(comparator, entries, key, node.value);
+                if (c == 0) {
+                    return node.value;
+                } else if (c < 0) {
+                    result = node.value;
+                    t = node.left;
+                } else {
+                    t = node.right;
+                }
+            }
+            return result;
+        }
+
+        /// The greatest element whose key is less than `key`, or `null` when there is none. One walk down the
+        /// tree, O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E maxBefore(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
+            E result = null;
+            while (t instanceof Node<E> node) {
+                if (compareKey(comparator, entries, key, node.value) <= 0) {
+                    t = node.left;
+                } else {
+                    result = node.value;
+                    t = node.right;
+                }
+            }
+            return result;
+        }
+
+        /// The elements whose key is greater than or equal to `start`, in order: the iterator of the tree started
+        /// at `start`. O(log n) to create, then O(1) per step on average.
+        public static <E extends @Nullable Object, K extends @Nullable Object> Iterator<E> iteratorFrom(
+                RedBlackTree<E> tree, K start, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> root)) {
+                return Iterator.empty();
+            }
+            InOrderIterator<E> iterator = new InOrderIterator<>(root);
+            // Scala's `startFrom`: the nodes whose key is at least `start` are pushed on the way down, the path
+            // turning left at each of them and right at the others
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = root;
+            while (t instanceof Node<E> node) {
+                if (compareKey(comparator, entries, start, node.value) <= 0) {
+                    iterator.push(node);
+                    t = node.left;
+                } else {
+                    t = node.right;
+                }
+            }
+            return iterator;
+        }
+
         /**
          * The number of leading elements, in order, for which {@code predicate} returns {@code expected}: the length
          * of the prefix {@code takeWhile} ({@code expected} true) or {@code takeUntil} ({@code expected} false) keeps.
@@ -814,6 +975,64 @@ public interface RedBlackTreeModule {
             }
             throw new IllegalStateException(
                     "unbalancedRight(" + color + ", " + blackHeight + ", " + left + ", " + value + ", " + right + ")");
+        }
+    }
+
+    /**
+     * An in-order walk of a tree, with the path of nodes whose value is still to be returned kept on an array stack,
+     * the next one on top: O(log n) to create, then O(1) per step on average, nothing allocated per step.
+     *
+     * @param <T> Component type
+     */
+    final class InOrderIterator<T extends @Nullable Object> extends AbstractIterator<T> {
+
+        // A red-black tree is at most twice as high as its black height, so the first array is almost always big
+        // enough; it grows otherwise.
+        private @Nullable Node<?>[] stack;
+        private int depth = 0;
+
+        InOrderIterator(Node<T> root) {
+            this.stack = new Node<?>[Math.max(4, 2 * root.blackHeight + 2)];
+        }
+
+        /** Every element of the non-empty {@code root}, in order. */
+        static <T extends @Nullable Object> InOrderIterator<T> all(Node<T> root) {
+            InOrderIterator<T> iterator = new InOrderIterator<>(root);
+            iterator.pushLeftChildren(root);
+            return iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return depth > 0;
+        }
+
+        // AbstractIterator only calls getNext() after hasNext() returned true: the top of the stack is a node
+        @SuppressWarnings({"unchecked", "NullAway"})
+        @Override
+        public T getNext() {
+            Node<T> node = (Node<T>) stack[--depth];
+            stack[depth] = null;
+            if (node.right instanceof Node<T> right) {
+                pushLeftChildren(right);
+            }
+            return node.value;
+        }
+
+        void push(Node<T> node) {
+            if (depth == stack.length) {
+                stack = Arrays.copyOf(stack, depth * 2);
+            }
+            stack[depth++] = node;
+        }
+
+        private void pushLeftChildren(Node<T> node) {
+            @SuppressWarnings("Var")
+            RedBlackTree<T> tree = node;
+            while (tree instanceof Node<T> next) {
+                push(next);
+                tree = next.left;
+            }
         }
     }
 

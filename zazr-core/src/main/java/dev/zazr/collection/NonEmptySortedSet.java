@@ -1395,6 +1395,87 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
         return NonEmptySortedMap.ofMappedEntries(comparator, set, f, "NonEmptySortedSet.toSortedMap");
     }
 
+    // -- ranges, in the comparator's order: the result may be empty
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeFrom(Object)}.
+     *
+     * @param from the lower bound, inclusive
+     * @return the elements greater than or equal to {@code from}; this set's elements when none is below it
+     * @throws NullPointerException if {@code from} is null
+     */
+    public TreeSet<A> rangeFrom(A from) {
+        return set.rangeFrom(from);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeUntil(Object)}.
+     *
+     * @param until the upper bound, exclusive
+     * @return the elements less than {@code until}
+     * @throws NullPointerException if {@code until} is null
+     */
+    public TreeSet<A> rangeUntil(A until) {
+        return set.rangeUntil(until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeTo(Object)}.
+     *
+     * @param to the upper bound, inclusive
+     * @return the elements less than or equal to {@code to}
+     * @throws NullPointerException if {@code to} is null
+     */
+    public TreeSet<A> rangeTo(A to) {
+        return set.rangeTo(to);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeFromUntil(Object, Object)}.
+     *
+     * @param from  the lower bound, inclusive
+     * @param until the upper bound, exclusive
+     * @return the elements greater than or equal to {@code from} and less than {@code until}; none when {@code from}
+     *         is not less than {@code until}
+     * @throws NullPointerException if {@code from} or {@code until} is null
+     */
+    public TreeSet<A> rangeFromUntil(A from, A until) {
+        return set.rangeFromUntil(from, until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#minAfter(Object)}.
+     *
+     * @param element the lower bound, inclusive
+     * @return the least element greater than or equal to {@code element}, if any
+     * @throws NullPointerException if {@code element} is null
+     */
+    public Option<A> minAfter(A element) {
+        return set.minAfter(element);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#maxBefore(Object)}.
+     *
+     * @param element the upper bound, exclusive
+     * @return the greatest element strictly less than {@code element}, if any
+     * @throws NullPointerException if {@code element} is null
+     */
+    public Option<A> maxBefore(A element) {
+        return set.maxBefore(element);
+    }
+
+    /**
+     * Complexity: O(log n) to create, then O(1) per step on average, as {@link TreeSet#iteratorFrom(Object)}.
+     *
+     * @param start the lower bound, inclusive
+     * @return an iterator over the elements greater than or equal to {@code start}, in the comparator's order
+     * @throws NullPointerException if {@code start} is null
+     */
+    public java.util.Iterator<A> iteratorFrom(A start) {
+        return set.iteratorFrom(start);
+    }
+
     // -- returns Option
 
     /**

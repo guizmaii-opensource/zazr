@@ -86,6 +86,29 @@ On a `LinkedHashMap`, a key already present keeps its position and a new key goe
 methods work on one side. `keySet()` returns the keys as a set, and `values()` the values as a `Vector`, in iteration
 order.
 
+## Ranges
+
+A `TreeMap` cuts out the entries whose keys lie between two bounds. The bounds need not be keys.
+
+- `rangeFrom(from)` keeps the keys at or after `from`.
+- `rangeUntil(until)` keeps those before `until`, and `rangeTo(to)` those at or before `to`.
+- `rangeFromUntil(from, until)` keeps those at or after `from` and before `until`. It is empty when `from` is not
+  before `until`; for `from` after `until`, `java.util.TreeMap.subMap` throws instead.
+
+Each result is a `TreeMap` with the same comparator, built in O(log n): it shares the rest of the tree with the map
+it came from, and is that map itself when nothing is cut.
+
+`minAfter(key)` is the entry with the least key at or after `key`, and `maxBefore(key)` the one with the greatest key
+strictly before it, both as an `Option` of a `Tuple2`. `iteratorFrom(start)` walks the entries from `start` on.
+
+```java
+var events  = TreeMap.of(9, "standup", 12, "lunch", 15, "review", 18, "gym");
+var workday = events.rangeFromUntil(9, 18);  // TreeMap<Integer, String>
+var next    = events.minAfter(13);           // Option<Tuple2<Integer, String>>
+var last    = events.maxBefore(12);          // Option<Tuple2<Integer, String>>
+// workday holds 9, 12 and 15, next is Some((15, review)), last is Some((9, standup))
+```
+
 ## Costs
 
 === "HashMap"

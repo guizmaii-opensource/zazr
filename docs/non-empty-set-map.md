@@ -46,8 +46,8 @@ The return type tells you whether the result can be empty:
 | Returns | When | For example |
 |---|---|---|
 | the non-empty type | the operation cannot remove every element | `add`, `addAll`, `union`, `map`, `put`, `putAll`, `merge`, `mapValues`, `replace` |
-| the plain type | the operation may remove elements | `filter`, `remove`, `updateWith`, `intersect`, `diff`, `take`, `drop`, `tail` |
-| `Option` | you ask for a part that may not exist | `find`, `get`, `tailNonEmpty()`, `initNonEmpty()` |
+| the plain type | the operation may remove elements | `filter`, `remove`, `updateWith`, `intersect`, `diff`, `take`, `drop`, `tail`, `rangeFrom` |
+| `Option` | you ask for a part that may not exist | `find`, `get`, `tailNonEmpty()`, `initNonEmpty()`, `minAfter`, `maxBefore` |
 
 `addAll`, `union`, `putAll` and `merge` accept a collection that may be empty and still return the non-empty type.
 `map` on a set may merge equal results, and `map` on a map equal keys, but never down to nothing.

@@ -1723,6 +1723,87 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
         return NonEmptySortedMap.ofMappedEntries(comparator, map, f, "NonEmptySortedMap.toSortedMap");
     }
 
+    // -- ranges, by key: the result may be empty
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeFrom(Object)}.
+     *
+     * @param from the lower bound on the keys, inclusive
+     * @return the entries whose key is greater than or equal to {@code from}
+     * @throws NullPointerException if {@code from} is null
+     */
+    public TreeMap<K, V> rangeFrom(K from) {
+        return map.rangeFrom(from);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeUntil(Object)}.
+     *
+     * @param until the upper bound on the keys, exclusive
+     * @return the entries whose key is less than {@code until}
+     * @throws NullPointerException if {@code until} is null
+     */
+    public TreeMap<K, V> rangeUntil(K until) {
+        return map.rangeUntil(until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeTo(Object)}.
+     *
+     * @param to the upper bound on the keys, inclusive
+     * @return the entries whose key is less than or equal to {@code to}
+     * @throws NullPointerException if {@code to} is null
+     */
+    public TreeMap<K, V> rangeTo(K to) {
+        return map.rangeTo(to);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeFromUntil(Object, Object)}.
+     *
+     * @param from  the lower bound on the keys, inclusive
+     * @param until the upper bound on the keys, exclusive
+     * @return the entries whose key is greater than or equal to {@code from} and less than {@code until}; none when
+     *         {@code from} is not less than {@code until}
+     * @throws NullPointerException if {@code from} or {@code until} is null
+     */
+    public TreeMap<K, V> rangeFromUntil(K from, K until) {
+        return map.rangeFromUntil(from, until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#minAfter(Object)}.
+     *
+     * @param key the lower bound on the keys, inclusive
+     * @return the entry with the least key greater than or equal to {@code key}, if any
+     * @throws NullPointerException if {@code key} is null
+     */
+    public Option<Tuple2<K, V>> minAfter(K key) {
+        return map.minAfter(key);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#maxBefore(Object)}.
+     *
+     * @param key the upper bound on the keys, exclusive
+     * @return the entry with the greatest key strictly less than {@code key}, if any
+     * @throws NullPointerException if {@code key} is null
+     */
+    public Option<Tuple2<K, V>> maxBefore(K key) {
+        return map.maxBefore(key);
+    }
+
+    /**
+     * Complexity: O(log n) to create, then O(1) per step on average, as {@link TreeMap#iteratorFrom(Object)}.
+     *
+     * @param start the lower bound on the keys, inclusive
+     * @return an iterator over the entries whose key is greater than or equal to {@code start}, in key order
+     * @throws NullPointerException if {@code start} is null
+     */
+    public java.util.Iterator<Tuple2<K, V>> iteratorFrom(K start) {
+        return map.iteratorFrom(start);
+    }
+
     // -- returns Option
 
     /**

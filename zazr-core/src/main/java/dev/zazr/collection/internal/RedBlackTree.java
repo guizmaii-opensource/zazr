@@ -4,7 +4,6 @@ import dev.zazr.Tuple2;
 import dev.zazr.collection.internal.RedBlackTreeModule.Empty;
 import dev.zazr.collection.internal.RedBlackTreeModule.Node;
 import dev.zazr.control.Option;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -273,53 +272,7 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
      */
     @Override
     default Iterator<T> iterator() {
-        if (isEmpty()) {
-            return Iterator.empty();
-        } else {
-            Node<T> that = (Node<T>) this;
-            return new AbstractIterator<T>() {
-
-                // The path of nodes whose value is still to be returned, the next one on top. A red-black tree is at
-                // most twice as high as its black height, so the first array is almost always big enough; it grows
-                // otherwise.
-                private @Nullable Node<?>[] stack = new Node<?>[Math.max(4, 2 * that.blackHeight + 2)];
-                private int depth = 0;
-
-                {
-                    pushLeftChildren(that);
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return depth > 0;
-                }
-
-                // AbstractIterator only calls getNext() after hasNext() returned true: the top of the stack is a node
-                @SuppressWarnings({"unchecked", "NullAway"})
-                @Override
-                public T getNext() {
-                    Node<T> node = (Node<T>) stack[--depth];
-                    stack[depth] = null;
-                    if (!node.right.isEmpty()) {
-                        pushLeftChildren((Node<T>) node.right);
-                    }
-                    return node.value;
-                }
-
-                private void pushLeftChildren(Node<T> that) {
-                    @SuppressWarnings("Var")
-                    RedBlackTree<T> tree = that;
-                    while (!tree.isEmpty()) {
-                        Node<T> node = (Node<T>) tree;
-                        if (depth == stack.length) {
-                            stack = Arrays.copyOf(stack, depth * 2);
-                        }
-                        stack[depth++] = node;
-                        tree = node.left;
-                    }
-                }
-            };
-        }
+        return isEmpty() ? Iterator.empty() : RedBlackTreeModule.InOrderIterator.all((Node<T>) this);
     }
 
     /**
