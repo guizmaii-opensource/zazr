@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A condition on a value of type {@code A} that explains why a value does not satisfy it, after zio-test's
@@ -33,7 +34,7 @@ import java.util.regex.Pattern;
  *
  * @param <A> the type of the values it tests
  */
-public final class Assertion<A> {
+public final class Assertion<A extends @Nullable Object> {
 
     private final String name;
     private final Function<? super A, TestResult> test;
@@ -53,14 +54,14 @@ public final class Assertion<A> {
      * @return a new assertion
      * @throws NullPointerException if an argument is null
      */
-    public static <A> Assertion<A> of(String name, Function<? super A, TestResult> test) {
+    public static <A extends @Nullable Object> Assertion<A> of(String name, Function<? super A, TestResult> test) {
         Objects.requireNonNull(name, "name is null");
         Objects.requireNonNull(test, "test is null");
         return new Assertion<>(name, test);
     }
 
     /// A leaf assertion: `explain(value)` is the explanation when `holds(value)` is false.
-    private static <A> Assertion<A> leaf(
+    private static <A extends @Nullable Object> Assertion<A> leaf(
             String name, java.util.function.Predicate<? super A> holds, Function<? super A, String> explain) {
         return new Assertion<>(
                 name, value -> holds.test(value) ? TestResult.succeed() : TestResult.fail(explain.apply(value)));
@@ -93,7 +94,7 @@ public final class Assertion<A> {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <A> TestResult assertThat(A value, Assertion<? super A>... assertions) {
+    public static <A extends @Nullable Object> TestResult assertThat(A value, Assertion<? super A>... assertions) {
         return all(assertions).test(value);
     }
 
@@ -115,7 +116,7 @@ public final class Assertion<A> {
 
     /// The assertions of a varargs call, combined with `and`.
     @SafeVarargs
-    static <A> Assertion<A> all(Assertion<? super A>... assertions) {
+    static <A extends @Nullable Object> Assertion<A> all(Assertion<? super A>... assertions) {
         Objects.requireNonNull(assertions, "assertions is null");
         if (assertions.length == 0) {
             throw new IllegalArgumentException("at least one assertion is needed");
@@ -127,7 +128,7 @@ public final class Assertion<A> {
     }
 
     @SuppressWarnings("unchecked")
-    private static <A> Assertion<A> narrow(Assertion<? super A> assertion) {
+    private static <A extends @Nullable Object> Assertion<A> narrow(Assertion<? super A> assertion) {
         return (Assertion<A>) assertion;
     }
 
@@ -188,7 +189,7 @@ public final class Assertion<A> {
      * @return a new assertion
      * @throws NullPointerException if {@code assertion} is null
      */
-    public static <A> Assertion<A> not(Assertion<A> assertion) {
+    public static <A extends @Nullable Object> Assertion<A> not(Assertion<A> assertion) {
         Objects.requireNonNull(assertion, "assertion is null");
         return new Assertion<>(
                 "not(" + assertion.name + ")",
@@ -205,7 +206,7 @@ public final class Assertion<A> {
      * @param <A> the type of the values it tests
      * @return the assertion
      */
-    public static <A> Assertion<A> anything() {
+    public static <A extends @Nullable Object> Assertion<A> anything() {
         return new Assertion<>("anything", value -> TestResult.succeed());
     }
 
@@ -217,7 +218,7 @@ public final class Assertion<A> {
      * @param <A>      the type of the values it tests
      * @return the assertion
      */
-    public static <A> Assertion<A> equalTo(A expected) {
+    public static <A extends @Nullable Object> Assertion<A> equalTo(A expected) {
         return leaf(
                 "equalTo(" + show(expected) + ")",
                 value -> Objects.deepEquals(value, expected),
@@ -804,7 +805,7 @@ public final class Assertion<A> {
 
     /// A value as the explanations show it: strings and characters quoted, arrays by their elements, code that is
     /// run as "the code" (its `toString` changes from one run to the next).
-    static String show(Object value) {
+    static String show(@Nullable Object value) {
         return switch (value) {
             case null -> "null";
             case String s -> "\"" + s + "\"";

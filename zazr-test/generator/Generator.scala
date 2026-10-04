@@ -37,7 +37,8 @@ def generateMainClasses(): Unit = {
       val objects = im.getType("java.util.Objects")
 
       def genArity(i: Int): String = {
-        val generics = (1 to i).gen(j => s"T$j")(using ", ")
+        val nullable = im.getType("org.jspecify.annotations.Nullable")
+        val generics = (1 to i).gen(j => s"T$j extends @$nullable Object")(using ", ")
         val gens = (1 to i).gen(j => s"Gen<? extends T$j> g$j")(using ", ")
         val gensArgs = (1 to i).gen(j => s"g$j")(using ", ")
         val checked = im.getType(s"dev.zazr.CheckedFunction$i")
@@ -240,7 +241,7 @@ def generateMainClasses(): Unit = {
              $throwsDoc
              */
             @SafeVarargs
-            public static <T1> $ret $name($configParam${if (configParam.isEmpty) "" else ", "}Gen<? extends T1> g1, $assertions) {
+            public static <T1 extends @${im.getType("org.jspecify.annotations.Nullable")} Object> $ret $name($configParam${if (configParam.isEmpty) "" else ", "}Gen<? extends T1> g1, $assertions) {
                 $call
             }
           """
