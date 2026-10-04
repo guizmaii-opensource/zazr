@@ -2121,8 +2121,9 @@ unreleased).
     generator, `collectAll` and the elements of `unfoldGen` (lists). `runCollect` and `runCollectN` keep the class
     bound and throw on a null value, since a `List` holds none.
   - `Check`'s type parameters (generated) are nullable, and so are `Assertion`'s, with `of`, `anything`, `equalTo`,
-    `not`, `assertThat` and the combinators, so that `check(gen, equalTo(null))` compiles under NullAway; the
-    assertions on comparables, strings, iterables and the Zazr types keep non-null type parameters.
+    `not`, `assertThat` and the combinators, so that a check of a nullable generator against `equalTo(null)` compiles
+    under NullAway (written inline, `equalTo` needs its type: `Assertion.<@Nullable String>equalTo(null)`, or a typed
+    local); the assertions on comparables, strings, iterables and the Zazr types keep non-null type parameters.
   - The holder of `Gen.draw` keeps its `NullAway.Init` suppression: NullAway reports an unset field of a type variable
     whatever its bound. The erasure, and so the bytecode, is unchanged.
 - **`CheckResult` loses `propertyName` and `exhausted`.** It stays a sealed interface of three records:

@@ -130,6 +130,54 @@ class GenTest {
         assertThat(seen(constant.zipWith(Gen.constant("e"), (a, b) -> a + b))).containsExactly("nulle");
         assertThat(seen(Gen.tuple2(constant, Gen.constant(1)))).containsExactly(Tuple.of(null, 1));
         assertThat(seen(Gen.zip(constant, constant, constant))).containsExactly(Tuple.of(null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null, null, null, null));
+        assertThat(seen(Gen.zipWith(constant, constant, (a, b) -> "" + a + b))).containsExactly("nullnull");
+        assertThat(seen(Gen.zipWith(constant, constant, constant, (a, b, c) -> "" + a + b + c)))
+                .containsExactly("nullnullnull");
+        assertThat(seen(Gen.zipWith(constant, constant, constant, constant, (a, b, c, d) -> "" + a + b + c + d)))
+                .containsExactly("nullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant, constant, constant, constant, constant, (a, b, c, d, e) -> "" + a + b + c + d + e)))
+                .containsExactly("nullnullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        (a, b, c, d, e, f) -> "" + a + b + c + d + e + f)))
+                .containsExactly("nullnullnullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        (a, b, c, d, e, f, g) -> "" + a + b + c + d + e + f + g)))
+                .containsExactly("nullnullnullnullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        (a, b, c, d, e, f, g, h) -> "" + a + b + c + d + e + f + g + h)))
+                .containsExactly("nullnullnullnullnullnullnullnull");
         assertThat(seen(Gen.lazy(constant)).get(0).get()).isNull();
         assertThat(seen(Gen.unfoldGenN(2, (String) null, s -> Gen.constant(Tuple.of(s, 1)))))
                 .containsExactly(List.of(1, 1));
