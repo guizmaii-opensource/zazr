@@ -16,6 +16,9 @@ the work and shows where it stands.
 - **[0.4.0: Scala 2.13 additions](https://github.com/guizmaii-opensource/zazr/milestone/5).** `groupMap`,
   `groupMapReduce`, `sizeCompare`, `updateWith` on maps, range operations on sorted sets and maps, and in
   `zazr-test` generators for the non-empty sets and maps.
+- **[0.5.0: warnings and sequence operations](https://github.com/guizmaii-opensource/zazr/milestone/6).** A
+  `Validation` that also collects warnings, which never block the result, and sequence operations such as
+  `zipWithPrevious`, `mapAccum` and `foldWhile`.
 - **[Performance](https://github.com/guizmaii-opensource/zazr/milestone/3).** Benchmarks and optimisations, shipped
   with whichever release comes next.
 
