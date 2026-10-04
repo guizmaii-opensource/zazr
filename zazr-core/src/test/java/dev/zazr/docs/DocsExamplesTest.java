@@ -140,6 +140,107 @@ public class DocsExamplesTest {
     }
 
     @Nested
+    class BlogBuilders {
+
+        record Order(String id, int amount) {
+            static Order parse(String row) {
+                var fields = row.split(",");
+                return new Order(fields[0], Integer.parseInt(fields[1]));
+            }
+        }
+
+        static final java.util.List<String> ROWS = java.util.List.of("o-1,30", "o-2,12", "o-3,45");
+
+        @SuppressWarnings("Var") // the snippet of the post reassigns a local, to show the loop it replaces
+        @Test
+        void theProblem() {
+            record Order(String id, int amount) {
+                static Order parse(String row) {
+                    var fields = row.split(",");
+                    return new Order(fields[0], Integer.parseInt(fields[1]));
+                }
+            }
+
+            var rows = java.util.List.of("o-1,30", "o-2,12", "o-3,45"); // the lines of a CSV file
+            var orders = Vector.<Order>empty();
+            for (var row : rows) {
+                orders = orders.append(Order.parse(row));
+            }
+
+            assertThat(orders)
+                    .hasToString(
+                            "Vector(Order[id=o-1, amount=30], Order[id=o-2, amount=12], Order[id=o-3, amount=45])");
+        }
+
+        @Test
+        void aBuilder() {
+            var rows = ROWS;
+
+            var builder = Vector.<Order>newBuilder(); // Vector.Builder<Order>
+            for (var row : rows) {
+                builder.add(Order.parse(row));
+            }
+            var orders = builder.result(); // Vector<Order>
+            // Vector(Order[id=o-1, amount=30], Order[id=o-2, amount=12], Order[id=o-3, amount=45])
+
+            var index = HashMap.<String, Order>newBuilder(); // HashMap.Builder<String, Order>
+            for (var order : orders) {
+                index.put(order.id(), order);
+            }
+            var byId = index.result(); // HashMap<String, Order>
+            var found = byId.get("o-2"); // Option<Order>
+            // Some(Order[id=o-2, amount=12])
+
+            assertThat(orders)
+                    .hasToString(
+                            "Vector(Order[id=o-1, amount=30], Order[id=o-2, amount=12], Order[id=o-3, amount=45])");
+            assertThat(found).hasToString("Some(Order[id=o-2, amount=12])");
+            assertThat(byId.size()).isEqualTo(3);
+
+            // of equal keys, the one put last wins
+            var last = HashMap.<String, Integer>newBuilder()
+                    .put("o-1", 1)
+                    .put("o-1", 2)
+                    .result();
+            assertThat(last).isEqualTo(HashMap.of("o-1", 2));
+        }
+
+        @Test
+        void whatABuilderDoesNotLetYouDo() {
+            var builder = Vector.<Order>newBuilder();
+            builder.add(new Order("o-1", 30));
+            var orders = builder.result();
+
+            assertThatThrownBy(() -> {
+                        builder.add(new Order("o-4", 7)); // throws IllegalStateException
+                    })
+                    .isInstanceOf(IllegalStateException.class);
+            // a second result() and size() throw too
+            assertThatThrownBy(builder::result).isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(builder::size).isInstanceOf(IllegalStateException.class);
+            assertThat(orders).hasToString("Vector(Order[id=o-1, amount=30])");
+
+            // like the collections, a builder refuses null
+            assertThatThrownBy(() -> Vector.<Order>newBuilder().add(null)).isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> HashMap.<String, Order>newBuilder().put("o-1", null))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        void withoutWritingTheLoop() {
+            var rows = ROWS;
+
+            var large = rows.stream()
+                    .map(Order::parse)
+                    .filter(order -> order.amount() > 20)
+                    .collect(Vector.collector()); // Vector<Order>
+            // Vector(Order[id=o-1, amount=30], Order[id=o-3, amount=45])
+
+            assertThat(large).hasToString("Vector(Order[id=o-1, amount=30], Order[id=o-3, amount=45])");
+        }
+    }
+
+    @Nested
     class NewToFpPage {
 
         record Customer(String name, String email) {}
