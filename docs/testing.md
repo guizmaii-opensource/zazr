@@ -364,25 +364,31 @@ The failure also prints `-Dzazr.check.seed=42`: that system property replays it 
 build passes it to the test JVM. Maven does; a Gradle build needs `systemProperty` in its `test` task. A seed set with
 `withSeed` takes precedence over the property.
 
-## Generators for every Zazr type
+## Generators for Zazr types
 
-`Gen` has a generator for each Zazr type. Pass it the generators of the elements.
+`Gen` has a generator for each Zazr collection, control type and tuple from `Tuple2` to `Tuple8`. Pass it the generators of the elements.
 
 | Kind | Generators |
 |---|---|
 | Control types | `option`, `some`, `none`, `either`, `tryOf`, `validation`, `lazy` |
 | Tuples | `tuple2` to `tuple8` |
 | Sequences | `vector`, `vectorN`, `nonEmptyVector`, `list`, `queue`, `lazyList` |
-| Sets | `hashSet`, `linkedHashSet`, `treeSet` |
-| Maps | `hashMap`, `linkedHashMap`, `treeMap` |
+| Sets | `hashSet`, `linkedHashSet`, `treeSet`, `nonEmptySet`, `nonEmptySortedSet` |
+| Maps | `hashMap`, `linkedHashMap`, `treeMap`, `nonEmptyMap`, `nonEmptySortedMap` |
 
 ```java
 var checks = Gen.validation(Gen.elements("too short", "no digit"), Gen.integers()); // Gen<Validation<String, Integer>>
 Check.check(checks, checks, (a, b) -> assertThat(a.zip(b).isValid(), equalTo(a.isValid() && b.isValid())));
 ```
 
-A collection has up to the current size elements (a non-empty vector has at least one). Half of the lengths are 0, 1, the size or the size minus one, so
+A collection has up to the current size elements. Half of the lengths are 0, 1, the size or the size minus one, so
 empty, single-element and full collections come up often.
+
+A non-empty collection always has at least one element, even when the element generator gives the same value every
+time. Its lengths go from 1 to the size, and about half of them are 1, 2, the size or the size minus one. The sorted sets and maps use the natural order of their elements or keys.
+
+`Tuple0` and `Tuple1` have no generator of their own: `Gen.constant(Tuple.empty())` and `gen.map(Tuple::of)` give
+them.
 
 ## Unusual layouts included
 

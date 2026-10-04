@@ -2103,6 +2103,13 @@ unreleased).
   already supplies the short ones at the start of a run. The collection generators keep the internal layouts of
   #107 (dropped prefixes and slices of a `Vector`, split `Queue`s, unevaluated `Stream` tails, sets and maps after
   removals and overwrites).
+- **Non-empty sets and maps** (decided 2026-10-04, #235): `nonEmptySet`, `nonEmptySortedSet`, `nonEmptyMap` and
+  `nonEmptySortedMap` follow `nonEmptyVector`: a head drawn first, then a tail of up to the size minus one draws built
+  along the set or map layouts, joined by `addAll`/`putAll`, `fromIterable` or `fromSet`/`fromMap` (the tail with the
+  head added). The head is always in the result, so a generator whose draws all repeat still gives one element, never
+  an empty collection; when the tail holds the head's key, the tail's value is kept, the last one drawn, as in the map
+  layouts. The sorted ones take the natural order only, as `treeSet` and `treeMap` do: comparator overloads, if
+  wanted, come to all four sorted generators at once.
 - **`CheckResult` loses `propertyName` and `exhausted`.** It stays a sealed interface of three records:
   `Satisfied(samples)`, `Falsified(sampleNumber, seed, counterexample, message)` and
   `Erroneous(sampleNumber, seed, cause, sample)`, with a `Throwable` cause. There are no named properties any more
