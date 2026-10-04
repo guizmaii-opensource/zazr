@@ -41,6 +41,7 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 | `contains`, `get`, `containsKey` | effectively O(1) | effectively O(1) | O(log n) |
 | `add`, `put`, `remove` | effectively O(1) | effectively O(1), `remove` amortised | O(log n) |
 | `head`, `take`, `drop` | none | yes | O(log n) |
+| `rangeFrom`, `rangeFromUntil`, `minAfter` | none | none | O(log n) |
 
 `NonEmptyVector` has `Vector`'s costs. `contains` on a sequence is O(n); use a set for membership.
 
@@ -108,6 +109,22 @@ var more   = counts.updateWith("apple", n -> Option.some(n.getOrElse(0) + 1));  
 var none   = counts.updateWith("apple", n -> Option.none());                    // HashMap<String, Integer>
 var pears  = counts.getOrElse("pear", () -> 0);                                 // Integer
 // more is HashMap((apple, 3)), none is HashMap(), pears is 0
+```
+
+`TreeSet` and `TreeMap` (and `NonEmptySortedSet`, `NonEmptySortedMap`, which return the plain types) cut ranges by
+element or key in O(log n), sharing the rest of the tree: `rangeFrom(from)` (inclusive), `rangeUntil(until)`
+(exclusive), `rangeTo(to)` (inclusive) and `rangeFromUntil(from, until)`, empty when `from` is not before `until`
+(there is no instance `range`: `TreeSet.range(int, int)` is a static factory). `minAfter(x)` is the least at or after
+`x` (inclusive), `maxBefore(x)` the greatest strictly before `x`, both an `Option` (of a `Tuple2` on a map);
+`iteratorFrom(start)` iterates from `start` on.
+
+```java
+var scores = TreeSet.of(10, 20, 30, 40);
+var middle = scores.rangeFromUntil(20, 40);                    // TreeSet<Integer>
+var next   = scores.minAfter(20);                              // Option<Integer>
+var before = scores.maxBefore(20);                             // Option<Integer>
+var later  = TreeMap.of(1, "a", 2, "b", 3, "c").rangeFrom(2);  // TreeMap<Integer, String>
+// middle is TreeSet(20, 30), next is Some(20), before is Some(10), later is TreeMap((2, b), (3, c))
 ```
 
 ## Build in bulk

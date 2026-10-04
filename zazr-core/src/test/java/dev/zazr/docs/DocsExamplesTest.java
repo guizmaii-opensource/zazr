@@ -1373,6 +1373,27 @@ public class DocsExamplesTest {
             assertThat(reversed.head()).isEqualTo(3);
             assertThat(reversed.min()).isEqualTo(Option.some(1));
         }
+
+        @Test
+        void ranges() {
+            var scores = TreeSet.of(10, 20, 30, 40, 50);
+            var middle = scores.rangeFromUntil(20, 40); // TreeSet<Integer>
+            var upTo30 = scores.rangeTo(30); // TreeSet<Integer>
+            var next = scores.minAfter(25); // Option<Integer>
+            var before = scores.maxBefore(20); // Option<Integer>
+            // middle is TreeSet(20, 30), upTo30 is TreeSet(10, 20, 30), next is Some(30), before is Some(10)
+
+            assertThat(middle).hasToString("TreeSet(20, 30)");
+            assertThat(upTo30).hasToString("TreeSet(10, 20, 30)");
+            assertThat(next).isEqualTo(Option.some(30));
+            assertThat(before).isEqualTo(Option.some(10));
+            // minAfter keeps its bound, maxBefore excludes it
+            assertThat(scores.minAfter(30)).isEqualTo(Option.some(30));
+            assertThat(scores.maxBefore(30)).isEqualTo(Option.some(20));
+            // empty when from is not before until, the set itself when nothing is cut
+            assertThat(scores.rangeFromUntil(40, 20)).isEmpty();
+            assertThat(scores.rangeFrom(0)).isSameAs(scores);
+        }
     }
 
     @Nested
@@ -1395,6 +1416,19 @@ public class DocsExamplesTest {
             assertThat(kiwis).isZero();
             assertThat(values).hasToString("Vector(1, 2, 3)");
             assertThat(first).hasToString("(a, 1)");
+        }
+
+        @Test
+        void ranges() {
+            var events = TreeMap.of(9, "standup", 12, "lunch", 15, "review", 18, "gym");
+            var workday = events.rangeFromUntil(9, 18); // TreeMap<Integer, String>
+            var next = events.minAfter(13); // Option<Tuple2<Integer, String>>
+            var last = events.maxBefore(12); // Option<Tuple2<Integer, String>>
+            // workday holds 9, 12 and 15, next is Some((15, review)), last is Some((9, standup))
+
+            assertThat(workday.keySet()).containsExactly(9, 12, 15);
+            assertThat(next).isEqualTo(Option.some(Tuple.of(15, "review")));
+            assertThat(last).isEqualTo(Option.some(Tuple.of(9, "standup")));
         }
 
         @Test

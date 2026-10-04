@@ -1800,6 +1800,51 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     // -- Object
 
+    // -- Ranges, by key
+
+    @Override
+    public TreeMap<K, V> rangeFrom(K from) {
+        Objects.requireNonNull(from, "from is null");
+        return withEntries(RedBlackTreeModule.Node.rangeFrom(entries, from, comparator(), true));
+    }
+
+    @Override
+    public TreeMap<K, V> rangeUntil(K until) {
+        Objects.requireNonNull(until, "until is null");
+        return withEntries(RedBlackTreeModule.Node.rangeUntil(entries, until, comparator(), true));
+    }
+
+    @Override
+    public TreeMap<K, V> rangeTo(K to) {
+        Objects.requireNonNull(to, "to is null");
+        return withEntries(RedBlackTreeModule.Node.rangeTo(entries, to, comparator(), true));
+    }
+
+    @Override
+    public TreeMap<K, V> rangeFromUntil(K from, K until) {
+        Objects.requireNonNull(from, "from is null");
+        Objects.requireNonNull(until, "until is null");
+        return withEntries(RedBlackTreeModule.Node.range(entries, from, until, comparator(), true));
+    }
+
+    @Override
+    public Option<Tuple2<K, V>> minAfter(K key) {
+        Objects.requireNonNull(key, "key is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.minAfter(entries, key, comparator(), true));
+    }
+
+    @Override
+    public Option<Tuple2<K, V>> maxBefore(K key) {
+        Objects.requireNonNull(key, "key is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.maxBefore(entries, key, comparator(), true));
+    }
+
+    @Override
+    public java.util.Iterator<Tuple2<K, V>> iteratorFrom(K start) {
+        Objects.requireNonNull(start, "start is null");
+        return RedBlackTreeModule.Node.iteratorFrom(entries, start, comparator(), true);
+    }
+
     // -- Positional operations, in the comparator's order
 
     @Override

@@ -63,6 +63,30 @@ Every method: [complexity page](complexity.md#sets).
 
 `HashSet` has none of them, because its order is not defined.
 
+## Ranges
+
+A `TreeSet` cuts out the elements between two bounds in its comparator's order. The bounds need not be elements.
+
+- `rangeFrom(from)` keeps the elements at or after `from`.
+- `rangeUntil(until)` keeps those before `until`, and `rangeTo(to)` those at or before `to`.
+- `rangeFromUntil(from, until)` keeps those at or after `from` and before `until`. It is empty when `from` is not
+  before `until`; for `from` after `until`, `java.util.TreeSet.subSet` throws instead.
+
+Each result is a `TreeSet` with the same comparator, built in O(log n): it shares the rest of the tree with the set
+it came from, and is that set itself when nothing is cut.
+
+`minAfter(element)` is the least element at or after `element`, and `maxBefore(element)` the greatest strictly before
+it, both as an `Option`. `iteratorFrom(start)` walks the elements from `start` on, without building a range.
+
+```java
+var scores = TreeSet.of(10, 20, 30, 40, 50);
+var middle = scores.rangeFromUntil(20, 40);  // TreeSet<Integer>
+var upTo30 = scores.rangeTo(30);             // TreeSet<Integer>
+var next   = scores.minAfter(25);            // Option<Integer>
+var before = scores.maxBefore(20);           // Option<Integer>
+// middle is TreeSet(20, 30), upTo30 is TreeSet(10, 20, 30), next is Some(30), before is Some(10)
+```
+
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashSet`: it depends on the hashes and may change between versions.

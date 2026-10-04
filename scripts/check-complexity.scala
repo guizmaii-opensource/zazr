@@ -51,7 +51,9 @@ val documented: Set[String] = Set(
   // the grouping and size comparisons that every collection has
   "groupMap", "groupMapReduce", "sizeCompare",
   // the lookup with a default and the update of one key of the maps
-  "getOrElse", "updateWith"
+  "getOrElse", "updateWith",
+  // the ranges of the sorted sets and maps
+  "rangeFrom", "rangeUntil", "rangeTo", "rangeFromUntil", "minAfter", "maxBefore", "iteratorFrom"
 )
 
 /** The complexity classes of the legend, cheapest first. */
