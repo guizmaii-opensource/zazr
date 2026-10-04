@@ -736,7 +736,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n): one lookup, then one deletion when the key is present.
+     * Complexity: O(log n): one walk down the tree, then one deletion on the way back up when the key is present.
      */
     @Override
     SortedMap<K, V> remove(K key);
@@ -752,7 +752,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log n) for m keys: one lookup each, then one deletion for each key present.
+     * Complexity: O(m log n) for m keys: one walk down the tree each, then one deletion for each key present.
      */
     @Override
     SortedMap<K, V> removeAll(Iterable<? extends K> keys);

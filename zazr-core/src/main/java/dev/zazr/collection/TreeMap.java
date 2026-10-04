@@ -1213,17 +1213,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return mapBoth(this, EntryComparator.of(keyComparator), keyMapper, valueMapper);
     }
 
-    /**
-     * Creates a lookup-only entry for the given key.
-     * <p>
-     * {@code entries} is ordered by key alone, so the value of the probe is never read -- it only
-     * has to be type-compatible. Kept in one place so the null value is justified exactly once.
-     */
-    @SuppressWarnings("NullAway")
-    private static <K extends @Nullable Object, V extends @Nullable Object> Tuple2<K, V> lookupEntry(K key) {
-        return new Tuple2<>(key, null);
-    }
-
     // the stored entry of `key`, or null: `key` is compared with the key of each entry in place, so no probe entry
     // and no Option are made
     private @Nullable Tuple2<K, V> entryOf(K key) {
@@ -1649,12 +1638,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> remove(K key) {
-        Tuple2<K, V> entry = lookupEntry(key);
-        if (entries.contains(entry)) {
-            return new TreeMap<>(entries.delete(entry));
-        } else {
-            return this;
-        }
+        RedBlackTree<Tuple2<K, V>> removed = withoutKey(entries, key);
+        return removed == entries ? this : new TreeMap<>(removed);
+    }
+
+    // `tree` without the entry of `key`, or `tree` itself when there is none: `key` is compared with the key of each
+    // entry in place, in one walk, so no probe entry is made
+    private RedBlackTree<Tuple2<K, V>> withoutKey(RedBlackTree<Tuple2<K, V>> tree, K key) {
+        return RedBlackTreeModule.Node.deleteByKey(tree, key, comparator(), true);
     }
 
     @Override
@@ -1679,12 +1670,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         @SuppressWarnings("Var")
         RedBlackTree<Tuple2<K, V>> removed = entries;
         for (K key : keys) {
-            Tuple2<K, V> entry = lookupEntry(key);
-            if (removed.contains(entry)) {
-                removed = removed.delete(entry);
-            }
+            removed = withoutKey(removed, key);
         }
-        if (removed.size() == entries.size()) {
+        if (removed == entries) {
             return this;
         } else {
             return new TreeMap<>(removed);
