@@ -1,5 +1,6 @@
 package dev.zazr.collection;
 
+import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.internal.Comparators;
 import dev.zazr.collection.internal.NonEmptyModule;
@@ -25,7 +26,7 @@ import org.jspecify.annotations.Nullable;
  * The contract is {@link NonEmptyMap}'s, plus the positional operations of a sorted map:
  * <ul>
  * <li>operations that cannot remove every entry return a {@code NonEmptySortedMap}: {@code put}, {@code putAll},
- * {@code merge}, {@code map}, {@code mapBoth}, {@code mapKeys},
+ * {@code merge}, {@code computeIfAbsent}, {@code computeIfPresent}, {@code map}, {@code mapBoth}, {@code mapKeys},
  * {@code mapValues}, {@code flatMap}, {@code replace}, {@code replaceAll}, {@code replaceValue}, {@code tap};
  * {@code keySet} returns a {@link NonEmptySortedSet}, {@code values} and {@code zipWithIndex} a
  * {@link NonEmptyVector}, and {@code grouped}, {@code sliding}, {@code slideBy} and {@code groupBy} non-empty groups
@@ -436,6 +437,29 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public <U extends V> NonEmptySortedMap<K, V> merge(
             Map<? extends K, U> that, BiFunction<? super V, ? super U, ? extends V> collisionResolution) {
         return wrap(map.merge(that, collisionResolution));
+    }
+
+    /**
+     * @param key             A key
+     * @param mappingFunction Computes the value of an absent key
+     * @return the value of {@code key}, computed if it was absent, and this map with it
+     * @throws NullPointerException if {@code mappingFunction} is null or returns null
+     */
+    public Tuple2<V, NonEmptySortedMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        Tuple2<V, TreeMap<K, V>> result = map.computeIfAbsent(key, mappingFunction);
+        return Tuple.of(result._1(), wrap(result._2()));
+    }
+
+    /**
+     * @param key               A key
+     * @param remappingFunction Computes the new value of a present key from its current value
+     * @return the new value of {@code key}, if it was present, and this map with it
+     * @throws NullPointerException if {@code remappingFunction} is null or returns null
+     */
+    public Tuple2<Option<V>, NonEmptySortedMap<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        Tuple2<Option<V>, TreeMap<K, V>> result = map.computeIfPresent(key, remappingFunction);
+        return Tuple.of(result._1(), wrap(result._2()));
     }
 
     /**

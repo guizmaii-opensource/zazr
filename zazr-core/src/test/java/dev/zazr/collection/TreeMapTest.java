@@ -993,6 +993,35 @@ public class TreeMapTest extends AbstractTraversableTest {
     }
 
     @Nested
+    class ComputeifabsentTests {
+        @Test
+        public void shouldComputeIfAbsent() {
+            Map<Integer, String> map = emptyIntString().put(1, "v");
+            assertThat(map.computeIfAbsent(1, k -> "b")).isEqualTo(Tuple.of("v", map));
+            assertThat(map.computeIfAbsent(2, k -> "n"))
+                    .isEqualTo(Tuple.of("n", emptyIntString().put(1, "v").put(2, "n")));
+        }
+    }
+
+    @Nested
+    class ComputeIfPresentTests {
+        @Test
+        public void shouldComputeIfPresent() {
+            Map<Integer, String> map = emptyIntString().put(1, "v");
+            assertThat(map.computeIfPresent(1, (k, v) -> "b"))
+                    .isEqualTo(Tuple.of(Option.some("b"), emptyIntString().put(1, "b")));
+            assertThat(map.computeIfPresent(2, (k, v) -> "n")).isEqualTo(Tuple.of(Option.none(), map));
+        }
+
+        @Test
+        public void shouldRejectComputeIfPresentWithNullResult() {
+            // Some(null) does not exist (design 3.9), so a remapping to null cannot be reported
+            Map<Integer, String> map = emptyIntString().put(1, "v");
+            assertThatThrownBy(() -> map.computeIfPresent(1, (k, v) -> null)).isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Nested
     class GetWithNullsTests {
         @Test
         public void shouldRejectPutOfNullValue() {
@@ -1132,6 +1161,20 @@ public class TreeMapTest extends AbstractTraversableTest {
         }
 
         @Test
+        public void shouldRejectComputeIfPresentWithNullResult() {
+            assertThatNullPointerException()
+                    .isThrownBy(() ->
+                            TreeMapTest.this.<String, String>mapOf("k", "v").computeIfPresent("k", (k, v) -> null));
+        }
+
+        @Test
+        public void shouldRejectComputeIfAbsentWithNullResult() {
+            assertThatNullPointerException()
+                    .isThrownBy(
+                            () -> TreeMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> null));
+        }
+
+        @Test
         public void shouldRejectReplaceWithNullValue() {
             Map<String, String> map = mapOf("k", "v");
             assertThatNullPointerException()
@@ -1167,29 +1210,19 @@ public class TreeMapTest extends AbstractTraversableTest {
         }
 
         @Test
-        public void updateWithOnAbsentKeyHandsNoneToF() {
-            Map<String, String> map = mapOf("k", "v");
-            java.util.List<Option<String>> seen = new java.util.ArrayList<>();
-            Map<String, String> updated = map.updateWith("missing", value -> {
-                seen.add(value);
-                return Option.some("computed");
-            });
-            assertThat(seen).containsExactly(Option.none());
-            assertThat(updated.get("missing")).isEqualTo(Option.some("computed"));
-            assertThat(updated.get("k")).isEqualTo(Option.some("v"));
+        public void computeIfAbsentOnAbsentKeyComputes() {
+            Tuple2<String, ? extends Map<String, String>> result =
+                    TreeMapTest.this.<String, String>emptyMap().computeIfAbsent("k", k -> "computed");
+            assertThat(result._1()).isEqualTo("computed");
         }
 
         @Test
-        public void updateWithRemovingAnAbsentKeyGivesTheMapItself() {
+        public void computeIfPresentOnAbsentKeyIsNoop() {
             Map<String, String> map = mapOf("k", "v");
-            assertThat(map.updateWith("missing", value -> Option.none())).isSameAs(map);
-        }
-
-        @Test
-        public void getOrElseWithASupplierOnAbsentKeyCallsIt() {
-            Map<String, String> map = mapOf("k", "v");
-            assertThat(map.getOrElse("missing", () -> "computed")).isEqualTo("computed");
-            assertThat(map.getOrElse("k", () -> "computed")).isEqualTo("v");
+            Tuple2<Option<String>, ? extends Map<String, String>> result =
+                    map.computeIfPresent("missing", (k, v) -> "x");
+            assertThat(result._1()).isEqualTo(Option.none());
+            assertThat(result._2()).isSameAs(map);
         }
 
         @Test

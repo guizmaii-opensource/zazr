@@ -211,6 +211,7 @@ public class NonEmptyMapTest {
             assertThatNullPointerException().isThrownBy(() -> nem.map((k, v) -> null));
             assertThatNullPointerException().isThrownBy(() -> nem.mapValues(v -> null));
             assertThatNullPointerException().isThrownBy(() -> nem.merge(null));
+            assertThatNullPointerException().isThrownBy(() -> nem.computeIfAbsent(3, k -> null));
             assertThatNullPointerException().isThrownBy(() -> nem.maxBy((Comparator<Tuple2<Integer, String>>) null));
             assertThatNullPointerException()
                     .isThrownBy(() -> nem.minBy((Function<Tuple2<Integer, String>, Integer>) null));
@@ -239,7 +240,7 @@ public class NonEmptyMapTest {
 
         @ParameterizedTest
         @MethodSource("dev.zazr.collection.NonEmptyMapTest#maps")
-        public void shouldMerge(int n, HashMap<Integer, String> map) {
+        public void shouldMergeAndCompute(int n, HashMap<Integer, String> map) {
             NonEmptyMap<Integer, String> nem = nem(map);
             for (int m : new int[] {0, 1, 33, 1025}) {
                 HashMap<Integer, String> that =
@@ -249,6 +250,13 @@ public class NonEmptyMapTest {
                 assertThat(nem.merge(that.toSortedMap(t -> t)).toMap()).isEqualTo(map.merge(that));
             }
             assertThat(nem.merge(HashMap.empty())).isSameAs(nem);
+            assertThat(nem.computeIfAbsent(-1, k -> "c")._1()).isEqualTo("c");
+            assertThat(nem.computeIfAbsent(-1, k -> "c")._2().toMap())
+                    .isEqualTo(map.computeIfAbsent(-1, k -> "c")._2());
+            assertThat(nem.computeIfAbsent(0, k -> "c")._1()).isEqualTo("v0");
+            assertThat(nem.computeIfPresent(0, (k, v) -> v + "!"))
+                    .isEqualTo(Tuple.of(Option.some("v0!"), nem.put(0, "v0!")));
+            assertThat(nem.computeIfPresent(-1, (k, v) -> v + "!")).isEqualTo(Tuple.of(Option.none(), nem));
         }
 
         @ParameterizedTest
@@ -512,6 +520,13 @@ public class NonEmptyMapTest {
             calls.put(
                     "merge(Map, BiFunction)",
                     m -> java.util.List.of(m.merge(HashMap.<Integer, String>empty(), String::concat)));
+            calls.put(
+                    "computeIfAbsent(Object, Function)",
+                    m -> java.util.List.of(m.computeIfAbsent(0, k -> "x"), m.computeIfAbsent(-1, k -> "x")));
+            calls.put(
+                    "computeIfPresent(Object, BiFunction)",
+                    m -> java.util.List.of(
+                            m.computeIfPresent(0, (k, v) -> "x"), m.computeIfPresent(-1, (k, v) -> "x")));
             calls.put("map(BiFunction)", m -> java.util.List.of(m.map((k, v) -> Tuple.of(0, v))));
             calls.put("mapBoth(Function, Function)", m -> java.util.List.of(m.mapBoth(k -> 0, v -> v)));
             calls.put("mapKeys(Function)", m -> java.util.List.of(m.mapKeys(k -> 0)));

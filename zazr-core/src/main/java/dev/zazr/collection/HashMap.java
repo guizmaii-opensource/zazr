@@ -598,6 +598,27 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is absent.
+     */
+    @Override
+    public Tuple2<V, HashMap<K, V>> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        return Maps.computeIfAbsent(this, key, mappingFunction);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one lookup, and one {@link #put(Object, Object)} when the key is present.
+     */
+    @Override
+    public Tuple2<Option<V>, HashMap<K, V>> computeIfPresent(
+            K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        return Maps.computeIfPresent(this, key, remappingFunction);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: effectively O(1): one lookup of the key, then its value is compared.
      */
     @Override

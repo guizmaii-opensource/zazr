@@ -34,6 +34,35 @@ public final class Maps {
 
     private Maps() {}
 
+    @SuppressWarnings("unchecked")
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>>
+            Tuple2<V, M> computeIfAbsent(M map, K key, Function<? super K, ? extends V> mappingFunction) {
+        Objects.requireNonNull(mappingFunction, "mappingFunction is null");
+        V value = getOrAbsent(map, key);
+        if (value != ABSENT) {
+            return Tuple.of(value, map);
+        } else {
+            V newValue = mappingFunction.apply(key);
+            M newMap = (M) map.put(key, newValue);
+            return Tuple.of(newValue, newMap);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>>
+            Tuple2<Option<V>, M> computeIfPresent(
+                    M map, K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        Objects.requireNonNull(remappingFunction, "remappingFunction is null");
+        V value = getOrAbsent(map, key);
+        if (value != ABSENT) {
+            V newValue = remappingFunction.apply(key, value);
+            M newMap = (M) map.put(key, newValue);
+            return Tuple.of(Option.some(newValue), newMap);
+        } else {
+            return Tuple.of(Option.none(), map);
+        }
+    }
+
     /// [Map#getOrElse(Object, Supplier)]: one lookup, and `supplier` runs only when `key` is absent. A null
     /// result is rejected with `nullResult` (`HashMap.getOrElse: supplier returned null`).
     public static <K extends @Nullable Object, V extends @Nullable Object> V getOrElse(
