@@ -18,8 +18,11 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -993,23 +996,33 @@ public class TryTest {
         @Test
         public void shouldBlockUntilPendingFutureIsCompletedFromAnotherThread() throws InterruptedException {
             CompletableFuture<String> future = new CompletableFuture<>();
-            long delayMillis = 200;
-            Thread completer = new Thread(() -> {
-                try {
-                    Thread.sleep(delayMillis);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                future.complete("done");
+            AtomicReference<Try<String>> result = new AtomicReference<>();
+            CountDownLatch returned = new CountDownLatch(1);
+            Thread caller = Thread.ofPlatform().daemon().start(() -> {
+                result.set(Try.fromCompletableFuture(future));
+                returned.countDown();
             });
-            completer.start();
-            long startNanos = System.nanoTime();
-            Try<String> result = Try.fromCompletableFuture(future);
-            long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000;
-            completer.join();
-            assertThat(result.isSuccess()).isTrue();
-            assertThat(result.get()).isEqualTo("done");
-            assertThat(elapsedMillis).isGreaterThanOrEqualTo(delayMillis);
+            awaitWaitingOrReturned(future, returned);
+            assertThat(returned.getCount())
+                    .as("Try.fromCompletableFuture returned before the future was completed: %s", result.get())
+                    .isEqualTo(1);
+            future.complete("done");
+            assertThat(returned.await(1, TimeUnit.MINUTES)).isTrue();
+            caller.join();
+            assertThat(result.get()).isEqualTo(Try.success("done"));
+        }
+
+        // A thread blocked in join() or get() on a pending future is one of the future's dependents. The deadline
+        // only stops a hang: the loop ends as soon as the caller waits on the future or returns.
+        private static void awaitWaitingOrReturned(CompletableFuture<?> future, CountDownLatch returned)
+                throws InterruptedException {
+            for (long deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(1);
+                    future.getNumberOfDependents() == 0 && returned.getCount() > 0;
+                    Thread.sleep(1)) {
+                assertThat(System.nanoTime() - deadline)
+                        .as("the caller neither waited on the future nor returned")
+                        .isNegative();
+            }
         }
 
         @Test

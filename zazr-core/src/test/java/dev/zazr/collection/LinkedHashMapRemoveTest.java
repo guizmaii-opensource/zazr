@@ -2,26 +2,29 @@ package dev.zazr.collection;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import java.time.Duration;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
+@Isolated
 public class LinkedHashMapRemoveTest {
 
     // -- performance: remove(key) must not scan the insertion-order structure
 
     @Test
     public void shouldRemoveInReverseOrderInSubQuadraticTime() {
-        int n = 50_000;
+        // 200,000 removes from the back: over a minute when each remove scans the insertion order, 334 ms fixed, both
+        // measured with the same workload; the bound sits between the two. The class runs alone, so that the bound
+        // does not measure the other test classes running in parallel.
+        int n = 200_000;
         LinkedHashMap<Integer, Integer> map = ascending(n);
-        long start = System.nanoTime();
-        LinkedHashMap<Integer, Integer> result = Vector.rangeBy(n - 1, -1, -1).foldLeft(map, LinkedHashMap::remove);
-        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+        LinkedHashMap<Integer, Integer> result = assertTimeoutPreemptively(
+                Duration.ofSeconds(20), () -> Vector.rangeBy(n - 1, -1, -1).foldLeft(map, LinkedHashMap::remove));
         assertThat(result.isEmpty()).isTrue();
-        // O(n) per remove takes seconds here; O(log n) takes tens of milliseconds.
-        // The bound is deliberately loose to stay robust on slow CI machines.
-        assertThat(elapsedMs).isLessThan(2_000);
     }
 
     // -- semantics: random interleaving must match java.util.LinkedHashMap
