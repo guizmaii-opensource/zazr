@@ -39,6 +39,7 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 | `Either.cond`, `Validation.cond` | `Either.fromPredicate`, `Validation.fromPredicate` |
 | `getOrElseGet(f)` | `getOrElse(f)`, an overload taking the failure |
 | `mapTo(value)` | `as(value)` on a sequence or a set; `map(x -> value)` on a control type or a map |
+| `map.computeIfAbsent(k, f)`, `map.computeIfPresent(k, f)` (a `Tuple2` of the value and the map) | `map.updateWith(k, o -> o.orElse(() -> Option.some(f.apply(k))))`, `map.updateWith(k, o -> o.map(v -> f.apply(k, v)))`, then `get(k)` for the value; `map.getOrElse(k, () -> f.apply(k))` for the value alone |
 | `toJavaList()`, `toJavaSet()`, `toJavaMap()` | the view `asJava()` or `asJavaMap()`; copy with `new java.util.ArrayList<>(x.asJava())` |
 | `toJavaOptional()` | `toOptional()` |
 | `toJavaStream()` | `stream()` |
