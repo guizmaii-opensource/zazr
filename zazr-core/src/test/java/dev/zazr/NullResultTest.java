@@ -734,6 +734,14 @@ public class NullResultTest {
                 "HashMap.collect: mapper returned null",
                 () -> HashMap.of(1, "a").collect((k, v) -> null)));
         cases.add(throwing(
+                "HashMap.updateWith(java.lang.Object, java.util.function.Function)",
+                "HashMap.updateWith: f returned null",
+                () -> HashMap.of(1, "a").updateWith(1, previous -> null)));
+        cases.add(throwing(
+                "HashMap.getOrElse(java.lang.Object, java.util.function.Supplier)",
+                "HashMap.getOrElse: supplier returned null",
+                () -> HashMap.of(1, "a").getOrElse(2, () -> null)));
+        cases.add(throwing(
                 "HashMap.fill(int, java.util.function.Supplier)",
                 "HashMap.fill: s returned null",
                 () -> HashMap.fill(1, () -> null)));
@@ -784,6 +792,14 @@ public class NullResultTest {
                 "LinkedHashMap.collect: mapper returned null",
                 () -> LinkedHashMap.of(1, "a").collect((k, v) -> null)));
         cases.add(throwing(
+                "LinkedHashMap.updateWith(java.lang.Object, java.util.function.Function)",
+                "LinkedHashMap.updateWith: f returned null",
+                () -> LinkedHashMap.of(1, "a").updateWith(1, previous -> null)));
+        cases.add(throwing(
+                "LinkedHashMap.getOrElse(java.lang.Object, java.util.function.Supplier)",
+                "LinkedHashMap.getOrElse: supplier returned null",
+                () -> LinkedHashMap.of(1, "a").getOrElse(2, () -> null)));
+        cases.add(throwing(
                 "LinkedHashMap.fill(int, java.util.function.Supplier)",
                 "LinkedHashMap.fill: s returned null",
                 () -> LinkedHashMap.fill(1, () -> null)));
@@ -833,6 +849,14 @@ public class NullResultTest {
                 "TreeMap.collect(java.util.function.BiFunction)",
                 "TreeMap.collect: mapper returned null",
                 () -> TreeMap.of(1, "a").collect((k, v) -> null)));
+        cases.add(throwing(
+                "TreeMap.updateWith(java.lang.Object, java.util.function.Function)",
+                "TreeMap.updateWith: f returned null",
+                () -> TreeMap.of(1, "a").updateWith(1, previous -> null)));
+        cases.add(throwing(
+                "TreeMap.getOrElse(java.lang.Object, java.util.function.Supplier)",
+                "TreeMap.getOrElse: supplier returned null",
+                () -> TreeMap.of(1, "a").getOrElse(2, () -> null)));
         cases.add(throwing(
                 "TreeMap.collect(java.util.Comparator, java.util.function.BiFunction)",
                 "TreeMap.collect: mapper returned null",
@@ -908,6 +932,14 @@ public class NullResultTest {
                 "NonEmptyMap.collect: mapper returned null",
                 () -> NonEmptyMap.of(Tuple.of(1, "a")).collect((k, v) -> (Option<Tuple2<Integer, String>>) null)));
         cases.add(throwing(
+                "NonEmptyMap.updateWith(java.lang.Object, java.util.function.Function)",
+                "NonEmptyMap.updateWith: f returned null",
+                () -> NonEmptyMap.of(Tuple.of(1, "a")).updateWith(1, previous -> null)));
+        cases.add(throwing(
+                "NonEmptyMap.getOrElse(java.lang.Object, java.util.function.Supplier)",
+                "NonEmptyMap.getOrElse: supplier returned null",
+                () -> NonEmptyMap.of(Tuple.of(1, "a")).getOrElse(2, () -> null)));
+        cases.add(throwing(
                 "NonEmptyMap.flatMap(java.util.function.BiFunction)",
                 "NonEmptyMap.flatMap: mapper returned null",
                 () -> NonEmptyMap.of(Tuple.of(1, "a")).flatMap((k, v) -> (NonEmptyMap<Integer, String>) null)));
@@ -949,6 +981,14 @@ public class NullResultTest {
                 "NonEmptySortedMap.collect: mapper returned null",
                 () -> NonEmptySortedMap.of(Tuple.of(1, "a"))
                         .collect((k, v) -> (Option<Tuple2<Integer, String>>) null)));
+        cases.add(throwing(
+                "NonEmptySortedMap.updateWith(java.lang.Object, java.util.function.Function)",
+                "NonEmptySortedMap.updateWith: f returned null",
+                () -> NonEmptySortedMap.of(Tuple.of(1, "a")).updateWith(1, previous -> null)));
+        cases.add(throwing(
+                "NonEmptySortedMap.getOrElse(java.lang.Object, java.util.function.Supplier)",
+                "NonEmptySortedMap.getOrElse: supplier returned null",
+                () -> NonEmptySortedMap.of(Tuple.of(1, "a")).getOrElse(2, () -> null)));
         cases.add(throwing(
                 "NonEmptySortedMap.flatMap(java.util.function.BiFunction)",
                 "NonEmptySortedMap.flatMap: mapper returned null",

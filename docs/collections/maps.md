@@ -41,6 +41,30 @@ var first  = byName.head();    // Tuple2<String, Integer>
 // values is Vector(1, 2, 3), first is (a, 1)
 ```
 
+## Updating one key
+
+`updateWith` reads a key and writes it in one call. Its function receives the key's value as an `Option`, `None`
+when the key is absent, and returns the new one: `Some` puts that value, `None` removes the key.
+
+```java
+var stock = HashMap.of("apple", 3, "pear", 1);
+var sold  = stock.updateWith("pear", count -> count.map(n -> n - 1).filter(n -> n > 0));
+var added = stock.updateWith("fig", count -> Option.some(count.getOrElse(0) + 4));
+// sold has no pear left, added has fig -> 4
+```
+
+When nothing changes, the same map comes back: `None` for an absent key, or `Some` of the very object the key
+already holds. On a `LinkedHashMap`, an updated key keeps its position.
+
+`getOrElse` also takes a `Supplier`, for a default that costs something to make. It runs only when the key is
+absent.
+
+```java
+var prices = HashMap.of("apple", 3);
+var apple  = prices.getOrElse("apple", () -> lookUpPrice("apple"));  // 3, lookUpPrice is not called
+var kiwi   = prices.getOrElse("kiwi", () -> lookUpPrice("kiwi"));    // what lookUpPrice returns
+```
+
 ## Putting many entries
 
 `putAll` puts every entry of another map, or of any iterable of `Tuple2`s, as successive `put`s would. On a key both
@@ -88,6 +112,10 @@ Every method: [complexity page](complexity.md#maps).
   the gaps first.
 - `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries; the `java.util.Map` view is `asJavaMap()`
   ([Java interop](../java-interop.md)).
-- Neither keys nor values can be `null`.
+- Neither keys nor values can be `null`. A function or a supplier that returns `null` fails with a
+  `NullPointerException` naming the method.
+- With two `getOrElse` overloads, `getOrElse(key, null)` does not compile: cast the `null` to the value type,
+  `getOrElse(key, (Integer) null)`. On a `Map<K, Object>`, a `Supplier` passed as the default is called, not
+  returned.
 - `groupMap` groups what its function returns for each entry in a `Vector`, in the map's iteration order, as
   `values()` does; `groupBy` groups whole entries in maps of the same type.

@@ -76,14 +76,14 @@ public class HashMapSetBenchmark {
     @Benchmark
     public void mapGetHit(Blackhole bh) {
         for (Integer key : present) {
-            bh.consume(map.getOrElse(key, null));
+            bh.consume(map.getOrElse(key, (Integer) null));
         }
     }
 
     @Benchmark
     public void mapGetMiss(Blackhole bh) {
         for (Integer key : absent) {
-            bh.consume(map.getOrElse(key, null));
+            bh.consume(map.getOrElse(key, (Integer) null));
         }
     }
 

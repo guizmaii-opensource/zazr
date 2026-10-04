@@ -96,6 +96,19 @@ map take a function of the key and the value; `mapValues` and `filterKeys` work 
 and `values()` a `Vector`.
 `putAll(entries)` puts many entries as successive `put`s would, the argument's value winning on a shared key (Scala's
 `++`); `merge(that)` keeps this map's value and adds only the keys it lacks.
+`updateWith(key, f)` (Scala's `updatedWith`) reads and writes one key: `f` gets the value as an `Option` (`None` if
+absent) and returns `Some` of the new value, or `None` to remove the key; the same map comes back when nothing changes,
+and a `LinkedHashMap` key keeps its position. On `NonEmptyMap` and `NonEmptySortedMap` it returns the plain map, as
+`remove` does. `getOrElse(key, () -> ...)` runs the supplier only when the key is absent; `getOrElse(key, null)` is
+ambiguous, so cast the `null` (`(Integer) null`). A function or supplier returning `null` throws.
+
+```java
+var counts = HashMap.of("apple", 2);
+var more   = counts.updateWith("apple", n -> Option.some(n.getOrElse(0) + 1));  // HashMap<String, Integer>
+var none   = counts.updateWith("apple", n -> Option.none());                    // HashMap<String, Integer>
+var pears  = counts.getOrElse("pear", () -> 0);                                 // Integer
+// more is HashMap((apple, 3)), none is HashMap(), pears is 0
+```
 
 ## Build in bulk
 

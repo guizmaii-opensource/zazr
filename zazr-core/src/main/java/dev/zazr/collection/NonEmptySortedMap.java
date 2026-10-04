@@ -966,6 +966,22 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
+     * Updates, adds or removes the mapping of {@code key} with what {@code f} makes of its current value, as
+     * {@link Map#updateWith(Object, Function)}. The result is a {@link TreeMap}, as {@link #remove(Object)}'s, since
+     * {@code f} may remove the last key; when nothing changes, it is the map this one wraps.
+     * <p>
+     * Complexity: O(log n), as {@link TreeMap#updateWith(Object, Function)}.
+     *
+     * @param key A key
+     * @param f   The new value of {@code key}, given its current one: {@code None} removes it
+     * @return this map's entries with the mapping of {@code key} updated, added or removed
+     * @throws NullPointerException if {@code f} is null, or returns null
+     */
+    public TreeMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return map.updateWith(key, f, "NonEmptySortedMap.updateWith: f returned null");
+    }
+
+    /**
      * Complexity: O(m log n) for m given keys, as {@link TreeMap#removeAll(Iterable)}.
      *
      * @param keys Keys
@@ -1303,12 +1319,29 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
+     * Complexity: O(log n), as {@link TreeMap#getOrElse(Object, Object)}.
+     *
      * @param key          A key
      * @param defaultValue The result when {@code key} is absent
      * @return the value of {@code key}, or {@code defaultValue}
      */
     public V getOrElse(K key, V defaultValue) {
         return map.getOrElse(key, defaultValue);
+    }
+
+    /**
+     * The value of {@code key}, or the value {@code supplier} gives if {@code key} is absent: {@code supplier} runs
+     * only then, once. As {@link Map#getOrElse(Object, Supplier)}.
+     * <p>
+     * Complexity: O(log n), as {@link TreeMap#getOrElse(Object, Supplier)}.
+     *
+     * @param key      A key
+     * @param supplier Gives the result when {@code key} is absent
+     * @return the value of {@code key}, or the value {@code supplier} gives
+     * @throws NullPointerException if {@code supplier} is null, or returns null
+     */
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return map.getOrElse(key, supplier, "NonEmptySortedMap.getOrElse: supplier returned null");
     }
 
     /**

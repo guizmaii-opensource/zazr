@@ -193,6 +193,19 @@ public class SkillExamplesTest {
         }
 
         @Test
+        void updatingOneKeyOfAMap() {
+            var counts = HashMap.of("apple", 2);
+            var more = counts.updateWith("apple", n -> Option.some(n.getOrElse(0) + 1)); // HashMap<String, Integer>
+            var none = counts.updateWith("apple", n -> Option.none()); // HashMap<String, Integer>
+            var pears = counts.getOrElse("pear", () -> 0); // Integer
+            // more is HashMap((apple, 3)), none is HashMap(), pears is 0
+
+            assertThat(more).hasToString("HashMap((apple, 3))");
+            assertThat(none).hasToString("HashMap()");
+            assertThat(pears).isEqualTo(0);
+        }
+
+        @Test
         void grouping() {
             var words = List.of("apple", "bob", "avocado");
             var byChar = words.groupMap(w -> w.charAt(0), String::length); // Map<Character, List<Integer>>

@@ -7,6 +7,7 @@
 | `put` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeMap.put.">O(log n)</abbr> | O(log n), as TreeMap.put. |
 | `putAll` | <abbr class="cx cx-linearithmic" title="O(m log(n + m)) for m entries, as TreeMap.putAll.">O(m log(n + m))</abbr> | O(m log(n + m)) for m entries, as TreeMap.putAll. |
 | `remove` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeMap.remove.">O(log n)</abbr> | O(log n), as TreeMap.remove. |
+| `updateWith` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeMap.updateWith.">O(log n)</abbr> | O(log n), as TreeMap.updateWith. |
 | `keySet` | <abbr class="cx cx-linear" title="O(n), with no key comparison, as TreeMap.keySet.">O(n)</abbr> | O(n), with no key comparison, as TreeMap.keySet. |
 | `values` | <abbr class="cx cx-linear" title="O(n), as TreeMap.values.">O(n)</abbr> | O(n), as TreeMap.values. |
 | `head` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeMap.head.">O(log n)</abbr> | O(log n), as TreeMap.head. |
