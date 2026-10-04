@@ -13,6 +13,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,6 +102,99 @@ class GenTest {
         Check.checkAll(Gen.fromIterable(Arrays.asList(1, null)), value -> seen.add(value));
         assertThat(seen).containsExactly(1, null);
         assertThatThrownBy(() -> pass(Gen.constant(null))).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void nullValuesPassThroughTheGeneratorsThatAllowThem() {
+        Gen<@Nullable String> constant = Gen.constant(null);
+        Gen<@Nullable String> elements = Gen.elements("a", null);
+        assertThat(seen(constant)).containsExactly((String) null);
+        assertThat(seen(Gen.fromIterable(Arrays.asList(null, "b", null)))).containsExactly(null, "b", null);
+        assertThat(seenN(elements, 200)).containsOnly("a", null).contains("a").containsNull();
+        assertThat(seen(Gen.fromRandom(random -> (String) null))).containsExactly((String) null);
+        assertThat(seen(Gen.suspend(() -> constant))).containsExactly((String) null);
+        assertThat(seen(Gen.oneOf(constant, constant))).containsExactly((String) null);
+        assertThat(seen(Gen.weighted(Tuple.of(constant, 1.0)))).containsExactly((String) null);
+        assertThat(seen(Gen.sized(n -> constant))).containsExactly((String) null);
+        assertThat(seen(Gen.small(n -> constant))).containsExactly((String) null);
+        assertThat(seen(Gen.large(n -> constant))).containsExactly((String) null);
+        assertThat(seen(constant.withSize(3))).containsExactly((String) null);
+        assertThat(seen(Gen.constant("a").map(s -> (String) null))).containsExactly((String) null);
+        assertThat(seen(constant.map(s -> s == null ? "was null" : s))).containsExactly("was null");
+        assertThat(seen(constant.flatMap(s -> Gen.fromIterable(Arrays.asList(s, "c")))))
+                .containsExactly(null, "c");
+        assertThat(seen(constant.filter(s -> s == null))).containsExactly((String) null);
+        assertThat(seen(constant.filterNot(s -> s != null))).containsExactly((String) null);
+        assertThat(seen(constant.concat(Gen.constant("d")))).containsExactly(null, "d");
+        assertThat(seen(constant.zip(constant))).containsExactly(Tuple.of(null, null));
+        assertThat(seen(constant.zipWith(Gen.constant("e"), (a, b) -> a + b))).containsExactly("nulle");
+        assertThat(seen(Gen.tuple2(constant, Gen.constant(1)))).containsExactly(Tuple.of(null, 1));
+        assertThat(seen(Gen.zip(constant, constant, constant))).containsExactly(Tuple.of(null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null, null, null));
+        assertThat(seen(Gen.zip(constant, constant, constant, constant, constant, constant, constant, constant)))
+                .containsExactly(Tuple.of(null, null, null, null, null, null, null, null));
+        assertThat(seen(Gen.zipWith(constant, constant, (a, b) -> "" + a + b))).containsExactly("nullnull");
+        assertThat(seen(Gen.zipWith(constant, constant, constant, (a, b, c) -> "" + a + b + c)))
+                .containsExactly("nullnullnull");
+        assertThat(seen(Gen.zipWith(constant, constant, constant, constant, (a, b, c, d) -> "" + a + b + c + d)))
+                .containsExactly("nullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant, constant, constant, constant, constant, (a, b, c, d, e) -> "" + a + b + c + d + e)))
+                .containsExactly("nullnullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        (a, b, c, d, e, f) -> "" + a + b + c + d + e + f)))
+                .containsExactly("nullnullnullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        (a, b, c, d, e, f, g) -> "" + a + b + c + d + e + f + g)))
+                .containsExactly("nullnullnullnullnullnullnull");
+        assertThat(seen(Gen.zipWith(
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        constant,
+                        (a, b, c, d, e, f, g, h) -> "" + a + b + c + d + e + f + g + h)))
+                .containsExactly("nullnullnullnullnullnullnullnull");
+        assertThat(seen(Gen.lazy(constant)).get(0).get()).isNull();
+        assertThat(seen(Gen.unfoldGenN(2, (String) null, s -> Gen.constant(Tuple.of(s, 1)))))
+                .containsExactly(List.of(1, 1));
+    }
+
+    // the values of one pass, in a JDK list that holds null
+    private static <A extends @Nullable Object> java.util.List<A> seen(Gen<A> gen) {
+        java.util.List<A> values = new ArrayList<>();
+        Check.checkAll(config(1), gen, values::add);
+        return values;
+    }
+
+    // the first n values, in a JDK list that holds null
+    private static <A extends @Nullable Object> java.util.List<A> seenN(Gen<A> gen, int n) {
+        java.util.List<A> values = new ArrayList<>();
+        Check.check(config(1).withSamples(n), gen, values::add);
+        return values;
     }
 
     @Test

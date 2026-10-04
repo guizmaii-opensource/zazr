@@ -3,7 +3,9 @@ package dev.zazr.test;
 import dev.zazr.Tuple;
 import dev.zazr.control.Option;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -367,6 +369,44 @@ class CheckTest {
         assertThatThrownBy(() -> Check.check(config(12), Gen.constant(5), i -> i < 5))
                 .isInstanceOf(AssertionError.class)
                 .hasMessage("falsified at sample 1 by (5) (seed 12, replay with -Dzazr.check.seed=12)");
+    }
+
+    // -- null values
+
+    @Test
+    void aCheckOverNullValuesPasses() {
+        Gen<@Nullable String> constant = Gen.constant(null);
+        Gen<@Nullable String> elements = Gen.elements("a", null);
+        java.util.List<@Nullable String> seen = new ArrayList<>();
+        Check.check(config(5), elements, s -> seen.add(s) && (s == null || s.equals("a")));
+        assertThat(seen).hasSize(200).contains("a").containsNull();
+        Check.checkAll(constant, s -> s == null);
+        Check.check(config(5), constant, Assertion.equalTo(null));
+        Check.check(
+                config(5), elements, Assertion.<@Nullable String>equalTo(null).or(Assertion.equalTo("a")));
+        java.util.List<@Nullable String> values = Arrays.asList("a", null);
+        java.util.List<Object> pairs = new ArrayList<>();
+        Check.checkAll(Gen.fromIterable(values), constant, (a, b) -> pairs.add(Tuple.of(a, b)) && b == null);
+        assertThat(pairs).containsExactly(Tuple.of("a", null), Tuple.of(null, null));
+    }
+
+    @Test
+    void aNullSampleIsReportedInTheFailure() {
+        Gen<@Nullable String> constant = Gen.constant(null);
+        assertThatThrownBy(() -> Check.check(config(12), constant, s -> s != null))
+                .isInstanceOf(AssertionError.class)
+                .hasMessage("falsified at sample 1 by (null) (seed 12, replay with -Dzazr.check.seed=12)");
+        CheckResult drawn = Check.evaluate(config(12), Gen.elements("a", null), s -> s != null);
+        assertThat(drawn.isFalsified()).isTrue();
+        assertThat(drawn.sample()).isEqualTo(Option.some(Tuple.of((Object) null)));
+        assertThatThrownBy(drawn::assertIsSatisfied)
+                .isInstanceOf(AssertionError.class)
+                .hasMessageMatching(
+                        "falsified at sample \\d+ by \\(null\\) \\(seed 12, replay with -Dzazr.check.seed=12\\)");
+        assertThatThrownBy(() -> Check.check(config(12), constant, Assertion.equalTo("a")))
+                .isInstanceOf(AssertionError.class)
+                .hasMessageStartingWith("falsified at sample 1 by (null)")
+                .hasMessageContaining("null is not equal to \"a\"");
     }
 
     @Test

@@ -2110,6 +2110,22 @@ unreleased).
   an empty collection; when the tail holds the head's key, the tail's value is kept, the last one drawn, as in the map
   layouts. The sorted ones take the natural order only, as `treeSet` and `treeMap` do: comparator overloads, if
   wanted, come to all four sorted generators at once.
+- **Null values** (decided 2026-10-04, #281): `Gen<A extends @Nullable Object>`, the bound of the core containers, so
+  that a NullAway-checked caller can write `Gen<@Nullable String> g = Gen.constant(null)`. Each generator's type
+  parameters say what it accepts.
+  - Nullable, where null passes through: `constant`, `empty`, `fromIterable`, `elements`, `fromRandom`, `suspend`,
+    `oneOf`, `weighted`, `sized`, `small`, `large`, `map`, `flatMap`, `zip` and `zipWith` at every arity, `tuple2` to
+    `tuple8` (tuples allow null components, 3.9), `lazy` (a `Lazy` may hold null), `none`, and the state of
+    `unfoldGen`.
+  - Non-null, where the result rejects null: `option`, `some`, `either`, `tryOf`, `validation`, every collection
+    generator, `collectAll` and the elements of `unfoldGen` (lists). `runCollect` and `runCollectN` keep the class
+    bound and throw on a null value, since a `List` holds none.
+  - `Check`'s type parameters (generated) are nullable, and so are `Assertion`'s, with `of`, `anything`, `equalTo`,
+    `not`, `assertThat` and the combinators, so that a check of a nullable generator against `equalTo(null)` compiles
+    under NullAway (written inline, `equalTo` needs its type: `Assertion.<@Nullable String>equalTo(null)`, or a typed
+    local); the assertions on comparables, strings, iterables and the Zazr types keep non-null type parameters.
+  - The holder of `Gen.draw` keeps its `NullAway.Init` suppression: NullAway reports an unset field of a type variable
+    whatever its bound. The erasure, and so the bytecode, is unchanged.
 - **`CheckResult` loses `propertyName` and `exhausted`.** It stays a sealed interface of three records:
   `Satisfied(samples)`, `Falsified(sampleNumber, seed, counterexample, message)` and
   `Erroneous(sampleNumber, seed, cause, sample)`, with a `Throwable` cause. There are no named properties any more

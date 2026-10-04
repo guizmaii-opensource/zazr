@@ -45,6 +45,7 @@ import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A generator of values of type {@code A}, to check a property against.
@@ -63,10 +64,15 @@ import java.util.random.RandomGenerator;
  * {@link #map}, {@link #flatMap} and {@link #zip} combine generators; {@code flatMap} and {@code zip} run the second
  * generator for every value of the first, so two finite generators give every pair. {@link #filter} keeps the values
  * that satisfy a predicate, within a discard budget.
+ * <p>
+ * A generator may give null values: {@link #constant}, {@link #fromIterable}, {@link #elements}, the combinators,
+ * the tuples and {@link #lazy} pass them through, so a {@code Gen<@Nullable String>} checks code that takes null.
+ * The generators of options, eithers, tries, validations and collections take generators of non-null values only,
+ * since those types reject null.
  *
  * @param <A> the type of the generated values
  */
-public final class Gen<A> {
+public final class Gen<A extends @Nullable Object> {
 
     private static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final String NUMERIC = "0123456789";
@@ -85,7 +91,7 @@ public final class Gen<A> {
      * to stop.
      */
     @FunctionalInterface
-    interface Pass<A> {
+    interface Pass<A extends @Nullable Object> {
 
         /**
          * Runs one pass.
@@ -102,7 +108,7 @@ public final class Gen<A> {
      * Receives the values of a pass.
      */
     @FunctionalInterface
-    interface Sink<A> {
+    interface Sink<A extends @Nullable Object> {
 
         /**
          * Receives one value.
@@ -113,7 +119,7 @@ public final class Gen<A> {
         boolean accept(A value);
     }
 
-    static <A> Gen<A> fromPass(Pass<A> pass) {
+    static <A extends @Nullable Object> Gen<A> fromPass(Pass<A> pass) {
         return new Gen<>(pass);
     }
 
@@ -147,8 +153,9 @@ public final class Gen<A> {
         }
     }
 
-    private static final class Holder<A> {
-        // read only once found is true, so after the sink wrote it
+    private static final class Holder<A extends @Nullable Object> {
+        // left unset until the sink writes it, and read only once found is true; NullAway reports an unset field of a
+        // type variable even when its bound is nullable, since A may be a non-null type
         @SuppressWarnings("NullAway.Init")
         A value;
 
@@ -164,7 +171,7 @@ public final class Gen<A> {
      * @param <A>   the type of the value
      * @return a finite generator of {@code value}
      */
-    public static <A> Gen<A> constant(A value) {
+    public static <A extends @Nullable Object> Gen<A> constant(A value) {
         return new Gen<>((sampling, size, sink) -> sink.accept(value));
     }
 
@@ -174,7 +181,7 @@ public final class Gen<A> {
      * @param <A> the type of the values it does not produce
      * @return a finite generator of nothing
      */
-    public static <A> Gen<A> empty() {
+    public static <A extends @Nullable Object> Gen<A> empty() {
         return new Gen<>((sampling, size, sink) -> true);
     }
 
@@ -187,7 +194,7 @@ public final class Gen<A> {
      * @return a finite generator of {@code values}
      * @throws NullPointerException if {@code values} is null
      */
-    public static <A> Gen<A> fromIterable(Iterable<? extends A> values) {
+    public static <A extends @Nullable Object> Gen<A> fromIterable(Iterable<? extends A> values) {
         Objects.requireNonNull(values, "values is null");
         ArrayList<A> copy = new ArrayList<>();
         for (A value : values) {
@@ -215,7 +222,7 @@ public final class Gen<A> {
      * @throws NullPointerException if {@code values} is null
      */
     @SafeVarargs
-    public static <A> Gen<A> elements(A... values) {
+    public static <A extends @Nullable Object> Gen<A> elements(A... values) {
         Objects.requireNonNull(values, "values is null");
         if (values.length == 0) {
             return empty();
@@ -237,7 +244,7 @@ public final class Gen<A> {
      * @return a random generator
      * @throws NullPointerException if {@code f} is null
      */
-    public static <A> Gen<A> fromRandom(Function<? super RandomGenerator, ? extends A> f) {
+    public static <A extends @Nullable Object> Gen<A> fromRandom(Function<? super RandomGenerator, ? extends A> f) {
         Objects.requireNonNull(f, "f is null");
         return new Gen<>((sampling, size, sink) -> sink.accept(f.apply(sampling.draw())));
     }
@@ -250,7 +257,7 @@ public final class Gen<A> {
      * @return a generator of the values of {@code gen}'s generator
      * @throws NullPointerException if {@code gen} is null
      */
-    public static <A> Gen<A> suspend(Supplier<? extends Gen<? extends A>> gen) {
+    public static <A extends @Nullable Object> Gen<A> suspend(Supplier<? extends Gen<? extends A>> gen) {
         Objects.requireNonNull(gen, "gen is null");
         return new Gen<>((sampling, size, sink) ->
                 Objects.requireNonNull(gen.get(), "suspend: gen returned null").run(sampling, size, sink));
@@ -266,7 +273,7 @@ public final class Gen<A> {
      * @throws NullPointerException if {@code gens} or one of them is null
      */
     @SafeVarargs
-    public static <A> Gen<A> oneOf(Gen<? extends A>... gens) {
+    public static <A extends @Nullable Object> Gen<A> oneOf(Gen<? extends A>... gens) {
         Objects.requireNonNull(gens, "gens is null");
         Gen<?>[] copy = Arrays.copyOf(gens, gens.length, Gen[].class);
         for (Gen<?> gen : copy) {
@@ -294,7 +301,7 @@ public final class Gen<A> {
      * @throws IllegalArgumentException if a weight is negative, infinite or not a number, or if every weight is 0
      */
     @SafeVarargs
-    public static <A> Gen<A> weighted(Tuple2<? extends Gen<? extends A>, Double>... gens) {
+    public static <A extends @Nullable Object> Gen<A> weighted(Tuple2<? extends Gen<? extends A>, Double>... gens) {
         Objects.requireNonNull(gens, "gens is null");
         if (gens.length == 0) {
             return empty();
@@ -348,14 +355,14 @@ public final class Gen<A> {
      * A generator of lists built by applying {@code f} repeatedly to a state, starting from {@code initial}; the
      * length is drawn by {@link #small(IntFunction)}.
      *
-     * @param initial the first state
-     * @param f       generates the next state and an element from a state
+     * @param initial the first state, possibly null
+     * @param f       generates the next state and an element from a state; a null element makes the list throw
      * @param <S>     the type of the state
      * @param <A>     the type of the elements
      * @return a generator of lists
      * @throws NullPointerException if {@code f} is null
      */
-    public static <S, A> Gen<List<A>> unfoldGen(
+    public static <S extends @Nullable Object, A> Gen<List<A>> unfoldGen(
             S initial, Function<? super S, ? extends Gen<? extends Tuple2<? extends S, ? extends A>>> f) {
         Objects.requireNonNull(f, "f is null");
         return small(n -> unfoldGenN(n, initial, f));
@@ -366,15 +373,15 @@ public final class Gen<A> {
      * {@code initial}. Each step draws the first value of one pass of {@code f}'s generator.
      *
      * @param n       the number of elements
-     * @param initial the first state
-     * @param f       generates the next state and an element from a state
+     * @param initial the first state, possibly null
+     * @param f       generates the next state and an element from a state; a null element makes the list throw
      * @param <S>     the type of the state
      * @param <A>     the type of the elements
      * @return a generator of lists of {@code n} elements
      * @throws NullPointerException     if {@code f} is null
      * @throws IllegalArgumentException if {@code n} is negative
      */
-    public static <S, A> Gen<List<A>> unfoldGenN(
+    public static <S extends @Nullable Object, A> Gen<List<A>> unfoldGenN(
             int n, S initial, Function<? super S, ? extends Gen<? extends Tuple2<? extends S, ? extends A>>> f) {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(n, "n");
@@ -396,7 +403,7 @@ public final class Gen<A> {
      * A generator of the lists of one value of each generator, in order: every combination when the generators are
      * finite.
      *
-     * @param gens the generators
+     * @param gens the generators; a null value makes the list throw
      * @param <A>  the type of the values
      * @return a generator of lists as long as {@code gens}
      * @throws NullPointerException if {@code gens} or one of them is null
@@ -443,7 +450,7 @@ public final class Gen<A> {
      * @return a generator of the values of {@code f}'s generator at the current size
      * @throws NullPointerException if {@code f} is null
      */
-    public static <A> Gen<A> sized(IntFunction<? extends Gen<? extends A>> f) {
+    public static <A extends @Nullable Object> Gen<A> sized(IntFunction<? extends Gen<? extends A>> f) {
         Objects.requireNonNull(f, "f is null");
         return new Gen<>((sampling, size, sink) ->
                 Objects.requireNonNull(f.apply(size), "sized: f returned null").run(sampling, size, sink));
@@ -458,7 +465,7 @@ public final class Gen<A> {
      * @return a generator of the values of {@code f}'s generator at a small size
      * @throws NullPointerException if {@code f} is null
      */
-    public static <A> Gen<A> small(IntFunction<? extends Gen<? extends A>> f) {
+    public static <A extends @Nullable Object> Gen<A> small(IntFunction<? extends Gen<? extends A>> f) {
         return small(f, 0);
     }
 
@@ -474,7 +481,7 @@ public final class Gen<A> {
      * @throws NullPointerException     if {@code f} is null
      * @throws IllegalArgumentException if {@code min} is negative
      */
-    public static <A> Gen<A> small(IntFunction<? extends Gen<? extends A>> f, int min) {
+    public static <A extends @Nullable Object> Gen<A> small(IntFunction<? extends Gen<? extends A>> f, int min) {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(min, "min");
         return new Gen<>((sampling, size, sink) -> {
@@ -494,7 +501,7 @@ public final class Gen<A> {
      * @return a generator of the values of {@code f}'s generator at a random size
      * @throws NullPointerException if {@code f} is null
      */
-    public static <A> Gen<A> large(IntFunction<? extends Gen<? extends A>> f) {
+    public static <A extends @Nullable Object> Gen<A> large(IntFunction<? extends Gen<? extends A>> f) {
         return large(f, 0);
     }
 
@@ -509,7 +516,7 @@ public final class Gen<A> {
      * @throws NullPointerException     if {@code f} is null
      * @throws IllegalArgumentException if {@code min} is negative
      */
-    public static <A> Gen<A> large(IntFunction<? extends Gen<? extends A>> f, int min) {
+    public static <A extends @Nullable Object> Gen<A> large(IntFunction<? extends Gen<? extends A>> f, int min) {
         Objects.requireNonNull(f, "f is null");
         requireNonNegative(min, "min");
         return new Gen<>((sampling, size, sink) -> {
@@ -541,7 +548,7 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if {@code f} is null
      */
-    public <B> Gen<B> map(Function<? super A, ? extends B> f) {
+    public <B extends @Nullable Object> Gen<B> map(Function<? super A, ? extends B> f) {
         Objects.requireNonNull(f, "f is null");
         return new Gen<>((sampling, size, sink) -> pass.run(sampling, size, a -> sink.accept(f.apply(a))));
     }
@@ -555,7 +562,7 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if {@code f} is null
      */
-    public <B> Gen<B> flatMap(Function<? super A, ? extends Gen<? extends B>> f) {
+    public <B extends @Nullable Object> Gen<B> flatMap(Function<? super A, ? extends Gen<? extends B>> f) {
         Objects.requireNonNull(f, "f is null");
         return new Gen<>((sampling, size, sink) -> pass.run(
                 sampling,
@@ -657,7 +664,7 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if {@code that} is null
      */
-    public <B> Gen<Tuple2<A, B>> zip(Gen<? extends B> that) {
+    public <B extends @Nullable Object> Gen<Tuple2<A, B>> zip(Gen<? extends B> that) {
         return zip(this, that);
     }
 
@@ -672,7 +679,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public <B, C> Gen<C> zipWith(Gen<? extends B> that, BiFunction<? super A, ? super B, ? extends C> f) {
+    public <B extends @Nullable Object, C extends @Nullable Object> Gen<C> zipWith(
+            Gen<? extends B> that, BiFunction<? super A, ? super B, ? extends C> f) {
         return zipWith(this, that, f);
     }
 
@@ -690,7 +698,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> Gen<Tuple2<T1, T2>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> Gen<Tuple2<T1, T2>> zip(
+            Gen<? extends T1> g1, Gen<? extends T2> g2) {
         return zipWith(g1, g2, Tuple::of);
     }
 
@@ -706,8 +715,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> Gen<Tuple3<T1, T2, T3>> zip(
-            Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Gen<Tuple3<T1, T2, T3>> zip(Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3) {
         return zipWith(g1, g2, g3, Tuple::of);
     }
 
@@ -725,8 +734,13 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> Gen<Tuple4<T1, T2, T3, T4>> zip(
-            Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Gen<Tuple4<T1, T2, T3, T4>> zip(
+                    Gen<? extends T1> g1, Gen<? extends T2> g2, Gen<? extends T3> g3, Gen<? extends T4> g4) {
         return zipWith(g1, g2, g3, g4, Tuple::of);
     }
 
@@ -746,12 +760,18 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> Gen<Tuple5<T1, T2, T3, T4, T5>> zip(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Gen<Tuple5<T1, T2, T3, T4, T5>> zip(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5) {
         return zipWith(g1, g2, g3, g4, g5, Tuple::of);
     }
 
@@ -773,13 +793,20 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> Gen<Tuple6<T1, T2, T3, T4, T5, T6>> zip(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Gen<Tuple6<T1, T2, T3, T4, T5, T6>> zip(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6) {
         return zipWith(g1, g2, g3, g4, g5, g6, Tuple::of);
     }
 
@@ -803,14 +830,22 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> zip(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7) {
         return zipWith(g1, g2, g3, g4, g5, g6, g7, Tuple::of);
     }
 
@@ -836,15 +871,24 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> zip(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8) {
         return zipWith(g1, g2, g3, g4, g5, g6, g7, g8, Tuple::of);
     }
 
@@ -860,7 +904,7 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, R> Gen<R> zipWith(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, R extends @Nullable Object> Gen<R> zipWith(
             Gen<? extends T1> g1, Gen<? extends T2> g2, BiFunction<? super T1, ? super T2, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -883,11 +927,16 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, R> Gen<R> zipWith(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Gen<R> zipWith(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Function3<? super T1, ? super T2, ? super T3, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -914,12 +963,18 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, R> Gen<R> zipWith(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Gen<R> zipWith(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Function4<? super T1, ? super T2, ? super T3, ? super T4, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -955,13 +1010,20 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, R> Gen<R> zipWith(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Gen<R> zipWith(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Function5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -1004,14 +1066,22 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, R> Gen<R> zipWith(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Gen<R> zipWith(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Function6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? extends R> f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -1062,16 +1132,33 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, R> Gen<R> zipWith(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Function7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? extends R>
-                    f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Gen<R> zipWith(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Function7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -1129,26 +1216,36 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8, R> Gen<R> zipWith(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            Function8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ? extends R>
-                    f) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object,
+                    R extends @Nullable Object>
+            Gen<R> zipWith(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    Function8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ? extends R>
+                            f) {
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
         Objects.requireNonNull(g3, "g3 is null");
@@ -1542,7 +1639,7 @@ public final class Gen<A> {
      * @param <A> the type of the values the option does not hold
      * @return a finite generator of {@code None}
      */
-    public static <A> Gen<Option<A>> none() {
+    public static <A extends @Nullable Object> Gen<Option<A>> none() {
         return constant(Option.none());
     }
 
@@ -1635,7 +1732,7 @@ public final class Gen<A> {
      * @return a generator of lazy values
      * @throws NullPointerException if {@code gen} is null
      */
-    public static <A> Gen<Lazy<A>> lazy(Gen<A> gen) {
+    public static <A extends @Nullable Object> Gen<Lazy<A>> lazy(Gen<A> gen) {
         Objects.requireNonNull(gen, "gen is null");
         return new Gen<>((sampling, size, sink) -> gen.run(sampling, size, a -> {
             Lazy<A> lazy = Lazy.of(() -> a);
@@ -1656,7 +1753,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> Gen<Tuple2<T1, T2>> tuple2(Gen<T1> g1, Gen<T2> g2) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> Gen<Tuple2<T1, T2>> tuple2(
+            Gen<T1> g1, Gen<T2> g2) {
         return zip(g1, g2);
     }
 
@@ -1672,7 +1770,8 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> Gen<Tuple3<T1, T2, T3>> tuple3(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            Gen<Tuple3<T1, T2, T3>> tuple3(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3) {
         return zip(g1, g2, g3);
     }
 
@@ -1690,7 +1789,12 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> Gen<Tuple4<T1, T2, T3, T4>> tuple4(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            Gen<Tuple4<T1, T2, T3, T4>> tuple4(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4) {
         return zip(g1, g2, g3, g4);
     }
 
@@ -1710,8 +1814,13 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> Gen<Tuple5<T1, T2, T3, T4, T5>> tuple5(
-            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            Gen<Tuple5<T1, T2, T3, T4, T5>> tuple5(Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5) {
         return zip(g1, g2, g3, g4, g5);
     }
 
@@ -1733,8 +1842,15 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> Gen<Tuple6<T1, T2, T3, T4, T5, T6>> tuple6(
-            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            Gen<Tuple6<T1, T2, T3, T4, T5, T6>> tuple6(
+                    Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6) {
         return zip(g1, g2, g3, g4, g5, g6);
     }
 
@@ -1758,8 +1874,16 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> tuple7(
-            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            Gen<Tuple7<T1, T2, T3, T4, T5, T6, T7>> tuple7(
+                    Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7) {
         return zip(g1, g2, g3, g4, g5, g6, g7);
     }
 
@@ -1785,8 +1909,17 @@ public final class Gen<A> {
      * @return a new generator
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> tuple8(
-            Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7, Gen<T8> g8) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            Gen<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> tuple8(
+                    Gen<T1> g1, Gen<T2> g2, Gen<T3> g3, Gen<T4> g4, Gen<T5> g5, Gen<T6> g6, Gen<T7> g7, Gen<T8> g8) {
         return zip(g1, g2, g3, g4, g5, g6, g7, g8);
     }
 

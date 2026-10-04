@@ -6,6 +6,7 @@ package dev.zazr.test;
 
 import dev.zazr.*;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Checks a property against generated values, from 1 to 8 generators.
@@ -45,7 +46,7 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void check(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> void check(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluate(g1, body).assertIsSatisfied();
     }
 
@@ -62,7 +63,8 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void check(CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> void check(
+            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluate(config, g1, body).assertIsSatisfied();
     }
 
@@ -79,7 +81,8 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1> void checkN(int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> void checkN(
+            int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluateN(samples, g1, body).assertIsSatisfied();
     }
 
@@ -94,7 +97,8 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void checkAll(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> void checkAll(
+            Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluateAll(g1, body).assertIsSatisfied();
     }
 
@@ -111,7 +115,8 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> void checkAll(CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> void checkAll(
+            CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         evaluateAll(config, g1, body).assertIsSatisfied();
     }
 
@@ -125,7 +130,8 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> CheckResult evaluate(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> CheckResult evaluate(
+            Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, body);
     }
 
@@ -141,7 +147,7 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> CheckResult evaluate(
+    public static <T1 extends @Nullable Object> CheckResult evaluate(
             CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
@@ -161,7 +167,8 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1> CheckResult evaluateN(int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> CheckResult evaluateN(
+            int samples, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, body);
     }
 
@@ -175,7 +182,8 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> CheckResult evaluateAll(Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
+    public static <T1 extends @Nullable Object> CheckResult evaluateAll(
+            Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, body);
     }
 
@@ -192,7 +200,7 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1> CheckResult evaluateAll(
+    public static <T1 extends @Nullable Object> CheckResult evaluateAll(
             CheckConfig config, Gen<? extends T1> g1, CheckedFunction1<? super T1, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
@@ -213,7 +221,7 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> void check(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> void check(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         check(g1, Assertion.all(assertions)::test);
     }
     /**
@@ -230,7 +238,8 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> void check(CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> void check(
+            CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         check(config, g1, Assertion.all(assertions)::test);
     }
     /**
@@ -247,7 +256,8 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> void checkN(int samples, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> void checkN(
+            int samples, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         checkN(samples, g1, Assertion.all(assertions)::test);
     }
     /**
@@ -264,7 +274,8 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> void checkAll(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> void checkAll(
+            Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         checkAll(g1, Assertion.all(assertions)::test);
     }
     /**
@@ -281,7 +292,8 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> void checkAll(CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> void checkAll(
+            CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         checkAll(config, g1, Assertion.all(assertions)::test);
     }
     /**
@@ -297,7 +309,8 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> CheckResult evaluate(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> CheckResult evaluate(
+            Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         return evaluate(g1, Assertion.all(assertions)::test);
     }
     /**
@@ -313,7 +326,7 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> CheckResult evaluate(
+    public static <T1 extends @Nullable Object> CheckResult evaluate(
             CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         return evaluate(config, g1, Assertion.all(assertions)::test);
     }
@@ -330,7 +343,8 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> CheckResult evaluateN(int samples, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> CheckResult evaluateN(
+            int samples, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         return evaluateN(samples, g1, Assertion.all(assertions)::test);
     }
     /**
@@ -346,7 +360,8 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> CheckResult evaluateAll(Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
+    public static <T1 extends @Nullable Object> CheckResult evaluateAll(
+            Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         return evaluateAll(g1, Assertion.all(assertions)::test);
     }
     /**
@@ -362,7 +377,7 @@ public final class Check {
      * @throws IllegalArgumentException if no assertion is given
      */
     @SafeVarargs
-    public static <T1> CheckResult evaluateAll(
+    public static <T1 extends @Nullable Object> CheckResult evaluateAll(
             CheckConfig config, Gen<? extends T1> g1, Assertion<? super T1>... assertions) {
         return evaluateAll(config, g1, Assertion.all(assertions)::test);
     }
@@ -380,7 +395,7 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> void check(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> void check(
             Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluate(g1, g2, body).assertIsSatisfied();
     }
@@ -400,7 +415,7 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> void check(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> void check(
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
@@ -423,7 +438,7 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2> void checkN(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> void checkN(
             int samples, Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluateN(samples, g1, g2, body).assertIsSatisfied();
     }
@@ -441,7 +456,7 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> void checkAll(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> void checkAll(
             Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         evaluateAll(g1, g2, body).assertIsSatisfied();
     }
@@ -461,7 +476,7 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> void checkAll(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> void checkAll(
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
@@ -481,7 +496,7 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> CheckResult evaluate(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> CheckResult evaluate(
             Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, body);
     }
@@ -500,7 +515,7 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> CheckResult evaluate(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> CheckResult evaluate(
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
@@ -526,7 +541,7 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2> CheckResult evaluateN(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> CheckResult evaluateN(
             int samples, Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, body);
     }
@@ -543,7 +558,7 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> CheckResult evaluateAll(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> CheckResult evaluateAll(
             Gen<? extends T1> g1, Gen<? extends T2> g2, CheckedFunction2<? super T1, ? super T2, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, body);
     }
@@ -563,7 +578,7 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2> CheckResult evaluateAll(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object> CheckResult evaluateAll(
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
@@ -590,7 +605,7 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> void check(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> void check(
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
@@ -615,7 +630,7 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> void check(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> void check(
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
@@ -641,7 +656,7 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3> void checkN(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> void checkN(
             int samples,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
@@ -665,7 +680,7 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> void checkAll(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> void checkAll(
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
             Gen<? extends T3> g3,
@@ -690,7 +705,7 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> void checkAll(
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object> void checkAll(
             CheckConfig config,
             Gen<? extends T1> g1,
             Gen<? extends T2> g2,
@@ -713,11 +728,12 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> CheckResult evaluate(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            CheckResult evaluate(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, body);
     }
 
@@ -737,12 +753,13 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> CheckResult evaluate(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            CheckResult evaluate(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -768,12 +785,13 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3> CheckResult evaluateN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            CheckResult evaluateN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, body);
     }
 
@@ -791,11 +809,12 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> CheckResult evaluateAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, body);
     }
 
@@ -816,12 +835,13 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3> CheckResult evaluateAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
+    public static <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    CheckedFunction3<? super T1, ? super T2, ? super T3, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -848,12 +868,17 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> void check(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            void check(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluate(g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -876,13 +901,18 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> void check(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            void check(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluate(config, g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -905,13 +935,18 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4> void checkN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            void checkN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluateN(samples, g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -932,12 +967,17 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> void checkAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            void checkAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluateAll(g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -960,13 +1000,18 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> void checkAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            void checkAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         evaluateAll(config, g1, g2, g3, g4, body).assertIsSatisfied();
     }
 
@@ -986,12 +1031,17 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> CheckResult evaluate(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            CheckResult evaluate(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, body);
     }
 
@@ -1013,13 +1063,18 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> CheckResult evaluate(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            CheckResult evaluate(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1051,13 +1106,18 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4> CheckResult evaluateN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            CheckResult evaluateN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, body);
     }
 
@@ -1077,12 +1137,17 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> CheckResult evaluateAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, body);
     }
 
@@ -1105,13 +1170,18 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4> CheckResult evaluateAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    CheckedFunction4<? super T1, ? super T2, ? super T3, ? super T4, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1144,13 +1214,19 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> void check(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            void check(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluate(g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1175,14 +1251,20 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> void check(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            void check(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluate(config, g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1207,14 +1289,20 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5> void checkN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            void checkN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluateN(samples, g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1237,13 +1325,19 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> void checkAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            void checkAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluateAll(g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1268,14 +1362,20 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> void checkAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            void checkAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         evaluateAll(config, g1, g2, g3, g4, g5, body).assertIsSatisfied();
     }
 
@@ -1297,13 +1397,19 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> CheckResult evaluate(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            CheckResult evaluate(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, body);
     }
 
@@ -1327,14 +1433,20 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> CheckResult evaluate(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            CheckResult evaluate(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1369,14 +1481,20 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5> CheckResult evaluateN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            CheckResult evaluateN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, body);
     }
 
@@ -1398,13 +1516,19 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> CheckResult evaluateAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, body);
     }
 
@@ -1429,14 +1553,20 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5> CheckResult evaluateAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    CheckedFunction5<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1472,14 +1602,21 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> void check(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            void check(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluate(g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1506,15 +1643,22 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> void check(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            void check(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluate(config, g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1541,15 +1685,22 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5, T6> void checkN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            void checkN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluateN(samples, g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1574,14 +1725,21 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> void checkAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            void checkAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluateAll(g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1608,15 +1766,22 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> void checkAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            void checkAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         evaluateAll(config, g1, g2, g3, g4, g5, g6, body).assertIsSatisfied();
     }
 
@@ -1640,14 +1805,21 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> CheckResult evaluate(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            CheckResult evaluate(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, body);
     }
 
@@ -1673,15 +1845,22 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> CheckResult evaluate(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            CheckResult evaluate(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1719,15 +1898,22 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5, T6> CheckResult evaluateN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            CheckResult evaluateN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, g6, body);
     }
 
@@ -1751,14 +1937,21 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> CheckResult evaluateAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, body);
     }
 
@@ -1785,15 +1978,22 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6> CheckResult evaluateAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    CheckedFunction6<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ?> body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -1832,16 +2032,32 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> void check(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            void check(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         evaluate(g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
 
@@ -1870,17 +2086,33 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> void check(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            void check(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         evaluate(config, g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
 
@@ -1909,17 +2141,33 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> void checkN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            void checkN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         evaluateN(samples, g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
 
@@ -1946,16 +2194,32 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> void checkAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            void checkAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         evaluateAll(g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
 
@@ -1984,17 +2248,33 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> void checkAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            void checkAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         evaluateAll(config, g1, g2, g3, g4, g5, g6, g7, body).assertIsSatisfied();
     }
 
@@ -2020,16 +2300,32 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> CheckResult evaluate(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            CheckResult evaluate(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, body);
     }
 
@@ -2057,17 +2353,33 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> CheckResult evaluate(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            CheckResult evaluate(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -2109,17 +2421,33 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> CheckResult evaluateN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            CheckResult evaluateN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, g6, g7, body);
     }
 
@@ -2145,16 +2473,32 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> CheckResult evaluateAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, body);
     }
 
@@ -2183,17 +2527,33 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7> CheckResult evaluateAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            CheckedFunction7<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    CheckedFunction7<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ?>
+                            body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -2236,26 +2596,35 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> void check(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            void check(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         evaluate(g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
 
@@ -2286,27 +2655,36 @@ public final class Check {
      *                              sample breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> void check(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            void check(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         evaluate(config, g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
 
@@ -2337,27 +2715,36 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> void checkN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            void checkN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         evaluateN(samples, g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
 
@@ -2386,26 +2773,35 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> void checkAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            void checkAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         evaluateAll(g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
 
@@ -2436,27 +2832,36 @@ public final class Check {
      *                              value breaks the property or something throws
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> void checkAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            void checkAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         evaluateAll(config, g1, g2, g3, g4, g5, g6, g7, g8, body).assertIsSatisfied();
     }
 
@@ -2484,26 +2889,35 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CheckResult evaluate(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            CheckResult evaluate(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         return evaluate(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, g8, body);
     }
 
@@ -2533,27 +2947,36 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CheckResult evaluate(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            CheckResult evaluate(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");
@@ -2605,27 +3028,36 @@ public final class Check {
      * @throws NullPointerException     if a generator or {@code body} is null
      * @throws IllegalArgumentException if {@code samples} is negative
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CheckResult evaluateN(
-            int samples,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            CheckResult evaluateN(
+                    int samples,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         return evaluate(CheckConfig.defaults().withSamples(samples), g1, g2, g3, g4, g5, g6, g7, g8, body);
     }
 
@@ -2653,26 +3085,35 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CheckResult evaluateAll(
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         return evaluateAll(CheckConfig.defaults(), g1, g2, g3, g4, g5, g6, g7, g8, body);
     }
 
@@ -2703,27 +3144,36 @@ public final class Check {
      * @return the result of the check
      * @throws NullPointerException if an argument is null
      */
-    public static <T1, T2, T3, T4, T5, T6, T7, T8> CheckResult evaluateAll(
-            CheckConfig config,
-            Gen<? extends T1> g1,
-            Gen<? extends T2> g2,
-            Gen<? extends T3> g3,
-            Gen<? extends T4> g4,
-            Gen<? extends T5> g5,
-            Gen<? extends T6> g6,
-            Gen<? extends T7> g7,
-            Gen<? extends T8> g8,
-            CheckedFunction8<
-                            ? super T1,
-                            ? super T2,
-                            ? super T3,
-                            ? super T4,
-                            ? super T5,
-                            ? super T6,
-                            ? super T7,
-                            ? super T8,
-                            ?>
-                    body) {
+    public static <
+                    T1 extends @Nullable Object,
+                    T2 extends @Nullable Object,
+                    T3 extends @Nullable Object,
+                    T4 extends @Nullable Object,
+                    T5 extends @Nullable Object,
+                    T6 extends @Nullable Object,
+                    T7 extends @Nullable Object,
+                    T8 extends @Nullable Object>
+            CheckResult evaluateAll(
+                    CheckConfig config,
+                    Gen<? extends T1> g1,
+                    Gen<? extends T2> g2,
+                    Gen<? extends T3> g3,
+                    Gen<? extends T4> g4,
+                    Gen<? extends T5> g5,
+                    Gen<? extends T6> g6,
+                    Gen<? extends T7> g7,
+                    Gen<? extends T8> g8,
+                    CheckedFunction8<
+                                    ? super T1,
+                                    ? super T2,
+                                    ? super T3,
+                                    ? super T4,
+                                    ? super T5,
+                                    ? super T6,
+                                    ? super T7,
+                                    ? super T8,
+                                    ?>
+                            body) {
         Objects.requireNonNull(config, "config is null");
         Objects.requireNonNull(g1, "g1 is null");
         Objects.requireNonNull(g2, "g2 is null");

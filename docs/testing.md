@@ -267,6 +267,17 @@ Check.check(twoDice, isWithin(2, 12));
 
 `Gen.zip(g1, ..., g8)` and `Gen.zipWith` combine up to eight generators at once.
 
+### Null values
+
+`constant`, `elements` and `fromIterable` accept `null`. `map`, `flatMap`, `filter`, `zip`, the tuples and `lazy` pass
+it through, so a property can test code that takes `null`.
+
+With JSpecify annotations, the type says so: a code base checked by NullAway accepts
+`Gen<@Nullable String> maybe = Gen.elements("a", null)`. A failing `null` sample prints as `(null)`.
+
+The generators of collections, `option`, `some`, `either`, `tryOf` and `validation` take generators of non-null values
+only: those types reject `null`.
+
 ## Finite generators and `checkAll`
 
 `fromIterable` and `constant` are finite: they give their values in order, then stop. `zip` of two finite generators
