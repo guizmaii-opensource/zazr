@@ -1224,6 +1224,12 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return new Tuple2<>(key, null);
     }
 
+    // the stored entry of `key`, or null: `key` is compared with the key of each entry in place, so no probe entry
+    // and no Option are made
+    private @Nullable Tuple2<K, V> entryOf(K key) {
+        return RedBlackTreeModule.Node.findByKey(entries, key, comparator(), true);
+    }
+
     /**
      * {@inheritDoc}
      * <p>
@@ -1241,7 +1247,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public boolean containsKey(K key) {
-        return entries.contains(lookupEntry(key));
+        return entryOf(key) != null;
     }
 
     /**
@@ -1386,7 +1392,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public Option<V> get(K key) {
-        return entries.find(TreeMap.<K, V>lookupEntry(key)).map(Tuple2::_2);
+        Tuple2<K, V> entry = entryOf(key);
+        return entry == null ? Option.none() : Option.some(entry._2());
     }
 
     /**
@@ -1396,7 +1403,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public V getOrElse(K key, V defaultValue) {
-        return get(key).getOrElse(defaultValue);
+        Tuple2<K, V> entry = entryOf(key);
+        return entry == null ? defaultValue : entry._2();
     }
 
     /**
@@ -1412,10 +1420,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     // also NonEmptySortedMap's, whose message names it
     V getOrElse(K key, Supplier<? extends V> supplier, String nullResult) {
         Objects.requireNonNull(supplier, "supplier is null");
-        return switch (get(key)) {
-            case Option.Some<V>(var value) -> value;
-            case Option.None<V> _ -> Objects.requireNonNull(supplier.get(), nullResult);
-        };
+        Tuple2<K, V> entry = entryOf(key);
+        return entry == null ? Objects.requireNonNull(supplier.get(), nullResult) : entry._2();
     }
 
     @Override
@@ -1656,14 +1662,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return updateWith(key, f, "TreeMap.updateWith: f returned null");
     }
 
-    // also NonEmptySortedMap's, whose message names it; the Option of the lookup is the one f receives, so no second
-    // one is made from the value
-    @SuppressWarnings("unchecked")
+    // also NonEmptySortedMap's, whose message names it
     TreeMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f, String nullResult) {
-        Objects.requireNonNull(f, "f is null");
-        Option<V> previous = get(key);
-        V current = previous instanceof Option.Some<V>(var value) ? value : (V) Maps.ABSENT;
-        return Maps.updateWith(this, key, previous, current, f, nullResult);
+        return Maps.updateWith(this, key, f, nullResult);
     }
 
     @Override

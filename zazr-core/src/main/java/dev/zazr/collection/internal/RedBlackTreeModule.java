@@ -791,6 +791,23 @@ public interface RedBlackTreeModule {
             return left == node.left && right == node.right ? node : join(left, node.value, right);
         }
 
+        /// The element whose key equals `key`, or `null` when there is none: a lookup by key, with no probe
+        /// element and no `Option`. `key` is the first argument of each comparison, as the probe element is in
+        /// [Node#find]; an empty tree compares nothing. One walk down the tree, O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E findByKey(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            while (t instanceof Node<E> node) {
+                int c = compareKey(comparator, entries, key, node.value);
+                if (c == 0) {
+                    return node.value;
+                }
+                t = c < 0 ? node.left : node.right;
+            }
+            return null;
+        }
+
         /// The least element whose key is greater than or equal to `key`, or `null` when there is none. One walk
         /// down the tree, O(log n).
         public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E minAfter(
