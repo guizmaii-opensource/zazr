@@ -761,6 +761,14 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
+     * Complexity: O(log n): one lookup, then at most one insertion or deletion.
+     */
+    @Override
+    SortedMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f);
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: O(m log n) for m keys: one lookup each, then one deletion for each key present.
      */
     @Override

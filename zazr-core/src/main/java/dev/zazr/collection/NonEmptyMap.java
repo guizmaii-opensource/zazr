@@ -3,6 +3,7 @@ package dev.zazr.collection;
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.internal.Comparators;
+import dev.zazr.collection.internal.Maps;
 import dev.zazr.collection.internal.NonEmptyModule;
 import dev.zazr.control.Option;
 import java.util.Comparator;
@@ -787,6 +788,22 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
+     * Updates, adds or removes the mapping of {@code key} with what {@code f} makes of its current value, as
+     * {@link Map#updateWith(Object, Function)}. The result is a {@link HashMap}, as {@link #remove(Object)}'s, since
+     * {@code f} may remove the last key; when nothing changes, it is the map this one wraps.
+     * <p>
+     * Complexity: effectively O(1), as {@link HashMap#updateWith(Object, Function)}.
+     *
+     * @param key A key
+     * @param f   The new value of {@code key}, given its current one: {@code None} removes it
+     * @return this map's entries with the mapping of {@code key} updated, added or removed
+     * @throws NullPointerException if {@code f} is null, or returns null
+     */
+    public HashMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return Maps.updateWith(map, key, f, "NonEmptyMap.updateWith: f returned null");
+    }
+
+    /**
      * Complexity: O(m) for m given keys, as {@link HashMap#removeAll(Iterable)}.
      *
      * @param keys Keys
@@ -949,12 +966,29 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
+     * Complexity: effectively O(1), as {@link HashMap#getOrElse(Object, Object)}.
+     *
      * @param key          A key
      * @param defaultValue The result when {@code key} is absent
      * @return the value of {@code key}, or {@code defaultValue}
      */
     public V getOrElse(K key, V defaultValue) {
         return map.getOrElse(key, defaultValue);
+    }
+
+    /**
+     * The value of {@code key}, or the value {@code supplier} gives if {@code key} is absent: {@code supplier} runs
+     * only then, once. As {@link Map#getOrElse(Object, Supplier)}.
+     * <p>
+     * Complexity: effectively O(1), as {@link HashMap#getOrElse(Object, Supplier)}.
+     *
+     * @param key      A key
+     * @param supplier Gives the result when {@code key} is absent
+     * @return the value of {@code key}, or the value {@code supplier} gives
+     * @throws NullPointerException if {@code supplier} is null, or returns null
+     */
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return Maps.getOrElse(map, key, supplier, "NonEmptyMap.getOrElse: supplier returned null");
     }
 
     /**

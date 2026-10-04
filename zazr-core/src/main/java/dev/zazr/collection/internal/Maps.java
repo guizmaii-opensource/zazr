@@ -63,6 +63,45 @@ public final class Maps {
         }
     }
 
+    /// [Map#getOrElse(Object, Supplier)]: one lookup, and `supplier` runs only when `key` is absent. A null
+    /// result is rejected with `nullResult` (`HashMap.getOrElse: supplier returned null`).
+    public static <K extends @Nullable Object, V extends @Nullable Object> V getOrElse(
+            Map<K, V> map, K key, Supplier<? extends V> supplier, String nullResult) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        V value = getOrAbsent(map, key);
+        return value != ABSENT ? value : Objects.requireNonNull(supplier.get(), nullResult);
+    }
+
+    /// [Map#updateWith(Object, Function)] on a map whose lookup answers without an `Option`: the `Some` handed
+    /// to `f` is the only one allocated, and `None` is the shared instance. A null result of `f` is rejected
+    /// with `nullResult` (`HashMap.updateWith: f returned null`).
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M updateWith(
+            M map, K key, Function<? super Option<V>, ? extends Option<? extends V>> f, String nullResult) {
+        Objects.requireNonNull(f, "f is null");
+        V current = getOrAbsent(map, key);
+        return updateWith(map, key, current == ABSENT ? Option.none() : Option.some(current), current, f, nullResult);
+    }
+
+    /// The rest of [#updateWith(Map, Object, Function, String)], once `f` is checked and the key looked up:
+    /// `previous` is what `f` receives, and `current` the value the key holds, or [#ABSENT]. As Scala's
+    /// `updatedWith`, the map comes back unchanged when `f` keeps an absent key absent or returns the very
+    /// value the key holds (compared by identity); otherwise `f`'s answer is a [Map#remove(Object)] or a
+    /// [Map#put(Object, Object)].
+    @SuppressWarnings("unchecked")
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M updateWith(
+            M map,
+            K key,
+            Option<V> previous,
+            V current,
+            Function<? super Option<V>, ? extends Option<? extends V>> f,
+            String nullResult) {
+        Option<? extends V> next = Objects.requireNonNull(f.apply(previous), nullResult);
+        return switch (next) {
+            case Option.Some<? extends V>(var value) -> value == current ? map : (M) map.put(key, value);
+            case Option.None<? extends V> _ -> current == ABSENT ? map : (M) map.remove(key);
+        };
+    }
+
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(
             M map, OfEntries<K, V, M> ofEntries, BiPredicate<? super K, ? super V> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");

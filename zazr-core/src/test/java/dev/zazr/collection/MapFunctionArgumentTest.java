@@ -47,6 +47,30 @@ public class MapFunctionArgumentTest {
     }
 
     @Test
+    public void shouldRejectANullFunctionInUpdateWith() {
+        for (Map<Integer, String> map : maps()) {
+            for (int key : new int[] {1, 2}) {
+                assertThatNullPointerException()
+                        .as(map + ", key " + key)
+                        .isThrownBy(() -> map.updateWith(key, null))
+                        .withMessage("f is null");
+            }
+        }
+    }
+
+    @Test
+    public void shouldRejectANullSupplierInGetOrElse() {
+        for (Map<Integer, String> map : maps()) {
+            for (int key : new int[] {1, 2}) {
+                assertThatNullPointerException()
+                        .as(map + ", key " + key)
+                        .isThrownBy(() -> map.getOrElse(key, (Supplier<String>) null))
+                        .withMessage("supplier is null");
+            }
+        }
+    }
+
+    @Test
     public void shouldRejectANullFunctionInReplaceAll() {
         for (Map<Integer, String> map : maps()) {
             assertThatNullPointerException()

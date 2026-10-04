@@ -782,6 +782,16 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return trie.getOrElse(key, defaultValue);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one hash lookup.
+     */
+    @Override
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return Maps.getOrElse(this, key, supplier, "HashMap.getOrElse: supplier returned null");
+    }
+
     @Override
     public <C extends @Nullable Object> Map<C, HashMap<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
@@ -1026,6 +1036,17 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     public HashMap<K, V> remove(K key) {
         BitmapIndexedMapNode<K, V> result = trie.removed(key);
         return result == trie ? this : wrap(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one hash lookup, then at most one {@link #put(Object, Object)} or
+     * {@link #remove(Object)}.
+     */
+    @Override
+    public HashMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return Maps.updateWith(this, key, f, "HashMap.updateWith: f returned null");
     }
 
     /**

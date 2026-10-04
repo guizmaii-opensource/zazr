@@ -1432,6 +1432,35 @@ public class DocsExamplesTest {
         }
 
         @Test
+        void updatingOneKey() {
+            var stock = HashMap.of("apple", 3, "pear", 1);
+            var sold = stock.updateWith("pear", count -> count.map(n -> n - 1).filter(n -> n > 0));
+            var added = stock.updateWith("fig", count -> Option.some(count.getOrElse(0) + 4));
+            // sold has no pear left, added has fig -> 4
+
+            assertThat(sold).isEqualTo(HashMap.of("apple", 3));
+            assertThat(added).isEqualTo(HashMap.of("apple", 3, "pear", 1, "fig", 4));
+        }
+
+        @Test
+        void lazyGetOrElse() {
+            var prices = HashMap.of("apple", 3);
+            var apple = prices.getOrElse("apple", () -> lookUpPrice("apple")); // 3, lookUpPrice is not called
+            var kiwi = prices.getOrElse("kiwi", () -> lookUpPrice("kiwi")); // what lookUpPrice returns
+
+            assertThat(apple).isEqualTo(3);
+            assertThat(kiwi).isEqualTo(4);
+            assertThat(lookUps).containsExactly("kiwi");
+        }
+
+        private final java.util.List<String> lookUps = new java.util.ArrayList<>();
+
+        private int lookUpPrice(String fruit) {
+            lookUps.add(fruit);
+            return fruit.length();
+        }
+
+        @Test
         void puttingManyEntries() {
             var prices = HashMap.of("apple", 3, "pear", 4);
             var updates = HashMap.of("pear", 5, "fig", 2);
