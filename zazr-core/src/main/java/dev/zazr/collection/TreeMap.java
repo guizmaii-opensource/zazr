@@ -1671,6 +1671,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> removeAll(Iterable<? extends K> keys) {
+        Objects.requireNonNull(keys, "keys is null");
         @SuppressWarnings("Var")
         RedBlackTree<Tuple2<K, V>> removed = entries;
         for (K key : keys) {

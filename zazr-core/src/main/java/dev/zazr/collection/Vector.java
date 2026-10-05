@@ -1159,6 +1159,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return ofAll(builder.result());
     }
 
+    /**
+     * The elements that do not satisfy {@code predicate}, in order: the complement of {@link #filter(Predicate)}.
+     * <p>
+     * Complexity: O(n); this Vector itself is returned when no element satisfies {@code predicate}.
+     *
+     * @param predicate the condition of the elements left out
+     * @return a new Vector of the elements that do not satisfy {@code predicate}, or this Vector if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(predicate.negate());
