@@ -19,7 +19,7 @@ generator type whose values grow over a run, assertions that explain why they fa
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-test</artifactId>
-        <version>0.3.0</version>
+        <version>0.4.0</version>
         <scope>test</scope>
     </dependency>
     ```
@@ -28,7 +28,7 @@ generator type whose values grow over a run, assertions that explain why they fa
 
     ```kotlin
     dependencies {
-        testImplementation("dev.zazr:zazr-test:0.3.0")
+        testImplementation("dev.zazr:zazr-test:0.4.0")
     }
     ```
 

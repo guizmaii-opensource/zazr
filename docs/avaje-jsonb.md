@@ -16,7 +16,7 @@ It is available from Zazr 0.3.0, and is built against avaje-jsonb 3.16.
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-avaje-jsonb</artifactId>
-        <version>0.3.0</version>
+        <version>0.4.0</version>
     </dependency>
     ```
 
@@ -24,7 +24,7 @@ It is available from Zazr 0.3.0, and is built against avaje-jsonb 3.16.
 
     ```kotlin
     dependencies {
-        implementation("dev.zazr:zazr-avaje-jsonb:0.3.0")
+        implementation("dev.zazr:zazr-avaje-jsonb:0.4.0")
     }
     ```
 
