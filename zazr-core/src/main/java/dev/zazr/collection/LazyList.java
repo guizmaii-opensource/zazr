@@ -2513,24 +2513,6 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     }
 
     /**
-     * This LazyList without the elements satisfying {@code predicate}.
-     * <p>
-     * Complexity: lazy, like {@link #filter(Predicate)}: nothing is computed now, and reading an element skips every
-     * element before it that satisfies the predicate, which never ends on an infinite LazyList with nothing left to
-     * keep.
-     *
-     * @deprecated use {@link #reject(Predicate)}
-     * @param predicate the condition
-     * @return a new LazyList
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    default LazyList<T> removeAll(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
-    }
-
-    /**
      * Replaces the first occurrence of {@code currentElement} with {@code newElement}, if it exists.
      * <p>
      * Complexity: lazy; nothing is computed now. Each element is compared when the result reaches it, and the elements

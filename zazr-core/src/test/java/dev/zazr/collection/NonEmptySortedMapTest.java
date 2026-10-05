@@ -646,11 +646,7 @@ public class NonEmptySortedMapTest {
                 "nonEmpty()",
                 "orElse(Iterable)",
                 "orElse(Supplier)",
-                "toNonEmptySortedMap()",
-                // deprecated on the plain maps in favour of reject, rejectKeys and rejectValues
-                "removeAll(BiPredicate)",
-                "removeKeys(Predicate)",
-                "removeValues(Predicate)");
+                "toNonEmptySortedMap()");
 
         @Test
         public void shouldHaveEveryTreeMapMethodButTheDeliberateAbsences() {

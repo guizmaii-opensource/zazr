@@ -112,7 +112,6 @@ class LazyListLazinessTest {
         lazy("remove(Object)", 2, l -> l.remove(0));
         lazy("removeAll(Iterable)", 3, l -> l.removeAll(List.of(0, 1)));
         lazy("removeAll(Object)", 2, l -> l.removeAll(0));
-        lazy("removeAll(Predicate)", 3, l -> l.reject(x -> x < 2));
         lazy("removeAt(int)", 2, l -> l.removeAt(0));
         lazy("removeFirst(Predicate)", 2, l -> l.removeFirst(x -> x == 0));
         lazy("removeLast(Predicate)", SIZE, l -> l.removeLast(x -> x == 0));

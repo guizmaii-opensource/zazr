@@ -1670,13 +1670,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
-    @Deprecated
-    public TreeMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
-    }
-
-    @Override
     public TreeMap<K, V> removeAll(Iterable<? extends K> keys) {
         @SuppressWarnings("Var")
         RedBlackTree<Tuple2<K, V>> removed = entries;
@@ -1688,20 +1681,6 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         } else {
             return new TreeMap<>(removed);
         }
-    }
-
-    @Override
-    @Deprecated
-    public TreeMap<K, V> removeKeys(Predicate<? super K> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectKeys(predicate);
-    }
-
-    @Override
-    @Deprecated
-    public TreeMap<K, V> removeValues(Predicate<? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectValues(predicate);
     }
 
     @Override

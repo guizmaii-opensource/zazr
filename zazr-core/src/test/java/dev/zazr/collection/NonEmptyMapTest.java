@@ -608,11 +608,7 @@ public class NonEmptyMapTest {
                 "nonEmpty()",
                 "orElse(Iterable)",
                 "orElse(Supplier)",
-                "toNonEmptyMap()",
-                // deprecated on the plain maps in favour of reject, rejectKeys and rejectValues
-                "removeAll(BiPredicate)",
-                "removeKeys(Predicate)",
-                "removeValues(Predicate)");
+                "toNonEmptyMap()");
 
         @Test
         public void shouldHaveEveryHashMapMethodButTheDeliberateAbsences() {

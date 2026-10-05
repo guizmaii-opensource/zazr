@@ -1381,17 +1381,6 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * Complexity: O(n), as {@link Vector#removeAll(Predicate)}.
-     *
-     * @param predicate A test
-     * @return this vector without the elements that pass {@code predicate}
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    public Vector<A> removeAll(Predicate<? super A> predicate) {
-        return vector.removeAll(predicate);
-    }
-
-    /**
      * Complexity: O(n), as {@link Vector#removeFirst(Predicate)}.
      *
      * @param predicate A test

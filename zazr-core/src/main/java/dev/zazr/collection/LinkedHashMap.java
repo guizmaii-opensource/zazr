@@ -1190,18 +1190,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): every entry is tested, and the kept ones are put in a new map.
-     */
-    @Override
-    @Deprecated
-    public LinkedHashMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Complexity: O(n + m) for m given keys: they are put in a hash set, every entry of this map is checked against it,
      * and the map is rebuilt without the removed ones.
      */
@@ -1211,20 +1199,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         HashSet<K> toRemove = HashSet.ofAll(keys);
         HashMap<K, Slot<K, V>> newMap = map.filter(t -> !toRemove.contains(t._1()));
         return newMap.size() == map.size() ? this : reindex(list, newMap);
-    }
-
-    @Override
-    @Deprecated
-    public LinkedHashMap<K, V> removeKeys(Predicate<? super K> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectKeys(predicate);
-    }
-
-    @Override
-    @Deprecated
-    public LinkedHashMap<K, V> removeValues(Predicate<? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectValues(predicate);
     }
 
     /**

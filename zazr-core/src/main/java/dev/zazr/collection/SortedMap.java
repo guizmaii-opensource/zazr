@@ -558,33 +558,6 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
-     */
-    @Override
-    @Deprecated
-    SortedMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate);
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
-     */
-    @Override
-    @Deprecated
-    SortedMap<K, V> removeKeys(Predicate<? super K> predicate);
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
-     */
-    @Override
-    @Deprecated
-    SortedMap<K, V> removeValues(Predicate<? super V> predicate);
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Complexity: O(n + k log k) for k entries produced by {@code mapper}: they are sorted, then the new tree is built
      * in one pass; O(n + k) when their keys come out in order.
      */

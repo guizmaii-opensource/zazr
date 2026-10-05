@@ -2108,22 +2108,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * Removes every element satisfying {@code predicate}: {@link #reject(Predicate)}.
-     * <p>
-     * Complexity: O(n).
-     *
-     * @param predicate the condition
-     * @return a new Vector of the elements not satisfying it, or this Vector if none does
-     * @throws NullPointerException if {@code predicate} is null
-     * @deprecated use {@link #reject(Predicate)}
-     */
-    @Deprecated
-    public Vector<T> removeAll(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
-    }
-
-    /**
      * Replaces the first occurrence of {@code currentElement} with {@code newElement}, if it exists.
      * <p>
      * Complexity: O(n) to find the element, then one effectively O(1) {@code update}.

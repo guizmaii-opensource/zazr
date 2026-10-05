@@ -2758,22 +2758,6 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
-    /**
-     * Removes all elements from this Queue that satisfy the given predicate.
-     * <p>
-     * Complexity: O(n).
-     *
-     * @param predicate the predicate used to test elements
-     * @return a new Queue with all elements that satisfy the predicate removed
-     * @throws NullPointerException if {@code predicate} is null
-     * @deprecated Use {@link #reject(Predicate)} instead
-     */
-    @Deprecated
-    public Queue<T> removeAll(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
-    }
-
     public Queue<T> reject(Predicate<? super T> predicate) {
         return Collections.reject(this, predicate, kept -> filter(kept));
     }

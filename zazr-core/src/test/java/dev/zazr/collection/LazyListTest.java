@@ -212,25 +212,6 @@ public class LazyListTest extends AbstractTraversableTest {
         assertThat(t.removeAll(of(4, 5))).isEqualTo(t).isNotSameAs(t);
     }
 
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveExistingElements() {
-        LazyList<Integer> seq = of(1, 2, 3);
-        assertThat(seq.removeAll(i -> i == 1)).isEqualTo(of(2, 3));
-        assertThat(seq.removeAll(i -> i == 2)).isEqualTo(of(1, 3));
-        assertThat(seq.removeAll(i -> i == 3)).isEqualTo(of(1, 2));
-        assertThat(seq.removeAll(ignore -> true)).isEmpty();
-        assertThat(seq.removeAll(ignore -> false)).isEqualTo(of(1, 2, 3)).isNotSameAs(of(1, 2, 3));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldNotRemoveAllNonMatchedElementsFromNonNil() {
-        LazyList<Integer> t = of(1, 2, 3);
-        Predicate<Integer> isTooBig = i -> i >= 4;
-        assertThat(t.removeAll(isTooBig)).isEqualTo(t).isNotSameAs(t);
-    }
-
     @Test
     public void shouldNotRemoveAllNonObjectsElementsFromNonNil() {
         LazyList<Integer> seq = of(1, 2, 3);
@@ -2366,33 +2347,6 @@ public class LazyListTest extends AbstractTraversableTest {
         assertThat(empty.removeAll(of(1, 2, 3))).isSameAs(empty);
     }
 
-    // -- removeAll(Predicate)
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveNonExistingElements() {
-        assertThat(this.<Integer>empty().removeAll(i -> i == 0)).isSameAs(empty());
-        assertThat(of(1, 2, 3).removeAll(i -> i != 0)).isEmpty();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveAllElementsByPredicateFromNil() {
-        assertThat(empty().removeAll(o -> true)).isEmpty();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveAllExistingElements() {
-        assertThat(of(1, 2, 3, 4, 5, 6).removeAll(ignored -> true)).isEmpty();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveAllMatchedElementsFromNonNil() {
-        assertThat(of(1, 2, 3, 4, 5, 6).removeAll(i -> i % 2 == 0)).isEqualTo(of(1, 3, 5));
-    }
-
     // -- removeAll(Object)
 
     @Test
@@ -3882,12 +3836,19 @@ public class LazyListTest extends AbstractTraversableTest {
         assertThat(of(1, 2, 3).reject(i -> i == 1)).isEqualTo(of(2, 3));
         assertThat(of(1, 2, 3).reject(i -> i == 2)).isEqualTo(of(1, 3));
         assertThat(of(1, 2, 3).reject(i -> i == 3)).isEqualTo(of(1, 2));
+        assertThat(of(1, 2, 3, 4, 5, 6).reject(i -> i % 2 == 0)).isEqualTo(of(1, 3, 5));
         if (useIsEqualToInsteadOfIsSameAs()) {
             assertThat(of(1, 2, 3).reject(ignore -> false)).isEqualTo(of(1, 2, 3));
         } else {
             LazyList<Integer> t = of(1, 2, 3);
             assertThat(t.reject(ignore -> false)).isSameAs(t);
         }
+    }
+
+    @Test
+    public void shouldRejectLazilyIntoANewLazyListWhenNothingMatches() {
+        LazyList<Integer> t = of(1, 2, 3);
+        assertThat(t.reject(ignore -> false)).isEqualTo(t).isNotSameAs(t);
     }
 
     @TestTemplate

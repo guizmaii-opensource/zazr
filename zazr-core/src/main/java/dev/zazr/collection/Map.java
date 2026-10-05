@@ -464,17 +464,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     Map<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f);
 
     /**
-     * Returns a new Map consisting of all elements which do not satisfy the given predicate.
-     *
-     * @deprecated Please use {@link #reject(BiPredicate)}
-     * @param predicate the predicate used to test elements
-     * @return a new Map
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    Map<K, V> removeAll(BiPredicate<? super K, ? super V> predicate);
-
-    /**
      * Removes the mapping for a key from this map if it is present.
      *
      * @param keys keys are to be removed from the map
@@ -482,28 +471,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * specified by that keys.
      */
     Map<K, V> removeAll(Iterable<? extends K> keys);
-
-    /**
-     * Returns a new Map consisting of all elements with keys which do not satisfy the given predicate.
-     *
-     * @deprecated Please use {@link #rejectKeys(Predicate)}
-     * @param predicate the predicate used to test keys of elements
-     * @return a new Map
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    Map<K, V> removeKeys(Predicate<? super K> predicate);
-
-    /**
-     * Returns a new Map consisting of all elements with values which do not satisfy the given predicate.
-     *
-     * @deprecated Please use {@link #rejectValues(Predicate)}
-     * @param predicate the predicate used to test values of elements
-     * @return a new Map
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    Map<K, V> removeValues(Predicate<? super V> predicate);
 
     @Override
     int size();

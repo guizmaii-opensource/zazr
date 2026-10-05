@@ -1052,18 +1052,6 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): every entry is tested, and the kept ones are put in a new map.
-     */
-    @Override
-    @Deprecated
-    public HashMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Complexity: O(m) for m given keys, each an effectively O(1) removal.
      */
     @Override
@@ -1082,20 +1070,6 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         } else {
             return wrap(result);
         }
-    }
-
-    @Override
-    @Deprecated
-    public HashMap<K, V> removeKeys(Predicate<? super K> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectKeys(predicate);
-    }
-
-    @Override
-    @Deprecated
-    public HashMap<K, V> removeValues(Predicate<? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectValues(predicate);
     }
 
     /**
