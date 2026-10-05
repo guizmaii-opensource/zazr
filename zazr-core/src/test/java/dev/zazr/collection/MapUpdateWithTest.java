@@ -492,20 +492,18 @@ public class MapUpdateWithTest {
                     .isSameAs(map);
             assertThat(map.getOrElse(null, () -> 9)).as(map.toString()).isEqualTo(9);
         }
-        // a TreeMap cannot look null up in its natural order: the lookup throws, as get does, before f runs
+        // a TreeMap cannot look null up in its natural order: the lookup throws, as get does, before f runs. The
+        // NPE comes from the JVM inside compareTo, so only its type is compared: once the JIT has compiled that
+        // path, the JVM may throw a preallocated NPE without a message
         TreeMap<String, Integer> tree = TreeMap.of("a", 1);
-        Throwable expected = catchThrowable(() -> tree.get(null));
-        assertThat(expected).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> tree.get(null)).isInstanceOf(NullPointerException.class);
         AtomicInteger calls = new AtomicInteger();
         assertThatThrownBy(() -> tree.updateWith(null, n -> {
                     calls.incrementAndGet();
                     return Option.none();
                 }))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage(expected.getMessage());
+                .isInstanceOf(NullPointerException.class);
         assertThat(calls).hasValue(0);
-        assertThatThrownBy(() -> tree.getOrElse(null, () -> 9))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage(expected.getMessage());
+        assertThatThrownBy(() -> tree.getOrElse(null, () -> 9)).isInstanceOf(NullPointerException.class);
     }
 }
