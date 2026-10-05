@@ -751,9 +751,7 @@ public class NonEmptyVectorTest {
             assertThat(nev.remove(-1)).isEqualTo(vector);
             assertThat(nev.removeAll(0)).isEqualTo(vector.removeAll(0));
             assertThat(nev.removeAll(Vector.range(0, 2))).isEqualTo(vector.removeAll(Vector.range(0, 2)));
-            assertThat(nev.removeAll(i -> i % 2 == 0)).isEqualTo(vector.removeAll(i -> i % 2 == 0));
             assertThat(nev.removeAll(vector)).isEqualTo(Vector.empty());
-            assertThat(nev.removeAll(i -> true)).isEqualTo(Vector.empty());
             assertThat(NonEmptyVector.single(7).remove(7)).isEqualTo(Vector.empty());
         }
 

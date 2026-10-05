@@ -19,9 +19,7 @@ operations that mean nothing on a non-empty collection:
 - `isEmpty`, `nonEmpty`, `orElse` and `toNonEmptySet` (or `toNonEmptyMap`, and so on), which would always give the
   same answer;
 - the `Option` forms of what is total here: `reduceOption`, `singleOption`, and on the sorted ones `headOption`,
-  `lastOption`, `tailOption` and `initOption`;
-- on the maps, `removeKeys` and `removeValues`, which the plain maps keep only as older names of `rejectKeys` and
-  `rejectValues`.
+  `lastOption`, `tailOption` and `initOption`.
 
 ## Total operations
 

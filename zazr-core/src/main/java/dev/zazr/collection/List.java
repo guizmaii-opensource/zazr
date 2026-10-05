@@ -2236,22 +2236,6 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * This List without the elements satisfying {@code predicate}.
-     * <p>
-     * Complexity: O(n).
-     *
-     * @deprecated use {@link #reject(Predicate)}
-     * @param predicate the condition
-     * @return a new List
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    default List<T> removeAll(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
-    }
-
-    /**
      * Replaces the first occurrence of {@code currentElement} with {@code newElement}, if it exists.
      * <p>
      * Complexity: O(k) for the k elements before the replaced one; the rest of this List is shared, not copied.

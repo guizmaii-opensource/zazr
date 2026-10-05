@@ -49,6 +49,8 @@ and zio-prelude, and `Using` follows Scala's `scala.util.Using`. It is not a dro
 | `Validation.cond`, `Either.cond` | `fromPredicate` |
 | `getOrElseGet(Function)` | a `getOrElse(Function)` overload |
 | `toJavaArray` | `toArray` |
+| `removeAll(Predicate)` on a sequence | `reject(Predicate)`; `removeAll` takes the elements to remove |
+| `removeAll(BiPredicate)`, `removeKeys`, `removeValues` on a map | `reject(BiPredicate)`, `rejectKeys`, `rejectValues`; `removeAll` takes the keys to remove |
 | `sum()`, `product()`, `average()` | `sumInt`, `sumLong`, `sumDouble`, `productInt`, `productLong`, `productDouble`, `average`, each taking the function that reads the number from an element |
 
 ## Behaviour that differs
