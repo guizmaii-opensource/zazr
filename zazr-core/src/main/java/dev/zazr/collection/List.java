@@ -1191,6 +1191,15 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         }
     }
 
+    /**
+     * The elements that do not satisfy {@code predicate}, in order: the complement of {@link #filter(Predicate)}.
+     * <p>
+     * Complexity: O(n); this List itself is returned when no element satisfies {@code predicate}.
+     *
+     * @param predicate the condition of the elements left out
+     * @return a new List of the elements that do not satisfy {@code predicate}, or this List if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Collections.reject(this, predicate, kept -> filter(kept));

@@ -2758,6 +2758,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return Collections.removeAll(this, elements, kept -> filter(kept));
     }
 
+    /**
+     * The elements that do not satisfy {@code predicate}, in order: the complement of {@link #filter(Predicate)}.
+     * <p>
+     * Complexity: O(n); this Queue itself is returned when no element satisfies {@code predicate}.
+     *
+     * @param predicate the condition of the elements left out
+     * @return a new Queue of the elements that do not satisfy {@code predicate}, or this Queue if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Queue<T> reject(Predicate<? super T> predicate) {
         return Collections.reject(this, predicate, kept -> filter(kept));
     }

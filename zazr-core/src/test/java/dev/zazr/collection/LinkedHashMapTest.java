@@ -973,6 +973,19 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
                             .put(13, "d")
                             .put(14, "e"));
         }
+
+        @Test
+        public void shouldKeepTheInsertionOrderThroughEveryReject() {
+            // the insertion order is neither the key order nor the hash order
+            LinkedHashMap<Integer, String> map = LinkedHashMap.ofEntries(
+                    Tuple.of(5, "e"), Tuple.of(3, "c"), Tuple.of(9, "i"), Tuple.of(1, "a"), Tuple.of(4, "d"));
+            java.util.List<Tuple2<Integer, String>> kept =
+                    java.util.List.of(Tuple.of(5, "e"), Tuple.of(3, "c"), Tuple.of(1, "a"), Tuple.of(4, "d"));
+            assertThat(map.reject((k, v) -> k == 9)).containsExactlyElementsOf(kept);
+            assertThat(map.reject(entry -> entry._1() == 9)).containsExactlyElementsOf(kept);
+            assertThat(map.rejectKeys(k -> k == 9)).containsExactlyElementsOf(kept);
+            assertThat(map.rejectValues(v -> v.equals("i"))).containsExactlyElementsOf(kept);
+        }
     }
 
     @Nested
