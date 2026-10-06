@@ -547,7 +547,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: O(n), the keys copied into a new set, as {@link HashMap#keySet()}.
+     * Complexity: O(n), with no hashing and no key comparison, as {@link HashMap#keySet()}.
      *
      * @return the keys, a non-empty set
      */
