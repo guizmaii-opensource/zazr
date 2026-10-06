@@ -108,17 +108,14 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
     boolean contains(T value);
 
     /**
-     * Deletes a value from this RedBlackTree.
-     * <p>
-     * A new instance is returned even if the value is not present in this tree, except when this tree is
-     * already empty, in which case {@code this} is returned.
+     * Deletes a value from this RedBlackTree, through {@link Node#deleteByKey}: {@code this} is returned when no
+     * element is equal to {@code value} under the comparator of this tree.
      *
      * @param value A value
      * @return A RedBlackTree without the given value.
      */
     default RedBlackTree<T> delete(T value) {
-        RedBlackTree<T> tree = Node.delete(this, value)._1();
-        return Node.color(tree, BLACK);
+        return Node.deleteByKey(this, value, comparator(), false);
     }
 
     default RedBlackTree<T> difference(RedBlackTree<T> tree) {

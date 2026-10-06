@@ -12,8 +12,8 @@ import static dev.zazr.collection.internal.RedBlackTreeValidity.assertValid;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /// `Node.deleteByKey` on the elements of a set (`entries` false) and on the entries of a map (`entries` true): the
-/// tree it gives is the very shape, colours included, that the element `delete` gives for the same element, and the
-/// tree itself when no key is equal.
+/// tree it gives is the very shape, colours included, that the reference element deletion
+/// (`RedBlackTreeDeletionReference`) gives for the same element, and the tree itself when no key is equal.
 public class RedBlackTreeDeleteByKeyTest {
 
     private static final long SEED = 20261005L;
@@ -45,7 +45,8 @@ public class RedBlackTreeDeleteByKeyTest {
                     if (tree.contains(key)) {
                         assertThat(deleted.toString())
                                 .as(context)
-                                .isEqualTo(tree.delete(key).toString());
+                                .isEqualTo(RedBlackTreeDeletionReference.delete(tree, key)
+                                        .toString());
                         assertThat(deleted.size()).as(context).isEqualTo(tree.size() - 1);
                         assertThat(deleted.contains(key)).as(context).isFalse();
                     } else {
@@ -78,7 +79,9 @@ public class RedBlackTreeDeleteByKeyTest {
                     Tuple2<Integer, String> probe = Tuple.of(key, "probe");
                     RedBlackTree<Tuple2<Integer, String>> deleted =
                             RedBlackTreeModule.Node.deleteByKey(tree, key, order, true);
-                    assertThat(deleted.toString()).isEqualTo(tree.delete(probe).toString());
+                    assertThat(deleted.toString())
+                            .isEqualTo(RedBlackTreeDeletionReference.delete(tree, probe)
+                                    .toString());
                     assertValid(deleted);
                     assertThat(RedBlackTreeModule.Node.deleteByKey(deleted, key, order, true))
                             .isSameAs(deleted);
