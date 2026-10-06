@@ -245,6 +245,28 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     V getOrElse(K key, V defaultValue);
 
     /**
+     * Returns the value associated with a key, or the value {@code supplier} gives if the key is not contained in the
+     * map. This is Scala's {@code getOrElse(key, default: => V)}: {@code supplier} runs only when the key is absent,
+     * once, and never when it is present.
+     * <pre>{@code
+     * var port = settings.getOrElse("port", () -> defaultPort()); // defaultPort() runs only if "port" is absent
+     * }</pre>
+     * <p>
+     * As on {@link dev.zazr.control.Option}, a {@code null} default is cast to the value type, as in
+     * {@code getOrElse(key, (String) null)}: without the cast, {@code getOrElse(key, null)} is ambiguous, or, on a
+     * {@code Map<K, Object>}, calls this overload and throws.
+     * <p>
+     * Complexity: effectively O(1) on HashMap and LinkedHashMap, O(log n) on TreeMap: one lookup of the key, as
+     * {@link #getOrElse(Object, Object)}. Each of them states its own cost.
+     *
+     * @param key      the key
+     * @param supplier gives the result when the key is absent
+     * @return the value associated with key if it exists, otherwise the value {@code supplier} gives
+     * @throws NullPointerException if {@code supplier} is null, or returns null
+     */
+    V getOrElse(K key, Supplier<? extends V> supplier);
+
+    /**
      * Returns the keys contained in this map.
      *
      * @return {@code Set} of the keys contained in this map.
@@ -416,15 +438,30 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     Map<K, V> remove(K key);
 
     /**
-     * Returns a new Map consisting of all elements which do not satisfy the given predicate.
+     * Updates, adds or removes the mapping of {@code key} with what {@code f} makes of its current value. {@code f}
+     * receives the {@code Some} of the value of {@code key}, or {@code None} if the key is absent, and returns the
+     * {@code Some} of the value to put, or {@code None} to remove the key (or leave it absent). This is Scala's
+     * {@code updatedWith}.
+     * <pre>{@code
+     * var counts = HashMap.of("apple", 2);
+     * var more   = counts.updateWith("apple", count -> Option.some(count.getOrElse(0) + 1)); // apple=3
+     * var less   = counts.updateWith("apple", count -> Option.none());                     // empty
+     * }</pre>
+     * <p>
+     * {@code f} runs once. This map itself is returned when nothing changes: when {@code f} returns {@code None} for an
+     * absent key, or the {@code Some} of the very value the key holds (the same instance). Otherwise the result is
+     * that of {@link #put(Object, Object)} or {@link #remove(Object)}: a key already present takes the key object
+     * given here, and keeps its position in a map with an insertion order.
+     * <p>
+     * Complexity: effectively O(1) on HashMap and LinkedHashMap, O(log n) on TreeMap: one lookup of the key, then at
+     * most one {@link #put(Object, Object)} or {@link #remove(Object)}. Each of them states its own cost.
      *
-     * @deprecated Please use {@link #reject(BiPredicate)}
-     * @param predicate the predicate used to test elements
-     * @return a new Map
-     * @throws NullPointerException if {@code predicate} is null
+     * @param key the key to update
+     * @param f   the new value of the key, given its current one
+     * @return this map with the mapping of {@code key} updated, added or removed
+     * @throws NullPointerException if {@code f} is null, or returns null
      */
-    @Deprecated
-    Map<K, V> removeAll(BiPredicate<? super K, ? super V> predicate);
+    Map<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f);
 
     /**
      * Removes the mapping for a key from this map if it is present.
@@ -434,28 +471,6 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * specified by that keys.
      */
     Map<K, V> removeAll(Iterable<? extends K> keys);
-
-    /**
-     * Returns a new Map consisting of all elements with keys which do not satisfy the given predicate.
-     *
-     * @deprecated Please use {@link #rejectKeys(Predicate)}
-     * @param predicate the predicate used to test keys of elements
-     * @return a new Map
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    Map<K, V> removeKeys(Predicate<? super K> predicate);
-
-    /**
-     * Returns a new Map consisting of all elements with values which do not satisfy the given predicate.
-     *
-     * @deprecated Please use {@link #rejectValues(Predicate)}
-     * @param predicate the predicate used to test values of elements
-     * @return a new Map
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    Map<K, V> removeValues(Predicate<? super V> predicate);
 
     @Override
     int size();
@@ -519,6 +534,44 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      */
     <C extends @Nullable Object> Map<C, ? extends Map<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier);
+
+    /**
+     * The entries grouped by the key {@code key} computes, each replaced in its group by what {@code value} returns,
+     * in a map ordered by the first occurrence of each key; each group is a {@link Vector} in this map's iteration
+     * order, as {@link #values()} is.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per entry.
+     *
+     * @param key   the group key of an entry
+     * @param value what an entry becomes in its group
+     * @param <K2>  the group key type
+     * @param <U>   the type of the grouped values
+     * @return a map from each group key to the values of the entries with that key
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, Vector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value);
+
+    /**
+     * The entries grouped by the key {@code key} computes, the values {@code value} returns for the entries of a
+     * group combined from the left with {@code reduce}, in this map's iteration order, in a map ordered by the first
+     * occurrence of each key. The same as {@code groupMap(key, value).mapValues(group -> group.reduceLeft(reduce))},
+     * in one pass and without building the groups.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per entry.
+     *
+     * @param key    the group key of an entry
+     * @param value  what an entry contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next entry
+     * @param <K2>   the group key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by group key
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce);
 
     /**
      * This map if it is non-empty, otherwise a map of the entries of {@code other}.

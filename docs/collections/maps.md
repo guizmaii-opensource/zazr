@@ -41,6 +41,30 @@ var first  = byName.head();    // Tuple2<String, Integer>
 // values is Vector(1, 2, 3), first is (a, 1)
 ```
 
+## Updating one key
+
+`updateWith` reads a key and writes it in one call. Its function receives the key's value as an `Option`, `None`
+when the key is absent, and returns the new one: `Some` puts that value, `None` removes the key.
+
+```java
+var stock = HashMap.of("apple", 3, "pear", 1);
+var sold  = stock.updateWith("pear", count -> count.map(n -> n - 1).filter(n -> n > 0));
+var added = stock.updateWith("fig", count -> Option.some(count.getOrElse(0) + 4));
+// sold has no pear left, added has fig -> 4
+```
+
+When nothing changes, the same map comes back: `None` for an absent key, or `Some` of the very object the key
+already holds. On a `LinkedHashMap`, an updated key keeps its position.
+
+`getOrElse` also takes a `Supplier`, for a default that costs something to make. It runs only when the key is
+absent.
+
+```java
+var prices = HashMap.of("apple", 3);
+var apple  = prices.getOrElse("apple", () -> lookUpPrice("apple"));  // 3, lookUpPrice is not called
+var kiwi   = prices.getOrElse("kiwi", () -> lookUpPrice("kiwi"));    // what lookUpPrice returns
+```
+
 ## Putting many entries
 
 `putAll` puts every entry of another map, or of any iterable of `Tuple2`s, as successive `put`s would. On a key both
@@ -61,6 +85,29 @@ On a `LinkedHashMap`, a key already present keeps its position and a new key goe
 `map`, `filter` and `forEach` take a function of the key and the value. `mapValues`, `filterKeys` and similar
 methods work on one side. `keySet()` returns the keys as a set, and `values()` the values as a `Vector`, in iteration
 order.
+
+## Ranges
+
+A `TreeMap` cuts out the entries whose keys lie between two bounds. The bounds need not be keys.
+
+- `rangeFrom(from)` keeps the keys at or after `from`.
+- `rangeUntil(until)` keeps those before `until`, and `rangeTo(to)` those at or before `to`.
+- `rangeFromUntil(from, until)` keeps those at or after `from` and before `until`. It is empty when `from` is not
+  before `until`; for `from` after `until`, `java.util.TreeMap.subMap` throws instead.
+
+Each result is a `TreeMap` with the same comparator, built in O(log n): it shares the rest of the tree with the map
+it came from, and is that map itself when nothing is cut.
+
+`minAfter(key)` is the entry with the least key at or after `key`, and `maxBefore(key)` the one with the greatest key
+strictly before it, both as an `Option` of a `Tuple2`. `iteratorFrom(start)` walks the entries from `start` on.
+
+```java
+var events  = TreeMap.of(9, "standup", 12, "lunch", 15, "review", 18, "gym");
+var workday = events.rangeFromUntil(9, 18);  // TreeMap<Integer, String>
+var next    = events.minAfter(13);           // Option<Tuple2<Integer, String>>
+var last    = events.maxBefore(12);          // Option<Tuple2<Integer, String>>
+// workday holds 9, 12 and 15, next is Some((15, review)), last is Some((9, standup))
+```
 
 ## Costs
 
@@ -88,4 +135,11 @@ Every method: [complexity page](complexity.md#maps).
   the gaps first.
 - `asJava()` on a map is a `java.util.Collection` of its `Tuple2` entries; the `java.util.Map` view is `asJavaMap()`
   ([Java interop](../java-interop.md)).
-- Neither keys nor values can be `null`.
+- Neither keys nor values can be `null`. A function or a supplier that returns `null` fails with a
+  `NullPointerException` naming the method.
+- With two `getOrElse` overloads, a `null` default needs a cast to the value type: `getOrElse(key, (Integer) null)`.
+  Without it, `getOrElse(key, null)` does not compile on most maps, and on a `Map<K, Object>` it picks the `Supplier`
+  overload and throws `supplier is null`, even when the key is present. On a `Map<K, Object>`, a `Supplier` passed
+  as the default is called, not returned.
+- `groupMap` groups what its function returns for each entry in a `Vector`, in the map's iteration order, as
+  `values()` does; `groupBy` groups whole entries in maps of the same type.

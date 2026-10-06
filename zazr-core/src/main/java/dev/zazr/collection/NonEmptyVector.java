@@ -578,6 +578,74 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value}
+     * returns; each group keeps the order of this
+     * vector, as {@link Vector#groupMap} does.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per element.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <B>   the type of the grouped values
+     * @return the groups, each non-empty, in a non-empty map
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K extends @Nullable Object, B extends @Nullable Object> NonEmptyMap<K, NonEmptyVector<B>> groupMap(
+            Function<? super A, ? extends K> key, Function<? super A, ? extends B> value) {
+        return NonEmptyModule.groupMap(
+                vector, key, value, values -> new NonEmptyVector<>(Vector.ofAll(values)), "NonEmptyVector.groupMap");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined from the left with {@code reduce} in the order of this vector, as {@link Vector#groupMapReduce} does.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <B>    the type of the values and of their combination
+     * @return the combined value of each group, by key, in a non-empty map
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K extends @Nullable Object, B extends @Nullable Object> NonEmptyMap<K, B> groupMapReduce(
+            Function<? super A, ? extends K> key,
+            Function<? super A, ? extends B> value,
+            BiFunction<? super B, ? super B, ? extends B> reduce) {
+        return NonEmptyModule.groupMapReduce(vector, key, value, reduce, "NonEmptyVector.groupMapReduce");
+    }
+
+    /**
+     * Compares the size of this vector with {@code otherSize}, as {@link Vector#sizeCompare(int)} does.
+     * <p>
+     * Complexity: O(1): the stored size is compared.
+     *
+     * @param otherSize the size to compare with; a negative one is smaller than every size
+     * @return -1, 0 or 1 as the size of this vector is smaller than, equal to or greater than {@code otherSize}
+     */
+    public int sizeCompare(int otherSize) {
+        return vector.sizeCompare(otherSize);
+    }
+
+    /**
+     * Compares the size of this vector with the size of {@code that}, as {@link Vector#sizeCompare(Iterable)} does:
+     * a size that is not stored is counted only up to this one, and a one-shot {@code that} is iterated once.
+     * <p>
+     * Complexity: O(min(n, m)), at most; O(1) when the size of {@code that} is stored.
+     *
+     * @param that the collection whose size this one is compared with
+     * @return -1, 0 or 1 as the size of this vector is smaller than, equal to or greater than the size of
+     *     {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int sizeCompare(Iterable<?> that) {
+        return vector.sizeCompare(that);
+    }
+
+    /**
      * Replaces every element by {@code value}.
      * <p>
      * Complexity: O(n), as {@link Vector#as(Object)}.
@@ -1310,17 +1378,6 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public Vector<A> removeAll(Iterable<? extends A> elements) {
         return vector.removeAll(elements);
-    }
-
-    /**
-     * Complexity: O(n), as {@link Vector#removeAll(Predicate)}.
-     *
-     * @param predicate A test
-     * @return this vector without the elements that pass {@code predicate}
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    public Vector<A> removeAll(Predicate<? super A> predicate) {
-        return vector.removeAll(predicate);
     }
 
     /**

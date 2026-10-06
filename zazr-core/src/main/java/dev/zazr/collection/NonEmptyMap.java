@@ -3,6 +3,7 @@ package dev.zazr.collection;
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.internal.Comparators;
+import dev.zazr.collection.internal.Maps;
 import dev.zazr.collection.internal.NonEmptyModule;
 import dev.zazr.control.Option;
 import java.util.Comparator;
@@ -583,6 +584,78 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
         return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
+    /**
+     * The entries grouped by the key {@code key} computes, each replaced in its group by what {@code value}
+     * returns; each group is a non-empty vector in this
+     * map's iteration order, as {@link HashMap#groupMap} does.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per entry.
+     *
+     * @param key   the key of an entry
+     * @param value what an entry becomes in its group
+     * @param <K2>  the key type
+     * @param <U>   the type of the grouped values
+     * @return the groups, each non-empty, in a non-empty map
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K2 extends @Nullable Object, U extends @Nullable Object> NonEmptyMap<K2, NonEmptyVector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value) {
+        return NonEmptyModule.groupMap(
+                map,
+                key,
+                value,
+                values -> NonEmptyVector.unsafeFromVector(Vector.ofAll(values)),
+                "NonEmptyMap.groupMap");
+    }
+
+    /**
+     * The entries grouped by the key {@code key} computes, the values {@code value} returns for the entries of a
+     * group combined from the left with {@code reduce} in this map's iteration order, as {@link HashMap#groupMapReduce} does.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per entry.
+     *
+     * @param key    the key of an entry
+     * @param value  what an entry contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next entry
+     * @param <K2>   the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key, in a non-empty map
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K2 extends @Nullable Object, U extends @Nullable Object> NonEmptyMap<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return NonEmptyModule.groupMapReduce(map, key, value, reduce, "NonEmptyMap.groupMapReduce");
+    }
+
+    /**
+     * Compares the size of this map with {@code otherSize}, as {@link HashMap#sizeCompare(int)} does.
+     * <p>
+     * Complexity: O(1): the stored size is compared.
+     *
+     * @param otherSize the size to compare with; a negative one is smaller than every size
+     * @return -1, 0 or 1 as the size of this map is smaller than, equal to or greater than {@code otherSize}
+     */
+    public int sizeCompare(int otherSize) {
+        return map.sizeCompare(otherSize);
+    }
+
+    /**
+     * Compares the size of this map with the size of {@code that}, as {@link HashMap#sizeCompare(Iterable)} does:
+     * a size that is not stored is counted only up to this one, and a one-shot {@code that} is iterated once.
+     * <p>
+     * Complexity: O(min(n, m)), at most; O(1) when the size of {@code that} is stored.
+     *
+     * @param that the collection whose size this one is compared with
+     * @return -1, 0 or 1 as the size of this map is smaller than, equal to or greater than the size of
+     *     {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int sizeCompare(Iterable<?> that) {
+        return map.sizeCompare(that);
+    }
+
     /* the plain operations that cannot empty a non-empty map return the same instance when nothing changes */
     private NonEmptyMap<K, V> wrap(HashMap<K, V> result) {
         return result == map ? this : new NonEmptyMap<>(result);
@@ -712,6 +785,22 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      */
     public HashMap<K, V> remove(K key) {
         return map.remove(key);
+    }
+
+    /**
+     * Updates, adds or removes the mapping of {@code key} with what {@code f} makes of its current value, as
+     * {@link Map#updateWith(Object, Function)}. The result is a {@link HashMap}, as {@link #remove(Object)}'s, since
+     * {@code f} may remove the last key; when nothing changes, it is the map this one wraps.
+     * <p>
+     * Complexity: effectively O(1), as {@link HashMap#updateWith(Object, Function)}.
+     *
+     * @param key A key
+     * @param f   The new value of {@code key}, given its current one: {@code None} removes it
+     * @return this map's entries with the mapping of {@code key} updated, added or removed
+     * @throws NullPointerException if {@code f} is null, or returns null
+     */
+    public HashMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return Maps.updateWith(map, key, f, "NonEmptyMap.updateWith: f returned null");
     }
 
     /**
@@ -877,12 +966,29 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
+     * Complexity: effectively O(1), as {@link HashMap#getOrElse(Object, Object)}.
+     *
      * @param key          A key
      * @param defaultValue The result when {@code key} is absent
      * @return the value of {@code key}, or {@code defaultValue}
      */
     public V getOrElse(K key, V defaultValue) {
         return map.getOrElse(key, defaultValue);
+    }
+
+    /**
+     * The value of {@code key}, or the value {@code supplier} gives if {@code key} is absent: {@code supplier} runs
+     * only then, once. As {@link Map#getOrElse(Object, Supplier)}.
+     * <p>
+     * Complexity: effectively O(1), as {@link HashMap#getOrElse(Object, Supplier)}.
+     *
+     * @param key      A key
+     * @param supplier Gives the result when {@code key} is absent
+     * @return the value of {@code key}, or the value {@code supplier} gives
+     * @throws NullPointerException if {@code supplier} is null, or returns null
+     */
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return Maps.getOrElse(map, key, supplier, "NonEmptyMap.getOrElse: supplier returned null");
     }
 
     /**

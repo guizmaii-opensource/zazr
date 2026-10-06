@@ -442,6 +442,78 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value}
+     * returns; each group is a {@link NonEmptySet}, as
+     * {@link TreeSet#groupMap} groups in a {@link HashSet}: the values need not be comparable.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per element.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <B>   the type of the grouped values
+     * @return the groups, each non-empty, in a non-empty map
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K extends @Nullable Object, B extends @Nullable Object> NonEmptyMap<K, NonEmptySet<B>> groupMap(
+            Function<? super A, ? extends K> key, Function<? super A, ? extends B> value) {
+        return NonEmptyModule.groupMap(
+                set,
+                key,
+                value,
+                values -> NonEmptySet.unsafeFromSet(HashSet.ofAll(values)),
+                "NonEmptySortedSet.groupMap");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined from the left with {@code reduce} in this set's order, as {@link TreeSet#groupMapReduce} does.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <B>    the type of the values and of their combination
+     * @return the combined value of each group, by key, in a non-empty map
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K extends @Nullable Object, B extends @Nullable Object> NonEmptyMap<K, B> groupMapReduce(
+            Function<? super A, ? extends K> key,
+            Function<? super A, ? extends B> value,
+            BiFunction<? super B, ? super B, ? extends B> reduce) {
+        return NonEmptyModule.groupMapReduce(set, key, value, reduce, "NonEmptySortedSet.groupMapReduce");
+    }
+
+    /**
+     * Compares the size of this set with {@code otherSize}, as {@link TreeSet#sizeCompare(int)} does.
+     * <p>
+     * Complexity: O(1): the stored size is compared.
+     *
+     * @param otherSize the size to compare with; a negative one is smaller than every size
+     * @return -1, 0 or 1 as the size of this set is smaller than, equal to or greater than {@code otherSize}
+     */
+    public int sizeCompare(int otherSize) {
+        return set.sizeCompare(otherSize);
+    }
+
+    /**
+     * Compares the size of this set with the size of {@code that}, as {@link TreeSet#sizeCompare(Iterable)} does:
+     * a size that is not stored is counted only up to this one, and a one-shot {@code that} is iterated once.
+     * <p>
+     * Complexity: O(min(n, m)), at most; O(1) when the size of {@code that} is stored.
+     *
+     * @param that the collection whose size this one is compared with
+     * @return -1, 0 or 1 as the size of this set is smaller than, equal to or greater than the size of
+     *     {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int sizeCompare(Iterable<?> that) {
+        return set.sizeCompare(that);
+    }
+
+    /**
      * Complexity: O((n / size) log n), as {@link TreeSet#grouped(int)}.
      *
      * @param size The block size
@@ -1321,6 +1393,87 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     public <K extends @Nullable Object, V extends @Nullable Object> NonEmptySortedMap<K, V> toSortedMap(
             Comparator<? super K> comparator, Function<? super A, ? extends Tuple2<? extends K, ? extends V>> f) {
         return NonEmptySortedMap.ofMappedEntries(comparator, set, f, "NonEmptySortedSet.toSortedMap");
+    }
+
+    // -- ranges, in the comparator's order: the result may be empty
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeFrom(Object)}.
+     *
+     * @param from the lower bound, inclusive
+     * @return the elements greater than or equal to {@code from}; this set's elements when none is below it
+     * @throws NullPointerException if {@code from} is null
+     */
+    public TreeSet<A> rangeFrom(A from) {
+        return set.rangeFrom(from);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeUntil(Object)}.
+     *
+     * @param until the upper bound, exclusive
+     * @return the elements less than {@code until}
+     * @throws NullPointerException if {@code until} is null
+     */
+    public TreeSet<A> rangeUntil(A until) {
+        return set.rangeUntil(until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeTo(Object)}.
+     *
+     * @param to the upper bound, inclusive
+     * @return the elements less than or equal to {@code to}
+     * @throws NullPointerException if {@code to} is null
+     */
+    public TreeSet<A> rangeTo(A to) {
+        return set.rangeTo(to);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#rangeFromUntil(Object, Object)}.
+     *
+     * @param from  the lower bound, inclusive
+     * @param until the upper bound, exclusive
+     * @return the elements greater than or equal to {@code from} and less than {@code until}; none when {@code from}
+     *         is not less than {@code until}
+     * @throws NullPointerException if {@code from} or {@code until} is null
+     */
+    public TreeSet<A> rangeFromUntil(A from, A until) {
+        return set.rangeFromUntil(from, until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#minAfter(Object)}.
+     *
+     * @param element the lower bound, inclusive
+     * @return the least element greater than or equal to {@code element}, if any
+     * @throws NullPointerException if {@code element} is null
+     */
+    public Option<A> minAfter(A element) {
+        return set.minAfter(element);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeSet#maxBefore(Object)}.
+     *
+     * @param element the upper bound, exclusive
+     * @return the greatest element strictly less than {@code element}, if any
+     * @throws NullPointerException if {@code element} is null
+     */
+    public Option<A> maxBefore(A element) {
+        return set.maxBefore(element);
+    }
+
+    /**
+     * Complexity: O(log n) to create, then O(1) per step on average, as {@link TreeSet#iteratorFrom(Object)}.
+     *
+     * @param start the lower bound, inclusive
+     * @return an iterator over the elements greater than or equal to {@code start}, in the comparator's order
+     * @throws NullPointerException if {@code start} is null
+     */
+    public java.util.Iterator<A> iteratorFrom(A start) {
+        return set.iteratorFrom(start);
     }
 
     // -- returns Option

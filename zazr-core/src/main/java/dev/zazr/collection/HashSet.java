@@ -785,6 +785,20 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return Collections.groupBy(this, classifier, HashSet::ofAll, "HashSet.groupBy: classifier returned null");
     }
 
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, HashSet<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, HashSet::ofAll, "HashSet.groupMap");
+    }
+
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "HashSet.groupMapReduce");
+    }
+
     /**
      * {@inheritDoc}
      * <p>

@@ -782,10 +782,34 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return trie.getOrElse(key, defaultValue);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one hash lookup.
+     */
+    @Override
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return Maps.getOrElse(this, key, supplier, "HashMap.getOrElse: supplier returned null");
+    }
+
     @Override
     public <C extends @Nullable Object> Map<C, HashMap<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
         return Maps.groupBy(this, this::createFromEntries, classifier, "HashMap.groupBy: classifier returned null");
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, Vector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value) {
+        return Collections.groupMap(this, key, value, Vector::ofAll, "HashMap.groupMap");
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "HashMap.groupMapReduce");
     }
 
     /**
@@ -1017,13 +1041,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): every entry is tested, and the kept ones are put in a new map.
+     * Complexity: effectively O(1): one hash lookup, then at most one {@link #put(Object, Object)} or
+     * {@link #remove(Object)}.
      */
     @Override
-    @Deprecated
-    public HashMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
+    public HashMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return Maps.updateWith(this, key, f, "HashMap.updateWith: f returned null");
     }
 
     /**
@@ -1047,20 +1070,6 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         } else {
             return wrap(result);
         }
-    }
-
-    @Override
-    @Deprecated
-    public HashMap<K, V> removeKeys(Predicate<? super K> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectKeys(predicate);
-    }
-
-    @Override
-    @Deprecated
-    public HashMap<K, V> removeValues(Predicate<? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectValues(predicate);
     }
 
     /**

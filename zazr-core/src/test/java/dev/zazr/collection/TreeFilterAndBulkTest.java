@@ -282,7 +282,6 @@ public class TreeFilterAndBulkTest {
         assertThat(entries(map)).isEqualTo(before);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void shouldFilterATreeMapAsRebuildingTheKeptEntriesWould() {
         Random random = new Random(SEED + 3);
@@ -299,9 +298,6 @@ public class TreeFilterAndBulkTest {
                     checkMapFilter(map, order, m -> m.rejectKeys(keys), e -> !keys.test(e._1()));
                     checkMapFilter(map, order, m -> m.filterValues(values), e -> values.test(e._2()));
                     checkMapFilter(map, order, m -> m.rejectValues(values), e -> !values.test(e._2()));
-                    checkMapFilter(map, order, m -> m.removeAll((k, v) -> keys.test(k)), e -> !keys.test(e._1()));
-                    checkMapFilter(map, order, m -> m.removeKeys(keys), e -> !keys.test(e._1()));
-                    checkMapFilter(map, order, m -> m.removeValues(values), e -> !values.test(e._2()));
                     checkMapFilter(
                             map, order, m -> m.partition(e -> keys.test(e._1()))._1(), e -> keys.test(e._1()));
                     checkMapFilter(

@@ -42,6 +42,8 @@ column, never the left one. Full page: https://zazr.dev/vavr/.
 | `toJavaList()`, `toJavaSet()`, `toJavaMap()` | the view `asJava()` or `asJavaMap()`; copy with `new java.util.ArrayList<>(x.asJava())` |
 | `toJavaOptional()` | `toOptional()` |
 | `toJavaStream()` | `stream()` |
+| `seq.removeAll(x -> ...)`, `map.removeAll((k, v) -> ...)` | `seq.reject(x -> ...)`, `map.reject((k, v) -> ...)`; `removeAll` takes only the elements or keys to remove |
+| `map.removeKeys(k -> ...)`, `map.removeValues(v -> ...)` | `map.rejectKeys(k -> ...)`, `map.rejectValues(v -> ...)` |
 | `toJavaArray` | `toArray` |
 | `reverseIterator()`, `iterator(int)` | `reverse().iterator()`, `drop(n).iterator()` |
 | `Tuple.sequence2(tuples)`, `tuple.toSeq()` | `Tuple.unzip2(tuples)`, `tuple.toVector()` |

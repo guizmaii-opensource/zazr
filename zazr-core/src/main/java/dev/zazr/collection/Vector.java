@@ -1159,6 +1159,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return ofAll(builder.result());
     }
 
+    /**
+     * The elements that do not satisfy {@code predicate}, in order: the complement of {@link #filter(Predicate)}.
+     * <p>
+     * Complexity: O(n); this Vector itself is returned when no element satisfies {@code predicate}.
+     *
+     * @param predicate the condition of the elements left out
+     * @return a new Vector of the elements that do not satisfy {@code predicate}, or this Vector if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
     public Vector<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return filter(predicate.negate());
@@ -1239,6 +1248,48 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <C extends @Nullable Object> Map<C, Vector<T>> groupBy(Function<? super T, ? extends C> classifier) {
         return dev.zazr.collection.internal.Collections.groupBy(
                 this, classifier, Vector::ofAll, "Vector.groupBy: classifier returned null");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value} returns,
+     * in a map ordered by the first occurrence of each key; each group keeps the order of this Vector. The same as
+     * {@code groupBy(key).mapValues(group -> group.map(value))}, in one pass.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per element.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <U>   the type of the grouped values
+     * @return the groups by key
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, Vector<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, Vector::ofAll, "Vector.groupMap");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined from the left with {@code reduce}, in a map ordered by the first occurrence of each key. The same
+     * as {@code groupMap(key, value).mapValues(group -> group.reduceLeft(reduce))}, in one pass and without building
+     * the groups: {@code words.groupMapReduce(word -> word, word -> 1, Integer::sum)} counts the words.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "Vector.groupMapReduce");
     }
 
     /**
@@ -2063,22 +2114,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> removeAll(Iterable<? extends T> elements) {
         return dev.zazr.collection.internal.Collections.removeAll(this, elements, kept -> filter(kept));
-    }
-
-    /**
-     * Removes every element satisfying {@code predicate}: {@link #reject(Predicate)}.
-     * <p>
-     * Complexity: O(n).
-     *
-     * @param predicate the condition
-     * @return a new Vector of the elements not satisfying it, or this Vector if none does
-     * @throws NullPointerException if {@code predicate} is null
-     * @deprecated use {@link #reject(Predicate)}
-     */
-    @Deprecated
-    public Vector<T> removeAll(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
     }
 
     /**

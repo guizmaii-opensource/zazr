@@ -916,6 +916,26 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
                 "TreeSet.groupBy: classifier returned null");
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The groups are {@link HashSet}s: the values need not be comparable, and this set's comparator orders elements,
+     * not the values they become. {@link #groupBy(Function)} keeps this comparator, as its groups hold elements.
+     */
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, HashSet<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, HashSet::ofAll, "TreeSet.groupMap");
+    }
+
+    @Override
+    public <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "TreeSet.groupMapReduce");
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public TreeSet<T> intersect(Set<? extends T> elements) {
@@ -1120,6 +1140,51 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         } else {
             return addAll(elements);
         }
+    }
+
+    // -- Ranges, by element in the comparator's order
+
+    @Override
+    public TreeSet<T> rangeFrom(T from) {
+        Objects.requireNonNull(from, "from is null");
+        return withTree(RedBlackTreeModule.Node.rangeFrom(tree, from, tree.comparator(), false));
+    }
+
+    @Override
+    public TreeSet<T> rangeUntil(T until) {
+        Objects.requireNonNull(until, "until is null");
+        return withTree(RedBlackTreeModule.Node.rangeUntil(tree, until, tree.comparator(), false));
+    }
+
+    @Override
+    public TreeSet<T> rangeTo(T to) {
+        Objects.requireNonNull(to, "to is null");
+        return withTree(RedBlackTreeModule.Node.rangeTo(tree, to, tree.comparator(), false));
+    }
+
+    @Override
+    public TreeSet<T> rangeFromUntil(T from, T until) {
+        Objects.requireNonNull(from, "from is null");
+        Objects.requireNonNull(until, "until is null");
+        return withTree(RedBlackTreeModule.Node.range(tree, from, until, tree.comparator(), false));
+    }
+
+    @Override
+    public Option<T> minAfter(T element) {
+        Objects.requireNonNull(element, "element is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.minAfter(tree, element, tree.comparator(), false));
+    }
+
+    @Override
+    public Option<T> maxBefore(T element) {
+        Objects.requireNonNull(element, "element is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.maxBefore(tree, element, tree.comparator(), false));
+    }
+
+    @Override
+    public java.util.Iterator<T> iteratorFrom(T start) {
+        Objects.requireNonNull(start, "start is null");
+        return RedBlackTreeModule.Node.iteratorFrom(tree, start, tree.comparator(), false);
     }
 
     // -- Positional operations, in the comparator's order

@@ -385,6 +385,11 @@ duplication is cheaper than a god interface).
 | `Lazy.filter -> Option` | delete | |
 | `isAsync`, `isLazy`, `isSingleValued`, `isTraversableAgain`, `hasDefiniteSize`, `isSequential`, `isOrdered`, `isDistinct` | delete | reflection-on-the-type flags that no caller should branch on |
 | `sum()`, `product()` → `Number`; `average()` → `Option<Double>`, all picking the arithmetic from the first element's class at run time | `sumInt(ToIntFunction)`, `sumLong(ToLongFunction)`, `sumDouble(ToDoubleFunction)`, `productInt`, `productLong`, `productDouble` with the same arguments, returning the primitive; `average(ToDoubleFunction)` → `Option<Double>` on the sequences and the sets, `double` on `NonEmptyVector`, `NonEmptySet`, `NonEmptySortedSet`. The untyped ones are deleted (decided 2026-09-28, #194) | the old forms summed `Integer`s into a `Long`, truncated a mixed `[1, 2.5]`, overflowed `long` silently and threw `UnsupportedOperationException` on non-numbers; Scala types them by `Numeric` at compile time, Java by the mapper, as `IntStream.sum`/`mapToInt`. **Overflow**: the `int` and `long` sums and products are exact and throw `ArithmeticException` when, and only when, the exact result does not fit: a partial result may leave the range if the later elements bring it back (`[MAX_VALUE, 1, -1]` gives `MAX_VALUE` in every order), so a set's result never depends on its iteration order. `sumInt` accumulates in a `long`, `sumLong` counts the carries out of 64 bits, the products keep the magnitude (unsigned for `long`) and the sign apart and become `0` on a zero factor whatever came before. The JDK's silent wrap-around was rejected (a wrong total is worse than an exception), and so was `Math.addExact` on the running total (it throws on `[MAX_VALUE, 1, -1]` and not on `[1, -1, MAX_VALUE]`). **Doubles**: `sumDouble` and `average` use Neumaier's compensated summation (NaN when a value is NaN or both infinities appear, the infinity when one is infinite or a partial sum overflows); `productDouble` multiplies in iteration order, compensation does not apply to products. **Empty**: `0`/`0L`/`0.0` and `1`/`1L`/`1.0`, the identities, as Scala and `IntStream`; `average` is `None`. **`Option<Double>` rather than `OptionalDouble`**: it is the library's absence type (pattern matching, `map`, `getOrElse`), what `max`/`min`/`reduceOption` already return, and 3.12 keeps primitive options out of v1; the one boxed `Double` per call is not a per-element cost. No `BigInteger`/`BigDecimal` forms: `foldLeft(BigInteger.ZERO, BigInteger::add)` says the same thing |
+| (none: `groupBy(key)` then a `map` of each group; `size()` compared with a number) | `groupMap(key, value)`, `groupMapReduce(key, value, reduce)`, `sizeCompare(int)`, `sizeCompare(Iterable)` (Scala 2.13 `IterableOps.groupMap`, `groupMapReduce`, `sizeCompare`; added 2026-10-03, #197) | **Placement** follows `groupBy`: `groupMap` and `groupMapReduce` are declared by each sequence, by `Set` and `Map` (implemented by each concrete set and map) and by the five non-empty types, each naming itself in its messages. `sizeCompare` is a default of `Traversable` comparing the stored size, overridden by `List`, `Queue` and `LazyList`, which count at most `otherSize + 1` elements (Scala's `LinearSeq.lengthCompare`), so it returns on an infinite `LazyList`; the non-empty types delegate to the collection they wrap. **Result types**: the keys keep the order of their first element, in a `LinkedHashMap` as `groupBy`'s (Scala returns an unordered `immutable.Map`), and a `NonEmptyMap` on the non-empty types. The groups are of the receiver's own type, as Scala's `CC[B]`: a sequence groups into its own type, `HashSet` and `LinkedHashSet` into their own; a `TreeSet` into `HashSet`s, as Scala's `TreeSet` (whose `iterableFactory` is `Set`), so that the values need not be comparable and no comparator overload is needed; a map into `Vector`s in its iteration order, as `values()` (Scala: `Iterable`). `NonEmptySortedSet` groups into `NonEmptySet`s, the maps into `NonEmptyVector`s. **`sizeCompare` returns -1, 0 or 1** (Scala promises only the sign, and `i - otherSize` can be any negative number); **a size is "known"** only where it is stored (`Vector`, the sets, the maps, the non-empty types): a JDK collection is iterated, not asked its `size()`, which on the view of a `LazyList` never returns (Scala's Java wrappers report -1 too). **Nulls**: a `key`, `value` or `reduce` that returns null is rejected by name (`List.groupMap: value returned null`), a deliberate extension of 3.9, which leaves a plain value to the collection's own check: a reduce result is fed back to `reduce` before it reaches a map, and a JDK map's `merge` treats null as removal |
+| (none: `get(key)`, then `put` or `remove`; `getOrElse(key, value)` only, eager) | `updateWith(key, f)`, `getOrElse(key, Supplier)` on `Map`, `SortedMap`, the three maps and the two non-empty maps (Scala 2.13 `immutable.MapOps.updatedWith`, `MapOps.getOrElse(key, default: => V)`; added 2026-10-04, #198) | **Name** `updateWith`, the issue's, not Scala's `updatedWith`: the maps say `put`/`remove`, not `updated`/`removed`. **`f`** is a `Function<? super Option<V>, ? extends Option<? extends V>>`, the wildcards of `collect`; Java has no `V1 >: V`, so the value type cannot widen. As Scala's: `None` removes the key (the map itself when it is absent), `Some(v)` puts `v` (the map itself when `v` is the value held, by identity, so the key object held stays); otherwise the result is `put`'s or `remove`'s, so a key present takes the given key object and keeps its `LinkedHashMap` position. **Result types**: each map its own, `SortedMap` on `SortedMap`; `NonEmptyMap` returns a `HashMap` and `NonEmptySortedMap` a `TreeMap`, as `remove` (the last key may go), the wrapped map itself when nothing changes. **The lazy `getOrElse` is an overload**, as on `Option` (and "keep one name", 3.2): `getOrElse(key, null)` no longer compiles, or, on a `Map<K, Object>`, picks the `Supplier` overload and throws `supplier is null` (cast the `null`), and on a `Map<K, Object>` a `Supplier` default is now called rather than returned, the trade-off `Option.getOrElse` already has. **Nulls**: `f is null` and `supplier is null` at once, whatever the map holds; a null result is rejected by name (`HashMap.updateWith: f returned null`, `TreeMap.getOrElse: supplier returned null`), while the eager `getOrElse(key, (V) null)` still returns `null`. **Internals**: one lookup through the `ABSENT` sentinel, then at most one `put` or `remove`; the only `Option` made is the `Some` handed to `f`, on every map. `TreeMap` looks a key up with `RedBlackTreeModule.Node.findByKey` (2026-10-04, #272), which compares the key with the key of each entry in place, as the range operations do, and returns the stored entry or `null`: `get` makes one `Option`, for its result, and `getOrElse`, `containsKey`, `updateWith` (through `Maps.updateWith`, as the other maps) and the `ABSENT` helpers none. `remove` and `removeAll(Iterable)` delete by key with `RedBlackTreeModule.Node.deleteByKey` (2026-10-04, #285), so `updateWith`'s removal, `replace` and the `NonEmptySortedMap` delegations do too: one walk that compares the key in place, then the rebalancing of the element `delete` on the way back up, with no probe `Tuple2` and no second walk; an absent key returns the map itself, with nothing rebuilt or allocated. The key is the first argument of each comparison, as the probe entry was, and an empty map compares nothing, so under the natural order `get(null)` is still `None` on an empty map and a `NullPointerException` otherwise (the `asJavaMap()` view rejects it in both cases, as `java.util.TreeMap`). `computeIfAbsent`/`computeIfPresent`, which return a `Tuple2` of the value and the map, are kept (next row) |
+| `Map.computeIfAbsent(key, f)` → `Tuple2<V, Map>`, `Map.computeIfPresent(key, f)` → `Tuple2<Option<V>, Map>`, on `Map`, `SortedMap`, the three maps and the two non-empty maps | keep (decided by the maintainer 2026-10-04: #278 removed them, and was reverted before 0.4.0 was released) | **They answer "get or add" in one lookup**: `computeIfAbsent` gives the value and the new map together, which `updateWith` then `get` needs two lookups for, and its replacements read worse at the call site. `updateWith` is added beside them (#198) for the general case. The `asJava()` views keep `java.util.Map`'s own `computeIfAbsent` and `computeIfPresent`, which throw `UnsupportedOperationException` as every mutator of the views |
+| `removeAll(Predicate)` on the sequences; `removeAll(BiPredicate)`, `removeKeys(Predicate)`, `removeValues(Predicate)` on the maps | `reject(Predicate)`; `reject(BiPredicate)`, `rejectKeys(Predicate)`, `rejectValues(Predicate)` (decided by the maintainer 2026-10-05, #293: the deprecated forms are deleted in 0.4.0, on `List`, `LazyList`, `Queue`, `Vector`, `NonEmptyVector`, `Map`, `SortedMap`, `HashMap`, `LinkedHashMap` and `TreeMap`) | **One meaning per name**: `removeAll(Iterable)` stays and removes the given elements or keys; `reject*` drops what a predicate matches (Scala's `filterNot`, ZIO's `reject`). A lambda or a method reference passed to `removeAll` no longer compiles: neither fits `Iterable`, whose `iterator()` takes no argument, nor an element type that is not a functional interface; a `BiPredicate` on a map does not compile either. **The silent case, accepted**: when the element type is `Object`, or the sequence is raw, any expression of type `Predicate` (a variable, a cast lambda, `p.negate()`, `Predicate.not(...)`) is an element, so `removeAll(predicate)` resolves to `removeAll(T)` and removes that one object, usually nothing. Guarding it would take an overload of the deleted name; the release notes say to use `reject` |
+| (none: the ranges only through the read-only `asJava()`/`asJavaMap()` views, `subSet`, `headMap`, `ceiling`...) | `rangeFrom(from)`, `rangeUntil(until)`, `rangeTo(to)`, `rangeFromUntil(from, until)`, `minAfter`, `maxBefore`, `iteratorFrom(start)` on `SortedSet` and `SortedMap`, implemented by `TreeSet` and `TreeMap` and delegated by `NonEmptySortedSet` and `NonEmptySortedMap` (Scala 2.13 `SortedOps`, `SortedSet`, `SortedMap` and `immutable.RedBlackTree`, which Scala 3 uses unchanged; added 2026-10-04, #196) | **The two-bound form is `rangeFromUntil`**, not Scala's `range(from, until)`: `TreeSet` has static `range(int, int)`, `range(char, char)` and `range(long, long)` factories, so `set.range(1, 5)` on a `TreeSet<Integer>` would resolve to a factory. `rangeFromUntil` names its bounds as the one-bound forms do (`from` inclusive, `until` exclusive) and is declared nowhere else, as a static or an instance method, on any collection; `rangeBetween` was rejected because it does not say which bound is included. **Semantics are Scala's**: `rangeFromUntil` is empty when `from` is not less than `until` (`java.util.TreeSet.subSet` throws when `from` is greater); `minAfter(x)` is the least element at or after `x` (inclusive, `ceiling` in Java terms) and `maxBefore(x)` the greatest strictly before `x` (`lower`); `rangeTo` is the inclusive upper bound, ported from `RedBlackTree.to`/`doTo` (Scala's `TreeSet` and `TreeMap` reach the same result through the `SortedSet`/`SortedMap` default, the iterator of a `rangeFrom` and a `rangeUntil`). **Implementation**: ports of `doFrom`, `doUntil`, `doTo`, `doRange`, `minAfter`, `maxBefore` and the iterator's `startFrom` in `RedBlackTreeModule`: one walk along the path of each bound, a `join` per level, O(log n); every subtree wholly inside the range is kept as it is, and the receiver itself is returned when nothing is cut. A map's bound is compared with the key of each entry in place, with no probe `Tuple2`. **Results**: the range methods return the receiver's type with its comparator (`TreeSet`, `TreeMap`; the plain type on the non-empty wrappers, the result may be empty); `minAfter`/`maxBefore` an `Option` of the element, or of the stored entry `Tuple2` on a map (Scala's pair); `iteratorFrom` a `java.util.Iterator`, as every public `iterator()` since the Zazr `Iterator` left the public API (3.7). **Not added**: Scala's `TreeMap.keysIteratorFrom` and `valuesIteratorFrom`, since Zazr maps dropped `keysIterator` and `valuesIterator` (3.7): `rangeFrom(k).keySet()` and `rangeFrom(k).values()` replace them. **Nulls**: a null bound is `<parameter> is null` (`from is null`, `key is null`) at once, even on an empty collection, since no element or key is null |
 
 Things ZIO does that **do not** port and should not be imitated:
 - `Par` suffix: there is no parallelism in pure data. Do **not** name `Validation`'s accumulating zip
@@ -569,7 +574,7 @@ type would guarantee nothing at the use site. Return-type contract, copied from 
 
 | returns `NonEmptyVector` | returns `Vector` | total (no `Option`) | returns `Option` |
 |---|---|---|---|
-| `map`, `flatMap(A->NonEmptyVector<B>)`, `append`, `appendAll(Vector)`, `appendAll(NonEmptyVector)`, `prepend`, `prependAll(Vector)`, `prependAll(NonEmptyVector)`, `concat(NonEmptyVector)`, `reverse`, `distinct`, `distinctBy` ×2, `sorted` ×2, `sortBy` ×2, `zip(NonEmptyVector)`, `zipWith(NonEmptyVector, ·)`, `zipWithIndex` ×2, `scanLeft` (n+1), `update(i,·)` ×2, `tap`; `grouped(n)` as `Vector<NonEmptyVector<A>>`, `groupBy` as `HashMap<K,NonEmptyVector<A>>` | `filter`, `reject`, `collect(A->Option<B>)`, `flatMapAll(A->Iterable<B>)`, `partitionMap`, `duplicates`, `duplicatesBy`, `tail`, `init`, `drop*`, `take*`, `slice`, `removeAt`, `remove`, `removeAll` ×3, `toVector()` | `head`, `last`, `max(Comparator)`, `min(Comparator)`, `maxBy(A->U)`, `minBy(A->U)`, `reduce`, `reduceLeft`, `reduceRight`, `reduceMap(A->B, (B,B)->B)`, `size` (≥1), `get`, `mkString` ×3, `foldLeft`, `foldRight`, `contains`, `exists`, `forAll`, `count`, `indexOf`, `iterator`, `stream`, `asJava`, `toList`, `toSet` | `find`, `findLast`, `indexOfOption`, `tailNonEmpty()`, `initNonEmpty()` |
+| `map`, `flatMap(A->NonEmptyVector<B>)`, `append`, `appendAll(Vector)`, `appendAll(NonEmptyVector)`, `prepend`, `prependAll(Vector)`, `prependAll(NonEmptyVector)`, `concat(NonEmptyVector)`, `reverse`, `distinct`, `distinctBy` ×2, `sorted` ×2, `sortBy` ×2, `zip(NonEmptyVector)`, `zipWith(NonEmptyVector, ·)`, `zipWithIndex` ×2, `scanLeft` (n+1), `update(i,·)` ×2, `tap`; `grouped(n)` as `Vector<NonEmptyVector<A>>`, `groupBy` as `HashMap<K,NonEmptyVector<A>>` | `filter`, `reject`, `collect(A->Option<B>)`, `flatMapAll(A->Iterable<B>)`, `partitionMap`, `duplicates`, `duplicatesBy`, `tail`, `init`, `drop*`, `take*`, `slice`, `removeAt`, `remove`, `removeAll` ×2, `toVector()` | `head`, `last`, `max(Comparator)`, `min(Comparator)`, `maxBy(A->U)`, `minBy(A->U)`, `reduce`, `reduceLeft`, `reduceRight`, `reduceMap(A->B, (B,B)->B)`, `size` (≥1), `get`, `mkString` ×3, `foldLeft`, `foldRight`, `contains`, `exists`, `forAll`, `count`, `indexOf`, `iterator`, `stream`, `asJava`, `toList`, `toSet` | `find`, `findLast`, `indexOfOption`, `tailNonEmpty()`, `initNonEmpty()` |
 
 Constructors: `of(A head, A... tail)`, `fromIterable(A head, Iterable<? extends A> tail)`, `single(A)`,
 `fromVector(Vector<A>) : Option<NonEmptyVector<A>>`, `fromIterable(Iterable<? extends A>) : Option<...>`,
@@ -682,10 +687,10 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   overload (name and parameter types), so a missing overload fails as a missing name does; the absences are listed by
   signature: `isEmpty`, `nonEmpty`, `orElse`, `reduceOption`, `singleOption`, the narrowing
   (`toNonEmptySet`, `toNonEmptySortedSet`, `toNonEmptyMap`, `toNonEmptySortedMap`); on the sorted ones also
-  `headOption`, `lastOption`, `tailOption`, `initOption`; on the maps also `removeKeys`/`removeValues`, deprecated on
-  `Map` in favour of `rejectKeys`/`rejectValues` (a new type does not start with deprecated methods; the deprecated
-  `removeAll(BiPredicate)` overload is left out for the same reason, `removeAll(Iterable)` keeps the name). Extra:
-  `reduceMap`, as on `NonEmptyVector`.
+  `headOption`, `lastOption`, `tailOption`, `initOption`. The maps' `removeKeys`/`removeValues` and
+  `removeAll(BiPredicate)`, deprecated on `Map` when the non-empty maps were added and left out of them, are deleted
+  from the plain maps too (2026-10-05, #293), so they are no longer absences. Extra: `reduceMap`, as on
+  `NonEmptyVector`.
 - **Returns the non-empty type:** `add`, `addAll(Iterable)`, `union(Set)` (accept the possibly empty type), `map`
   (equal results merge, never to zero), `as`, `replace`, `replaceAll`, `tap`; on the maps `put` ×4, `merge` ×2,
   `computeIfAbsent`/`computeIfPresent` (as `Tuple2<V, NonEmptyMap>` / `Tuple2<Option<V>, NonEmptyMap>`: `Maps` only ever
@@ -734,7 +739,9 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   `NonEmptyMap.ofMapped`/`ofMappedEntries` (and their `NonEmptySortedMap` twins), one builder pass that puts keys and
   values without an intermediate `Tuple2` and reports a null key, value or entry under the calling method's name
   (`NonEmptySet.toMap: keyMapper returned null`), as `NonEmptyVector` already did. This changes 3.6's
-  `groupBy as HashMap<K, NonEmptyVector<A>>`.
+  `groupBy as HashMap<K, NonEmptyVector<A>>`. `groupMap` and `groupMapReduce` (added 2026-10-03, 3.3) follow the same
+  rule: a `NonEmptyMap` of non-empty groups (`NonEmptyVector`, `NonEmptySet`; `NonEmptySet` on `NonEmptySortedSet` and
+  `NonEmptyVector` on the maps, as on their plain types) or of one value per group.
 
 ### 3.7 Removing the `Seq` abstraction
 
@@ -829,13 +836,13 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `grouped`/`sliding`/`slideBy` with an `Iterator` result; #68 decides the final shape when `Traversable` is slimmed.
   A lazy result keeps its argument lazy: `crossProduct(Iterable)` memoises `that` with `Stream.ofAll` (as the `Seq`
   default did; `Stream` survives as `LazyList`, #28), so `Vector.of(1).crossProduct(Iterator.from(0)).take(3)` works.
-- **`Seq` methods kept on `Vector` although 3.7 does not list them** (unused or slated for deletion elsewhere, kept
-  so that nothing changes behaviour or loses a test in this step): `asJava(Consumer)`, `asJavaMutable()`,
+- **`Seq` methods kept on `Vector` although 3.7 does not list them** (unused or slated for deletion elsewhere, kept so
+  that nothing changes behaviour or loses a test in this step): `asJava(Consumer)`, `asJavaMutable()`,
   `asJavaMutable(Consumer)` (3.1 deletes the mutable views and the consumer scopes; that is #26's PR),
-  `removeAll(Predicate)` (deprecated, `reject`), `iterator(int)`, `containsSlice`, `indexOfSlice`/`lastIndexOfSlice`
-  and the `*Option` variants of every index search, `prefixLength`/`segmentLength`, `distinctByKeepLast`,
-  `dropRightUntil`/`dropRightWhile`/`takeRightUntil`/`takeRightWhile`, `splitAtInclusive`, `leftPadTo`,
-  `reverseIterator`, `unzip`/`unzip3`. `endsWith` takes an `Iterable` (it took a `Seq`).
+  `removeAll(Predicate)` (deprecated, `reject`; deleted 2026-10-05, #293), `iterator(int)`, `containsSlice`,
+  `indexOfSlice`/`lastIndexOfSlice` and the `*Option` variants of every index search, `prefixLength`/`segmentLength`,
+  `distinctByKeepLast`, `dropRightUntil`/`dropRightWhile`/`takeRightUntil`/`takeRightWhile`, `splitAtInclusive`,
+  `leftPadTo`, `reverseIterator`, `unzip`/`unzip3`. `endsWith` takes an `Iterable` (it took a `Seq`).
 - **Equality across sequence types is unchanged for now**: a `Vector` equals any ordered sequence (`Vector`,
   `List`, `Queue`, `Stream`) with the same elements in the same order, and vice versa, as it did as a `Seq`
   (`Collections.isSequence`). #68 decides whether that survives once `Seq` is gone.
@@ -856,12 +863,12 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
 
 - **`Seq` methods kept on the three types although 3.7 does not list them**, for the same reason as on `Vector` (unused
   or slated for deletion elsewhere, kept so that nothing changes behaviour or loses a test in this step):
-  `asJava(Consumer)`, `asJavaMutable()`, `asJavaMutable(Consumer)`, `removeAll(Predicate)` (deprecated, `reject`),
-  `iterator(int)`, `containsSlice`, `indexOfSlice`/`lastIndexOfSlice` and the `*Option` variants of every index
-  search, `prefixLength`/`segmentLength`, `distinctByKeepLast`, `dropRightUntil`/`dropRightWhile`/
-  `takeRightUntil`/`takeRightWhile`, `splitAtInclusive`, `leftPadTo`, `reverseIterator`, `unzip`/`unzip3`. As on
-  `Vector`, `endsWith` takes an `Iterable` (it took a `Seq`), so any sequence, a JDK collection or a one-shot
-  iterator is accepted.
+  `asJava(Consumer)`, `asJavaMutable()`, `asJavaMutable(Consumer)`, `removeAll(Predicate)` (deprecated, `reject`;
+  deleted 2026-10-05, #293), `iterator(int)`, `containsSlice`, `indexOfSlice`/`lastIndexOfSlice` and the `*Option`
+  variants of every index search, `prefixLength`/`segmentLength`, `distinctByKeepLast`,
+  `dropRightUntil`/`dropRightWhile`/ `takeRightUntil`/`takeRightWhile`, `splitAtInclusive`, `leftPadTo`,
+  `reverseIterator`, `unzip`/`unzip3`. As on `Vector`, `endsWith` takes an `Iterable` (it took a `Seq`), so any
+  sequence, a JDK collection or a one-shot iterator is accepted.
 - **Where a `Seq` return type was named, the type that was already returned at runtime is declared.**
   `Map.map`, `flatMap`, `collect`, `as`, `zip`, `zipWith`, `zipAll`, `zipWithIndex`, `unzip`, `unzip3` and
   `values()` say `Stream` (they all build one through `Iterator.toStream` / `Stream.ofAll`; `HashMap.values()`
@@ -965,7 +972,7 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   maps, and no kind equals another.
 - **What `Set` keeps** (decided): the set algebra (`add`, `addAll`, `remove`, `removeAll(Iterable)`, `union`,
   `intersect`, `diff`, `contains`), `filter`, `reject`, `map`, `flatMap`, `collect(Function)`, `as`, `partition`,
-  `groupBy`, `orElse` ×2, `tap`, `replace`, `replaceAll` (the same thing on a set), `retainAll`, `existsUnique`,
+  `groupBy`, `groupMap`, `groupMapReduce` (added 2026-10-03, 3.3), `orElse` ×2, `tap`, `replace`, `replaceAll` (the same thing on a set), `retainAll`, `existsUnique`,
   `max`/`maxBy` ×2/`min`/`minBy` ×2, `sum`/`product`/`average` (typed since #194, 3.3), `fold`/`reduce`/`reduceOption`, `single`/
   `singleOption`, `arrangeBy`, `collect(Collector)` ×2, the `toJava*` and `to*` conversions, `toJavaSet()`;
   `SortedSet` adds `comparator()` and the comparator-taking `map`/`flatMap`/`collect`. **What it drops**: `head`,
@@ -976,18 +983,19 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   `reduceLeft`/`reduceRight` and their `Option` variants (they name a direction), `findLast`, `forEachWithIndex`,
   `length` (`size`), `test` (with the `Predicate` supertype). A `TreeSet` thus has no `head`/`last`: its first
   element is `iterator().next()`, and the `NavigableSet` view of #26 gives `first()`/`last()`.
-- **What `Map` keeps** (decided): the map API (`get`, `getOrElse`, `put` ×4, `remove`, `removeAll` ×2, `containsKey`,
-  `containsValue`, `keySet`, `values()` as a `Vector<V>` in iteration order, `filter`/`reject` in both the
-  `Predicate` and the `BiPredicate` form, `filterKeys`/`rejectKeys`/`filterValues`/`rejectValues`, the deprecated
-  `removeKeys`/`removeValues`, `map(BiFunction)`, `mapBoth`, `mapKeys` ×2, `mapValues`, `flatMap(BiFunction)`,
-  `collect(BiFunction)`, `merge` ×2, `replace(K, V, V)`, `replaceValue`, `replaceAll(BiFunction)`, the entry-typed
-  `replace`/`replaceAll`, `retainAll`, `partition`, `groupBy`, `orElse` ×2, `tap`, `forEach(BiConsumer)`,
-  `computeIfAbsent`/`computeIfPresent`, `toJavaMap()`), plus `existsUnique`, `max`/`maxBy` ×2/`min`/`minBy` ×2 over
-  the entries, `fold`/`reduce`/`reduceOption`, `single`/`singleOption`, `arrangeBy`, `collect(Collector)` ×2 and
-  the conversions; `SortedMap` adds `comparator()` and the comparator-taking forms. **What it drops**: the same
-  positional names as `Set`, `length`, the sums, products and `average` (entries are never numbers), and every
-  sequence-shaped method step 2 had typed `Stream`: `map(Function)`, `flatMap(Function)`, `collect(Function)`,
-  `as`, `zip`/`zipWith`/`zipAll`/`zipWithIndex` ×2, `unzip` ×3, `unzip3` ×2, `scanLeft`/`scanRight`, together with
+- **What `Map` keeps** (decided): the map API (`get`, `getOrElse`, `put` ×4, `remove`, `removeAll(Iterable)`,
+  `containsKey`, `containsValue`, `keySet`, `values()` as a `Vector<V>` in iteration order, `filter`/`reject` in both
+  the `Predicate` and the `BiPredicate` form, `filterKeys`/`rejectKeys`/`filterValues`/`rejectValues` (the deprecated
+  `removeAll(BiPredicate)`, `removeKeys` and `removeValues` are deleted, 2026-10-05, #293), `map(BiFunction)`,
+  `mapBoth`, `mapKeys` ×2, `mapValues`, `flatMap(BiFunction)`, `collect(BiFunction)`, `merge` ×2, `replace(K, V, V)`,
+  `replaceValue`, `replaceAll(BiFunction)`, the entry-typed `replace`/`replaceAll`, `retainAll`, `partition`, `groupBy`,
+  `groupMap` (groups in `Vector`s), `groupMapReduce` (added 2026-10-03, 3.3), `orElse` ×2, `tap`, `forEach(BiConsumer)`,
+  `computeIfAbsent`/`computeIfPresent`, `toJavaMap()`), plus `existsUnique`, `max`/`maxBy` ×2/`min`/`minBy` ×2 over the
+  entries, `fold`/`reduce`/`reduceOption`, `single`/`singleOption`, `arrangeBy`, `collect(Collector)` ×2 and the
+  conversions; `SortedMap` adds `comparator()` and the comparator-taking forms. **What it drops**: the same positional
+  names as `Set`, `length`, the sums, products and `average` (entries are never numbers), and every sequence-shaped
+  method step 2 had typed `Stream`: `map(Function)`, `flatMap(Function)`, `collect(Function)`, `as`,
+  `zip`/`zipWith`/`zipAll`/`zipWithIndex` ×2, `unzip` ×3, `unzip3` ×2, `scanLeft`/`scanRight`, together with
   `keysIterator`, `valuesIterator` and `iterator(BiFunction)` (`keySet()` and `values()` are the replacements).
 - **`fold`, `reduce`, `reduceOption` on the sets and the maps** combine the elements in the iteration order, which a
   `HashSet`/`HashMap` does not define: their javadoc says the operation should be associative and commutative for
@@ -1657,18 +1665,17 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   factories, `tabulate`, `fill`, `flatten`, the instance `addAll`/`union` and every `distinct`. The coordinator's
   3-fork JMH run of `MapSetBuilderBenchmark` is the reference table.
 - **The tree filter family keeps the untouched subtrees (decided 2026-09-25).** `filter`, `reject` and `partition` on
-  `TreeSet`, and the whole filter family and `partition` on `TreeMap` (`filterKeys`, `rejectValues`, the deprecated
-  `remove*` too), walk the tree once with `Node.filter` / `Node.partition`, ports of `filterEntries` /
-  `partitionEntries` of the Scala 3 standard library (the Scala 2.13 collection library that Scala 3 ships unchanged):
-  a subtree whose elements are all kept is returned as it is, and the kept parts are rejoined with `join` (kept node)
-  or `join2` (removed node, the maximum of the left part as the middle value; no tuple per level). No comparator call,
-  the predicate once per element in order, and the receiver itself when nothing is removed (the conserving rule of
-  Scala's `filter`; `partition` returns the receiver as the side that gets everything). `TreeSet.removeAll` and
-  `retainAll` go through `filter` and follow. `join` with an empty side appends the value down the outer spine with
-  the same rebalancing as `insert`, without comparing. A rough same-JVM probe (thread CPU time, a loaded machine):
-  large wins when whole ranges are kept or dropped (keeping all but one of 100 000 elements about 4x faster, with no
-  copy); the worst shape, every other element dropped, costs the same time and about 1.8x the bytes of the rebuild.
-  `groupBy` stays on the builder: sharing would need one walk per group.
+  `TreeSet`, and the whole filter family and `partition` on `TreeMap` (`filterKeys`, `rejectValues`), walk the tree once
+  with `Node.filter` / `Node.partition`, ports of `filterEntries` / `partitionEntries` of the Scala 3 standard library
+  (the Scala 2.13 collection library that Scala 3 ships unchanged): a subtree whose elements are all kept is returned as
+  it is, and the kept parts are rejoined with `join` (kept node) or `join2` (removed node, the maximum of the left part
+  as the middle value; no tuple per level). No comparator call, the predicate once per element in order, and the
+  receiver itself when nothing is removed (the conserving rule of Scala's `filter`; `partition` returns the receiver as
+  the side that gets everything). `TreeSet.removeAll` and `retainAll` go through `filter` and follow. `join` with an
+  empty side appends the value down the outer spine with the same rebalancing as `insert`, without comparing. A rough
+  same-JVM probe (thread CPU time, a loaded machine): large wins when whole ranges are kept or dropped (keeping all but
+  one of 100 000 elements about 4x faster, with no copy); the worst shape, every other element dropped, costs the same
+  time and about 1.8x the bytes of the rebuild. `groupBy` stays on the builder: sharing would need one walk per group.
 - **The remaining unsorted one-at-a-time paths (decided 2026-09-25)**, each rerouted on a rough probe showing a win:
   `RedBlackTree.of(varargs)` (so `TreeSet.of`, `tabulate`, `fill`), `TreeSet.flatten` and `TreeMap.retainAll` use the
   builder, keeping the last of equal elements as the insertions did (for `retainAll`, the given entry objects).
@@ -1837,7 +1844,8 @@ deleted. Attribution in `NOTICE`.
   value (`Option`, `Either`, `Try`, `Validation`, `Lazy`, a tuple, a collection or an iterable of elements: the
   functions of `flatMap`, `collect`, `partitionMap`, `unzip`, `unfold*`, `toMap(f)`, `orElse(Supplier)`, the map
   `map`/`fill`/`tabulate`/`ofAll(stream, entryMapper)`, `Stream.cons`/`iterate`/`appendSelf`), the key a `groupBy` or
-  `arrangeBy` classifier produces, and the value a control type stores in a case (`Option.map`, `Either.map`,
+  `arrangeBy` classifier produces, the three functions of `groupMap`/`groupMapReduce` (`key`, `value`, `reduce`, added
+  2026-10-03, 3.3), and the value a control type stores in a case (`Option.map`, `Either.map`,
   `mapLeft`, `mapBoth`, `filterOrElse`, `toEither`/`toTry`/`toValidation`). The result is checked where the function
   is called: `NullPointerException("<Type>.<method>: <parameter> returned null")` (`Option.flatMap: mapper returned
   null`). A default method shared by several types names the interface that declares it (`Set.toMap`, `Map.toMap`).
@@ -2096,6 +2104,29 @@ unreleased).
   already supplies the short ones at the start of a run. The collection generators keep the internal layouts of
   #107 (dropped prefixes and slices of a `Vector`, split `Queue`s, unevaluated `Stream` tails, sets and maps after
   removals and overwrites).
+- **Non-empty sets and maps** (decided 2026-10-04, #235): `nonEmptySet`, `nonEmptySortedSet`, `nonEmptyMap` and
+  `nonEmptySortedMap` follow `nonEmptyVector`: a head drawn first, then a tail of up to the size minus one draws built
+  along the set or map layouts, joined by `addAll`/`putAll`, `fromIterable` or `fromSet`/`fromMap` (the tail with the
+  head added). The head is always in the result, so a generator whose draws all repeat still gives one element, never
+  an empty collection; when the tail holds the head's key, the tail's value is kept, the last one drawn, as in the map
+  layouts. The sorted ones take the natural order only, as `treeSet` and `treeMap` do: comparator overloads, if
+  wanted, come to all four sorted generators at once.
+- **Null values** (decided 2026-10-04, #281): `Gen<A extends @Nullable Object>`, the bound of the core containers, so
+  that a NullAway-checked caller can write `Gen<@Nullable String> g = Gen.constant(null)`. Each generator's type
+  parameters say what it accepts.
+  - Nullable, where null passes through: `constant`, `empty`, `fromIterable`, `elements`, `fromRandom`, `suspend`,
+    `oneOf`, `weighted`, `sized`, `small`, `large`, `map`, `flatMap`, `zip` and `zipWith` at every arity, `tuple2` to
+    `tuple8` (tuples allow null components, 3.9), `lazy` (a `Lazy` may hold null), `none`, and the state of
+    `unfoldGen`.
+  - Non-null, where the result rejects null: `option`, `some`, `either`, `tryOf`, `validation`, every collection
+    generator, `collectAll` and the elements of `unfoldGen` (lists). `runCollect` and `runCollectN` keep the class
+    bound and throw on a null value, since a `List` holds none.
+  - `Check`'s type parameters (generated) are nullable, and so are `Assertion`'s, with `of`, `anything`, `equalTo`,
+    `not`, `assertThat` and the combinators, so that a check of a nullable generator against `equalTo(null)` compiles
+    under NullAway (written inline, `equalTo` needs its type: `Assertion.<@Nullable String>equalTo(null)`, or a typed
+    local); the assertions on comparables, strings, iterables and the Zazr types keep non-null type parameters.
+  - The holder of `Gen.draw` keeps its `NullAway.Init` suppression: NullAway reports an unset field of a type variable
+    whatever its bound. The erasure, and so the bytecode, is unchanged.
 - **`CheckResult` loses `propertyName` and `exhausted`.** It stays a sealed interface of three records:
   `Satisfied(samples)`, `Falsified(sampleNumber, seed, counterexample, message)` and
   `Erroneous(sampleNumber, seed, cause, sample)`, with a `Throwable` cause. There are no named properties any more

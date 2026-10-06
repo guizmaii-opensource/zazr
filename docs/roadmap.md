@@ -13,14 +13,17 @@ the work and shows where it stands.
 
 ## Next releases
 
-- **[0.4.0: Scala 2.13 additions](https://github.com/guizmaii-opensource/zazr/milestone/5).** `groupMap`,
-  `groupMapReduce`, `sizeCompare`, `updateWith` on maps, range operations on sorted sets and maps, and in
-  `zazr-test` generators for the non-empty sets and maps.
+- **[0.5.0: warnings and sequence operations](https://github.com/guizmaii-opensource/zazr/milestone/6).** A
+  `Validation` that also collects warnings, which never block the result, and sequence operations such as
+  `zipWithPrevious`, `mapAccum` and `foldWhile`.
 - **[Performance](https://github.com/guizmaii-opensource/zazr/milestone/3).** Benchmarks and optimisations, shipped
   with whichever release comes next.
 
 ## Released
 
+- **[0.4.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.4.0).** More of Scala's collections:
+  `groupMap`, `groupMapReduce`, `sizeCompare`, `updateWith` on maps and range operations on sorted sets and maps. In
+  `zazr-test`, generators for the non-empty sets and maps and for null values.
 - **[0.3.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.3.0).** Modules that read and write Zazr
   types with Jackson and with avaje-jsonb.
 - **[0.2.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.2.0).** `Option.unless`, `Option.reject` and

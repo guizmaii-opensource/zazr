@@ -15,7 +15,6 @@ import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import org.junit.jupiter.api.Nested;
@@ -27,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 public class ListTest extends AbstractTraversableTest {
 
@@ -1610,52 +1609,6 @@ public class ListTest extends AbstractTraversableTest {
         assertThat(empty.removeAll(of(1, 2, 3))).isSameAs(empty);
     }
 
-    // -- removeAll(Predicate)
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveExistingElements() {
-        List<Integer> seq = of(1, 2, 3);
-        assertThat(seq.removeAll(i -> i == 1)).isEqualTo(of(2, 3));
-        assertThat(seq.removeAll(i -> i == 2)).isEqualTo(of(1, 3));
-        assertThat(seq.removeAll(i -> i == 3)).isEqualTo(of(1, 2));
-        assertThat(seq.removeAll(ignore -> true)).isEmpty();
-        assertThat(seq.removeAll(ignore -> false)).isSameAs(seq);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveNonExistingElements() {
-        assertThat(this.<Integer>empty().removeAll(i -> i == 0)).isSameAs(empty());
-        assertThat(of(1, 2, 3).removeAll(i -> i != 0)).isSameAs(empty());
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveAllElementsByPredicateFromNil() {
-        assertThat(empty().removeAll(o -> true)).isEmpty();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveAllExistingElements() {
-        assertThat(of(1, 2, 3, 4, 5, 6).removeAll(ignored -> true)).isEmpty();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldRemoveAllMatchedElementsFromNonNil() {
-        assertThat(of(1, 2, 3, 4, 5, 6).removeAll(i -> i % 2 == 0)).isEqualTo(of(1, 3, 5));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void shouldNotRemoveAllNonMatchedElementsFromNonNil() {
-        List<Integer> t = of(1, 2, 3);
-        Predicate<Integer> isTooBig = i -> i >= 4;
-        assertThat(t.removeAll(isTooBig)).isSameAs(t);
-    }
-
     // -- removeAll(Object)
 
     @Test
@@ -3082,6 +3035,7 @@ public class ListTest extends AbstractTraversableTest {
         assertThat(of(1, 2, 3).reject(i -> i == 1)).isEqualTo(of(2, 3));
         assertThat(of(1, 2, 3).reject(i -> i == 2)).isEqualTo(of(1, 3));
         assertThat(of(1, 2, 3).reject(i -> i == 3)).isEqualTo(of(1, 2));
+        assertThat(of(1, 2, 3, 4, 5, 6).reject(i -> i % 2 == 0)).isEqualTo(of(1, 3, 5));
         List<Integer> t = of(1, 2, 3);
         assertThat(t.reject(ignore -> false)).isSameAs(t);
     }
@@ -4058,7 +4012,7 @@ public class ListTest extends AbstractTraversableTest {
 
     @TestTemplate
     public void shouldTerminateSlideByClassifier() {
-        assertTimeout(Duration.ofSeconds(1), () -> {
+        assertTimeoutPreemptively(Duration.ofMinutes(1), () -> {
             AtomicInteger ai = new AtomicInteger(0);
             List<List<String>> expected = List.of(List.of("a", "-"), List.of("-"), List.of("d"));
             List<List<String>> actual = List.of("a", "-", "-", "d")

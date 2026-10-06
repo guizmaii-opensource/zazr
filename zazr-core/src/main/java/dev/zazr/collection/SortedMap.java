@@ -133,6 +133,99 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
 
     // -- Adjusted return types of Map methods
 
+    // -- Ranges, by key
+
+    /**
+     * The entries whose key is greater than or equal to {@code from}, with the same key comparator: this map itself
+     * when no key is below {@code from}. {@code from} need not be a key.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the path of {@code from} without visiting the other entries, and
+     * the result shares the rest of the tree.
+     *
+     * @param from the lower bound on the keys, inclusive
+     * @return the entries from {@code from} on
+     * @throws NullPointerException if {@code from} is null
+     */
+    SortedMap<K, V> rangeFrom(K from);
+
+    /**
+     * The entries whose key is less than {@code until}, with the same key comparator: this map itself when no key is
+     * at or above {@code until}. {@code until} need not be a key.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the path of {@code until} without visiting the other entries, and
+     * the result shares the rest of the tree.
+     *
+     * @param until the upper bound on the keys, exclusive
+     * @return the entries before {@code until}
+     * @throws NullPointerException if {@code until} is null
+     */
+    SortedMap<K, V> rangeUntil(K until);
+
+    /**
+     * The entries whose key is less than or equal to {@code to}, with the same key comparator: this map itself when
+     * no key is above {@code to}. {@code to} need not be a key.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the path of {@code to} without visiting the other entries, and the
+     * result shares the rest of the tree.
+     *
+     * @param to the upper bound on the keys, inclusive
+     * @return the entries up to {@code to}
+     * @throws NullPointerException if {@code to} is null
+     */
+    SortedMap<K, V> rangeTo(K to);
+
+    /**
+     * The entries whose key is greater than or equal to {@code from} and less than {@code until}, with the same key
+     * comparator: this map itself when every key is in the range. The range is empty, and so is the result, when
+     * {@code from} is not less than {@code until}; unlike {@link java.util.TreeMap#subMap(Object, Object)}, this does
+     * not throw when {@code from} is greater. Neither bound need be a key.
+     * <p>
+     * Complexity: O(log n): the tree is cut along the paths of the two bounds without visiting the other entries, and
+     * the result shares the rest of the tree.
+     *
+     * @param from  the lower bound on the keys, inclusive
+     * @param until the upper bound on the keys, exclusive
+     * @return the entries from {@code from} to {@code until}
+     * @throws NullPointerException if {@code from} or {@code until} is null
+     */
+    SortedMap<K, V> rangeFromUntil(K from, K until);
+
+    /**
+     * The entry with the least key greater than or equal to {@code key}: the entry of {@code key} itself when this
+     * map has one. The same as {@code rangeFrom(key).headOption()}, without building the range.
+     * <p>
+     * Complexity: O(log n): one walk down the tree.
+     *
+     * @param key the lower bound on the keys, inclusive
+     * @return {@code Some} of that entry, or {@code None} if every key is less than {@code key}
+     * @throws NullPointerException if {@code key} is null
+     */
+    Option<Tuple2<K, V>> minAfter(K key);
+
+    /**
+     * The entry with the greatest key strictly less than {@code key}: unlike {@link #minAfter(Object)}, the bound is
+     * excluded. The same as {@code rangeUntil(key).lastOption()}, without building the range.
+     * <p>
+     * Complexity: O(log n): one walk down the tree.
+     *
+     * @param key the upper bound on the keys, exclusive
+     * @return {@code Some} of that entry, or {@code None} if no key is less than {@code key}
+     * @throws NullPointerException if {@code key} is null
+     */
+    Option<Tuple2<K, V>> maxBefore(K key);
+
+    /**
+     * An iterator over the entries whose key is greater than or equal to {@code start}, in key order: the same
+     * entries as {@code rangeFrom(start).iterator()}, without building the range.
+     * <p>
+     * Complexity: O(log n) to create, then O(1) per step on average; a whole walk is O(k + log n) for k entries.
+     *
+     * @param start the lower bound on the keys, inclusive
+     * @return an iterator from {@code start} on
+     * @throws NullPointerException if {@code start} is null
+     */
+    java.util.Iterator<Tuple2<K, V>> iteratorFrom(K start);
+
     // -- Positional operations, in key order
 
     /**
@@ -465,33 +558,6 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
-     */
-    @Override
-    @Deprecated
-    SortedMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate);
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
-     */
-    @Override
-    @Deprecated
-    SortedMap<K, V> removeKeys(Predicate<? super K> predicate);
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Complexity: O(n): the new tree is built from the kept entries, which come in order, in one pass.
-     */
-    @Override
-    @Deprecated
-    SortedMap<K, V> removeValues(Predicate<? super V> predicate);
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Complexity: O(n + k log k) for k entries produced by {@code mapper}: they are sorted, then the new tree is built
      * in one pass; O(n + k) when their keys come out in order.
      */
@@ -660,7 +726,7 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n): one lookup, then one deletion when the key is present.
+     * Complexity: O(log n): one walk down the tree, then one deletion on the way back up when the key is present.
      */
     @Override
     SortedMap<K, V> remove(K key);
@@ -668,7 +734,15 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log n) for m keys: one lookup each, then one deletion for each key present.
+     * Complexity: O(log n): one lookup, then at most one insertion or deletion.
+     */
+    @Override
+    SortedMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(m log n) for m keys: one walk down the tree each, then one deletion for each key present.
      */
     @Override
     SortedMap<K, V> removeAll(Iterable<? extends K> keys);

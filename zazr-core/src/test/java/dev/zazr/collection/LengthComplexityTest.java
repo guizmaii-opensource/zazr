@@ -10,68 +10,76 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 /**
  * {@code List.Cons.size()} walks the list (a record has no field for a cached size), so every caller
- * must measure a length once, never per element. Each case below is milliseconds when linear and times out
- * when quadratic. The class runs alone, so that the time bound does not measure the other test classes running in
+ * must measure a length once, never per element. These costs are walks over the cells of a List or a Queue, which no
+ * count can observe, so each case is timed: its workload is sized so that the slow path its comment names needs over a
+ * minute and the fixed code well under a second, both measured with the same workload; the bound sits between the
+ * two. The class runs alone, so that the bound does not measure the other test classes running in
  * parallel.
  */
 @Isolated
 public class LengthComplexityTest {
 
-    private static final int N = 100_000;
-    private static final int K = 50_000;
-    private static final Duration BOUND = Duration.ofSeconds(5);
+    private static final Duration WIDE_BOUND = Duration.ofSeconds(20);
+    private static final int MILLION = 1_000_000;
+    private static final int HALF = MILLION / 2;
 
     @Test
     public void shouldDropRightAndTakeRightOfListInLinearTime() {
-        assertTimeoutPreemptively(BOUND, () -> {
-            assertThat(List.range(0, N).dropRight(K).size()).isEqualTo(N - K);
-            assertThat(List.range(0, N).takeRight(K).size()).isEqualTo(K);
+        // dropRight and takeRight of half a List of 1,000,000: over a minute when the copy measures the List per
+        // element, 75 ms fixed
+        List<Integer> list = List.range(0, MILLION);
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            assertThat(list.dropRight(HALF).size()).isEqualTo(MILLION - HALF);
+            assertThat(list.takeRight(HALF).size()).isEqualTo(HALF);
         });
     }
 
     @Test
     public void shouldDropRightAndTakeRightOfQueueInLinearTime() {
-        assertTimeoutPreemptively(BOUND, () -> {
-            assertThat(Queue.ofAll(List.range(0, N)).dropRight(K).size()).isEqualTo(N - K);
-            assertThat(Queue.ofAll(List.range(0, N)).takeRight(K).size()).isEqualTo(K);
-            assertThat(Queue.<Integer>empty()
-                            .enqueueAll(List.range(0, N))
-                            .dropRight(K)
-                            .size())
-                    .isEqualTo(N - K);
+        // dropRight and takeRight of half a Queue of 1,000,000: over a minute when the copy measures the List per
+        // element, 123 ms fixed
+        Queue<Integer> front = Queue.ofAll(List.range(0, MILLION));
+        Queue<Integer> rear = Queue.<Integer>empty().enqueueAll(List.range(0, MILLION));
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            assertThat(front.dropRight(HALF).size()).isEqualTo(MILLION - HALF);
+            assertThat(front.takeRight(HALF).size()).isEqualTo(HALF);
+            assertThat(rear.dropRight(HALF).size()).isEqualTo(MILLION - HALF);
         });
     }
 
     @Test
     public void shouldTakeRightAndDropRightOfIteratorInLinearTime() {
-        assertTimeoutPreemptively(BOUND, () -> {
-            assertThat(Iterator.range(0, N).takeRight(K).toVector().size()).isEqualTo(K);
-            assertThat(Iterator.range(0, N).dropRight(K).toVector().size()).isEqualTo(N - K);
-            assertThat(Iterator.ofAll(List.range(0, N)).takeRight(K).toVector().size())
-                    .isEqualTo(K);
-            assertThat(Iterator.ofAll(List.range(0, N)).dropRight(K).toVector().size())
-                    .isEqualTo(N - K);
+        // takeRight and dropRight of half of 1,000,000 elements: over a minute when the buffer is measured per element,
+        // 268 ms fixed
+        List<Integer> list = List.range(0, MILLION);
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            assertThat(Iterator.range(0, MILLION).takeRight(HALF).toVector().size())
+                    .isEqualTo(HALF);
+            assertThat(Iterator.range(0, MILLION).dropRight(HALF).toVector().size())
+                    .isEqualTo(MILLION - HALF);
+            assertThat(Iterator.ofAll(list).takeRight(HALF).toVector().size()).isEqualTo(HALF);
+            assertThat(Iterator.ofAll(list).dropRight(HALF).toVector().size()).isEqualTo(MILLION - HALF);
         });
     }
 
     @Test
     public void shouldGetQueueElementsWithoutMeasuringTheFront() {
-        assertTimeoutPreemptively(BOUND, () -> {
-            Queue<Integer> front = Queue.ofAll(List.range(0, N));
-            Queue<Integer> rear = Queue.<Integer>empty().enqueueAll(List.range(0, N));
+        // 100,000 reads near the front of a Queue of 1,000,000: over a minute when each read measures the front,
+        // 666 ms fixed
+        Queue<Integer> front = Queue.ofAll(List.range(0, MILLION));
+        // an index held at the back costs O(n) by design, so this Queue is smaller and read once
+        Queue<Integer> rear = Queue.<Integer>empty().enqueueAll(List.range(0, 100_000));
+        assertTimeoutPreemptively(WIDE_BOUND, () -> {
+            for (int round = 0; round < 100; round++) {
+                for (int i = 0; i < 1_000; i++) {
+                    assertThat(front.get(i)).isEqualTo(i);
+                }
+            }
             for (int i = 0; i < 1_000; i++) {
-                assertThat(front.get(i)).isEqualTo(i);
                 assertThat(rear.get(i)).isEqualTo(i);
             }
         });
     }
-
-    // The tests below pin costs that no count can observe (walking cells of a List or a Queue). Each workload is
-    // sized so that the code before the fix needs over a minute on the maintainer's machine and the fixed code well
-    // under a second, both measured there with the same workload outside JUnit; the bound sits between the two.
-
-    private static final Duration WIDE_BOUND = Duration.ofSeconds(20);
-    private static final int MILLION = 1_000_000;
 
     @Test
     public void shouldWalkOnlyThePrefixOfAList() {

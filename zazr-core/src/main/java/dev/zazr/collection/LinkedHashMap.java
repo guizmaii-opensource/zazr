@@ -793,7 +793,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @SuppressWarnings("NullAway")
     private @Nullable Slot<K, V> slotOrNull(K key) {
-        return map.getOrElse(key, null);
+        return map.getOrElse(key, (Slot<K, V>) null);
     }
 
     /**
@@ -818,11 +818,35 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         return slot == null ? defaultValue : slot.entry()._2();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: effectively O(1): one hash lookup.
+     */
+    @Override
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return Maps.getOrElse(this, key, supplier, "LinkedHashMap.getOrElse: supplier returned null");
+    }
+
     @Override
     public <C extends @Nullable Object> Map<C, LinkedHashMap<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
         return Maps.groupBy(
                 this, this::createFromEntries, classifier, "LinkedHashMap.groupBy: classifier returned null");
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, Vector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value) {
+        return Collections.groupMap(this, key, value, Vector::ofAll, "LinkedHashMap.groupMap");
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "LinkedHashMap.groupMapReduce");
     }
 
     /**
@@ -1153,13 +1177,14 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): every entry is tested, and the kept ones are put in a new map.
+     * A key already present keeps its position in the insertion order; a new key goes to the end.
+     * <p>
+     * Complexity: effectively O(1): one hash lookup, then at most one {@link #put(Object, Object)}, or one
+     * {@link #remove(Object)}, which is amortised O(1).
      */
     @Override
-    @Deprecated
-    public LinkedHashMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
+    public LinkedHashMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return Maps.updateWith(this, key, f, "LinkedHashMap.updateWith: f returned null");
     }
 
     /**
@@ -1174,20 +1199,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         HashSet<K> toRemove = HashSet.ofAll(keys);
         HashMap<K, Slot<K, V>> newMap = map.filter(t -> !toRemove.contains(t._1()));
         return newMap.size() == map.size() ? this : reindex(list, newMap);
-    }
-
-    @Override
-    @Deprecated
-    public LinkedHashMap<K, V> removeKeys(Predicate<? super K> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectKeys(predicate);
-    }
-
-    @Override
-    @Deprecated
-    public LinkedHashMap<K, V> removeValues(Predicate<? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectValues(predicate);
     }
 
     /**
@@ -2046,7 +2057,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         private void putEntry(Tuple2<K, V> entry) {
             unadopt();
             K key = entry._1();
-            @Nullable Slot<K, V> existing = slots.getOrElse(key, null);
+            @Nullable Slot<K, V> existing = slots.getOrElse(key, (Slot<K, V>) null);
             if (existing == null) {
                 slots = slots.put(key, new Slot<>(entry, offset + keys.size()));
                 keys.add(key);

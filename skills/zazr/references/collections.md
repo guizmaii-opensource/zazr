@@ -41,19 +41,32 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 | `contains`, `get`, `containsKey` | effectively O(1) | effectively O(1) | O(log n) |
 | `add`, `put`, `remove` | effectively O(1) | effectively O(1), `remove` amortised | O(log n) |
 | `head`, `take`, `drop` | none | yes | O(log n) |
+| `rangeFrom`, `rangeFromUntil`, `minAfter` | none | none | O(log n) |
 
 `NonEmptyVector` has `Vector`'s costs. `contains` on a sequence is O(n); use a set for membership.
 
 ## What every collection shares
 
 Every collection except the non-empty ones (`NonEmptyVector`, `NonEmptySet`, `NonEmptyMap` and their `Sorted` variants)
-implements `Traversable<T>`: iteration, `size()`, `isEmpty()`,
+implements `Traversable<T>`: iteration, `size()`, `sizeCompare(n)` (counts at most n + 1 elements, so it returns on an
+infinite `LazyList`), `isEmpty()`,
 `contains`, `exists`, `forAll`, `count`, `find` (an `Option`), `foldLeft`, `mkString`, `toVector`, `toList`,
 `toSet`, `stream()`, `toArray`, `asJava()`.
 
 `map`, `filter`, `flatMap` and the rest are declared by each type and return that type: `grouped` on a `List` is a
 `List` of `List`s. `partitionMap` splits in one pass with a function returning an `Either` (sequences and hash
-sets). `groupBy` returns a `Map` of groups. The static `flatten` removes one level of nesting.
+sets). `groupBy` returns a `Map` of groups, keyed in the order of their first element; `groupMap(key, value)` maps the
+elements as it groups them, and `groupMapReduce(key, value, reduce)` combines each group into one value. A map groups
+the values of its entries in a `Vector`, a `TreeSet` in a `HashSet`, and a non-empty collection returns a
+`NonEmptyMap`. The static `flatten` removes one level of nesting.
+
+```java
+var words  = List.of("apple", "bob", "avocado");
+var byChar = words.groupMap(w -> w.charAt(0), String::length);              // Map<Character, List<Integer>>
+var counts = words.groupMapReduce(w -> w.charAt(0), w -> 1, Integer::sum);  // Map<Character, Integer>
+var big    = List.range(0, 1_000_000).sizeCompare(3) > 0;                   // boolean
+// byChar is LinkedHashMap((a, List(5, 7)), (b, List(3))), counts is LinkedHashMap((a, 2), (b, 1)), big is true
+```
 
 ```java
 var split = List.of(1, 2, 3, 4) // Tuple2<List<Integer>, List<String>>
@@ -84,6 +97,35 @@ map take a function of the key and the value; `mapValues` and `filterKeys` work 
 and `values()` a `Vector`.
 `putAll(entries)` puts many entries as successive `put`s would, the argument's value winning on a shared key (Scala's
 `++`); `merge(that)` keeps this map's value and adds only the keys it lacks.
+`updateWith(key, f)` (Scala's `updatedWith`) reads and writes one key: `f` gets the value as an `Option` (`None` if
+absent) and returns `Some` of the new value, or `None` to remove the key; the receiver comes back when nothing changes (on a non-empty map, the map it wraps),
+and a `LinkedHashMap` key keeps its position. On `NonEmptyMap` and `NonEmptySortedMap` it returns the plain map, as
+`remove` does. `getOrElse(key, () -> ...)` runs the supplier only when the key is absent; always cast a `null` default
+(`(Integer) null`): `getOrElse(key, null)` is ambiguous, or picks the supplier overload and throws on a `Map<K, Object>`. A function or supplier returning `null` throws.
+
+```java
+var counts = HashMap.of("apple", 2);
+var more   = counts.updateWith("apple", n -> Option.some(n.getOrElse(0) + 1));  // HashMap<String, Integer>
+var none   = counts.updateWith("apple", n -> Option.none());                    // HashMap<String, Integer>
+var pears  = counts.getOrElse("pear", () -> 0);                                 // Integer
+// more is HashMap((apple, 3)), none is HashMap(), pears is 0
+```
+
+`TreeSet` and `TreeMap` (and `NonEmptySortedSet`, `NonEmptySortedMap`, which return the plain types) cut ranges by
+element or key in O(log n), sharing the rest of the tree: `rangeFrom(from)` (inclusive), `rangeUntil(until)`
+(exclusive), `rangeTo(to)` (inclusive) and `rangeFromUntil(from, until)`, empty when `from` is not before `until`
+(there is no instance `range`: `TreeSet.range(int, int)` is a static factory). `minAfter(x)` is the least at or after
+`x` (inclusive), `maxBefore(x)` the greatest strictly before `x`, both an `Option` (of a `Tuple2` on a map);
+`iteratorFrom(start)` iterates from `start` on.
+
+```java
+var scores = TreeSet.of(10, 20, 30, 40);
+var middle = scores.rangeFromUntil(20, 40);                    // TreeSet<Integer>
+var next   = scores.minAfter(20);                              // Option<Integer>
+var before = scores.maxBefore(20);                             // Option<Integer>
+var later  = TreeMap.of(1, "a", 2, "b", 3, "c").rangeFrom(2);  // TreeMap<Integer, String>
+// middle is TreeSet(20, 30), next is Some(20), before is Some(10), later is TreeMap((2, b), (3, c))
+```
 
 ## Build in bulk
 

@@ -1191,6 +1191,15 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         }
     }
 
+    /**
+     * The elements that do not satisfy {@code predicate}, in order: the complement of {@link #filter(Predicate)}.
+     * <p>
+     * Complexity: O(n); this List itself is returned when no element satisfies {@code predicate}.
+     *
+     * @param predicate the condition of the elements left out
+     * @return a new List of the elements that do not satisfy {@code predicate}, or this List if none does
+     * @throws NullPointerException if {@code predicate} is null
+     */
     default List<T> reject(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         return Collections.reject(this, predicate, kept -> filter(kept));
@@ -1261,6 +1270,48 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
 
     default <C extends @Nullable Object> Map<C, List<T>> groupBy(Function<? super T, ? extends C> classifier) {
         return Collections.groupBy(this, classifier, List::ofAll, "List.groupBy: classifier returned null");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, each replaced in its group by what {@code value} returns,
+     * in a map ordered by the first occurrence of each key; each group keeps the order of this List. The same as
+     * {@code groupBy(key).mapValues(group -> group.map(value))}, in one pass.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per element.
+     *
+     * @param key   the key of an element
+     * @param value what an element becomes in its group
+     * @param <K>   the key type
+     * @param <U>   the type of the grouped values
+     * @return the groups by key
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    default <K extends @Nullable Object, U extends @Nullable Object> Map<K, List<U>> groupMap(
+            Function<? super T, ? extends K> key, Function<? super T, ? extends U> value) {
+        return Collections.groupMap(this, key, value, List::ofAll, "List.groupMap");
+    }
+
+    /**
+     * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
+     * group combined from the left with {@code reduce}, in a map ordered by the first occurrence of each key. The same
+     * as {@code groupMap(key, value).mapValues(group -> group.reduceLeft(reduce))}, in one pass and without building
+     * the groups: {@code words.groupMapReduce(word -> word, word -> 1, Integer::sum)} counts the words.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
+     *
+     * @param key    the key of an element
+     * @param value  what an element contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next element
+     * @param <K>    the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    default <K extends @Nullable Object, U extends @Nullable Object> Map<K, U> groupMapReduce(
+            Function<? super T, ? extends K> key,
+            Function<? super T, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "List.groupMapReduce");
     }
 
     /**
@@ -2191,22 +2242,6 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default List<T> removeAll(Iterable<? extends T> elements) {
         return Collections.removeAll(this, elements, kept -> filter(kept));
-    }
-
-    /**
-     * This List without the elements satisfying {@code predicate}.
-     * <p>
-     * Complexity: O(n).
-     *
-     * @deprecated use {@link #reject(Predicate)}
-     * @param predicate the condition
-     * @return a new List
-     * @throws NullPointerException if {@code predicate} is null
-     */
-    @Deprecated
-    default List<T> removeAll(Predicate<? super T> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
     }
 
     /**
@@ -3845,6 +3880,27 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     @Override
     int size();
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(min(n, k)) for k = {@code otherSize}: at most k + 1 cells are walked, where size() walks them all.
+     */
+    @Override
+    default int sizeCompare(int otherSize) {
+        if (otherSize < 0) {
+            return 1;
+        }
+        @SuppressWarnings("Var")
+        int count = 0;
+        for (List<T> cell = this; !cell.isEmpty(); cell = cell.tail()) {
+            if (count == otherSize) {
+                return 1;
+            }
+            count++;
+        }
+        return count == otherSize ? 0 : -1;
+    }
 
     /**
      * Collects the elements with {@code collector}, as {@code stream().collect(collector)} does.

@@ -715,6 +715,78 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
         return NonEmptyMap.unsafeFromMap(groups.result());
     }
 
+    /**
+     * The entries grouped by the key {@code key} computes, each replaced in its group by what {@code value}
+     * returns; each group is a non-empty vector in this
+     * map's key order, as {@link TreeMap#groupMap} does.
+     * <p>
+     * Complexity: O(n): one key, one value and one hash lookup per entry.
+     *
+     * @param key   the key of an entry
+     * @param value what an entry becomes in its group
+     * @param <K2>  the key type
+     * @param <U>   the type of the grouped values
+     * @return the groups, each non-empty, in a non-empty map
+     * @throws NullPointerException if {@code key} or {@code value} is null, or returns null
+     */
+    public <K2 extends @Nullable Object, U extends @Nullable Object> NonEmptyMap<K2, NonEmptyVector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value) {
+        return NonEmptyModule.groupMap(
+                map,
+                key,
+                value,
+                values -> NonEmptyVector.unsafeFromVector(Vector.ofAll(values)),
+                "NonEmptySortedMap.groupMap");
+    }
+
+    /**
+     * The entries grouped by the key {@code key} computes, the values {@code value} returns for the entries of a
+     * group combined from the left with {@code reduce} in this map's key order, as {@link TreeMap#groupMapReduce} does.
+     * <p>
+     * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per entry.
+     *
+     * @param key    the key of an entry
+     * @param value  what an entry contributes to its group
+     * @param reduce combines the result so far of a group with the value of its next entry
+     * @param <K2>   the key type
+     * @param <U>    the type of the values and of their combination
+     * @return the combined value of each group, by key, in a non-empty map
+     * @throws NullPointerException if {@code key}, {@code value} or {@code reduce} is null, or returns null
+     */
+    public <K2 extends @Nullable Object, U extends @Nullable Object> NonEmptyMap<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return NonEmptyModule.groupMapReduce(map, key, value, reduce, "NonEmptySortedMap.groupMapReduce");
+    }
+
+    /**
+     * Compares the size of this map with {@code otherSize}, as {@link TreeMap#sizeCompare(int)} does.
+     * <p>
+     * Complexity: O(1): the stored size is compared.
+     *
+     * @param otherSize the size to compare with; a negative one is smaller than every size
+     * @return -1, 0 or 1 as the size of this map is smaller than, equal to or greater than {@code otherSize}
+     */
+    public int sizeCompare(int otherSize) {
+        return map.sizeCompare(otherSize);
+    }
+
+    /**
+     * Compares the size of this map with the size of {@code that}, as {@link TreeMap#sizeCompare(Iterable)} does:
+     * a size that is not stored is counted only up to this one, and a one-shot {@code that} is iterated once.
+     * <p>
+     * Complexity: O(min(n, m)), at most; O(1) when the size of {@code that} is stored.
+     *
+     * @param that the collection whose size this one is compared with
+     * @return -1, 0 or 1 as the size of this map is smaller than, equal to or greater than the size of
+     *     {@code that}
+     * @throws NullPointerException if {@code that} is null
+     */
+    public int sizeCompare(Iterable<?> that) {
+        return map.sizeCompare(that);
+    }
+
     /* the plain operations that cannot empty a non-empty map return the same instance when nothing changes */
     private NonEmptySortedMap<K, V> wrap(TreeMap<K, V> result) {
         return result == map ? this : new NonEmptySortedMap<>(result);
@@ -891,6 +963,22 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     public TreeMap<K, V> remove(K key) {
         return map.remove(key);
+    }
+
+    /**
+     * Updates, adds or removes the mapping of {@code key} with what {@code f} makes of its current value, as
+     * {@link Map#updateWith(Object, Function)}. The result is a {@link TreeMap}, as {@link #remove(Object)}'s, since
+     * {@code f} may remove the last key; when nothing changes, it is the map this one wraps.
+     * <p>
+     * Complexity: O(log n), as {@link TreeMap#updateWith(Object, Function)}.
+     *
+     * @param key A key
+     * @param f   The new value of {@code key}, given its current one: {@code None} removes it
+     * @return this map's entries with the mapping of {@code key} updated, added or removed
+     * @throws NullPointerException if {@code f} is null, or returns null
+     */
+    public TreeMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return map.updateWith(key, f, "NonEmptySortedMap.updateWith: f returned null");
     }
 
     /**
@@ -1231,12 +1319,29 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
+     * Complexity: O(log n), as {@link TreeMap#getOrElse(Object, Object)}.
+     *
      * @param key          A key
      * @param defaultValue The result when {@code key} is absent
      * @return the value of {@code key}, or {@code defaultValue}
      */
     public V getOrElse(K key, V defaultValue) {
         return map.getOrElse(key, defaultValue);
+    }
+
+    /**
+     * The value of {@code key}, or the value {@code supplier} gives if {@code key} is absent: {@code supplier} runs
+     * only then, once. As {@link Map#getOrElse(Object, Supplier)}.
+     * <p>
+     * Complexity: O(log n), as {@link TreeMap#getOrElse(Object, Supplier)}.
+     *
+     * @param key      A key
+     * @param supplier Gives the result when {@code key} is absent
+     * @return the value of {@code key}, or the value {@code supplier} gives
+     * @throws NullPointerException if {@code supplier} is null, or returns null
+     */
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return map.getOrElse(key, supplier, "NonEmptySortedMap.getOrElse: supplier returned null");
     }
 
     /**
@@ -1616,6 +1721,87 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
             Comparator<? super K2> comparator,
             Function<? super Tuple2<K, V>, ? extends Tuple2<? extends K2, ? extends V2>> f) {
         return NonEmptySortedMap.ofMappedEntries(comparator, map, f, "NonEmptySortedMap.toSortedMap");
+    }
+
+    // -- ranges, by key: the result may be empty
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeFrom(Object)}.
+     *
+     * @param from the lower bound on the keys, inclusive
+     * @return the entries whose key is greater than or equal to {@code from}
+     * @throws NullPointerException if {@code from} is null
+     */
+    public TreeMap<K, V> rangeFrom(K from) {
+        return map.rangeFrom(from);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeUntil(Object)}.
+     *
+     * @param until the upper bound on the keys, exclusive
+     * @return the entries whose key is less than {@code until}
+     * @throws NullPointerException if {@code until} is null
+     */
+    public TreeMap<K, V> rangeUntil(K until) {
+        return map.rangeUntil(until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeTo(Object)}.
+     *
+     * @param to the upper bound on the keys, inclusive
+     * @return the entries whose key is less than or equal to {@code to}
+     * @throws NullPointerException if {@code to} is null
+     */
+    public TreeMap<K, V> rangeTo(K to) {
+        return map.rangeTo(to);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#rangeFromUntil(Object, Object)}.
+     *
+     * @param from  the lower bound on the keys, inclusive
+     * @param until the upper bound on the keys, exclusive
+     * @return the entries whose key is greater than or equal to {@code from} and less than {@code until}; none when
+     *         {@code from} is not less than {@code until}
+     * @throws NullPointerException if {@code from} or {@code until} is null
+     */
+    public TreeMap<K, V> rangeFromUntil(K from, K until) {
+        return map.rangeFromUntil(from, until);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#minAfter(Object)}.
+     *
+     * @param key the lower bound on the keys, inclusive
+     * @return the entry with the least key greater than or equal to {@code key}, if any
+     * @throws NullPointerException if {@code key} is null
+     */
+    public Option<Tuple2<K, V>> minAfter(K key) {
+        return map.minAfter(key);
+    }
+
+    /**
+     * Complexity: O(log n), as {@link TreeMap#maxBefore(Object)}.
+     *
+     * @param key the upper bound on the keys, exclusive
+     * @return the entry with the greatest key strictly less than {@code key}, if any
+     * @throws NullPointerException if {@code key} is null
+     */
+    public Option<Tuple2<K, V>> maxBefore(K key) {
+        return map.maxBefore(key);
+    }
+
+    /**
+     * Complexity: O(log n) to create, then O(1) per step on average, as {@link TreeMap#iteratorFrom(Object)}.
+     *
+     * @param start the lower bound on the keys, inclusive
+     * @return an iterator over the entries whose key is greater than or equal to {@code start}, in key order
+     * @throws NullPointerException if {@code start} is null
+     */
+    public java.util.Iterator<Tuple2<K, V>> iteratorFrom(K start) {
+        return map.iteratorFrom(start);
     }
 
     // -- returns Option

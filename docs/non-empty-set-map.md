@@ -19,9 +19,7 @@ operations that mean nothing on a non-empty collection:
 - `isEmpty`, `nonEmpty`, `orElse` and `toNonEmptySet` (or `toNonEmptyMap`, and so on), which would always give the
   same answer;
 - the `Option` forms of what is total here: `reduceOption`, `singleOption`, and on the sorted ones `headOption`,
-  `lastOption`, `tailOption` and `initOption`;
-- on the maps, `removeKeys` and `removeValues`, which the plain maps keep only as older names of `rejectKeys` and
-  `rejectValues`.
+  `lastOption`, `tailOption` and `initOption`.
 
 ## Total operations
 
@@ -46,8 +44,8 @@ The return type tells you whether the result can be empty:
 | Returns | When | For example |
 |---|---|---|
 | the non-empty type | the operation cannot remove every element | `add`, `addAll`, `union`, `map`, `put`, `putAll`, `merge`, `mapValues`, `replace` |
-| the plain type | the operation may remove elements | `filter`, `remove`, `intersect`, `diff`, `take`, `drop`, `tail` |
-| `Option` | you ask for a part that may not exist | `find`, `get`, `tailNonEmpty()`, `initNonEmpty()` |
+| the plain type | the operation may remove elements | `filter`, `remove`, `updateWith`, `intersect`, `diff`, `take`, `drop`, `tail`, `rangeFrom` |
+| `Option` | you ask for a part that may not exist | `find`, `get`, `tailNonEmpty()`, `initNonEmpty()`, `minAfter`, `maxBefore` |
 
 `addAll`, `union`, `putAll` and `merge` accept a collection that may be empty and still return the non-empty type.
 `map` on a set may merge equal results, and `map` on a map equal keys, but never down to nothing.
@@ -56,6 +54,9 @@ On a map, `keySet()` returns a `NonEmptySet` (a `NonEmptySortedSet` on a `NonEmp
 `NonEmptyVector`. `groupBy` returns a `NonEmptyMap` whose values are non-empty, and on the sorted variants `grouped`,
 `sliding` and `slideBy` return a `Vector` of them. `toMap` returns a `NonEmptyMap` and `toSortedMap` a
 `NonEmptySortedMap`, on these types and on `NonEmptyVector`: a non-empty source gives at least one entry.
+
+`groupMap` returns a `NonEmptyMap` too, of non-empty groups: a `NonEmptySet` of the values on the sets, a
+`NonEmptyVector` on the maps. `groupMapReduce` returns a `NonEmptyMap` of one value per group.
 
 ```java
 // NonEmptyMap<Integer, NonEmptySet<String>>

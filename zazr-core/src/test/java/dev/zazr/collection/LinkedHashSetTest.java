@@ -328,6 +328,12 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
         assertThat(empty.reject(v -> true)).isSameAs(empty);
     }
 
+    @Test
+    public void shouldKeepTheInsertionOrderThroughReject() {
+        // the insertion order is neither the natural order nor the hash order
+        assertThat(LinkedHashSet.of(5, 3, 9, 1, 4).reject(i -> i == 9)).containsExactly(5, 3, 1, 4);
+    }
+
     // -- flatMap
 
     @TestTemplate

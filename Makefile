@@ -134,7 +134,7 @@ fmt: ## format the sources with the Palantir Java Format (spotless apply)
 fmt-check: ## fail if sources are not formatted with the Palantir Java Format (spotless check)
 	$(MVN) spotless:check
 
-nullness: ## NullAway / JSpecify nullness check of the main sources of zazr-core, zazr-jackson and zazr-avaje-jsonb (classes in <module>/target/nullaway)
+nullness: ## NullAway / JSpecify nullness check of the main sources of zazr-core, zazr-test, zazr-jackson and zazr-avaje-jsonb (classes in <module>/target/nullaway)
 	$(MVN) -Pnullaway compile
 
 reassignment: ## fail when a local variable or a parameter is assigned after its declaration (Error Prone Var, main and test sources)

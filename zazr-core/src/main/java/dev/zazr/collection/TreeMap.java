@@ -1224,15 +1224,10 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return Maps.computeIfPresent(this, key, remappingFunction);
     }
 
-    /**
-     * Creates a lookup-only entry for the given key.
-     * <p>
-     * {@code entries} is ordered by key alone, so the value of the probe is never read -- it only
-     * has to be type-compatible. Kept in one place so the null value is justified exactly once.
-     */
-    @SuppressWarnings("NullAway")
-    private static <K extends @Nullable Object, V extends @Nullable Object> Tuple2<K, V> lookupEntry(K key) {
-        return new Tuple2<>(key, null);
+    // the stored entry of `key`, or null: `key` is compared with the key of each entry in place, so no probe entry
+    // and no Option are made
+    private @Nullable Tuple2<K, V> entryOf(K key) {
+        return RedBlackTreeModule.Node.findByKey(entries, key, comparator(), true);
     }
 
     /**
@@ -1252,7 +1247,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public boolean containsKey(K key) {
-        return entries.contains(lookupEntry(key));
+        return entryOf(key) != null;
     }
 
     /**
@@ -1397,7 +1392,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public Option<V> get(K key) {
-        return entries.find(TreeMap.<K, V>lookupEntry(key)).map(Tuple2::_2);
+        Tuple2<K, V> entry = entryOf(key);
+        return entry == null ? Option.none() : Option.some(entry._2());
     }
 
     /**
@@ -1407,13 +1403,45 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public V getOrElse(K key, V defaultValue) {
-        return get(key).getOrElse(defaultValue);
+        Tuple2<K, V> entry = entryOf(key);
+        return entry == null ? defaultValue : entry._2();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(log n), as {@link #get(Object)}.
+     */
+    @Override
+    public V getOrElse(K key, Supplier<? extends V> supplier) {
+        return getOrElse(key, supplier, "TreeMap.getOrElse: supplier returned null");
+    }
+
+    // also NonEmptySortedMap's, whose message names it
+    V getOrElse(K key, Supplier<? extends V> supplier, String nullResult) {
+        Objects.requireNonNull(supplier, "supplier is null");
+        Tuple2<K, V> entry = entryOf(key);
+        return entry == null ? Objects.requireNonNull(supplier.get(), nullResult) : entry._2();
     }
 
     @Override
     public <C extends @Nullable Object> Map<C, TreeMap<K, V>> groupBy(
             Function<? super Tuple2<K, V>, ? extends C> classifier) {
         return Maps.groupBy(this, this::createFromEntries, classifier, "TreeMap.groupBy: classifier returned null");
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, Vector<U>> groupMap(
+            Function<? super Tuple2<K, V>, ? extends K2> key, Function<? super Tuple2<K, V>, ? extends U> value) {
+        return Collections.groupMap(this, key, value, Vector::ofAll, "TreeMap.groupMap");
+    }
+
+    @Override
+    public <K2 extends @Nullable Object, U extends @Nullable Object> Map<K2, U> groupMapReduce(
+            Function<? super Tuple2<K, V>, ? extends K2> key,
+            Function<? super Tuple2<K, V>, ? extends U> value,
+            BiFunction<? super U, ? super U, ? extends U> reduce) {
+        return Collections.groupMapReduceToMap(this, key, value, reduce, "TreeMap.groupMapReduce");
     }
 
     @Override
@@ -1621,50 +1649,39 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public TreeMap<K, V> remove(K key) {
-        Tuple2<K, V> entry = lookupEntry(key);
-        if (entries.contains(entry)) {
-            return new TreeMap<>(entries.delete(entry));
-        } else {
-            return this;
-        }
+        RedBlackTree<Tuple2<K, V>> removed = withoutKey(entries, key);
+        return removed == entries ? this : new TreeMap<>(removed);
+    }
+
+    // `tree` without the entry of `key`, or `tree` itself when there is none: `key` is compared with the key of each
+    // entry in place, in one walk, so no probe entry is made
+    private RedBlackTree<Tuple2<K, V>> withoutKey(RedBlackTree<Tuple2<K, V>> tree, K key) {
+        return RedBlackTreeModule.Node.deleteByKey(tree, key, comparator(), true);
     }
 
     @Override
-    @Deprecated
-    public TreeMap<K, V> removeAll(BiPredicate<? super K, ? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return reject(predicate);
+    public TreeMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
+        return updateWith(key, f, "TreeMap.updateWith: f returned null");
+    }
+
+    // also NonEmptySortedMap's, whose message names it
+    TreeMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f, String nullResult) {
+        return Maps.updateWith(this, key, f, nullResult);
     }
 
     @Override
     public TreeMap<K, V> removeAll(Iterable<? extends K> keys) {
+        Objects.requireNonNull(keys, "keys is null");
         @SuppressWarnings("Var")
         RedBlackTree<Tuple2<K, V>> removed = entries;
         for (K key : keys) {
-            Tuple2<K, V> entry = lookupEntry(key);
-            if (removed.contains(entry)) {
-                removed = removed.delete(entry);
-            }
+            removed = withoutKey(removed, key);
         }
-        if (removed.size() == entries.size()) {
+        if (removed == entries) {
             return this;
         } else {
             return new TreeMap<>(removed);
         }
-    }
-
-    @Override
-    @Deprecated
-    public TreeMap<K, V> removeKeys(Predicate<? super K> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectKeys(predicate);
-    }
-
-    @Override
-    @Deprecated
-    public TreeMap<K, V> removeValues(Predicate<? super V> predicate) {
-        Objects.requireNonNull(predicate, "predicate is null");
-        return rejectValues(predicate);
     }
 
     @Override
@@ -1762,6 +1779,51 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     // -- Object
+
+    // -- Ranges, by key
+
+    @Override
+    public TreeMap<K, V> rangeFrom(K from) {
+        Objects.requireNonNull(from, "from is null");
+        return withEntries(RedBlackTreeModule.Node.rangeFrom(entries, from, comparator(), true));
+    }
+
+    @Override
+    public TreeMap<K, V> rangeUntil(K until) {
+        Objects.requireNonNull(until, "until is null");
+        return withEntries(RedBlackTreeModule.Node.rangeUntil(entries, until, comparator(), true));
+    }
+
+    @Override
+    public TreeMap<K, V> rangeTo(K to) {
+        Objects.requireNonNull(to, "to is null");
+        return withEntries(RedBlackTreeModule.Node.rangeTo(entries, to, comparator(), true));
+    }
+
+    @Override
+    public TreeMap<K, V> rangeFromUntil(K from, K until) {
+        Objects.requireNonNull(from, "from is null");
+        Objects.requireNonNull(until, "until is null");
+        return withEntries(RedBlackTreeModule.Node.range(entries, from, until, comparator(), true));
+    }
+
+    @Override
+    public Option<Tuple2<K, V>> minAfter(K key) {
+        Objects.requireNonNull(key, "key is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.minAfter(entries, key, comparator(), true));
+    }
+
+    @Override
+    public Option<Tuple2<K, V>> maxBefore(K key) {
+        Objects.requireNonNull(key, "key is null");
+        return Option.ofNullable(RedBlackTreeModule.Node.maxBefore(entries, key, comparator(), true));
+    }
+
+    @Override
+    public java.util.Iterator<Tuple2<K, V>> iteratorFrom(K start) {
+        Objects.requireNonNull(start, "start is null");
+        return RedBlackTreeModule.Node.iteratorFrom(entries, start, comparator(), true);
+    }
 
     // -- Positional operations, in the comparator's order
 

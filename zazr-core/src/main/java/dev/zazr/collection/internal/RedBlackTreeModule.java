@@ -7,6 +7,7 @@ import dev.zazr.collection.Vector;
 import dev.zazr.collection.internal.RedBlackTreeModule.Empty;
 import dev.zazr.collection.internal.RedBlackTreeModule.Node;
 import dev.zazr.control.Option;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -216,50 +217,95 @@ public interface RedBlackTreeModule {
                 Node<T> node = (Node<T>) tree;
                 int comparison = node.comparator().compare(value, node.value);
                 if (comparison < 0) {
-                    Tuple2<? extends RedBlackTree<T>, Boolean> deleted = delete(node.left, value);
-                    RedBlackTree<T> l = deleted._1();
-                    boolean d = deleted._2();
-                    if (d) {
-                        return Node.unbalancedRight(
-                                node.color, node.blackHeight - 1, l, node.value, node.right, node.empty);
-                    } else {
-                        Node<T> newNode =
-                                new Node<>(node.color, node.blackHeight, l, node.value, node.right, node.empty);
-                        return Tuple.of(newNode, false);
-                    }
+                    return deletedLeft(node, delete(node.left, value));
                 } else if (comparison > 0) {
-                    Tuple2<? extends RedBlackTree<T>, Boolean> deleted = delete(node.right, value);
-                    RedBlackTree<T> r = deleted._1();
-                    boolean d = deleted._2();
-                    if (d) {
-                        return Node.unbalancedLeft(
-                                node.color, node.blackHeight - 1, node.left, node.value, r, node.empty);
-                    } else {
-                        Node<T> newNode =
-                                new Node<>(node.color, node.blackHeight, node.left, node.value, r, node.empty);
-                        return Tuple.of(newNode, false);
-                    }
+                    return deletedRight(node, delete(node.right, value));
                 } else {
-                    if (node.right.isEmpty()) {
-                        if (node.color == BLACK) {
-                            return blackify(node.left);
-                        } else {
-                            return Tuple.of(node.left, false);
-                        }
-                    } else {
-                        Node<T> nodeRight = (Node<T>) node.right;
-                        Tuple3<? extends RedBlackTree<T>, Boolean, T> newRight = deleteMin(nodeRight);
-                        RedBlackTree<T> r = newRight._1();
-                        boolean d = newRight._2();
-                        T m = newRight._3();
-                        if (d) {
-                            return Node.unbalancedLeft(node.color, node.blackHeight - 1, node.left, m, r, node.empty);
-                        } else {
-                            RedBlackTree<T> newNode =
-                                    new Node<>(node.color, node.blackHeight, node.left, m, r, node.empty);
-                            return Tuple.of(newNode, false);
-                        }
-                    }
+                    return deleteRoot(node);
+                }
+            }
+        }
+
+        /// `tree` without the element whose key equals `key`, or `tree` itself when there is none: a deletion
+        /// by key, with no probe element. `key` is the first argument of each comparison, as in [#findByKey];
+        /// an empty tree compares nothing. One walk down the tree, then the rebalancing of
+        /// [#delete(RedBlackTree, Object)] on the way back up when the key is found, O(log n); nothing is
+        /// allocated when it is not.
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> deleteByKey(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            Tuple2<? extends RedBlackTree<E>, Boolean> deleted = doDeleteByKey(tree, key, comparator, entries);
+            return deleted == null ? tree : color(deleted._1(), BLACK);
+        }
+
+        // as `delete`, but `null` when no key equals `key`, passed up unchanged so that no level is rebuilt; the depth
+        // of the recursion is the height of the tree, at most 2 log2(n + 1)
+        private static <E extends @Nullable Object, K extends @Nullable Object> @Nullable
+                Tuple2<? extends RedBlackTree<E>, Boolean> doDeleteByKey(
+                        RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return null;
+            }
+            int c = compareKey(comparator, entries, key, node.value);
+            if (c < 0) {
+                Tuple2<? extends RedBlackTree<E>, Boolean> deleted = doDeleteByKey(node.left, key, comparator, entries);
+                return deleted == null ? null : deletedLeft(node, deleted);
+            } else if (c > 0) {
+                Tuple2<? extends RedBlackTree<E>, Boolean> deleted =
+                        doDeleteByKey(node.right, key, comparator, entries);
+                return deleted == null ? null : deletedRight(node, deleted);
+            } else {
+                return deleteRoot(node);
+            }
+        }
+
+        // `node` with its left subtree replaced by `deleted`, the result of a deletion from it, and whether the black
+        // height of the result dropped
+        private static <T extends @Nullable Object> Tuple2<? extends RedBlackTree<T>, Boolean> deletedLeft(
+                Node<T> node, Tuple2<? extends RedBlackTree<T>, Boolean> deleted) {
+            RedBlackTree<T> l = deleted._1();
+            boolean d = deleted._2();
+            if (d) {
+                return Node.unbalancedRight(node.color, node.blackHeight - 1, l, node.value, node.right, node.empty);
+            } else {
+                Node<T> newNode = new Node<>(node.color, node.blackHeight, l, node.value, node.right, node.empty);
+                return Tuple.of(newNode, false);
+            }
+        }
+
+        // `node` with its right subtree replaced by `deleted`, the result of a deletion from it, and whether the black
+        // height of the result dropped
+        private static <T extends @Nullable Object> Tuple2<? extends RedBlackTree<T>, Boolean> deletedRight(
+                Node<T> node, Tuple2<? extends RedBlackTree<T>, Boolean> deleted) {
+            RedBlackTree<T> r = deleted._1();
+            boolean d = deleted._2();
+            if (d) {
+                return Node.unbalancedLeft(node.color, node.blackHeight - 1, node.left, node.value, r, node.empty);
+            } else {
+                Node<T> newNode = new Node<>(node.color, node.blackHeight, node.left, node.value, r, node.empty);
+                return Tuple.of(newNode, false);
+            }
+        }
+
+        // `node` without its own element, and whether the black height of the result dropped
+        private static <T extends @Nullable Object> Tuple2<? extends RedBlackTree<T>, Boolean> deleteRoot(
+                Node<T> node) {
+            if (node.right.isEmpty()) {
+                if (node.color == BLACK) {
+                    return blackify(node.left);
+                } else {
+                    return Tuple.of(node.left, false);
+                }
+            } else {
+                Node<T> nodeRight = (Node<T>) node.right;
+                Tuple3<? extends RedBlackTree<T>, Boolean, T> newRight = deleteMin(nodeRight);
+                RedBlackTree<T> r = newRight._1();
+                boolean d = newRight._2();
+                T m = newRight._3();
+                if (d) {
+                    return Node.unbalancedLeft(node.color, node.blackHeight - 1, node.left, m, r, node.empty);
+                } else {
+                    RedBlackTree<T> newNode = new Node<>(node.color, node.blackHeight, node.left, m, r, node.empty);
+                    return Tuple.of(newNode, false);
                 }
             }
         }
@@ -694,6 +740,183 @@ public interface RedBlackTreeModule {
             }
         }
 
+        // -- ranges by key
+
+        // The range operations compare a bound with the key of an element: the element itself for a set
+        // (`entries` false), the first component of a `Tuple2` entry for a map (`entries` true), so that no probe
+        // element is built. They are ports of `from`, `until`, `to`, `range`, `minAfter` and `maxBefore` (and their
+        // `doFrom`, `doUntil`, `doTo`, `doRange` helpers) in `scala.collection.immutable.RedBlackTree` of the Scala
+        // 2.13 collections library, which Scala 3 uses unchanged: the walk follows the path of the bound, every
+        // subtree wholly inside the range is kept as it is, and the kept parts are rejoined with [#join], so the result
+        // shares every untouched subtree and is `tree` itself when nothing is cut.
+
+        @SuppressWarnings("unchecked")
+        private static <E extends @Nullable Object, K extends @Nullable Object> int compareKey(
+                Comparator<? super K> comparator, boolean entries, K key, E element) {
+            K other = entries ? ((Tuple2<K, ?>) element)._1() : (K) element;
+            return comparator.compare(key, other);
+        }
+
+        // `tree` itself when nothing is cut, otherwise the result with a black root
+        private static <E extends @Nullable Object> RedBlackTree<E> blackRoot(
+                RedBlackTree<E> tree, RedBlackTree<E> cut) {
+            return cut == tree ? tree : color(cut, BLACK);
+        }
+
+        /// The elements whose key is greater than or equal to `from`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> rangeFrom(
+                RedBlackTree<E> tree, K from, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doFrom(tree, from, comparator, entries));
+        }
+
+        /// The elements whose key is less than `until`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> rangeUntil(
+                RedBlackTree<E> tree, K until, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doUntil(tree, until, comparator, entries));
+        }
+
+        /// The elements whose key is less than or equal to `to`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> rangeTo(
+                RedBlackTree<E> tree, K to, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doTo(tree, to, comparator, entries));
+        }
+
+        /// The elements whose key is greater than or equal to `from` and less than `until`; none when `from` is not
+        /// less than `until`. O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> range(
+                RedBlackTree<E> tree, K from, K until, Comparator<? super K> comparator, boolean entries) {
+            return blackRoot(tree, doRange(tree, from, until, comparator, entries));
+        }
+
+        // the depth of the recursion of the four walks below is the height of the tree, at most 2 log2(n + 1)
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doFrom(
+                RedBlackTree<E> tree, K from, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, from, node.value) > 0) {
+                return doFrom(node.right, from, comparator, entries);
+            }
+            RedBlackTree<E> left = doFrom(node.left, from, comparator, entries);
+            return left == node.left ? node : join(left, node.value, node.right);
+        }
+
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doUntil(
+                RedBlackTree<E> tree, K until, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, until, node.value) <= 0) {
+                return doUntil(node.left, until, comparator, entries);
+            }
+            RedBlackTree<E> right = doUntil(node.right, until, comparator, entries);
+            return right == node.right ? node : join(node.left, node.value, right);
+        }
+
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doTo(
+                RedBlackTree<E> tree, K to, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, to, node.value) < 0) {
+                return doTo(node.left, to, comparator, entries);
+            }
+            RedBlackTree<E> right = doTo(node.right, to, comparator, entries);
+            return right == node.right ? node : join(node.left, node.value, right);
+        }
+
+        private static <E extends @Nullable Object, K extends @Nullable Object> RedBlackTree<E> doRange(
+                RedBlackTree<E> tree, K from, K until, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> node)) {
+                return tree;
+            } else if (compareKey(comparator, entries, from, node.value) > 0) {
+                return doRange(node.right, from, until, comparator, entries);
+            } else if (compareKey(comparator, entries, until, node.value) <= 0) {
+                return doRange(node.left, from, until, comparator, entries);
+            }
+            RedBlackTree<E> left = doFrom(node.left, from, comparator, entries);
+            RedBlackTree<E> right = doUntil(node.right, until, comparator, entries);
+            return left == node.left && right == node.right ? node : join(left, node.value, right);
+        }
+
+        /// The element whose key equals `key`, or `null` when there is none: a lookup by key, with no probe
+        /// element and no `Option`. `key` is the first argument of each comparison, as the probe element is in
+        /// [Node#find]; an empty tree compares nothing. One walk down the tree, O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E findByKey(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            while (t instanceof Node<E> node) {
+                int c = compareKey(comparator, entries, key, node.value);
+                if (c == 0) {
+                    return node.value;
+                }
+                t = c < 0 ? node.left : node.right;
+            }
+            return null;
+        }
+
+        /// The least element whose key is greater than or equal to `key`, or `null` when there is none. One walk
+        /// down the tree, O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E minAfter(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
+            E result = null;
+            while (t instanceof Node<E> node) {
+                int c = compareKey(comparator, entries, key, node.value);
+                if (c == 0) {
+                    return node.value;
+                } else if (c < 0) {
+                    result = node.value;
+                    t = node.left;
+                } else {
+                    t = node.right;
+                }
+            }
+            return result;
+        }
+
+        /// The greatest element whose key is less than `key`, or `null` when there is none. One walk down the
+        /// tree, O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E maxBefore(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
+            E result = null;
+            while (t instanceof Node<E> node) {
+                if (compareKey(comparator, entries, key, node.value) <= 0) {
+                    t = node.left;
+                } else {
+                    result = node.value;
+                    t = node.right;
+                }
+            }
+            return result;
+        }
+
+        /// The elements whose key is greater than or equal to `start`, in order: the iterator of the tree started
+        /// at `start`. O(log n) to create, then O(1) per step on average.
+        public static <E extends @Nullable Object, K extends @Nullable Object> Iterator<E> iteratorFrom(
+                RedBlackTree<E> tree, K start, Comparator<? super K> comparator, boolean entries) {
+            if (!(tree instanceof Node<E> root)) {
+                return Iterator.empty();
+            }
+            InOrderIterator<E> iterator = new InOrderIterator<>(root);
+            // Scala's `startFrom`: the nodes whose key is at least `start` are pushed on the way down, the path
+            // turning left at each of them and right at the others
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = root;
+            while (t instanceof Node<E> node) {
+                if (compareKey(comparator, entries, start, node.value) <= 0) {
+                    iterator.push(node);
+                    t = node.left;
+                } else {
+                    t = node.right;
+                }
+            }
+            return iterator;
+        }
+
         /**
          * The number of leading elements, in order, for which {@code predicate} returns {@code expected}: the length
          * of the prefix {@code takeWhile} ({@code expected} true) or {@code takeUntil} ({@code expected} false) keeps.
@@ -814,6 +1037,64 @@ public interface RedBlackTreeModule {
             }
             throw new IllegalStateException(
                     "unbalancedRight(" + color + ", " + blackHeight + ", " + left + ", " + value + ", " + right + ")");
+        }
+    }
+
+    /**
+     * An in-order walk of a tree, with the path of nodes whose value is still to be returned kept on an array stack,
+     * the next one on top: O(log n) to create, then O(1) per step on average, nothing allocated per step.
+     *
+     * @param <T> Component type
+     */
+    final class InOrderIterator<T extends @Nullable Object> extends AbstractIterator<T> {
+
+        // A red-black tree is at most twice as high as its black height, so the first array is almost always big
+        // enough; it grows otherwise.
+        private @Nullable Node<?>[] stack;
+        private int depth = 0;
+
+        InOrderIterator(Node<T> root) {
+            this.stack = new Node<?>[Math.max(4, 2 * root.blackHeight + 2)];
+        }
+
+        /** Every element of the non-empty {@code root}, in order. */
+        static <T extends @Nullable Object> InOrderIterator<T> all(Node<T> root) {
+            InOrderIterator<T> iterator = new InOrderIterator<>(root);
+            iterator.pushLeftChildren(root);
+            return iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return depth > 0;
+        }
+
+        // AbstractIterator only calls getNext() after hasNext() returned true: the top of the stack is a node
+        @SuppressWarnings({"unchecked", "NullAway"})
+        @Override
+        public T getNext() {
+            Node<T> node = (Node<T>) stack[--depth];
+            stack[depth] = null;
+            if (node.right instanceof Node<T> right) {
+                pushLeftChildren(right);
+            }
+            return node.value;
+        }
+
+        void push(Node<T> node) {
+            if (depth == stack.length) {
+                stack = Arrays.copyOf(stack, depth * 2);
+            }
+            stack[depth++] = node;
+        }
+
+        private void pushLeftChildren(Node<T> node) {
+            @SuppressWarnings("Var")
+            RedBlackTree<T> tree = node;
+            while (tree instanceof Node<T> next) {
+                push(next);
+                tree = next.left;
+            }
         }
     }
 
