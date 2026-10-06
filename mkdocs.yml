@@ -83,6 +83,7 @@ plugins:
         - Testing
         - JSON
         - Collections
+        - Error handling
   # the pages that moved keep their old address
   - redirects:
       redirect_maps:
