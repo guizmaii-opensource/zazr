@@ -483,7 +483,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
-     * Complexity: O(n + m) for m given elements, as {@link HashSet#removeAll(Iterable)}.
+     * Complexity: O(m) for m given elements, as {@link HashSet#removeAll(Iterable)}.
      *
      * @param elements Elements
      * @return this set without {@code elements}
@@ -516,7 +516,7 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
-     * Complexity: O(n + m) for a set of m elements, as {@link HashSet#diff(Set)}.
+     * Complexity: O(m) for a set of m elements, as {@link HashSet#diff(Set)}.
      *
      * @param elements A set
      * @return the elements of this set that are not in {@code elements}

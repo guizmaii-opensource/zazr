@@ -884,7 +884,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * All combinations of {@code k} elements, by position, in lexicographic position order. A negative {@code k}
      * counts as 0, and a {@code k} greater than {@code size()} gives no combination.
      * <p>
-     * Complexity: O(k * C(n, k)): C(n, k) combinations of k elements each. The length is counted first, O(n).
+     * Complexity: O(k * C(n, k)): C(n, k) combinations of k elements each, built from an array of k positions that
+     * moves to the next combination in O(k). The elements are first read into an array, O(n).
      *
      * @param k the size of each combination
      * @return the combinations
@@ -1955,25 +1956,18 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * All distinct permutations of the elements.
      * <p>
-     * Complexity: O(n! * n^2) for n distinct elements: n! permutations, and the result is copied again each time the
-     * permutations starting with the next element are added to it.
+     * Complexity: O(n! * n) for n distinct elements: n! permutations, each built once, in O(n), from an array of
+     * positions that moves to the next permutation in O(n).
      *
      * @return the permutations
      */
     default List<List<T>> permutations() {
         if (isEmpty()) {
             return Nil.instance();
+        } else if (tail().isEmpty()) {
+            return of(this);
         } else {
-            List<T> tail = tail();
-            if (tail.isEmpty()) {
-                return of(this);
-            } else {
-                List<List<T>> zero = Nil.instance();
-                return distinct().foldLeft(zero, (xs, x) -> {
-                    Function<List<T>, List<T>> prepend = l -> l.prepend(x);
-                    return xs.appendAll(remove(x).permutations().map(prepend));
-                });
-            }
+            return ListModule.Permutations.apply(this);
         }
     }
 
@@ -2344,7 +2338,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Rotates the elements {@code n} positions to the right: {@code List(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code List(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); O(1) when the distance is 0: this List is returned without being walked.
+     * Complexity: O(n); O(1) when the distance is 0: this List is returned without being walked. Otherwise the
+     * length is counted and the elements are read into an array, then the n cells of the result are built from the
+     * end.
      *
      * @param n the distance
      * @return the rotated List, or this List if the rotation is a multiple of the length
@@ -2354,8 +2350,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (n == 0 || isEmpty()) {
             return this;
         }
-        int k = Math.floorMod(n, size());
-        return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
+        int length = size();
+        int k = Math.floorMod(n, length);
+        return (k == 0) ? this : ListModule.Rotate.right(this, length, k);
     }
 
     /**

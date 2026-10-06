@@ -189,8 +189,8 @@ public interface LazyListModule {
         }
     }
 
-    /// The elements of a list, then those of the list a mapper computes from the result itself: the mapper is called
-    /// once, when a read reaches the end of the list, and not at all when the list is empty.
+    /// The elements of a list, then those of the list a mapper computes from the result itself: the mapper is
+    /// called once, when a read reaches the end of the list, and not at all when the list is empty.
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Function<? super LazyList<T>, ? extends LazyList<T>> mapper;
@@ -228,14 +228,137 @@ public interface LazyListModule {
 
     interface Combinations {
 
+        /// The combinations of `k >= 0` elements, by position, in lexicographic order of the positions, each
+        /// computed when the result reaches it.
         static <T extends @Nullable Object> LazyList<LazyList<T>> apply(LazyList<T> elements, int k) {
             if (k == 0) {
                 return LazyList.of(LazyList.empty());
+            } else if (LazyCell.knownIsEmpty(elements)) {
+                return LazyList.empty();
             } else {
-                return elements.zipWithIndex()
-                        .flatMap(t ->
-                                apply(elements.drop(t._2() + 1), (k - 1)).map((LazyList<T> c) -> c.prepend(t._1())));
+                return LazyCell.ofIterator(new CombinationIterator<>(elements, k));
             }
+        }
+    }
+
+    /// The combinations of k elements of a LazyList, by position, in lexicographic order of the positions: the
+    /// index array of [Arrangements.Combinations], where each index is the cell of the chosen element, so that the
+    /// elements are read in order and never copied. A cell is read only when a combination needs it, or to find
+    /// that the list ends there: the first combination reads the first k cells, and each next one at most one cell
+    /// more.
+    final class CombinationIterator<T extends @Nullable Object> implements java.util.Iterator<LazyList<T>> {
+
+        private static final int UNKNOWN = 0;
+        private static final int READY = 1;
+        private static final int DONE = 2;
+
+        // the cells of the elements of the current combination, from the first one
+        private final LazyList<T>[] cells;
+        // the list, until the first combination is found
+        private @Nullable LazyList<T> source;
+        private int state = UNKNOWN;
+
+        @SuppressWarnings("unchecked")
+        CombinationIterator(LazyList<T> source, int k) {
+            this.source = source;
+            this.cells = (LazyList<T>[]) new LazyList<?>[k];
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (state == UNKNOWN) {
+                state = advance() ? READY : DONE;
+            }
+            return state == READY;
+        }
+
+        @Override
+        public LazyList<T> next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException("no combination left");
+            }
+            state = UNKNOWN;
+            @SuppressWarnings("Var")
+            LazyList<T> combination = LazyList.empty();
+            for (int j = cells.length - 1; j >= 0; j--) {
+                combination = LazyCell.cons(cells[j].head(), combination);
+            }
+            return combination;
+        }
+
+        private boolean advance() {
+            LazyList<T> first = source;
+            if (first != null) {
+                source = null;
+                return layOut(0, first);
+            }
+            // the last cell that can move: moving cell j one step on, the cells after it follow it
+            for (int j = cells.length - 1; j >= 0; j--) {
+                if (layOut(j, cells[j].tail())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // puts the cells from `from` on at `start` and the cells after it, false when the list ends before
+        @SuppressWarnings("Var")
+        private boolean layOut(int from, LazyList<T> start) {
+            LazyList<T> cell = start;
+            for (int j = from; j < cells.length; j++) {
+                if (cell.isEmpty()) {
+                    return false;
+                }
+                cells[j] = cell;
+                cell = cell.tail();
+            }
+            return true;
+        }
+    }
+
+    interface Permutations {
+
+        /// The distinct permutations of `elements`, at least two of them, in the order of
+        /// [Arrangements.Permutations], each computed when the result reaches it. The elements are read when
+        /// this is called.
+        static <T extends @Nullable Object> LazyList<LazyList<T>> apply(LazyList<T> elements) {
+            return LazyCell.ofIterator(new PermutationIterator<T>(elements.toArray()));
+        }
+    }
+
+    /// The permutations of the elements of an array, each built as a LazyList of evaluated cells when it is read.
+    final class PermutationIterator<T extends @Nullable Object> implements java.util.Iterator<LazyList<T>> {
+
+        private final Object[] source;
+        private final Arrangements.Permutations cursor;
+        private int state = CombinationIterator.UNKNOWN;
+
+        PermutationIterator(Object[] source) {
+            this.source = source;
+            this.cursor = new Arrangements.Permutations(source);
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (state == CombinationIterator.UNKNOWN) {
+                state = cursor.advance() ? CombinationIterator.READY : CombinationIterator.DONE;
+            }
+            return state == CombinationIterator.READY;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public LazyList<T> next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException("no permutation left");
+            }
+            state = CombinationIterator.UNKNOWN;
+            @SuppressWarnings("Var")
+            LazyList<T> permutation = LazyList.empty();
+            for (int level = source.length - 1; level >= 0; level--) {
+                permutation = LazyCell.cons((T) source[cursor.position(level)], permutation);
+            }
+            return permutation;
         }
     }
 
@@ -275,8 +398,8 @@ public interface LazyListModule {
         }
     }
 
-    /// Reads a list one cell at a time: [#hasNext()] evaluates the current cell, [#next()] moves to its tail without
-    /// evaluating it.
+    /// Reads a list one cell at a time: [#hasNext()] evaluates the current cell, [#next()] moves to its tail
+    /// without evaluating it.
     final class LazyListIterator<T extends @Nullable Object> extends AbstractIterator<T> {
 
         private LazyList<T> current;

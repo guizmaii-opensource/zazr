@@ -848,8 +848,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * All combinations of the elements, for every size from 0 to {@code size()}, by position:
      * {@code Vector(1, 2).combinations()} is {@code Vector(Vector(), Vector(1), Vector(2), Vector(1, 2))}.
      * <p>
-     * Complexity: O(n * 2^n): the 2^n combinations hold n * 2^(n - 1) elements in all, and building them visits as
-     * many partial choices.
+     * Complexity: O(n * 2^n): the 2^n combinations hold n * 2^(n - 1) elements in all, each built once.
      *
      * @return the combinations, ordered by size, then by position
      */
@@ -860,10 +859,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * All combinations of {@code k} elements, selected by position (equal elements are distinct positions).
      * <p>
-     * Complexity: O(k * C(n, k) + C(n, 0) + ... + C(n, k)): the C(n, k) combinations of k elements are built, and
-     * every choice of fewer than k elements is visited on the way, even one that cannot be completed. That is
-     * O(k * C(n, k)) for k up to n / 2; as k approaches n, the visited choices approach 2^n while the result shrinks:
-     * {@code combinations(n)} does O(2^n) work to return one combination.
+     * Complexity: O(k * C(n, k)): each of the C(n, k) combinations is built from an array of k positions, which moves
+     * to the next combination in O(k); the elements are first copied into an array, O(n), which that bound covers.
      *
      * @param k the size of each combination; {@code k <= 0} gives one empty combination
      * @return the k-combinations, in position order
@@ -1941,8 +1938,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     /**
      * All distinct permutations of the elements, in the order the distinct elements first occur.
      * <p>
-     * Complexity: O(n! * n^2) in the worst case (all elements distinct): there are n! permutations of n elements, and
-     * every partial permutation is copied into a new Vector at each of the n levels of the recursion.
+     * Complexity: O(n! * n) in the worst case (all elements distinct): there are n! permutations of n elements, each
+     * built once, in O(n), from an array of positions that moves to the next permutation in O(n).
      *
      * @return the permutations; none for the empty Vector
      */
@@ -1952,14 +1949,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         } else if (size() == 1) {
             return of(this);
         } else {
-            @SuppressWarnings("Var")
-            Vector<Vector<T>> results = empty();
-            for (T t : distinct()) {
-                for (Vector<T> ts : remove(t).permutations()) {
-                    results = results.append(of(t).appendAll(ts));
-                }
-            }
-            return results;
+            return VectorModule.Permutations.apply(this);
         }
     }
 

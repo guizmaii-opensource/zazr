@@ -6,13 +6,53 @@ import org.jspecify.annotations.Nullable;
 
 public interface VectorModule {
     final class Combinations {
+
+        /// The combinations of `k >= 0` elements, by position, in lexicographic order of the positions.
         public static <T extends @Nullable Object> Vector<Vector<T>> apply(Vector<T> elements, int k) {
-            return (k == 0)
-                    ? Vector.of(Vector.empty())
-                    : elements.zipWithIndex()
-                            .flatMap(t ->
-                                    apply(elements.drop(t._2() + 1), (k - 1)).map((Vector<T> c) -> c.prepend(t._1())));
+            if (k == 0) {
+                return Vector.of(Vector.empty());
+            }
+            int n = elements.size();
+            if (k > n) {
+                return Vector.empty();
+            }
+            Object[] source = elements.toArray();
+            Arrangements.Combinations cursor = new Arrangements.Combinations(n, k);
+            Vector.Builder<Vector<T>> result = Vector.newBuilder();
+            while (cursor.advance()) {
+                Object[] combination = new Object[k];
+                for (int j = 0; j < k; j++) {
+                    combination[j] = source[cursor.index(j)];
+                }
+                result.add(ofArray(combination));
+            }
+            return result.result();
         }
+    }
+
+    final class Permutations {
+
+        /// The distinct permutations of at least two elements, in the order of [Arrangements.Permutations].
+        public static <T extends @Nullable Object> Vector<Vector<T>> apply(Vector<T> elements) {
+            Object[] source = elements.toArray();
+            int n = source.length;
+            Arrangements.Permutations cursor = new Arrangements.Permutations(source);
+            Vector.Builder<Vector<T>> result = Vector.newBuilder();
+            while (cursor.advance()) {
+                Object[] permutation = new Object[n];
+                for (int level = 0; level < n; level++) {
+                    permutation[level] = source[cursor.position(level)];
+                }
+                result.add(ofArray(permutation));
+            }
+            return result.result();
+        }
+    }
+
+    // the Vector of the elements of `array`, which are of type T
+    @SuppressWarnings("unchecked")
+    private static <T extends @Nullable Object> Vector<T> ofArray(Object[] array) {
+        return Vector.of((T[]) array);
     }
 
     /* contiguous-slice search by index; the slice is materialised once, first thing (O(1) when it already is a

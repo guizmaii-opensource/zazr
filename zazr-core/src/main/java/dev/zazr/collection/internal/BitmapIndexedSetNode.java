@@ -14,9 +14,9 @@ import static java.lang.Integer.bitCount;
 /// the hash of each element. The node caches the size and the sum of the hashes of its subtree.
 ///
 /// The fields are not final: a node owned by a [HashSetBuilder] (its `owner` is the builder's token) is updated in
-/// place until the builder's `result()`, which fences the writes before the trie is published. A node of a persistent
-/// operation has no owner and never changes; a trie is only reached through the final field of its `HashSet` or of a
-/// view, whose freeze covers the nodes.
+/// place until the builder's `result()`, which fences the writes before the trie is published, and so is the root
+/// owned by one `HashSet.removeAll`, until it returns. A node of a persistent operation has no owner and never changes;
+/// a trie is only reached through the final field of its `HashSet` or of a view, whose freeze covers the nodes.
 ///
 /// @param <T> the element type
 public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetNode<T> {
@@ -238,9 +238,9 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         }
     }
 
-    /// The node of two elements whose hashes agree up to `shift`, owned by `owner`: one node holding both when their
-    /// fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node below
-    /// the last level.
+    /// The node of two elements whose hashes agree up to `shift`, owned by `owner`: one node holding both when
+    /// their fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node
+    /// below the last level.
     static <T extends @Nullable Object> SetNode<T> mergeTwoKeyValPairs(
             @Nullable Object owner, T element0, int hash0, T element1, int hash1, int shift) {
         if (shift >= HASH_CODE_LENGTH) {
@@ -740,6 +740,83 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             }
         }
         return true;
+    }
+
+    // -- the removals in place of removeAll
+
+    /// The trie, of which this node is the root, without `element` of hash `hash`: this root when it is absent, and
+    /// otherwise this root updated in place when `owner` owns it, or a copy owned by `owner`. Only the root is
+    /// updated in place; the subtrees go through the persistent [#removed(Object, int, int)], and the trie is the
+    /// one it gives, node for node. Scala's `removeWithShallowMutations`, of `HashSet.removedAll`, with the
+    /// ownership of the builders in place of a node created for the purpose.
+    public BitmapIndexedSetNode<T> removeInPlace(Object owner, T element, int hash) {
+        int bitpos = bitposFrom(maskFrom(hash, 0));
+        if ((dataMap & bitpos) != 0) {
+            int index = indexFrom(dataMap, bitpos);
+            if (hashes[index] != hash || !Objects.equals(getPayload(index), element)) {
+                return this;
+            }
+            // at the root, removing one of two inline elements is removing one value, as with more of them
+            BitmapIndexedSetNode<T> root = ownedBy(owner);
+            root.removeValue(bitpos, index, hash);
+            return root;
+        } else if ((nodeMap & bitpos) != 0) {
+            SetNode<T> subNode = getNode(indexFrom(nodeMap, bitpos));
+            SetNode<T> subNodeNew = subNode.removed(element, hash, BIT_PARTITION_SIZE);
+            if (subNodeNew == subNode) {
+                return this;
+            }
+            if (subNodeNew.size() == 1 && size == subNode.size()) {
+                // the child was all this root held: its remaining element, in a node of the root level, is the root
+                return (BitmapIndexedSetNode<T>) subNodeNew;
+            }
+            BitmapIndexedSetNode<T> root = ownedBy(owner);
+            if (subNodeNew.size() == 1) {
+                root.migrateFromNodeToInline(bitpos, subNode, subNodeNew);
+            } else {
+                root.content[root.content.length - 1 - root.nodeIndex(bitpos)] = subNodeNew;
+                root.size = size - subNode.size() + subNodeNew.size();
+                root.keyHashSum = keyHashSum - subNode.keyHashSum() + subNodeNew.keyHashSum();
+            }
+            return root;
+        } else {
+            return this;
+        }
+    }
+
+    // this node when `owner` owns it, otherwise a copy that it owns, with its own content array
+    private BitmapIndexedSetNode<T> ownedBy(Object owner) {
+        return (this.owner == owner)
+                ? this
+                : new BitmapIndexedSetNode<>(owner, dataMap, nodeMap, content.clone(), hashes, size, keyHashSum);
+    }
+
+    // removes the inline element of `bitpos`, at `index`, of hash `hash`; this node is owned
+    private void removeValue(int bitpos, int index, int hash) {
+        Object[] src = content;
+        Object[] dst = new Object[src.length - 1];
+        System.arraycopy(src, 0, dst, 0, index);
+        System.arraycopy(src, index + 1, dst, index, src.length - index - 1);
+        content = dst;
+        hashes = removeElement(hashes, index);
+        dataMap ^= bitpos;
+        size--;
+        keyHashSum -= hash;
+    }
+
+    // replaces the child `oldNode` of `bitpos` by the single element of `node`, inline; this node is owned. The child
+    // and the element take one slot each, so the owned array is reused: the elements from the new one's place and the
+    // children before the old one's place shift right by one
+    private void migrateFromNodeToInline(int bitpos, SetNode<T> oldNode, SetNode<T> node) {
+        int idxOld = content.length - 1 - nodeIndex(bitpos);
+        int idxNew = dataIndex(bitpos);
+        System.arraycopy(content, idxNew, content, idxNew + 1, idxOld - idxNew);
+        content[idxNew] = node.getPayload(0);
+        hashes = insertElement(hashes, idxNew, node.getHash(0));
+        dataMap |= bitpos;
+        nodeMap ^= bitpos;
+        size = size - oldNode.size() + 1;
+        keyHashSum = keyHashSum - oldNode.keyHashSum() + node.keyHashSum();
     }
 
     // -- the updates in place of a builder

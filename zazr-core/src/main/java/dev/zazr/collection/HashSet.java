@@ -11,6 +11,7 @@ import dev.zazr.collection.internal.SetViews;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import java.io.*;
+import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.util.function.*;
 import java.util.stream.Collector;
@@ -695,10 +696,9 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for a set of m elements; O(n) when it is a HashSet. Another kind of set is put in a hash
-     * set, then every element of this set is checked against it: the whole set is walked even to remove one element,
-     * which {@link #remove(Object)} does in effectively O(1). A HashSet is compared with this set part by part, and a
-     * part of this set that the argument does not reach is kept whole, not walked.
+     * Complexity: O(m) for a set of m elements, effectively O(1) each, as {@link #removeAll(Iterable)}; O(n) when it is
+     * a HashSet, which is compared with this set part by part: a part of this set that the argument does not reach is
+     * kept whole, not walked.
      */
     @Override
     public HashSet<T> diff(Set<? extends T> elements) {
@@ -982,10 +982,10 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n + m) for m given elements; O(n) when they are a HashSet. Other elements are put in a hash set,
-     * then every element of this set is checked against it: the whole set is walked even to remove one element,
-     * which {@link #remove(Object)} does in effectively O(1). A HashSet is compared with this set part by part, and a
-     * part of this set that the argument does not reach is kept whole, not walked.
+     * Complexity: O(m) for m given elements, effectively O(1) each, as {@link #remove(Object)}; O(n) when they are a
+     * HashSet. Other elements are removed one by one, and the first removal copies the top node of this set, which
+     * the next ones update in place. A HashSet is compared with this set part by part, and a part of this set that
+     * the argument does not reach is kept whole, not walked.
      */
     @Override
     public HashSet<T> removeAll(Iterable<? extends T> elements) {
@@ -996,7 +996,26 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             BitmapIndexedSetNode<T> result = that.isEmpty() ? tree : tree.diff(that.tree, 0);
             return result == tree ? this : wrap(result);
         }
-        return Collections.removeAll(this, elements, kept -> filter(kept));
+        Objects.requireNonNull(elements, "elements is null");
+        if (isEmpty()) {
+            return this;
+        }
+        // the root is copied once, by the first removal, then updated in place: the token marks it as this call's own
+        Object owner = new Object();
+        @SuppressWarnings("Var")
+        BitmapIndexedSetNode<T> root = tree;
+        for (T element : elements) {
+            // every element is checked, also once the set is empty, as when they were put in a set of their own
+            Objects.requireNonNull(element, "HashSet: element is null");
+            root = root.removeInPlace(owner, element, Objects.hashCode(element));
+        }
+        if (root == tree) {
+            return this;
+        }
+        // the root was written through non-final fields: order those writes before its publication, as the end of a
+        // constructor does for final fields
+        VarHandle.releaseFence();
+        return wrap(root);
     }
 
     /**

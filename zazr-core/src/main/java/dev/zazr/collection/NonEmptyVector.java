@@ -1024,7 +1024,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * All distinct permutations of the elements, in the order the distinct elements first occur.
      * <p>
-     * Complexity: O(n! * n^2) in the worst case (all elements distinct), as {@link Vector#permutations()}.
+     * Complexity: O(n! * n) in the worst case (all elements distinct), as {@link Vector#permutations()}.
      *
      * @return the permutations, at least one, each of this vector's size
      */
@@ -1597,8 +1597,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * All combinations of {@code k} elements, selected by position (equal elements are distinct positions).
      * <p>
-     * Complexity: O(k * C(n, k) + C(n, 0) + ... + C(n, k)), as {@link Vector#combinations(int)}: as k approaches n,
-     * the work approaches O(2^n) while the result shrinks.
+     * Complexity: O(k * C(n, k)), as {@link Vector#combinations(int)}.
      *
      * @param k The size of each combination; {@code k <= 0} gives one empty combination
      * @return the k-combinations, in position order; none when {@code k > size()}

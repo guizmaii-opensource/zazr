@@ -4,6 +4,7 @@ import dev.zazr.*;
 import dev.zazr.collection.internal.Collections;
 import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
+import dev.zazr.collection.internal.ListModule;
 import dev.zazr.collection.internal.TraversableModule;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
@@ -1722,12 +1723,71 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n) to create, then O(1) per step: the elements held at the back are put in order first. O(1) to
-     * create when no element is held at the back, as on a Queue built by ofAll.
+     * Complexity: O(1) to create, then O(1) per step, apart from the step that reaches the elements held at the back:
+     * it copies them into an array, O(n) for n of them, read from its end.
      */
     @Override
     public java.util.Iterator<T> iterator() {
-        return Iterator.ofAll(front).concat(rear.reverse().iterator());
+        return new QueueIterator<>(front, rear);
+    }
+
+    /* The elements of the front, then those of the rear in reverse order. The front is walked cell by cell; the rear,
+     * which holds the last elements from the last one, is copied into an array only when the front is used up, and the
+     * array read from its end (Scala's Queue reverses its rear only then too, with a by-name concat). */
+    private static final class QueueIterator<T extends @Nullable Object> implements java.util.Iterator<T> {
+
+        private static final Object[] NO_ELEMENTS = new Object[0];
+
+        private List<T> front;
+        private final List<T> rear;
+        // the elements of the rear, from the last one, once the front is used up (loaded); read from index - 1 down
+        // to 0
+        private Object[] back = NO_ELEMENTS;
+        private boolean loaded;
+        private int index;
+
+        QueueIterator(List<T> front, List<T> rear) {
+            this.front = front;
+            this.rear = rear;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !front.isEmpty() || backLeft() > 0;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public T next() {
+            if (!front.isEmpty()) {
+                T head = front.head();
+                front = front.tail();
+                return head;
+            }
+            if (backLeft() == 0) {
+                throw new NoSuchElementException("next() on an exhausted Queue iterator");
+            }
+            index--;
+            return (T) back[index];
+        }
+
+        // the number of elements of the rear left to read, once they are in the array
+        @SuppressWarnings("Var")
+        private int backLeft() {
+            if (!loaded) {
+                loaded = true;
+                int length = rear.size();
+                Object[] array = (length == 0) ? NO_ELEMENTS : new Object[length];
+                List<T> cell = rear;
+                for (int i = 0; i < length; i++) {
+                    array[i] = cell.head();
+                    cell = cell.tail();
+                }
+                back = array;
+                index = length;
+            }
+            return index;
+        }
     }
 
     /**
@@ -1877,8 +1937,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * All distinct permutations of the elements.
      * <p>
-     * Complexity: O(n! * n^2) when the elements are distinct: n! permutations of n elements each, and each level of
-     * the recursion copies the permutations found so far.
+     * Complexity: O(n! * n) when the elements are distinct: n! permutations of n elements each, each built once, as
+     * {@link List#permutations()} builds them, then copied into a Queue.
      *
      * @return the permutations
      */
@@ -2056,7 +2116,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Rotates the elements {@code n} positions to the right: {@code Queue(1, 2, 3, 4, 5).rotateRight(2)} is
      * {@code Queue(4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the length.
      * <p>
-     * Complexity: O(n); O(1) for a rotation by 0.
+     * Complexity: O(n); O(1) for a rotation by 0. Otherwise the elements are read into an array once, and the result
+     * is a front of n new cells built from it.
      *
      * @param n the distance
      * @return the rotated Queue, or this Queue if the rotation is a multiple of the length
@@ -2066,8 +2127,24 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (n == 0 || isEmpty()) {
             return this;
         }
-        int k = Math.floorMod(n, size());
-        return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
+        int frontLength = front.size();
+        int length = frontLength + rear.size();
+        int k = Math.floorMod(n, length);
+        if (k == 0) {
+            return this;
+        }
+        // the front in order, then the rear, which holds the last elements from the last one, from the end
+        Object[] elements = new Object[length];
+        @SuppressWarnings("Var")
+        List<T> cell = front;
+        for (int i = 0; i < frontLength; i++, cell = cell.tail()) {
+            elements[i] = cell.head();
+        }
+        cell = rear;
+        for (int i = length - 1; i >= frontLength; i--, cell = cell.tail()) {
+            elements[i] = cell.head();
+        }
+        return new Queue<>(ListModule.Rotate.fromArrayRotated(elements, k), List.empty());
     }
 
     /**
@@ -3326,7 +3403,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(min(n, m)), at most: a size that is not stored is counted only up to the other one; O(1) when the
      * size of {@code that} is stored. The elements held at the back, of this queue and of a Queue {@code that}, are
-     * counted where they are, not put in order first, as iterator() does.
+     * counted where they are, not put in order first, as iterator() does once it reaches them.
      */
     @Override
     public int sizeCompare(Iterable<?> that) {

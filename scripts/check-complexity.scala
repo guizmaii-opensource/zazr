@@ -115,6 +115,7 @@ val vocabulary: Map[String, Cost] = Map(
   "O(power * n^power)" -> Cost.Polynomial,
   "O(n + n * min(size, n - size))" -> Cost.Polynomial,
   "O(n! * n^2)" -> Cost.Combinatorial,
+  "O(n! * n)" -> Cost.Combinatorial,
   "O(k * C(n, k))" -> Cost.Combinatorial,
   "O(n * 2^n)" -> Cost.Combinatorial,
   "O(k * C(n, k) + C(n, 0) + ... + C(n, k))" -> Cost.Combinatorial

@@ -1508,9 +1508,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * counts as 0, and a {@code k} greater than {@code size()} gives no combination.
      * <p>
      * Complexity: lazy; nothing is computed now, and reading the first combination computes the first k elements.
-     * Reading every combination costs O(n * C(n, k)) for a small k, but the search explores every run of up to k
-     * positions, so it grows to O(n * 2^n) as k nears n, even though few combinations remain. A k greater than the length
-     * pays all of it when the result is first read, to find it empty.
+     * Reading every combination costs O(k * C(n, k)): the next combination moves an array of the k chosen cells, in
+     * O(k), and reads at most one element more. A k greater than the length computes the whole LazyList when the
+     * result is first read, to find it empty.
      *
      * @param k the size of each combination
      * @return the combinations
@@ -2350,8 +2350,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * All distinct permutations of the elements.
      * <p>
-     * Complexity: lazy; nothing is computed now. Reading every permutation of n distinct elements costs O(n! * n^2) (fewer
-     * permutations when some are equal); reading the first computes the whole LazyList.
+     * Complexity: lazy; nothing is computed now. Reading every permutation of n distinct elements costs O(n! * n) (fewer
+     * permutations when some are equal), O(n) each; reading the first computes the whole LazyList.
      *
      * @return the permutations
      */
@@ -2362,11 +2362,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             } else if (tail().isEmpty()) {
                 return LazyList.of(this);
             } else {
-                LazyList<LazyList<T>> zero = empty();
-                return distinct().foldLeft(zero, (xs, x) -> {
-                    Function<LazyList<T>, LazyList<T>> prepend = l -> l.prepend(x);
-                    return xs.appendAll(remove(x).permutations().map(prepend));
-                });
+                return LazyListModule.Permutations.apply(this);
             }
         });
     }
@@ -2625,8 +2621,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             if (isEmpty()) {
                 return empty();
             }
-            int k = Math.floorMod(n, size());
-            return (k == 0) ? this : takeRight(k).appendAll(dropRight(k));
+            int length = size();
+            int k = Math.floorMod(n, length);
+            // the last k elements, then the others: the rotation to the left by the length of the others
+            return (k == 0) ? this : drop(length - k).appendAll(take(length - k));
         });
     }
 
