@@ -1805,6 +1805,18 @@ deleted. Attribution in `NOTICE`.
     `retainAll`, and `intersect` with a larger or equal argument, end in `filter` and follow.
   - `HashMap.mapValues` and `replaceAll(BiFunction)` keep the keys in place and replace the values (Scala's
     `transform`), calling the function in iteration order, with the null check and message of a put.
+  - `HashMap.keySet` copies the map trie into a set trie node for node (decided 2026-10-06, #123; Scala returns a
+    view of the map instead). The two node types share their layout: the same `dataMap`, `nodeMap`, stored hash codes,
+    size and key hash sum, the children at the back of the array in reverse slot order (after `2 * payload` slots in a
+    map node, `payload` in a set node), and collision nodes as flat arrays in insertion order. So `MapNode.keyTrie`
+    takes the keys out of each node, keeps everything else, and shares the `hashes` arrays, which no node writes in
+    place (a builder replaces them). The copied nodes have no owner. The result is the trie successive additions of the
+    keys in the map's iteration order build, the collision order included, so the `HashSet` behaves as one built from
+    the keys under every later operation; it holds the key objects the map kept. No key is hashed or compared.
+    `ChampKeyTrieTest` checks the copy against that rebuilt trie (shape, key objects, collision order) on persistent
+    and built maps with collisions and removals, and that later updates of the set, through a builder too, leave the
+    map and the set unchanged; `HashMapKeySetTest` checks the public set against `HashSet.ofAll` of the keys at every
+    boundary and under later additions, removals and bulk operations.
   - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
     `flatMap`.
   - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with
