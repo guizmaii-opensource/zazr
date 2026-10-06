@@ -1,0 +1,13 @@
+diff --git a/zazr-core/src/main/java/dev/zazr/collection/internal/BitmapIndexedMapNode.java b/zazr-core/src/main/java/dev/zazr/collection/internal/BitmapIndexedMapNode.java
+index 4ddbb41a8..5b664d8f2 100644
+--- a/zazr-core/src/main/java/dev/zazr/collection/internal/BitmapIndexedMapNode.java
++++ b/zazr-core/src/main/java/dev/zazr/collection/internal/BitmapIndexedMapNode.java
+@@ -152,7 +152,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
+         for (int i = 0; i < children; i++) {
+             keys[keys.length - 1 - i] = getNode(i).keyTrie();
+         }
+-        return new BitmapIndexedSetNode<>(null, dataMap, nodeMap, keys, hashes, size, keyHashSum);
++        return new BitmapIndexedSetNode<>(owner, dataMap, nodeMap, keys, hashes, size, keyHashSum);
+     }
+ 
+     int dataIndex(int bitpos) {
