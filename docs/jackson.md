@@ -18,7 +18,7 @@ description: Read and write the Zazr collections, Option and the tuples as JSON 
     <dependency>
         <groupId>dev.zazr</groupId>
         <artifactId>zazr-jackson</artifactId>
-        <version>0.3.0</version>
+        <version>0.4.0</version>
     </dependency>
     ```
 
@@ -26,7 +26,7 @@ description: Read and write the Zazr collections, Option and the tuples as JSON 
 
     ```kotlin
     dependencies {
-        implementation("dev.zazr:zazr-jackson:0.3.0")
+        implementation("dev.zazr:zazr-jackson:0.4.0")
     }
     ```
 
