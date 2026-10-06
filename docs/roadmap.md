@@ -13,11 +13,14 @@ the work and shows where it stands.
 
 ## Next releases
 
-- **[0.5.0: warnings and sequence operations](https://github.com/guizmaii-opensource/zazr/milestone/6).** A
+- **[0.5.0: performance](https://github.com/guizmaii-opensource/zazr/milestone/6).** Faster operations, with the same
+  behaviour: tree deletion without temporary objects, `keySet()` without rebuilding, faster `combinations` and
+  `permutations`, a real-time `Queue`, and operations that change nothing giving back the collection itself.
+- **[0.6.0: warnings and sequence operations](https://github.com/guizmaii-opensource/zazr/milestone/7).** A
   `Validation` that also collects warnings, which never block the result, and sequence operations such as
   `zipWithPrevious`, `mapAccum` and `foldWhile`.
-- **[Performance](https://github.com/guizmaii-opensource/zazr/milestone/3).** Benchmarks and optimisations, shipped
-  with whichever release comes next.
+- **[Benchmarks](https://github.com/guizmaii-opensource/zazr/milestone/3).** Measurements of the collections and the
+  JSON modules, published as they are done.
 
 ## Released
 
