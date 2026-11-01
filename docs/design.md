@@ -1059,7 +1059,9 @@ inserted), `take(n)` the first n, and so on:
   `deleteMin` returns the tree alone, its caller reading the successor with `minimum` first (a read-only walk down
   the same spine). The trees are the very ones the tuple form built, node for node: `RedBlackTreeDeletionTest`
   compares them with `RedBlackTreeDeletionReference`, a copy of the tuple form kept in the tests, which also checks
-  at every level that its flag equals the drop of the black heights. A per-call mutable context (one object per
+  at every level that its flag equals the drop of the black heights, on trees built by insertion, by the builder, by
+  deletions, and by the operations that go through `join` and `merge` (the set operations, `filter`, `partition`,
+  `take`, `drop`, `slice`, `split`), which leave red nodes inside the tree. A per-call mutable context (one object per
   deletion) was the alternative; reading the heights allocates nothing.
 - **`LinkedHashSet`/`LinkedHashMap`: a slice of the insertion order.** A `LinkedHashMap` pairs a `HashMap` of slots
   (entry and absolute index) with a `Vector` of keys in insertion order, where a removed key leaves a marker until the

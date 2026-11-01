@@ -64,12 +64,38 @@ public class RedBlackTreeDeletionTest {
         return tree;
     }
 
+    // the shapes `join` and `merge` leave behind, with red nodes in the middle of the tree: the set operations, the
+    // filters and the cuts by position or by element, each from random trees of about `size` elements
+    private static List<RedBlackTree<Integer>> joined(Comparator<Integer> order, int size, Random random) {
+        RedBlackTree<Integer> first = inserted(order, size, random);
+        RedBlackTree<Integer> second = inserted(order, size, random);
+        RedBlackTree<Integer> larger = inserted(order, size + size / 2, random);
+        int n = size == 0 ? 0 : random.nextInt(size + 1);
+        int m = larger.size() == 0 ? 0 : random.nextInt(larger.size() + 1);
+        int pivot = random.nextInt(4 * size + 1) - 2 * size;
+        return List.of(
+                first.union(second),
+                larger.difference(first),
+                larger.intersection(first.union(second)),
+                RedBlackTreeModule.Node.filter(larger, i -> Math.floorMod(i, 3) != 0),
+                RedBlackTreeModule.Node.partition(larger, i -> random.nextBoolean())
+                        ._2(),
+                RedBlackTreeModule.Node.take(larger, m),
+                RedBlackTreeModule.Node.drop(larger, m),
+                RedBlackTreeModule.Node.slice(larger, n, n + size),
+                RedBlackTreeModule.Node.color(
+                        RedBlackTreeModule.Node.split(larger, pivot)._1(), RedBlackTree.Color.BLACK),
+                RedBlackTreeModule.Node.color(
+                        RedBlackTreeModule.Node.split(larger, pivot)._2(), RedBlackTree.Color.BLACK));
+    }
+
     private static List<RedBlackTree<Integer>> trees(Comparator<Integer> order, Random random) {
         List<RedBlackTree<Integer>> trees = new ArrayList<>();
         for (int size : SIZES) {
             trees.add(inserted(order, size, random));
             trees.add(built(order, size, random));
             trees.add(thinned(order, size, random));
+            trees.addAll(joined(order, size, random));
         }
         for (int i = 0; i < 200; i++) {
             trees.add(inserted(order, random.nextInt(100), random));
