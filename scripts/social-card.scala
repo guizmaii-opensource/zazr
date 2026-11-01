@@ -10,8 +10,8 @@
 // https://github.com/rsms/inter/releases). OUTPUT defaults to docs/assets/social-card.png. The PNG is committed, so
 // the site build needs neither this script nor the fonts; run it again when the logo, the colours or the tagline change.
 //
-// The card: Zaz (docs/assets/zaz-512.png) on the left, and on the right the wordmark and the tagline, on the espresso
-// brown of the site header with the yuzu accent (docs/assets/zazr.css). The bottom left stays empty: X lays the page
+// The card: Zaz (docs/assets/zaz-512.png) on the left, and on the right the wordmark and the tagline, on the onsen
+// teal of the site header with the yuzu accent (docs/assets/zazr.css). The bottom left stays empty: X lays the page
 // title over it, and every network already shows the domain under the card. The card is laid out on a 1200x630 grid
 // and drawn at twice that size, so the text stays sharp when a network scales the card down or recompresses it.
 
@@ -26,10 +26,10 @@ import javax.imageio.ImageIO
   val height = 630
   val scale  = 2
 
-  val espresso = Color(0x2e2017)
-  val yuzu     = Color(0xf5a524)
-  val cream    = Color(0xfff8ee)
-  val muted    = Color(0xc9bcae)
+  val onsen = Color(0x0f3d3e)
+  val yuzu  = Color(0xf5a524)
+  val cream = Color(0xf2fbfa)
+  val muted = Color(0xb7c4c4)
 
   def font(name: String, size: Float): Font =
     Font.createFont(Font.TRUETYPE_FONT, File(fontDir, s"Inter-$name.ttf")).deriveFont(size)
@@ -43,7 +43,7 @@ import javax.imageio.ImageIO
   g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
   g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
 
-  g.setColor(espresso)
+  g.setColor(onsen)
   g.fillRect(0, 0, width, height)
   g.setColor(yuzu)
   g.fillRect(0, height - 12, width, 12)
