@@ -1397,6 +1397,37 @@ head is the same object as the head of the cell before the loop. `Lazy` keeps `L
 `LazyList` say `head of empty LazyList`, `tail of empty LazyList` and `init of empty LazyList`, naming the type as
 `Vector`, `Queue` and the sorted and linked collections do (Scala says `lazy list`, Zazr's `List` says `list`).
 
+**Faster `combinations`, `permutations`, `rotateRight`, `Queue.iterator` and `HashSet.removeAll` (#159, decided
+2026-11-02).** The results are unchanged: the same elements in the same order, the same element objects, and on a
+`LazyList` the same cells read at every step. The old recursive definitions stay in the tests as the models
+(`ArrangementModels`) that the new code is compared with.
+
+- **`combinations(k)`** walks an array of k positions in lexicographic order: from one combination, the last index
+  that can still move goes one step on and the ones after it follow it, O(k) per combination. This is Scala 3's
+  `CombinationsItr` (`library/src/scala/collection/Seq.scala`) with every count 1: Zazr chooses by position, so equal
+  elements are never merged. The old search visited every choice of fewer than k elements, O(2^n) as k nears n. On a
+  `LazyList` the indices are cells, read only as a combination needs them. The arrays grow as cells are found, so
+  `combinations(Integer.MAX_VALUE)` reads the list and allocates no more than its length.
+- **`permutations()`** keeps Zazr's order, which is not Scala's. Here a permutation starts with each distinct element
+  in the order it first occurs among the elements left. Scala's `PermutationsItr` sorts by the first occurrence in
+  the whole sequence (`b, a, b` gives `bab, bba, abb` here and `bba, bab, abb` there). So the walk is a depth-first
+  search over positions: an occurrence is a candidate when its rank among the equal elements is the number of them
+  already used, an O(1) test. Each permutation is built once, where the old code copied the partial results at every
+  level: O(n! * n) in place of O(n! * n^2).
+- **`rotateRight`** on `List` and `Queue` reads the elements into an array once and builds the n new cells from the
+  end, in place of `takeRight(k).appendAll(dropRight(k))`. On `LazyList` it is `drop(n - k).appendAll(take(n - k))`.
+  Scala has no `rotateRight`.
+- **`Queue.iterator`** walks the front, then reverses the rear only when the front is used up, as Scala's
+  `out.iterator.concat(in.reverse)` does (`library/src/scala/collection/immutable/Queue.scala`): creating the
+  iterator is O(1), and a loop that stops early never reverses the rear.
+- **`HashSet.removeAll`** of anything but a `HashSet` removes the elements one by one: O(m) for m elements, where the
+  old code put them in a set, then filtered the whole receiver, O(n + m). The first removal copies the root and the
+  next ones update that copy in place. This is Scala's `removedAllWithShallowMutations`
+  (`library/src/scala/collection/immutable/HashSet.scala`), with the builders' owner token marking the root this call
+  made. The subtrees go through the persistent removal, so the trie is the one `remove` would give, node for node.
+- An operation stays rewritten only if the benchmark run for #159 shows a win. One that does not is put back as it
+  was, and the pull request says so.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.

@@ -424,4 +424,14 @@ class ArrangementsTest {
         assertThat(shorter.combinations(2).size()).isEqualTo(1_000 * 999 / 2);
         assertThat(shorter.combinations(999).size()).isEqualTo(1_000);
     }
+
+    @Test
+    void lazyCombinationsOfAHugeKHoldOnlyTheCellsThereAre() {
+        // no array of k cells: the result is found empty once the 100 cells are read
+        AtomicInteger evaluated = new AtomicInteger();
+        assertThat(counted(100, 100, evaluated).combinations(Integer.MAX_VALUE)).isEmpty();
+        assertThat(evaluated.get()).isEqualTo(100);
+        assertThat(counted(100, 100, evaluated).combinations(100)).hasSize(1);
+        assertThat(LazyList.range(0, 40).combinations(38).last()).containsExactlyElementsOf(LazyList.range(2, 40));
+    }
 }

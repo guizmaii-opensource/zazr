@@ -1939,7 +1939,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * All distinct permutations of the elements, in the order the distinct elements first occur.
      * <p>
      * Complexity: O(n! * n) in the worst case (all elements distinct): there are n! permutations of n elements, each
-     * built once, in O(n), from an array of positions that moves to the next permutation in O(n).
+     * built once, in O(n), from an array of positions that moves to the next permutation in O(n) on average. With
+     * repeated elements there are fewer permutations, and a move can cost up to O(n^2).
      *
      * @return the permutations; none for the empty Vector
      */

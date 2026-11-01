@@ -2350,8 +2350,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     /**
      * All distinct permutations of the elements.
      * <p>
-     * Complexity: lazy; nothing is computed now. Reading every permutation of n distinct elements costs O(n! * n) (fewer
-     * permutations when some are equal), O(n) each; reading the first computes the whole LazyList.
+     * Complexity: lazy; nothing is computed now. Reading every permutation of n distinct elements costs O(n! * n), O(n)
+     * each on average; with repeated elements there are fewer permutations, up to O(n^2) each. Reading the first
+     * computes the whole LazyList.
      *
      * @return the permutations
      */

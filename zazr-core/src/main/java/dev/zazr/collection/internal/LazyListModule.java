@@ -189,8 +189,8 @@ public interface LazyListModule {
         }
     }
 
-    /// The elements of a list, then those of the list a mapper computes from the result itself: the mapper is
-    /// called once, when a read reaches the end of the list, and not at all when the list is empty.
+    /// The elements of a list, then those of the list a mapper computes from the result itself: the mapper is called
+    /// once, when a read reaches the end of the list, and not at all when the list is empty.
     final class AppendSelf<T extends @Nullable Object> {
 
         private final Function<? super LazyList<T>, ? extends LazyList<T>> mapper;
@@ -245,15 +245,22 @@ public interface LazyListModule {
     /// index array of [Arrangements.Combinations], where each index is the cell of the chosen element, so that the
     /// elements are read in order and never copied. A cell is read only when a combination needs it, or to find
     /// that the list ends there: the first combination reads the first k cells, and each next one at most one cell
-    /// more.
+    /// more. The arrays grow as cells are found, so a k far beyond the length costs only the cells there are. Once
+    /// the end of the list is found, its length tells in O(1) which cells can no longer move.
     final class CombinationIterator<T extends @Nullable Object> implements java.util.Iterator<LazyList<T>> {
 
         private static final int UNKNOWN = 0;
         private static final int READY = 1;
         private static final int DONE = 2;
+        private static final int INITIAL_CAPACITY = 16;
 
-        // the cells of the elements of the current combination, from the first one
-        private final LazyList<T>[] cells;
+        private final int k;
+        // the cells of the elements of the current combination, from the first one, and their positions in the list;
+        // the first k slots are used once a combination is found
+        private LazyList<T>[] cells;
+        private int[] positions;
+        // the length of the list once a read reached its end, -1 before
+        private int length = -1;
         // the list, until the first combination is found
         private @Nullable LazyList<T> source;
         private int state = UNKNOWN;
@@ -261,7 +268,10 @@ public interface LazyListModule {
         @SuppressWarnings("unchecked")
         CombinationIterator(LazyList<T> source, int k) {
             this.source = source;
-            this.cells = (LazyList<T>[]) new LazyList<?>[k];
+            this.k = k;
+            int capacity = Math.min(k, INITIAL_CAPACITY);
+            this.cells = (LazyList<T>[]) new LazyList<?>[capacity];
+            this.positions = new int[capacity];
         }
 
         @Override
@@ -280,7 +290,7 @@ public interface LazyListModule {
             state = UNKNOWN;
             @SuppressWarnings("Var")
             LazyList<T> combination = LazyList.empty();
-            for (int j = cells.length - 1; j >= 0; j--) {
+            for (int j = k - 1; j >= 0; j--) {
                 combination = LazyCell.cons(cells[j].head(), combination);
             }
             return combination;
@@ -290,29 +300,47 @@ public interface LazyListModule {
             LazyList<T> first = source;
             if (first != null) {
                 source = null;
-                return layOut(0, first);
+                return layOut(0, first, 0);
             }
-            // the last cell that can move: moving cell j one step on, the cells after it follow it
-            for (int j = cells.length - 1; j >= 0; j--) {
-                if (layOut(j, cells[j].tail())) {
+            // the last cell that can move: moving cell j one step on, the cells after it follow it. Once the length is
+            // known, cell j is at its last place when k - 1 - j cells are left after it
+            for (int j = k - 1; j >= 0; j--) {
+                if (length >= 0 && positions[j] == length - k + j) {
+                    continue;
+                }
+                if (layOut(j, cells[j].tail(), positions[j] + 1)) {
                     return true;
                 }
             }
             return false;
         }
 
-        // puts the cells from `from` on at `start` and the cells after it, false when the list ends before
+        // puts the cells from `from` on at `start`, of position `position`, and the cells after it; false when the
+        // list ends before, its length then known
         @SuppressWarnings("Var")
-        private boolean layOut(int from, LazyList<T> start) {
+        private boolean layOut(int from, LazyList<T> start, int position) {
             LazyList<T> cell = start;
-            for (int j = from; j < cells.length; j++) {
+            int p = position;
+            for (int j = from; j < k; j++, p++) {
                 if (cell.isEmpty()) {
+                    length = p;
                     return false;
                 }
+                if (j == cells.length) {
+                    grow();
+                }
                 cells[j] = cell;
+                positions[j] = p;
                 cell = cell.tail();
             }
             return true;
+        }
+
+        // doubles the arrays, up to k slots
+        private void grow() {
+            int capacity = (int) Math.min(k, 2L * cells.length);
+            cells = java.util.Arrays.copyOf(cells, capacity);
+            positions = java.util.Arrays.copyOf(positions, capacity);
         }
     }
 
@@ -398,8 +426,8 @@ public interface LazyListModule {
         }
     }
 
-    /// Reads a list one cell at a time: [#hasNext()] evaluates the current cell, [#next()] moves to its tail
-    /// without evaluating it.
+    /// Reads a list one cell at a time: [#hasNext()] evaluates the current cell, [#next()] moves to its tail without
+    /// evaluating it.
     final class LazyListIterator<T extends @Nullable Object> extends AbstractIterator<T> {
 
         private LazyList<T> current;

@@ -1957,7 +1957,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * All distinct permutations of the elements.
      * <p>
      * Complexity: O(n! * n) for n distinct elements: n! permutations, each built once, in O(n), from an array of
-     * positions that moves to the next permutation in O(n).
+     * positions that moves to the next permutation in O(n) on average. With repeated elements there are fewer
+     * permutations, and a move can cost up to O(n^2).
      *
      * @return the permutations
      */

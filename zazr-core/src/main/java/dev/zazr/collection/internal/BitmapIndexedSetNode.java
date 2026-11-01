@@ -238,9 +238,9 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         }
     }
 
-    /// The node of two elements whose hashes agree up to `shift`, owned by `owner`: one node holding both when
-    /// their fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node
-    /// below the last level.
+    /// The node of two elements whose hashes agree up to `shift`, owned by `owner`: one node holding both when their
+    /// fragments at `shift` differ, a chain of single-child nodes down to where they do, or a collision node below
+    /// the last level.
     static <T extends @Nullable Object> SetNode<T> mergeTwoKeyValPairs(
             @Nullable Object owner, T element0, int hash0, T element1, int hash1, int shift) {
         if (shift >= HASH_CODE_LENGTH) {

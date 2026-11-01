@@ -6,7 +6,7 @@ import org.jspecify.annotations.Nullable;
 /// order, one array of positions updated in place, and the caller builds each result from the positions.
 public interface Arrangements {
 
-    /// The k-combinations of n positions, in lexicographic order: the index array of Scala's `CombinationsItr`
+    /// The k-combinations of n positions, in lexicographic order: the index array of Scala 3's `CombinationsItr`
     /// (`scala/collection/Seq.scala`) with every position counted once, since the sequences choose by position
     /// and keep equal elements apart. From one combination, the next increments the last index that can still move,
     /// and puts the following ones right after it: O(k) per combination, and no choice is ever abandoned.
