@@ -1813,10 +1813,13 @@ deleted. Attribution in `NOTICE`.
     place (a builder replaces them). The copied nodes have no owner. The result is the trie successive additions of the
     keys in the map's iteration order build, the collision order included, so the `HashSet` behaves as one built from
     the keys under every later operation; it holds the key objects the map kept. No key is hashed or compared.
-    `ChampKeyTrieTest` checks the copy against that rebuilt trie (shape, key objects, collision order) on persistent
-    and built maps with collisions and removals, and that later updates of the set, through a builder too, leave the
-    map and the set unchanged; `HashMapKeySetTest` checks the public set against `HashSet.ofAll` of the keys at every
-    boundary and under later additions, removals and bulk operations.
+    `ChampKeyTrieTest` checks the copy against that rebuilt trie (shape, key objects, collision order, no owner) on
+    persistent and built maps with collisions and removals, and that later updates of the set and of the map,
+    persistent and through a builder that adopts them, leave the map and the set unchanged; `HashMapKeySetTest` checks
+    the public set against `HashSet.ofAll` of the keys at every boundary, under later additions, removals and bulk
+    operations of the set, and under later updates of the map. `TreeMap.keySet` already copied its tree the same way
+    (`Node.mapOrdered`). `HashMap.values` is left as it is: a `Vector` shares no layout with the trie, and the size
+    hint of `Vector.newBuilder` changes nothing, so there is no copy to skip.
   - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
     `flatMap`.
   - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with

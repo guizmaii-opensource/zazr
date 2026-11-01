@@ -138,6 +138,47 @@ public class HashMapKeySetTest {
     }
 
     @Test
+    public void keySetIsUnchangedByLaterUpdatesOfTheMap() {
+        Random random = new Random(SEED + 1);
+        for (int size : SIZES) {
+            HashMap<Colliding, Integer> map = mapOf(size, i -> new Colliding(i / 4, i % 4));
+            Set<Colliding> keys = map.keySet();
+            java.util.List<Colliding> keysBefore = list(keys);
+            HashSet<Colliding> expected = HashSet.ofAll(keysBefore);
+
+            // persistent puts of new keys, puts replacing a value and removals
+            HashMap<Colliding, Integer> updated = Vector.range(0, 2 * size + 10).foldLeft(map, (acc, i) -> {
+                Colliding key = new Colliding(random.nextInt(size / 2 + 2), random.nextInt(6));
+                return random.nextBoolean() ? acc.put(key, -i) : acc.remove(key);
+            });
+            // a builder that adopts the map, then replaces every value, adds keys that collide with the map's
+            // and adds keys of new hashes, through the adopted nodes
+            HashMap.Builder<Colliding, Integer> builder =
+                    HashMap.<Colliding, Integer>newBuilder().putAll(map);
+            for (Colliding key : keysBefore) {
+                builder.put(key, -1);
+                builder.put(new Colliding(key.hash(), key.id() + 4), -2);
+                builder.put(new Colliding(key.hash() + size + 1, key.id()), -3);
+            }
+            HashMap<Colliding, Integer> built = builder.result();
+
+            assertThat(list(keys)).isEqualTo(keysBefore);
+            assertThat(keys).isEqualTo(expected);
+            assertThat(keys.hashCode()).isEqualTo(expected.hashCode());
+            for (Colliding key : keysBefore) {
+                assertThat(keys.contains(key)).isTrue();
+            }
+            assertThat(keys.contains(new Colliding(0, 4))).isFalse();
+            assertThat(built.size()).isEqualTo(3 * size);
+            assertIsTheRebuiltSet(map);
+            assertIsTheRebuiltSet(updated);
+            assertIsTheRebuiltSet(built);
+            // the key set of the older map is still the one taken before the updates
+            assertThat(list(map.keySet())).isEqualTo(keysBefore);
+        }
+    }
+
+    @Test
     public void keySetBehavesAsTheRebuiltSetUnderBulkOperations() {
         HashMap<Colliding, Integer> map = mapOf(1025, i -> new Colliding(i / 2, i % 2));
         Set<Colliding> keys = map.keySet();

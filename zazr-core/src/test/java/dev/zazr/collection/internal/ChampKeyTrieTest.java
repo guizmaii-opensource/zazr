@@ -173,9 +173,21 @@ public class ChampKeyTrieTest {
         assertValid(builder.result());
 
         // the map's own updates, persistent and through a builder
-        BitmapIndexedMapNode<ChampMapTest.Key, Integer> mapUpdated =
-                Vector.ofAll(more).foldLeft(map, (acc, key) -> acc.removed(key));
+        BitmapIndexedMapNode<ChampMapTest.Key, Integer> mapUpdated = Vector.ofAll(more)
+                .foldLeft(map, (acc, key) -> random.nextBoolean() ? acc.updated(key, -1) : acc.removed(key));
         ChampValidity.assertValid(mapUpdated);
+        // a builder that adopts the map, then replaces values of its keys, adds keys that collide with its inline
+        // keys (moving them down into new children) and adds new keys, through the adopted nodes
+        HashMapBuilder<ChampMapTest.Key, Integer> mapBuilder = new HashMapBuilder<>("test");
+        mapBuilder.putAll(map);
+        for (ChampMapTest.Key key : keys) {
+            mapBuilder.put(key, -2);
+            mapBuilder.put(new ChampMapTest.Key(key.hash() ^ (1 << 30), key.id()), -3);
+        }
+        for (ChampMapTest.Key key : more) {
+            mapBuilder.put(key, -4);
+        }
+        ChampValidity.assertValid(mapBuilder.result());
 
         assertThat(describe(map)).isEqualTo(mapBefore);
         assertThat(describe(keyTrie)).isEqualTo(keysBefore);
