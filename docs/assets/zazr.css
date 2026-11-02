@@ -2,7 +2,8 @@
  * Zazr site theme on top of Material for MkDocs, in the colours of Zaz, the capybara with a yuzu on its head:
  * onsen teal (the hot spring a capybara sits in) for the chrome, the yuzu yellow-orange as the accent, cool greys
  * for the rest.
- * Fonts: Inter for text, JetBrains Mono for code (mkdocs.yml, theme.font).
+ * Fonts: Inter for text, JetBrains Mono for code (mkdocs.yml, theme.font), Fraunces for the wordmark of the home page
+ * (overrides/main.html).
  */
 
 :root {
@@ -193,11 +194,11 @@
 }
 .zz-hero__title {
   margin: 0;
-  font-family: var(--md-code-font-family), monospace;
-  font-size: 4rem;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 4.4rem;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.03em;
   background: linear-gradient(100deg, #fff6e6 10%, var(--zz-yuzu-light) 55%, var(--zz-yuzu) 100%);
   -webkit-background-clip: text;
   background-clip: text;
