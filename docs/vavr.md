@@ -4,6 +4,8 @@ description: What Zazr changes from Vavr - removed types, renamed operations, an
 
 # Compared to Vavr
 
+In one line: Vavr is Scala 2.12, Zazr is Scala 2.13.
+
 Zazr is a fork of the latest [Vavr](https://github.com/vavr-io/vavr), reshaped for Java 25. Its collections follow the
 Scala 2.13 collections library, which Scala 3 uses unchanged; its names and most of its control types follow ZIO
 and zio-prelude, and `Using` follows Scala's `scala.util.Using`. It is not a drop-in replacement: the package is
