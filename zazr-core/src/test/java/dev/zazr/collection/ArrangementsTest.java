@@ -320,6 +320,25 @@ class ArrangementsTest {
     }
 
     @Test
+    void queueIteratorLeavesTheRearAloneWhileTheFrontLasts() {
+        Queue<Integer> queue = Queue.of(1, 2).enqueue(3).enqueue(4);
+        Queue.QueueIterator<Integer> iterator = (Queue.QueueIterator<Integer>) queue.iterator();
+        assertThat(iterator.hasNext()).isTrue();
+        assertThat(iterator.next()).isEqualTo(1);
+        assertThat(iterator.hasNext()).isTrue();
+        assertThat(iterator.next()).isEqualTo(2);
+        assertThat(iterator.rearLoaded())
+                .as("not reversed while the front lasts")
+                .isFalse();
+        assertThat(iterator.hasNext()).isTrue();
+        assertThat(iterator.rearLoaded()).isTrue();
+        assertThat(iterator.next()).isEqualTo(3);
+        assertThat(Queue.ofAll(List.of(1, 2)).iterator())
+                .as("no rear: the front's own")
+                .isNotInstanceOf(Queue.QueueIterator.class);
+    }
+
+    @Test
     void queueIteratorsAreIndependent() {
         Queue<Integer> queue = Queue.of(1).enqueue(2).enqueue(3);
         java.util.Iterator<Integer> first = queue.iterator();

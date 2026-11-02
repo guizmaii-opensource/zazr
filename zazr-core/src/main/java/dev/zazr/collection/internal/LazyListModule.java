@@ -287,20 +287,22 @@ public interface LazyListModule {
             if (!hasNext()) {
                 throw new java.util.NoSuchElementException("no combination left");
             }
-            state = UNKNOWN;
             @SuppressWarnings("Var")
             LazyList<T> combination = LazyList.empty();
             for (int j = k - 1; j >= 0; j--) {
                 combination = LazyCell.cons(cells[j].head(), combination);
             }
+            // only once it is built: after a VirtualMachineError, the next read gets the same combination
+            state = UNKNOWN;
             return combination;
         }
 
         private boolean advance() {
             LazyList<T> first = source;
             if (first != null) {
+                boolean found = layOut(0, first, 0);
                 source = null;
-                return layOut(0, first, 0);
+                return found;
             }
             // the last cell that can move: moving cell j one step on, the cells after it follow it. Once the length is
             // known, cell j is at its last place when k - 1 - j cells are left after it
@@ -316,7 +318,10 @@ public interface LazyListModule {
         }
 
         // puts the cells from `from` on at `start`, of position `position`, and the cells after it; false when the
-        // list ends before, its length then known
+        // list ends before, its length then known. A VirtualMachineError, which a LazyList does not keep, can only
+        // be met on a cell evaluated for the first time, past the last cell read. Moving cell k - 1 writes nothing
+        // before reading it, and an earlier cell moves only once cell k - 1 could not, after the end was read. So a
+        // move that fails leaves the slots as they were, and the next read makes the same move again
         @SuppressWarnings("Var")
         private boolean layOut(int from, LazyList<T> start, int position) {
             LazyList<T> cell = start;
@@ -334,6 +339,16 @@ public interface LazyListModule {
                 cell = cell.tail();
             }
             return true;
+        }
+
+        /// The length of the list once a read reached its end, -1 before.
+        int knownLength() {
+            return length;
+        }
+
+        /// The position in the list of the `j`-th cell of the current combination.
+        int position(int j) {
+            return positions[j];
         }
 
         // doubles the arrays, up to k slots
@@ -380,12 +395,13 @@ public interface LazyListModule {
             if (!hasNext()) {
                 throw new java.util.NoSuchElementException("no permutation left");
             }
-            state = CombinationIterator.UNKNOWN;
             @SuppressWarnings("Var")
             LazyList<T> permutation = LazyList.empty();
             for (int level = source.length - 1; level >= 0; level--) {
                 permutation = LazyCell.cons((T) source[cursor.position(level)], permutation);
             }
+            // only once it is built: after a VirtualMachineError, the next read gets the same permutation
+            state = CombinationIterator.UNKNOWN;
             return permutation;
         }
     }

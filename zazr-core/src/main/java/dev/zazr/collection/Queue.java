@@ -1735,7 +1735,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /* The elements of the front, then those of the rear in reverse order. The front is walked cell by cell; the rear,
      * which holds the last elements from the last one, is copied into an array only when the front is used up, and the
      * array read from its end (Scala's Queue reverses its rear only then too, with a by-name concat). */
-    private static final class QueueIterator<T extends @Nullable Object> implements java.util.Iterator<T> {
+    static final class QueueIterator<T extends @Nullable Object> implements java.util.Iterator<T> {
 
         private static final Object[] NO_ELEMENTS = new Object[0];
 
@@ -1750,6 +1750,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         QueueIterator(List<T> front, List<T> rear) {
             this.front = front;
             this.rear = rear;
+        }
+
+        /// Whether the elements of the rear were copied into the array yet: not while the front lasts.
+        boolean rearLoaded() {
+            return loaded;
         }
 
         @Override
