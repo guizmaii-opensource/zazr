@@ -1425,8 +1425,12 @@ head is the same object as the head of the cell before the loop. `Lazy` keeps `L
   next ones update that copy in place. This is Scala's `removedAllWithShallowMutations`
   (`library/src/scala/collection/immutable/HashSet.scala`), with the builders' owner token marking the root this call
   made. The subtrees go through the persistent removal, so the trie is the one `remove` would give, node for node.
-- An operation stays rewritten only if the benchmark run for #159 shows a win. One that does not is put back as it
-  was, and the pull request says so.
+- **Measured** (JMH, 3 forks, `-prof gc`; the `*Benchmark` classes of these five operations in `zazr-benchmark`, the
+  table in the pull request): each of the five wins and keeps its rewrite. `combinations` is up to 600x faster at k
+  near n, `permutations` 3x to 19x, `rotateRight` 1.6x to 5x. `HashSet.removeAll` is 1.1x faster when it removes
+  half of 100 000 elements, and up to 15 000x when it removes one. `Queue.iterator` reads the first element of an
+  enqueued Queue without reversing its rear. A Queue with nothing at the back iterates its front directly: the
+  dedicated iterator measured twice as slow on a small Queue built by `ofAll`.
 
 ### 3.8 `Vector` builder
 
