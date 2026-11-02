@@ -1007,7 +1007,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (isEmpty()) {
             return this;
         }
-        // the root is copied once, by the first removal, then updated in place: the token marks it as this call's own
+        // each node on the path to an element is copied once, by the first removal that reaches it, then updated in
+        // place by the next ones: the token, made for this call only, marks the copies as its own
         Object owner = new Object();
         @SuppressWarnings("Var")
         BitmapIndexedSetNode<T> root = tree;
@@ -1019,8 +1020,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         if (root == tree) {
             return this;
         }
-        // the root was written through non-final fields: order those writes before its publication, as the end of a
-        // constructor does for final fields
+        // the nodes this call copied were written through non-final fields: order those writes before the trie's
+        // publication, as the end of a constructor does for final fields
         VarHandle.releaseFence();
         return wrap(root);
     }

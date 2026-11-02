@@ -351,11 +351,14 @@ public interface LazyListModule {
             return positions[j];
         }
 
-        // doubles the arrays, up to k slots
+        // doubles the arrays, up to k slots; both are copied before either is replaced, so that an OutOfMemoryError
+        // leaves them as they were for the next read
         private void grow() {
             int capacity = (int) Math.min(k, 2L * cells.length);
-            cells = java.util.Arrays.copyOf(cells, capacity);
-            positions = java.util.Arrays.copyOf(positions, capacity);
+            LazyList<T>[] grownCells = java.util.Arrays.copyOf(cells, capacity);
+            int[] grownPositions = java.util.Arrays.copyOf(positions, capacity);
+            cells = grownCells;
+            positions = grownPositions;
         }
     }
 

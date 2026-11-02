@@ -11,8 +11,9 @@ import static dev.zazr.collection.internal.ChampValidity.assertSameShape;
 import static dev.zazr.collection.internal.ChampValidity.assertValid;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/// The removals of `HashSet.removeAll`, which update the root of the trie in place: after each one, the trie is the
-/// one the persistent removals of the same elements give, node for node, and the trie it started from is unchanged.
+/// The removals of `HashSet.removeAll`, which update in place, at any depth, the nodes of the trie they copied: after
+/// each one, the trie is the one the persistent removals of the same elements give, node for node, and the trie it
+/// started from is unchanged.
 public class ChampRemoveInPlaceTest {
 
     private static final long SEED = 20261006L;
@@ -111,7 +112,7 @@ public class ChampRemoveInPlaceTest {
     }
 
     @Test
-    public void updatesInPlaceOnlyTheRootItOwns() {
+    public void updatesInPlaceOnlyTheNodesItOwns() {
         java.util.List<Key> keys = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             keys.add(new Key(i, 0));
