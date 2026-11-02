@@ -1421,10 +1421,15 @@ head is the same object as the head of the cell before the loop. `Lazy` keeps `L
   `out.iterator.concat(in.reverse)` does (`library/src/scala/collection/immutable/Queue.scala`): creating the
   iterator is O(1), and a loop that stops early never reverses the rear.
 - **`HashSet.removeAll`** of anything but a `HashSet` removes the elements one by one: O(m) for m elements, where the
-  old code put them in a set, then filtered the whole receiver, O(n + m). The first removal copies the root and the
-  next ones update that copy in place. This is Scala's `removedAllWithShallowMutations`
-  (`library/src/scala/collection/immutable/HashSet.scala`), with the builders' owner token marking the root this call
-  made. The subtrees go through the persistent removal, so the trie is the one `remove` would give, node for node.
+  old code put them in a set, then filtered the whole receiver, O(n + m). Each node on the path to an element is
+  copied by the first removal that reaches it, with an owner token made for the call, and updated in place by the
+  next ones, at any depth, as the builders do: one call copies a node at most once. This is Scala's
+  `removedAllWithShallowMutations` (`library/src/scala/collection/immutable/HashSet.scala`), which updates only the
+  root in place. Each branch is the one of the persistent removal, so the trie is the one `remove` would give, node
+  for node. The token is dropped when the call returns, so the nodes it leaves never change again.
+  `diff` of a `LinkedHashSet` larger than the receiver filters the receiver instead, as Scala's `diff` does when
+  the argument's known size is the larger one; it is kept only for a `LinkedHashSet`, which decides with `equals`
+  and `hashCode` as the removals do (a `TreeSet` would decide with its comparator).
 - **Measured** (JMH, 3 forks, `-prof gc`; the `*Benchmark` classes of these five operations in `zazr-benchmark`, the
   table in the pull request): each of the five wins and keeps its rewrite. `combinations` is up to 600x faster at k
   near n, `permutations` 3x to 19x, `rotateRight` 1.6x to 5x. `HashSet.removeAll` is 1.1x faster when it removes

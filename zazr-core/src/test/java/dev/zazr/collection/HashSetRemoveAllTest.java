@@ -105,6 +105,24 @@ class HashSetRemoveAllTest {
     }
 
     @Test
+    void aResultIsNeverChangedByLaterCalls() {
+        // the nodes a removeAll leaves in place carry its own token: later removals and builders copy them
+        HashSet<Integer> set = HashSet.range(0, 5000);
+        HashSet<Integer> result = set.removeAll(Vector.rangeBy(0, 5000, 3));
+        java.util.List<Integer> before = new ArrayList<>();
+        result.forEach(before::add);
+        HashSet<Integer> fewer = result.removeAll(Vector.rangeBy(0, 5000, 2));
+        HashSet<Integer> more = result.addAll(Vector.range(5000, 6000));
+        HashSet<Integer> again = result.removeAll(Vector.rangeBy(1, 5000, 3));
+        java.util.List<Integer> after = new ArrayList<>();
+        result.forEach(after::add);
+        assertThat(after).containsExactlyElementsOf(before);
+        assertThat(fewer).isEqualTo(HashSet.range(0, 5000).filter(i -> i % 3 != 0 && i % 2 != 0));
+        assertThat(more).isEqualTo(HashSet.range(0, 6000).filter(i -> i >= 5000 || i % 3 != 0));
+        assertThat(again).isEqualTo(HashSet.range(0, 5000).filter(i -> i % 3 == 2));
+    }
+
+    @Test
     void removingEverythingGivesTheEmptySet() {
         HashSet<Integer> set = HashSet.range(0, 2000);
         HashSet<Integer> none = set.removeAll(Vector.range(0, 2000).reverse());

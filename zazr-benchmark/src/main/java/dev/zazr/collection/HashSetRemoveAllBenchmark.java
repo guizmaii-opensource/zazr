@@ -16,7 +16,7 @@ import org.openjdk.jmh.annotations.Warmup;
 
 /**
  * `HashSet.removeAll` of a `java.util.List`: one present element, half of the elements, and as many absent ones as
- * the set holds. Only the public API is used, so the class runs on two branches.
+ * the set holds; and `diff` of a `LinkedHashSet` larger than the set. Only the public API is used, so the class runs on two branches.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -33,6 +33,8 @@ public class HashSetRemoveAllBenchmark {
     private java.util.List<Integer> one;
     private java.util.List<Integer> half;
     private java.util.List<Integer> absent;
+    // a quarter of the elements of set, and as many absent ones as set holds: larger than set
+    private LinkedHashSet<Integer> larger;
 
     @Setup(Level.Trial)
     public void setup() {
@@ -46,6 +48,7 @@ public class HashSetRemoveAllBenchmark {
         one = java.util.List.of(all.get(size / 2));
         half = java.util.List.copyOf(all.subList(0, size / 2));
         absent = java.util.List.copyOf(all.subList(size, 2 * size));
+        larger = LinkedHashSet.ofAll(all.subList(size - size / 4, 2 * size));
     }
 
     @Benchmark
@@ -61,5 +64,10 @@ public class HashSetRemoveAllBenchmark {
     @Benchmark
     public HashSet<Integer> removeAbsent() {
         return set.removeAll(absent);
+    }
+
+    @Benchmark
+    public HashSet<Integer> diffLarger() {
+        return set.diff(larger);
     }
 }

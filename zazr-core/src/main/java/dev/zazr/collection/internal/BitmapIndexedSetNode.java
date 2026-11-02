@@ -14,8 +14,8 @@ import static java.lang.Integer.bitCount;
 /// the hash of each element. The node caches the size and the sum of the hashes of its subtree.
 ///
 /// The fields are not final: a node owned by a [HashSetBuilder] (its `owner` is the builder's token) is updated in
-/// place until the builder's `result()`, which fences the writes before the trie is published, and so is the root
-/// owned by one `HashSet.removeAll`, until it returns. A node of a persistent operation has no owner and never changes;
+/// place until the builder's `result()`, which fences the writes before the trie is published, and so is a node owned
+/// by one `HashSet.removeAll`, until it returns. A node of a persistent operation has no owner and never changes;
 /// a trie is only reached through the final field of its `HashSet` or of a view, whose freeze covers the nodes.
 ///
 /// @param <T> the element type
@@ -185,7 +185,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         } else if ((nodeMap & bitpos) != 0) {
             SetNode<T> subNode = getNode(indexFrom(nodeMap, bitpos));
             SetNode<T> subNodeNew = subNode.updated(element, hash, shift + BIT_PARTITION_SIZE, replace);
-            return (subNodeNew == subNode) ? this : copyAndSetNode(bitpos, subNode, subNodeNew);
+            return (subNodeNew == subNode) ? this : copyAndSetNode(null, bitpos, subNode, subNodeNew);
         } else {
             return copyAndInsertValue(bitpos, element, hash);
         }
@@ -211,7 +211,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                             1,
                             hashes[other]);
                 } else {
-                    return copyAndRemoveValue(bitpos, hash);
+                    return copyAndRemoveValue(null, bitpos, hash);
                 }
             } else {
                 return this;
@@ -228,10 +228,10 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                     // parent
                     return (BitmapIndexedSetNode<T>) subNodeNew;
                 } else {
-                    return copyAndMigrateFromNodeToInline(bitpos, subNode, subNodeNew);
+                    return copyAndMigrateFromNodeToInline(null, bitpos, subNode, subNodeNew);
                 }
             } else {
-                return copyAndSetNode(bitpos, subNode, subNodeNew);
+                return copyAndSetNode(null, bitpos, subNode, subNodeNew);
             }
         } else {
             return this;
@@ -265,11 +265,13 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         }
     }
 
-    private BitmapIndexedSetNode<T> copyAndSetNode(int bitpos, SetNode<T> oldNode, SetNode<T> newNode) {
+    // the copies below are owned by `owner`: null for a persistent operation
+    private BitmapIndexedSetNode<T> copyAndSetNode(
+            @Nullable Object owner, int bitpos, SetNode<T> oldNode, SetNode<T> newNode) {
         Object[] dst = content.clone();
         dst[dst.length - 1 - nodeIndex(bitpos)] = newNode;
         return new BitmapIndexedSetNode<>(
-                null,
+                owner,
                 dataMap,
                 nodeMap,
                 dst,
@@ -289,14 +291,14 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                 null, dataMap | bitpos, nodeMap, dst, insertElement(hashes, dataIx, hash), size + 1, keyHashSum + hash);
     }
 
-    private BitmapIndexedSetNode<T> copyAndRemoveValue(int bitpos, int hash) {
+    private BitmapIndexedSetNode<T> copyAndRemoveValue(@Nullable Object owner, int bitpos, int hash) {
         int dataIx = dataIndex(bitpos);
         Object[] src = content;
         Object[] dst = new Object[src.length - 1];
         System.arraycopy(src, 0, dst, 0, dataIx);
         System.arraycopy(src, dataIx + 1, dst, dataIx, src.length - dataIx - 1);
         return new BitmapIndexedSetNode<>(
-                null, dataMap ^ bitpos, nodeMap, dst, removeElement(hashes, dataIx), size - 1, keyHashSum - hash);
+                owner, dataMap ^ bitpos, nodeMap, dst, removeElement(hashes, dataIx), size - 1, keyHashSum - hash);
     }
 
     // the content of this node with the element of `bitpos` moved out, and `node` inserted among the children
@@ -323,7 +325,8 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                 keyHashSum - hash + node.keyHashSum());
     }
 
-    private BitmapIndexedSetNode<T> copyAndMigrateFromNodeToInline(int bitpos, SetNode<T> oldNode, SetNode<T> node) {
+    private BitmapIndexedSetNode<T> copyAndMigrateFromNodeToInline(
+            @Nullable Object owner, int bitpos, SetNode<T> oldNode, SetNode<T> node) {
         int idxOld = content.length - 1 - nodeIndex(bitpos);
         int idxNew = dataIndex(bitpos);
         Object[] src = content;
@@ -333,7 +336,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         System.arraycopy(src, idxNew, dst, idxNew + 1, idxOld - idxNew);
         System.arraycopy(src, idxOld + 1, dst, idxOld + 1, src.length - idxOld - 1);
         return new BitmapIndexedSetNode<>(
-                null,
+                owner,
                 dataMap | bitpos,
                 nodeMap ^ bitpos,
                 dst,
@@ -744,51 +747,72 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
 
     // -- the removals in place of removeAll
 
-    /// The trie, of which this node is the root, without `element` of hash `hash`: this root when it is absent, and
-    /// otherwise this root updated in place when `owner` owns it, or a copy owned by `owner`. Only the root is
-    /// updated in place; the subtrees go through the persistent [#removed(Object, int, int)], and the trie is the
-    /// one it gives, node for node. Scala's `removeWithShallowMutations`, of `HashSet.removedAll`, with the
-    /// ownership of the builders in place of a node created for the purpose.
+    /// The trie, of which this node is the root, without `element` of hash `hash`: this root when it is absent. A
+    /// node on the path to the element is updated in place when `owner` owns it, and otherwise copied into a node
+    /// that `owner` owns, so that the removals of one call copy each node at most once. Every branch is the one of
+    /// the persistent [#removed(Object, int, int)], and the trie is the one it gives, node for node. Scala's
+    /// `removeWithShallowMutations`, of `HashSet.removedAll`, with the ownership of the builders at every depth in
+    /// place of the root alone.
+    ///
+    /// `owner` is a token made for one call (`new Object()`) and dropped when it returns: the nodes it leaves in
+    /// the trie are never reached again by anyone holding it, so they never change after the call.
     public BitmapIndexedSetNode<T> removeInPlace(Object owner, T element, int hash) {
-        int bitpos = bitposFrom(maskFrom(hash, 0));
+        return removeInPlace(owner, element, hash, 0);
+    }
+
+    private BitmapIndexedSetNode<T> removeInPlace(Object owner, T element, int hash, int shift) {
+        int bitpos = bitposFrom(maskFrom(hash, shift));
         if ((dataMap & bitpos) != 0) {
             int index = indexFrom(dataMap, bitpos);
             if (hashes[index] != hash || !Objects.equals(getPayload(index), element)) {
                 return this;
+            } else if (payloadArity() == 2 && nodeArity() == 0) {
+                // the node of the remaining element, made as the persistent removal makes it
+                return removed(element, hash, shift);
+            } else if (this.owner == owner) {
+                removeValue(bitpos, index, hash);
+                return this;
+            } else {
+                return copyAndRemoveValue(owner, bitpos, hash);
             }
-            // at the root, removing one of two inline elements is removing one value, as with more of them
-            BitmapIndexedSetNode<T> root = ownedBy(owner);
-            root.removeValue(bitpos, index, hash);
-            return root;
         } else if ((nodeMap & bitpos) != 0) {
             SetNode<T> subNode = getNode(indexFrom(nodeMap, bitpos));
-            SetNode<T> subNodeNew = subNode.removed(element, hash, BIT_PARTITION_SIZE);
+            int subSize = subNode.size();
+            int subKeyHashSum = subNode.keyHashSum();
+            SetNode<T> subNodeNew = (subNode instanceof BitmapIndexedSetNode<T> child)
+                    ? child.removeInPlace(owner, element, hash, shift + BIT_PARTITION_SIZE)
+                    : subNode.removed(element, hash, shift + BIT_PARTITION_SIZE);
             if (subNodeNew == subNode) {
+                if (subNodeNew.size() == subSize) {
+                    return this;
+                }
+                // the child was updated in place: `owner` owns it, so it made it, as a copy put in this node, which
+                // it owns too
+                size = size - subSize + subNodeNew.size();
+                keyHashSum = keyHashSum - subKeyHashSum + subNodeNew.keyHashSum();
                 return this;
-            }
-            if (subNodeNew.size() == 1 && size == subNode.size()) {
-                // the child was all this root held: its remaining element, in a node of the root level, is the root
-                return (BitmapIndexedSetNode<T>) subNodeNew;
-            }
-            BitmapIndexedSetNode<T> root = ownedBy(owner);
-            if (subNodeNew.size() == 1) {
-                root.migrateFromNodeToInline(bitpos, subNode, subNodeNew);
+            } else if (subNodeNew.size() == 1) {
+                if (size == subSize) {
+                    // the child was all this node held: the single remaining element goes up, to be inlined by the
+                    // parent
+                    return (BitmapIndexedSetNode<T>) subNodeNew;
+                } else if (this.owner == owner) {
+                    migrateFromNodeToInline(bitpos, subNode, subNodeNew);
+                    return this;
+                } else {
+                    return copyAndMigrateFromNodeToInline(owner, bitpos, subNode, subNodeNew);
+                }
+            } else if (this.owner == owner) {
+                content[content.length - 1 - nodeIndex(bitpos)] = subNodeNew;
+                size = size - subSize + subNodeNew.size();
+                keyHashSum = keyHashSum - subKeyHashSum + subNodeNew.keyHashSum();
+                return this;
             } else {
-                root.content[root.content.length - 1 - root.nodeIndex(bitpos)] = subNodeNew;
-                root.size = size - subNode.size() + subNodeNew.size();
-                root.keyHashSum = keyHashSum - subNode.keyHashSum() + subNodeNew.keyHashSum();
+                return copyAndSetNode(owner, bitpos, subNode, subNodeNew);
             }
-            return root;
         } else {
             return this;
         }
-    }
-
-    // this node when `owner` owns it, otherwise a copy that it owns, with its own content array
-    private BitmapIndexedSetNode<T> ownedBy(Object owner) {
-        return (this.owner == owner)
-                ? this
-                : new BitmapIndexedSetNode<>(owner, dataMap, nodeMap, content.clone(), hashes, size, keyHashSum);
     }
 
     // removes the inline element of `bitpos`, at `index`, of hash `hash`; this node is owned

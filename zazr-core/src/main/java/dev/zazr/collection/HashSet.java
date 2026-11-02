@@ -698,13 +698,20 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * <p>
      * Complexity: O(m) for a set of m elements, effectively O(1) each, as {@link #removeAll(Iterable)}; O(n) when it is
      * a HashSet, which is compared with this set part by part: a part of this set that the argument does not reach is
-     * kept whole, not walked.
+     * kept whole, not walked. A LinkedHashSet larger than this set is not walked: each element of this set is
+     * looked up in it, O(n).
      */
     @Override
     public HashSet<T> diff(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
         if (isEmpty() || elements.isEmpty()) {
             return this;
+        } else if (elements instanceof LinkedHashSet<? extends T> linked && linked.size() > size()) {
+            // Scala's choice: the smaller side is walked. A LinkedHashSet decides with equals and hashCode, as the
+            // removals do; it only reads the elements of this set
+            @SuppressWarnings("unchecked")
+            LinkedHashSet<T> larger = (LinkedHashSet<T>) linked;
+            return filter(e -> !larger.contains(e));
         } else {
             return removeAll(elements);
         }
@@ -983,8 +990,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: O(m) for m given elements, effectively O(1) each, as {@link #remove(Object)}; O(n) when they are a
-     * HashSet. Other elements are removed one by one, and the first removal copies the top node of this set, which
-     * the next ones update in place. A HashSet is compared with this set part by part, and a part of this set that
+     * HashSet. Other elements are removed one by one: each node on the path to an element is copied by the first
+     * removal that reaches it, and updated in place by the next ones. A HashSet is compared with this set part by part, and a part of this set that
      * the argument does not reach is kept whole, not walked.
      */
     @Override

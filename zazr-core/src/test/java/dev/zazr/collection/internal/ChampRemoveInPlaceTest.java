@@ -130,6 +130,37 @@ public class ChampRemoveInPlaceTest {
         assertThat(other.size()).isEqualTo(97);
     }
 
+    @Test
+    public void updatesInPlaceAtEveryDepthTheNodesItCopied() {
+        // 20 keys under one slot of the root and one slot of its child: a path of three nodes, the last one holding
+        // the keys; and one key elsewhere, so that the root keeps two parts
+        java.util.List<Key> keys = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            keys.add(new Key(1 | (i << 10), 0));
+        }
+        keys.add(new Key(2, 0));
+        BitmapIndexedSetNode<Key> trie = persistent(keys);
+        BitmapIndexedSetNode<Key> copy = persistent(keys);
+        Object owner = new Object();
+        BitmapIndexedSetNode<Key> first = trie.removeInPlace(owner, keys.get(0), Objects.hashCode(keys.get(0)));
+        BitmapIndexedSetNode<Key> child = (BitmapIndexedSetNode<Key>) first.getNode(0);
+        BitmapIndexedSetNode<Key> leaf = (BitmapIndexedSetNode<Key>) child.getNode(0);
+        assertThat(java.util.Arrays.asList(first.owner, child.owner, leaf.owner))
+                .as("every node of the path is a copy that the call owns")
+                .containsOnly(owner);
+        BitmapIndexedSetNode<Key> second = first.removeInPlace(owner, keys.get(1), Objects.hashCode(keys.get(1)));
+        assertThat(second).isSameAs(first);
+        assertThat(second.getNode(0)).as("the child, updated in place").isSameAs(child);
+        assertThat(child.getNode(0)).as("the leaf, updated in place").isSameAs(leaf);
+        assertThat(java.util.List.of(second.size(), child.size(), leaf.size())).containsExactly(19, 18, 18);
+        assertSameShape(trie.removed(keys.get(0)).removed(keys.get(1)), second, true);
+        // down to one key under the child: inlined into the root, as the persistent removal does
+        BitmapIndexedSetNode<Key> rest = removeChecked(second, keys.subList(2, 19));
+        assertThat(rest.nodeArity()).isZero();
+        assertThat(rest.size()).isEqualTo(2);
+        assertSameShape(copy, trie, true);
+    }
+
     private static final int[] HOT_HASHES = {
         0, 1, 2, 31, 32, 33, 1023, 1024, 1025, -1, Integer.MIN_VALUE, Integer.MAX_VALUE, 1 << 30, 1 << 25, 1 << 20
     };
