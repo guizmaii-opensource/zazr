@@ -1213,7 +1213,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return tree.updated(element, false);
     }
 
-    private static <T extends @Nullable Object> HashSet<T> wrap(BitmapIndexedSetNode<T> tree) {
+    // also the HashSet of HashMap.keySet
+    static <T extends @Nullable Object> HashSet<T> wrap(BitmapIndexedSetNode<T> tree) {
         return tree.size() == 0 ? empty() : new HashSet<>(tree);
     }
 }

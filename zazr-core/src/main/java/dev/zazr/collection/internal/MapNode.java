@@ -60,6 +60,11 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     /// every new value is the same object as the old one. A null value is rejected as a put rejects it.
     abstract <W extends @Nullable Object> MapNode<K, W> transform(BiFunction<? super K, ? super V, ? extends W> f);
 
+    /// The set trie of the keys of this subtree, node for node: the same bitmaps, hashes, sizes and key hash sums, and
+    /// the keys of a collision node in the same order, so it is the trie of a set built from the keys in iteration
+    /// order. It shares the `hashes` arrays of this subtree, which no node writes in place, and has no owner.
+    abstract SetNode<K> keyTrie();
+
     /// `true` when the two subtrees, at the same place in their tries, hold equal keys mapped to equal values. Since
     /// the shape is canonical, equal maps have equal bitmaps, hashes and sizes, compared before any key.
     public static boolean sameEntries(MapNode<?, ?> a, MapNode<?, ?> b) {

@@ -138,6 +138,23 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         return keyHashSum;
     }
 
+    /// The trie of a `HashSet` of the keys of this trie, built node for node in O(n), with no hashing and no key
+    /// comparison (see [MapNode#keyTrie()]).
+    @Override
+    public BitmapIndexedSetNode<K> keyTrie() {
+        int payload = bitCount(dataMap);
+        int children = bitCount(nodeMap);
+        Object[] keys = new Object[payload + children];
+        for (int i = 0; i < payload; i++) {
+            keys[i] = content[2 * i];
+        }
+        // the children sit at the back of both arrays, in reverse slot order
+        for (int i = 0; i < children; i++) {
+            keys[keys.length - 1 - i] = getNode(i).keyTrie();
+        }
+        return new BitmapIndexedSetNode<>(null, dataMap, nodeMap, keys, hashes, size, keyHashSum);
+    }
+
     int dataIndex(int bitpos) {
         return bitCount(dataMap & (bitpos - 1));
     }
