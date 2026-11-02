@@ -992,6 +992,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(k) for k dropped elements; the rest of this List is shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1010,6 +1012,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * that satisfies the given {@code predicate}, dropping all preceding elements.
      * <p>
      * Complexity: O(k) for the k dropped elements; the rest of this List is shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param predicate a condition tested on each element
      * @return a new instance starting from the first element matching the predicate
@@ -1028,6 +1032,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * for method references that cannot be negated directly.
      * <p>
      * Complexity: O(k) for the k dropped elements; the rest of this List is shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param predicate a condition tested on each element
      * @return a new instance starting from the first element not matching the predicate
@@ -1048,6 +1054,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(n); the length is counted, then the kept elements are copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -1067,6 +1075,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The elements up to and including the last one satisfying {@code predicate}: the elements after it are dropped.
      * <p>
      * Complexity: O(n); the List is copied twice (reversed, then reversed back).
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -1074,7 +1084,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default List<T> dropRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return reverse().dropUntil(predicate).reverse();
+        List<T> reversed = reverse();
+        List<T> dropped = reversed.dropUntil(predicate);
+        return (dropped == reversed) ? this : dropped.reverse();
     }
 
     /**
@@ -1082,6 +1094,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * {@code dropRightUntil(predicate.negate())}.
      * <p>
      * Complexity: O(n); the List is copied twice (reversed, then reversed back).
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -1170,7 +1184,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Returns a new traversable containing only the elements that satisfy the given predicate.
      * <p>
-     * Complexity: O(n); this List itself is returned when every element is kept.
+     * Complexity: O(n); the elements after the last removed one are shared, not copied, and this List itself is
+     * returned when every element is kept.
      *
      * @param predicate the condition to test elements
      * @return a traversable with elements matching the predicate
@@ -1178,18 +1193,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default List<T> filter(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        if (isEmpty()) {
-            return this;
-        } else {
-            List<T> filtered = foldLeft(empty(), (xs, x) -> predicate.test(x) ? xs.prepend(x) : xs);
-            if (filtered.isEmpty()) {
-                return empty();
-            } else if (filtered.size() == size()) {
-                return this;
-            } else {
-                return filtered.reverse();
-            }
-        }
+        return ListModule.Conserve.filter(this, predicate);
     }
 
     /**
@@ -1553,6 +1557,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * on shifted right.
      * <p>
      * Complexity: O(i + m) for m inserted elements; the elements before i are copied, the rest of this List is shared.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
@@ -1565,6 +1571,17 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         Objects.requireNonNull(elements, "elements is null");
         if (index < 0) {
             throw new IndexOutOfBoundsException("insertAll(" + index + ", elements)");
+        }
+        if (Collections.isTraversableAgain(elements) && Collections.isEmpty(elements)) {
+            // nothing to insert: the index is checked, without copying a cell
+            List<T> rest = this;
+            for (int i = index; i > 0; i--, rest = rest.tail()) {
+                if (rest.isEmpty()) {
+                    throw new IndexOutOfBoundsException(
+                            "insertAll(" + index + ", elements) on List of length " + size());
+                }
+            }
+            return this;
         }
         List<T> preceding = Nil.instance();
         List<T> tail = this;
@@ -1587,9 +1604,12 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Complexity: O(n).
      *
      * @param element the separator
-     * @return a new List, or this List if it is empty
+     * @return a new List, or this List if it has fewer than two elements
      */
     default List<T> intersperse(T element) {
+        if (isEmpty() || tail().isEmpty()) {
+            return this;
+        }
         return ofAll(Iterator.ofAll(this).intersperse(element));
     }
 
@@ -1855,6 +1875,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * {@code from} or {@code replaced} counts as 0.
      * <p>
      * Complexity: O(n + m) for m replacement elements: the elements before and after the replaced ones are copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -1867,6 +1889,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         int count = Math.max(replaced, 0);
         // the end of the replaced range, saturated: from + replaced can overflow an int
         int end = (int) Math.min((long) start + count, Integer.MAX_VALUE);
+        if (count == 0 && Collections.isTraversableAgain(that) && Collections.isEmpty(that)) {
+            return this;
+        }
         return take(start).appendAll(that).appendAll(drop(end));
     }
 
@@ -1880,6 +1905,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             } else {
                 right = right.prepend(t);
             }
+        }
+        if (right.isEmpty()) {
+            return Tuple.of(this, right);
+        } else if (left.isEmpty()) {
+            return Tuple.of(left, this);
         }
         return Tuple.of(left.reverse(), right.reverse());
     }
@@ -2080,6 +2110,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * the first which will be retrieved.
      * <p>
      * Complexity: O(m) for m pushed elements; this List is shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param elements Elements, may be empty
      * @return a new {@code List} instance, containing the new elements on top of this List
@@ -2101,6 +2133,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * the first which will be retrieved.
      * <p>
      * Complexity: O(m) for m pushed elements; this List is shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param elements An Iterable of elements, may be empty
      * @return a new {@code List} instance, containing the new elements on top of this List
@@ -2180,8 +2214,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default List<T> removeLast(Predicate<T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        List<T> removedAndReversed = reverse().removeFirst(predicate);
-        return removedAndReversed.size() == size() ? this : removedAndReversed.reverse();
+        List<T> reversed = reverse();
+        List<T> removedAndReversed = reversed.removeFirst(predicate);
+        return (removedAndReversed == reversed) ? this : removedAndReversed.reverse();
     }
 
     /**
@@ -2243,6 +2278,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Replaces the first occurrence of {@code currentElement} with {@code newElement}, if it exists.
      * <p>
      * Complexity: O(k) for the k elements before the replaced one; the rest of this List is shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
@@ -2270,33 +2307,24 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Replaces all occurrences of {@code currentElement} with {@code newElement}.
      * <p>
-     * Complexity: O(n).
+     * Complexity: O(n); the elements after the last replaced one are shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
      * @return a new List with all occurrences of {@code currentElement} replaced by {@code newElement}
      */
     default List<T> replaceAll(T currentElement, T newElement) {
-        @SuppressWarnings("Var")
-        List<T> result = Nil.instance();
-        @SuppressWarnings("Var")
-        boolean changed = false;
-        for (List<T> list = this; !list.isEmpty(); list = list.tail()) {
-            T head = list.head();
-            if (Objects.equals(head, currentElement)) {
-                result = result.prepend(newElement);
-                changed = true;
-            } else {
-                result = result.prepend(head);
-            }
-        }
-        return changed ? result.reverse() : this;
+        return ListModule.Conserve.replaceAll(this, currentElement, newElement);
     }
 
     /**
      * Retains only the elements from this List that are contained in the given {@code elements}.
      * <p>
      * Complexity: O(n + m) for m given elements: they are put in a hash set, then this List is filtered once.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param elements the elements to keep
      * @return a new List containing only the elements present in {@code elements}, in their original order
@@ -2481,6 +2509,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * this List.
      * <p>
      * Complexity: O(j); the elements before i are skipped, the ones from i to j are copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
@@ -2501,11 +2531,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
-     * @return a new sorted List, or this List if it is empty
+     * @return a new sorted List, or this List if it has fewer than two elements
      * @throws ClassCastException if {@code T} is not {@code Comparable}
      */
     default List<T> sorted() {
-        return isEmpty() ? this : stream().sorted().collect(collector());
+        return (isEmpty() || tail().isEmpty()) ? this : stream().sorted().collect(collector());
     }
 
     /**
@@ -2514,12 +2544,14 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * Complexity: O(n log n) comparisons; the elements are copied to an array and sorted there.
      *
      * @param comparator the order
-     * @return a new sorted List, or this List if it is empty
+     * @return a new sorted List, or this List if it has fewer than two elements
      * @throws NullPointerException if {@code comparator} is null
      */
     default List<T> sorted(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return isEmpty() ? this : stream().sorted(comparator).collect(collector());
+        return (isEmpty() || tail().isEmpty())
+                ? this
+                : stream().sorted(comparator).collect(collector());
     }
 
     /**
@@ -2529,7 +2561,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param mapper computes the sort key
      * @param <U>    the key type
-     * @return a new sorted List, or this List if it is empty
+     * @return a new sorted List, or this List if it has fewer than two elements
      * @throws NullPointerException if {@code mapper} is null
      */
     default <U extends Comparable<? super U>> List<T> sortBy(Function<? super T, ? extends U> mapper) {
@@ -2544,7 +2576,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param comparator the order of the keys
      * @param mapper     computes the sort key
      * @param <U>        the key type
-     * @return a new sorted List, or this List if it is empty
+     * @return a new sorted List, or this List if it has fewer than two elements
      * @throws NullPointerException if {@code comparator} or {@code mapper} is null
      */
     default <U extends @Nullable Object> List<T> sortBy(
@@ -2560,7 +2592,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The first element of the returned {@code Tuple} is the longest prefix of elements satisfying {@code predicate},
      * and the second element is the remaining elements.
      * <p>
-     * Complexity: O(n); both parts are copied.
+     * Complexity: O(k) for the k elements of the prefix; they are copied, the rest of this List is shared.
+     * <p>
+     * When one part holds every element, it is this List itself.
      *
      * @param predicate a predicate used to determine the prefix
      * @return a {@code Tuple} containing the prefix and remainder
@@ -2568,32 +2602,31 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default Tuple2<List<T>, List<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        Tuple2<Iterator<T>, Iterator<T>> itt = Iterator.ofAll(this).span(predicate);
-        return Tuple.of(ofAll(itt._1()), ofAll(itt._2()));
+        @SuppressWarnings("Var")
+        List<T> cut = this;
+        while (!cut.isEmpty() && predicate.test(cut.head())) {
+            cut = cut.tail();
+        }
+        return ListModule.Conserve.splitAt(this, cut);
     }
 
     /**
      * This List split in two at position {@code n}: the first {@code n} elements and the rest.
      * <p>
      * Complexity: O(k) for the first k elements; they are copied, the rest of this List is shared.
+     * <p>
+     * When one part holds every element, it is this List itself.
      *
      * @param n the position of the split
      * @return the prefix and the suffix
      */
-    @SuppressWarnings("Var")
     default Tuple2<List<T>, List<T>> splitAt(int n) {
-        if (isEmpty()) {
-            return Tuple.of(empty(), empty());
-        } else {
-            List<T> init = Nil.instance();
-            List<T> tail = this;
-            while (n > 0 && !tail.isEmpty()) {
-                init = init.prepend(tail.head());
-                tail = tail.tail();
-                n--;
-            }
-            return Tuple.of(init.reverse(), tail);
+        @SuppressWarnings("Var")
+        List<T> cut = this;
+        for (int i = n; i > 0 && !cut.isEmpty(); i--) {
+            cut = cut.tail();
         }
+        return ListModule.Conserve.splitAt(this, cut);
     }
 
     /**
@@ -2601,6 +2634,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * whole List is the first part.
      * <p>
      * Complexity: O(k) for the k elements before the split; the suffix is shared.
+     * <p>
+     * When one part holds every element, it is this List itself.
      *
      * @param predicate the condition
      * @return the prefix and the suffix
@@ -2623,6 +2658,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * whole List is the first part.
      * <p>
      * Complexity: O(k) for the k elements up to the split; the suffix is shared.
+     * <p>
+     * When one part holds every element, it is this List itself.
      *
      * @param predicate the condition
      * @return the prefix including the matching element, and the suffix
@@ -2684,6 +2721,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The elements from {@code beginIndex} on.
      * <p>
      * Complexity: O(i); the result shares its elements with this List.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param beginIndex the first position
      * @return a new List
@@ -2707,6 +2746,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
      * <p>
      * Complexity: O(j); the elements before i are skipped, the ones from i to j are copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
@@ -2765,6 +2806,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(k) for k taken elements; they are copied. A List of at most k elements is returned as is.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param n the number of elements to take
      * @return a new {@code List} containing the first {@code n} elements
@@ -2840,6 +2883,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(n); the length is counted, and the List is copied twice (reversed, then reversed back).
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param n the number of elements to take from the end
      * @return a new {@code List} containing the last {@code n} elements
@@ -2858,6 +2903,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The longest suffix whose elements, from the end, do not satisfy {@code predicate}.
      * <p>
      * Complexity: O(n); the List is copied twice (reversed, then reversed back).
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -2872,6 +2919,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * The longest suffix whose elements, from the end, all satisfy {@code predicate}.
      * <p>
      * Complexity: O(n); the List is copied twice (reversed, then reversed back).
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new List
@@ -2879,7 +2928,9 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default List<T> takeRightWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return reverse().takeWhile(predicate).reverse();
+        List<T> reversed = reverse();
+        List<T> taken = reversed.takeWhile(predicate);
+        return (taken == reversed) ? this : taken.reverse();
     }
 
     default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<List<T1>, List<T2>> unzip(
@@ -2920,6 +2971,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * This List with the element at {@code index} replaced by {@code element}.
      * <p>
      * Complexity: O(i); the elements before i are copied, the rest of this List is shared.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param index   the position to update
      * @param element the new element
@@ -2934,29 +2987,32 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (index < 0) {
             throw new IndexOutOfBoundsException("update(" + index + ", e)");
         }
-        List<T> preceding = Nil.instance();
-        List<T> tail = this;
-        for (int i = index; i > 0; i--, tail = tail.tail()) {
-            if (tail.isEmpty()) {
+        List<T> target = this;
+        for (int i = index; i > 0; i--, target = target.tail()) {
+            if (target.isEmpty()) {
                 throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + size());
             }
-            preceding = preceding.prepend(tail.head());
         }
-        if (tail.isEmpty()) {
+        if (target.isEmpty()) {
             throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + size());
         }
-        // skip the current head element because it is replaced
-        List<T> result = tail.tail().prepend(element);
-        for (T next : preceding) {
-            result = result.prepend(next);
+        if (target.head() == element) {
+            return this;
         }
-        return result;
+        // the cells before the updated one are copied, the ones after it are shared
+        List.Builder<T> result = newBuilder();
+        ListModule.Conserve.addCells(result, this, target);
+        return result.add(Objects.requireNonNull(element, "List: element is null"))
+                .addAll(target.tail())
+                .result();
     }
 
     /**
      * This List with the element at {@code index} replaced by what {@code updater} computes from it.
      * <p>
      * Complexity: O(i); the element is read, then the elements before i are copied.
+     * <p>
+     * Returns this List itself when nothing changes.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one

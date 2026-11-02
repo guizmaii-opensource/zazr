@@ -72,6 +72,24 @@ A `Vector`, `List`, `Queue` or `LazyList` equals another of these four when they
 order. Sets equal sets and maps equal maps. A `NonEmptyVector` equals only another `NonEmptyVector`; a non-empty set
 equals only a non-empty set, and a non-empty map only a non-empty map.
 
+## When nothing changes
+
+A sequence operation that changes nothing returns the sequence itself, not a copy. Nothing is allocated, and
+`result == original` tells that nothing changed.
+
+- `filter` that keeps every element, `remove` or `replace` of an absent element.
+- `take(n)` with `n` at least the size, `drop(0)`, a `slice` of the whole range, `padTo` below the size.
+- Appending, prepending or inserting an empty collection. When the receiver is empty, `appendAll` and
+  `prependAll` return the other side.
+- `sorted`, `reverse` and `intersperse` on fewer than two elements, and `update` with the element already there.
+- `partition`, `span` and `splitAt` return the receiver as the part that gets every element.
+
+A `List` also shares what follows the last change: `filter`, `replaceAll`, `update`, `span` and `splitAt` copy only
+the elements before it.
+
+A `LazyList` returns itself only when it can tell without reading an element, such as `drop(0)` or a `patch` that
+inserts and removes nothing. Each method's documentation says when it returns the receiver.
+
 ## Grouping
 
 `groupBy` splits a collection into groups by a key. Two variants change the elements as they group them, in one pass:

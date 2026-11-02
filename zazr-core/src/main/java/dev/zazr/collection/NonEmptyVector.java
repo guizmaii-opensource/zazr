@@ -74,6 +74,11 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         this.vector = vector;
     }
 
+    // the result of an operation on the wrapped Vector: this NonEmptyVector itself when it is that very Vector
+    private NonEmptyVector<A> rewrap(Vector<A> result) {
+        return (result == vector) ? this : new NonEmptyVector<>(result);
+    }
+
     // -- constructors
 
     /**
@@ -278,13 +283,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Accepts the possibly empty type and returns the non-empty one.
      * <p>
      * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param elements Elements to append, possibly none
      * @return this vector followed by {@code elements}
      * @throws NullPointerException if {@code elements} is null
      */
     public NonEmptyVector<A> appendAll(Vector<? extends A> elements) {
-        return new NonEmptyVector<>(vector.appendAll(elements));
+        return rewrap(vector.appendAll(elements));
     }
 
     /**
@@ -326,13 +333,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Accepts the possibly empty type and returns the non-empty one.
      * <p>
      * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param elements Elements to prepend, possibly none
      * @return {@code elements} followed by this vector
      * @throws NullPointerException if {@code elements} is null
      */
     public NonEmptyVector<A> prependAll(Vector<? extends A> elements) {
-        return new NonEmptyVector<>(vector.prependAll(elements));
+        return rewrap(vector.prependAll(elements));
     }
 
     /**
@@ -349,35 +358,43 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Complexity: O(n), as {@link Vector#reverse()}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @return the elements in reverse order
      */
     public NonEmptyVector<A> reverse() {
-        return new NonEmptyVector<>(vector.reverse());
+        return rewrap(vector.reverse());
     }
 
     /**
      * Complexity: O(n), as {@link Vector#distinct()}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @return the distinct elements, each at its first occurrence
      */
     public NonEmptyVector<A> distinct() {
-        return new NonEmptyVector<>(vector.distinct());
+        return rewrap(vector.distinct());
     }
 
     /**
      * Complexity: O(n log n) comparisons, as {@link Vector#distinctBy(Comparator)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param comparator Decides which elements are equal
      * @return the elements distinct under {@code comparator}, each at its first occurrence
      * @throws NullPointerException if {@code comparator} is null
      */
     public NonEmptyVector<A> distinctBy(Comparator<? super A> comparator) {
-        return new NonEmptyVector<>(vector.distinctBy(comparator));
+        return rewrap(vector.distinctBy(comparator));
     }
 
     /**
      * Complexity: O(n), as {@link Vector#distinctBy(Function)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param keyExtractor Computes the key elements are distinct by
      * @param <K>          Key type
@@ -385,32 +402,38 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if {@code keyExtractor} is null
      */
     public <K extends @Nullable Object> NonEmptyVector<A> distinctBy(Function<? super A, ? extends K> keyExtractor) {
-        return new NonEmptyVector<>(vector.distinctBy(keyExtractor));
+        return rewrap(vector.distinctBy(keyExtractor));
     }
 
     /**
      * Complexity: O(n log n) comparisons, as {@link Vector#sorted()}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @return the elements sorted by their natural order
      * @throws ClassCastException if the elements are not {@link Comparable}
      */
     public NonEmptyVector<A> sorted() {
-        return new NonEmptyVector<>(vector.sorted());
+        return rewrap(vector.sorted());
     }
 
     /**
      * Complexity: O(n log n) comparisons, as {@link Vector#sorted(Comparator)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param comparator The order
      * @return the elements sorted by {@code comparator} (stable)
      * @throws NullPointerException if {@code comparator} is null
      */
     public NonEmptyVector<A> sorted(Comparator<? super A> comparator) {
-        return new NonEmptyVector<>(vector.sorted(comparator));
+        return rewrap(vector.sorted(comparator));
     }
 
     /**
      * Complexity: O(n log n) comparisons, as {@link Vector#sortBy(Function)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param mapper Computes the sort key
      * @param <U>    Key type
@@ -418,11 +441,13 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException if {@code mapper} is null
      */
     public <U extends Comparable<? super U>> NonEmptyVector<A> sortBy(Function<? super A, ? extends U> mapper) {
-        return new NonEmptyVector<>(vector.sortBy(mapper));
+        return rewrap(vector.sortBy(mapper));
     }
 
     /**
      * Complexity: O(n log n) comparisons, as {@link Vector#sortBy(Comparator, Function)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param comparator The order of the keys
      * @param mapper     Computes the sort key
@@ -432,7 +457,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public <U extends @Nullable Object> NonEmptyVector<A> sortBy(
             Comparator<? super U> comparator, Function<? super A, ? extends U> mapper) {
-        return new NonEmptyVector<>(vector.sortBy(comparator, mapper));
+        return rewrap(vector.sortBy(comparator, mapper));
     }
 
     /**
@@ -508,6 +533,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Object)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param index   A position
      * @param element The new element
@@ -517,11 +544,13 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> update(int index, A element) {
         Objects.requireNonNull(element, "NonEmptyVector.update: element is null");
-        return new NonEmptyVector<>(vector.update(index, element));
+        return rewrap(vector.update(index, element));
     }
 
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Function)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param index   A position
      * @param updater Computes the new element from the current one
@@ -530,7 +559,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * @throws NullPointerException      if {@code updater} is null or returns null
      */
     public NonEmptyVector<A> update(int index, Function<? super A, ? extends A> updater) {
-        return new NonEmptyVector<>(vector.update(index, updater));
+        return rewrap(vector.update(index, updater));
     }
 
     /**
@@ -664,6 +693,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Accepts any iterable, possibly empty, and returns the non-empty type. The elements are read once.
      * <p>
      * Complexity: O(m) for m appended elements, as {@link Vector#appendAll(Iterable)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param elements Elements to append, possibly none
      * @return this vector followed by {@code elements}
@@ -671,14 +702,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> appendAll(Iterable<? extends A> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return new NonEmptyVector<>(
-                vector.appendAll(addAll(Vector.newBuilder(), elements).result()));
+        return rewrap(vector.appendAll(addAll(Vector.newBuilder(), elements).result()));
     }
 
     /**
      * Accepts any iterable, possibly empty, and returns the non-empty type. The elements are read once.
      * <p>
      * Complexity: O(m) for m prepended elements, as {@link Vector#prependAll(Iterable)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param elements Elements to prepend, possibly none
      * @return {@code elements} followed by this vector
@@ -686,8 +718,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> prependAll(Iterable<? extends A> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return new NonEmptyVector<>(
-                vector.prependAll(addAll(Vector.newBuilder(), elements).result()));
+        return rewrap(vector.prependAll(addAll(Vector.newBuilder(), elements).result()));
     }
 
     /**
@@ -711,6 +742,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * shift right. The elements are read once.
      * <p>
      * Complexity: O(m + min(i, n - i)) for m inserted elements, as {@link Vector#insertAll(int, Iterable)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param index    A position, {@code 0 <= index <= size()}
      * @param elements The elements to insert
@@ -720,7 +753,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> insertAll(int index, Iterable<? extends A> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return new NonEmptyVector<>(
+        return rewrap(
                 vector.insertAll(index, addAll(Vector.newBuilder(), elements).result()));
     }
 
@@ -728,6 +761,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Puts {@code element} between every two elements.
      * <p>
      * Complexity: O(n), as {@link Vector#intersperse(Object)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param element The separator
      * @return a non-empty vector of {@code 2 * size() - 1} elements
@@ -735,13 +770,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> intersperse(A element) {
         Objects.requireNonNull(element, "NonEmptyVector.intersperse: element is null");
-        return new NonEmptyVector<>(vector.intersperse(element));
+        return rewrap(vector.intersperse(element));
     }
 
     /**
      * Appends copies of {@code element} until there are {@code length} elements.
      * <p>
      * Complexity: O(k) for the k elements appended, as {@link Vector#padTo(int, Object)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param length  The target size
      * @param element The padding element
@@ -750,13 +787,15 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> padTo(int length, A element) {
         Objects.requireNonNull(element, "NonEmptyVector.padTo: element is null");
-        return new NonEmptyVector<>(vector.padTo(length, element));
+        return rewrap(vector.padTo(length, element));
     }
 
     /**
      * Prepends copies of {@code element} until there are {@code length} elements.
      * <p>
      * Complexity: O(k) for the k elements prepended, as {@link Vector#leftPadTo(int, Object)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param length  The target size
      * @param element The padding element
@@ -765,7 +804,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> leftPadTo(int length, A element) {
         Objects.requireNonNull(element, "NonEmptyVector.leftPadTo: element is null");
-        return new NonEmptyVector<>(vector.leftPadTo(length, element));
+        return rewrap(vector.leftPadTo(length, element));
     }
 
     /**
@@ -773,12 +812,14 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * {@code (3, 4, 5, 1, 2)}. A negative {@code n} rotates right; {@code n} is taken modulo the size.
      * <p>
      * Complexity: O(min(k, n - k)), where k is the distance modulo the size, as {@link Vector#rotateLeft(int)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param n The distance
      * @return the rotated elements
      */
     public NonEmptyVector<A> rotateLeft(int n) {
-        return new NonEmptyVector<>(vector.rotateLeft(n));
+        return rewrap(vector.rotateLeft(n));
     }
 
     /**
@@ -786,26 +827,32 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * {@code (4, 5, 1, 2, 3)}. A negative {@code n} rotates left; {@code n} is taken modulo the size.
      * <p>
      * Complexity: O(min(k, n - k)), where k is the distance modulo the size, as {@link Vector#rotateRight(int)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param n The distance
      * @return the rotated elements
      */
     public NonEmptyVector<A> rotateRight(int n) {
-        return new NonEmptyVector<>(vector.rotateRight(n));
+        return rewrap(vector.rotateRight(n));
     }
 
     /**
      * Complexity: O(n), as {@link Vector#shuffle()}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @return the elements in a uniformly random order
      */
     public NonEmptyVector<A> shuffle() {
-        return new NonEmptyVector<>(vector.shuffle());
+        return rewrap(vector.shuffle());
     }
 
     /**
      * Complexity: O(n) to find the element, then one effectively O(1) update, as
      * {@link Vector#replace(Object, Object)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param currentElement The element to replace
      * @param newElement     The replacement
@@ -814,11 +861,13 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> replace(A currentElement, A newElement) {
         Objects.requireNonNull(newElement, "NonEmptyVector.replace: newElement is null");
-        return new NonEmptyVector<>(vector.replace(currentElement, newElement));
+        return rewrap(vector.replace(currentElement, newElement));
     }
 
     /**
      * Complexity: O(n) plus one effectively O(1) update per occurrence, as {@link Vector#replaceAll(Object, Object)}.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
      *
      * @param currentElement The element to replace
      * @param newElement     The replacement
@@ -827,7 +876,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      */
     public NonEmptyVector<A> replaceAll(A currentElement, A newElement) {
         Objects.requireNonNull(newElement, "NonEmptyVector.replaceAll: newElement is null");
-        return new NonEmptyVector<>(vector.replaceAll(currentElement, newElement));
+        return rewrap(vector.replaceAll(currentElement, newElement));
     }
 
     /**

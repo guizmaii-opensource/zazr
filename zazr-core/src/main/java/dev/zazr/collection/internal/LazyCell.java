@@ -315,8 +315,8 @@ public abstract class LazyCell<T extends @Nullable Object> implements LazyList<T
         return builder.append(", <cycle>)").toString();
     }
 
-    // whether list is a cell already evaluated as non-empty: nothing is evaluated
-    private static boolean knownNonEmpty(LazyList<?> list) {
+    /// Whether `list` is already known to be non-empty, without evaluating anything.
+    public static boolean knownNonEmpty(LazyList<?> list) {
         return list instanceof LazyCell<?> cell && cell.state == CONS;
     }
 

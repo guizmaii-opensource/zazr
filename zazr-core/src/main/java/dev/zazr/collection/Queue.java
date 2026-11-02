@@ -1237,7 +1237,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a new {@code Queue} without duplicate elements
      */
     public Queue<T> distinct() {
-        return ofAll(toList().distinct());
+        List<T> list = toList();
+        return conserved(list, list.distinct());
     }
 
     /**
@@ -1252,7 +1253,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> distinctBy(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return ofAll(toList().distinctBy(comparator));
+        List<T> list = toList();
+        return conserved(list, list.distinctBy(comparator));
     }
 
     /**
@@ -1270,7 +1272,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public <U extends @Nullable Object> Queue<T> distinctBy(Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor, "keyExtractor is null");
-        return ofAll(toList().distinctBy(keyExtractor));
+        List<T> list = toList();
+        return conserved(list, list.distinctBy(keyExtractor));
     }
 
     /**
@@ -1339,6 +1342,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param n the number of elements to drop
      * @return a new instance excluding the first {@code n} elements
@@ -1361,6 +1366,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * for method references that cannot be negated directly.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate a condition tested on each element
      * @return a new instance starting from the first element not matching the predicate
@@ -1377,6 +1384,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * or an empty instance if this contains fewer than {@code n} elements.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param n the number of elements to drop from the end
      * @return a new instance excluding the last {@code n} elements
@@ -1395,6 +1404,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The elements up to and including the last one satisfying {@code predicate}: the elements after it are dropped.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new Queue
@@ -1402,7 +1413,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Queue<T> dropRightUntil(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return reverse().dropUntil(predicate).reverse();
+        Queue<T> reversed = reverse();
+        Queue<T> dropped = reversed.dropUntil(predicate);
+        return (dropped == reversed) ? this : dropped.reverse();
     }
 
     /**
@@ -1410,6 +1423,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * {@code dropRightUntil(predicate.negate())}.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new Queue
@@ -1424,6 +1439,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Returns a new traversable containing only the elements that satisfy the given predicate.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate the condition to test elements
      * @return a traversable with elements matching the predicate
@@ -1655,6 +1672,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * on shifted right.
      * <p>
      * Complexity: O(n + m) for m inserted elements.
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
@@ -1697,10 +1716,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Complexity: O(n).
      *
      * @param element the separator
-     * @return a new Queue, or this Queue if it is empty
+     * @return a new Queue, or this Queue if it has fewer than two elements
      */
     public Queue<T> intersperse(T element) {
-        if (isEmpty()) {
+        if (sizeCompare(1) <= 0) {
             return this;
         } else if (rear.isEmpty()) {
             return new Queue<>(front.intersperse(element), rear);
@@ -1891,6 +1910,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * {@code from} or {@code replaced} counts as 0.
      * <p>
      * Complexity: O(n + m) for m replacement elements.
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -1903,12 +1924,32 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         int count = Math.max(replaced, 0);
         // the end of the replaced range, saturated: from + replaced can overflow an int
         int end = (int) Math.min((long) start + count, Integer.MAX_VALUE);
+        if (count == 0 && Collections.isTraversableAgain(that) && Collections.isEmpty(that)) {
+            return this;
+        }
         return take(start).appendAll(that).appendAll(drop(end));
     }
 
     public Tuple2<Queue<T>, Queue<T>> partition(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return toList().partition(predicate).map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        List<T> list = toList();
+        return conserved(list, list.partition(predicate));
+    }
+
+    // the result of a List operation on toList(): this Queue itself when it is that very list
+    private Queue<T> conserved(List<T> list, List<T> result) {
+        return (result == list) ? this : ofAll(result);
+    }
+
+    // the two parts of a List operation on toList(): this Queue itself for a part that is that very list
+    private Tuple2<Queue<T>, Queue<T>> conserved(List<T> list, Tuple2<List<T>, List<T>> parts) {
+        if (parts._1() == list) {
+            return Tuple.of(this, ofAll(parts._2()));
+        } else if (parts._2() == list) {
+            return Tuple.of(ofAll(parts._1()), this);
+        } else {
+            return Tuple.of(ofAll(parts._1()), ofAll(parts._2()));
+        }
     }
 
     /**
@@ -2054,6 +2095,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Replaces the first occurrence of {@code currentElement} with {@code newElement}, if it exists.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
@@ -2076,6 +2119,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Replaces all occurrences of {@code currentElement} with {@code newElement}.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
@@ -2094,10 +2139,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n).
      *
-     * @return a new Queue, or this Queue if it is empty
+     * @return a new Queue, or this Queue if it has fewer than two elements
      */
     public Queue<T> reverse() {
-        return isEmpty() ? this : ofAll(toList().reverse());
+        return (sizeCompare(1) <= 0) ? this : ofAll(toList().reverse());
     }
 
     /**
@@ -2219,13 +2264,16 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * this Queue.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
      * @return a new Queue, empty if the range is empty
      */
     public Queue<T> slice(int beginIndex, int endIndex) {
-        return ofAll(toList().slice(beginIndex, endIndex));
+        List<T> list = toList();
+        return conserved(list, list.slice(beginIndex, endIndex));
     }
 
     /**
@@ -2233,11 +2281,11 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n log n) comparisons.
      *
-     * @return a new sorted Queue, or this Queue if it is empty
+     * @return a new sorted Queue, or this Queue if it has fewer than two elements
      * @throws ClassCastException if {@code T} is not {@code Comparable}
      */
     public Queue<T> sorted() {
-        return ofAll(toList().sorted());
+        return (sizeCompare(1) <= 0) ? this : ofAll(toList().sorted());
     }
 
     /**
@@ -2246,12 +2294,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Complexity: O(n log n) comparisons.
      *
      * @param comparator the order
-     * @return a new sorted Queue, or this Queue if it is empty
+     * @return a new sorted Queue, or this Queue if it has fewer than two elements
      * @throws NullPointerException if {@code comparator} is null
      */
     public Queue<T> sorted(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return ofAll(toList().sorted(comparator));
+        return (sizeCompare(1) <= 0) ? this : ofAll(toList().sorted(comparator));
     }
 
     /**
@@ -2261,7 +2309,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param mapper computes the sort key
      * @param <U>    the key type
-     * @return a new sorted Queue, or this Queue if it is empty
+     * @return a new sorted Queue, or this Queue if it has fewer than two elements
      * @throws NullPointerException if {@code mapper} is null
      */
     public <U extends Comparable<? super U>> Queue<T> sortBy(Function<? super T, ? extends U> mapper) {
@@ -2276,7 +2324,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param comparator the order of the keys
      * @param mapper     computes the sort key
      * @param <U>        the key type
-     * @return a new sorted Queue, or this Queue if it is empty
+     * @return a new sorted Queue, or this Queue if it has fewer than two elements
      * @throws NullPointerException if {@code comparator} or {@code mapper} is null
      */
     public <U extends @Nullable Object> Queue<T> sortBy(
@@ -2293,6 +2341,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * and the second element is the remaining elements.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * When one part holds every element, it is this Queue itself.
      *
      * @param predicate a predicate used to determine the prefix
      * @return a {@code Tuple} containing the prefix and remainder
@@ -2300,19 +2350,23 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      */
     public Tuple2<Queue<T>, Queue<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return toList().span(predicate).map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        List<T> list = toList();
+        return conserved(list, list.span(predicate));
     }
 
     /**
      * This Queue split in two at position {@code n}: the first {@code n} elements and the rest.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * When one part holds every element, it is this Queue itself.
      *
      * @param n the position of the split
      * @return the prefix and the suffix
      */
     public Tuple2<Queue<T>, Queue<T>> splitAt(int n) {
-        return toList().splitAt(n).map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        List<T> list = toList();
+        return conserved(list, list.splitAt(n));
     }
 
     /**
@@ -2320,12 +2374,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * whole Queue is the first part.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * When one part holds every element, it is this Queue itself.
      *
      * @param predicate the condition
      * @return the prefix and the suffix
      */
     public Tuple2<Queue<T>, Queue<T>> splitAt(Predicate<? super T> predicate) {
-        return toList().splitAt(predicate).map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        List<T> list = toList();
+        return conserved(list, list.splitAt(predicate));
     }
 
     /**
@@ -2333,13 +2390,15 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * whole Queue is the first part.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * When one part holds every element, it is this Queue itself.
      *
      * @param predicate the condition
      * @return the prefix including the matching element, and the suffix
      */
     public Tuple2<Queue<T>, Queue<T>> splitAtInclusive(Predicate<? super T> predicate) {
-        return toList().splitAtInclusive(predicate)
-                .map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
+        List<T> list = toList();
+        return conserved(list, list.splitAtInclusive(predicate));
     }
 
     /**
@@ -2377,6 +2436,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The elements from {@code beginIndex} on.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param beginIndex the first position
      * @return a new Queue
@@ -2394,6 +2455,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The elements from {@code beginIndex} inclusive to {@code endIndex} exclusive.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param beginIndex the first position
      * @param endIndex   the position after the last one
@@ -2436,6 +2499,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param n the number of elements to take
      * @return a new {@code Queue} containing the first {@code n} elements
@@ -2464,6 +2529,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * that cannot be negated directly.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate a condition tested sequentially on the elements
      * @return a new {@code Queue} containing all elements before the first one that satisfies the predicate
@@ -2481,6 +2548,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * If {@code n < 0}, an empty instance is returned. If {@code n > size()}, the full instance is returned.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param n the number of elements to take from the end
      * @return a new {@code Queue} containing the last {@code n} elements
@@ -2506,6 +2575,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The longest suffix whose elements, from the end, do not satisfy {@code predicate}.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new Queue
@@ -2521,6 +2592,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * The longest suffix whose elements, from the end, all satisfy {@code predicate}.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate the condition, tested from the end
      * @return a new Queue
@@ -2555,6 +2628,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * This Queue with the element at {@code index} replaced by {@code element}.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param index   the position to update
      * @param element the new element
@@ -2562,13 +2637,16 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code size()}
      */
     public Queue<T> update(int index, T element) {
-        return ofAll(toList().update(index, element));
+        List<T> list = toList();
+        return conserved(list, list.update(index, element));
     }
 
     /**
      * This Queue with the element at {@code index} replaced by what {@code updater} computes from it.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one
@@ -2736,6 +2814,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * the first which will be retrieved.
      * <p>
      * Complexity: O(m) for m enqueued elements.
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param elements Elements, may be empty
      * @return a new {@code Queue} instance, containing the new elements
@@ -2781,6 +2861,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * that satisfies the given {@code predicate}, dropping all preceding elements.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate a condition tested on each element
      * @return a new instance starting from the first element matching the predicate
@@ -2819,6 +2901,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Retains only the elements from this Queue that are contained in the given {@code elements}.
      * <p>
      * Complexity: O(n + m) for m retained elements (they are hashed once, then one filter pass).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param elements the elements to keep
      * @return a new Queue containing only the elements present in {@code elements}, in their original order
@@ -2832,6 +2916,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Removes all occurrences of the specified elements from this Queue.
      * <p>
      * Complexity: O(n + m) for m removed elements (they are hashed once, then one filter pass).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param elements the elements to be removed
      * @return a new Queue with all occurrences of the specified elements removed
@@ -2858,6 +2944,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * Takes elements from this {@code Queue} while the given predicate holds.
      * <p>
      * Complexity: O(n).
+     * <p>
+     * Returns this Queue itself when nothing changes.
      *
      * @param predicate a condition tested sequentially on the elements
      * @return a new {@code Queue} containing all elements up to (but not including) the first one

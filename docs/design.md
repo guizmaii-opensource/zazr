@@ -1453,6 +1453,44 @@ head is the same object as the head of the cell before the loop. `Lazy` keeps `L
   first element of an enqueued Queue without reversing its rear. A Queue with nothing at the back iterates its front directly: the
   dedicated iterator measured twice as slow on a small Queue built by `ofAll`.
 
+**Operations that change nothing return the receiver: the sequences (decided 2026-11-03).** Scala's rule, from the
+Scala 3 standard library (the Scala 2.13 collection library that Scala 3 ships unchanged): an operation that can tell
+cheaply that it changes nothing returns the receiver itself (`result == this`), so a no-op call allocates nothing
+and a caller can test identity. On `Vector`, `List`, `Queue`, `LazyList` and `NonEmptyVector`:
+
+- The filter family, `distinct*`, `remove*`, `replace*`, `take*`, `drop*`, `slice`, `subSequence`, `padTo`,
+  `leftPadTo`, `rotate*`, `orElse` and the conversions to the same type return the receiver when nothing is removed,
+  replaced or added. `appendAll`, `prependAll`, `insertAll` and `patch` do when the argument is a collection known to
+  be empty (a one-shot `Iterable` is read once, never asked first); an empty receiver of `appendAll` or `prependAll`
+  returns the argument when it is of the same type. `sorted*`, `sortBy`, `reverse`, `intersperse` and `shuffle` do
+  on fewer than two elements; `update` does when the element at the index is the new one by reference (`==`), not by
+  `equals`. `partition`, `span`, `splitAt` and `splitAtInclusive` return the receiver as the part that gets every
+  element.
+- `List.filter` (so `reject`, `distinct*`, `removeAll` and `retainAll`), `replaceAll`, `update`, `span` and
+  `splitAt(int)` share the cells after the last change, as Scala's `filterCommon`
+  (`library/src/scala/collection/immutable/List.scala`) does: one pass, the predicate once per element in order, and
+  the cells before the last change copied through a `List.Builder` whose tail is the shared rest. Scala writes the
+  copied cells in place; a `Cons` is a record, so the builder buffers them instead. The helper,
+  `ListModule.Conserve.addCells` (the cells from one cell up to a later one, into a builder), is what a conserving
+  `map` on `List` would use; on `Vector`, `filter` already seeds its builder with the untouched prefix
+  (`trie.take(k)`), the same idea.
+- `Queue` asks the `List` it gets from `toList()` and returns itself when the `List` operation returns that very
+  list: the checks stay at the public methods, independent of the representation.
+- `NonEmptyVector` returns itself when the wrapped `Vector` returns itself; its methods that return a `Vector`
+  (`filter`, `take`, ...) return the wrapped `Vector` itself when nothing changes.
+- `LazyList` returns itself only when it knows without evaluating a cell the operation would not: `drop(0)`,
+  `dropRight(0)`, `padTo`/`leftPadTo` to 0, `rotate*(0)`, `cycle(1)`, `subSequence(0)`, `patch` and `appendAll` /
+  `prependAll` / `removeAll` of an argument already known to be empty, `orElse` once the first cell is known to be
+  non-empty, and the operations that read the whole list anyway (`reverse`, `sorted*`, `shuffle`). The lazy ones
+  (`filter`, `take`, `slice`, `distinct`, `remove*`, ...) return a new lazy list: knowing that nothing changes
+  would read cells the call itself leaves unread.
+- Left out: `distinctByKeepLast` (it builds its result before it can know that every element is kept), and the
+  operations that always change something (`append`, `insert`, `tail`, `init`, `scan`, ...).
+  `ConservingOperationsTest` reads every public method that returns the sequence's own type, or a tuple of two, by
+  reflection: each is a conserving row or a row saying why it is left out, so a new operation fails the test until it
+  gets one. The control types already conserve (`Option.filter`, `Try.filter`, `Either.filterOrElse`, the `orElse`
+  family, the mapping of the other side). A conserving `map` is a separate decision.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
