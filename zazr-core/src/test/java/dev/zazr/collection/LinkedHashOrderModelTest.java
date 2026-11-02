@@ -126,6 +126,7 @@ public class LinkedHashOrderModelTest {
             case 12 -> new Version(map.dropRight(n), n <= 0 ? model : slice(model, 0, size - n));
             case 13 -> {
                 int bound = random.nextInt(ids);
+                @SuppressWarnings("Var")
                 int prefix = 0;
                 while (prefix < size && model.get(prefix)._1().id < bound) {
                     prefix++;
