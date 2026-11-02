@@ -36,8 +36,10 @@ import org.jspecify.annotations.Nullable;
  * moves the second half of the front to the rear.
  * <p>
  * The O(1) costs of {@link #tail()}, {@link #dequeue()} and {@link #init()} are amortised over a chain of calls, each
- * on the result of the previous one. A Queue is persistent, so an older version can be used again: calling one of them
- * repeatedly on a Queue that is about to be rebalanced pays the O(n) rebalancing each time.
+ * on the result of the previous one. A Queue is persistent, so an older version can be used again: a Queue that is
+ * about to be rebalanced keeps the result of its rebalancing, so calling them again on it pays the O(n) step once, and
+ * O(1) afterwards. A new version made from it ({@code enqueue} on it, for example) is about to be rebalanced too, and
+ * pays the O(n) step once itself.
  * <p>
  * Complexity: a Queue keeps its last elements in reverse order (those added at its back since it last put them in
  * order, or those {@link #init()} moved there), and puts them in order in one O(n) step when a call needs them; the
@@ -57,6 +59,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
 
     private final dev.zazr.collection.List<T> front;
     private final dev.zazr.collection.List<T> rear;
+
+    /* The result of the one call that rebalances this Queue, kept by its first call: tail() when the front holds one
+     * element and the rear is not empty, init() when the rear is empty. The two never hold on the same Queue. Written without a lock, as String.hash is: two threads may both compute it,
+     * and each sees either null or a whole Queue, whose fields are final. It takes the padding of the object, so a
+     * Queue is no larger with it. */
+    private @Nullable Queue<T> rebalanced;
 
     /**
      * Creates a Queue consisting of a front List and a rear List.
@@ -1585,7 +1593,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one. When no element is
      * held at the back, the call moves the second half of the Queue there in one O(n) step, which the next calls use
-     * up. Calling {@code init()} again on the same older Queue pays that O(n) step each time.
+     * up. The Queue keeps that result: calling {@code init()} again on the same older Queue is O(1).
      *
      * @return a new instance containing all elements except the last
      * @throws UnsupportedOperationException if this Queue is empty
@@ -1594,7 +1602,13 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         if (isEmpty()) {
             throw new UnsupportedOperationException("init of empty Queue");
         } else if (rear.isEmpty()) {
-            return initOfFront();
+            Queue<T> known = rebalanced;
+            if (known != null) {
+                return known;
+            }
+            Queue<T> result = initOfFront();
+            rebalanced = result;
+            return result;
         } else {
             return new Queue<>(front, rear.tail());
         }
@@ -2417,7 +2431,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: amortised O(1) over a chain of calls, each on the result of the previous one. When the removed
      * element is the last one before the elements held at the back, the call puts those in order in one O(n) step.
-     * Calling {@code tail()} again on the same older Queue pays that O(n) step each time.
+     * The Queue keeps that result: calling {@code tail()} again on the same older Queue is O(1).
      *
      * @return a new {@code Queue} containing all elements except the first
      * @throws UnsupportedOperationException if this {@code Queue} is empty
@@ -2425,9 +2439,18 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Queue<T> tail() {
         if (isEmpty()) {
             throw new UnsupportedOperationException("tail of empty Queue");
-        } else {
-            return new Queue<>(front.tail(), rear);
         }
+        dev.zazr.collection.List<T> frontTail = front.tail();
+        if (!frontTail.isEmpty() || rear.isEmpty()) {
+            return new Queue<>(frontTail, rear);
+        }
+        Queue<T> known = rebalanced;
+        if (known != null) {
+            return known;
+        }
+        Queue<T> result = new Queue<>(rear.reverse(), dev.zazr.collection.List.empty());
+        rebalanced = result;
+        return result;
     }
 
     /**
@@ -2705,8 +2728,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Removes an element from this Queue.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}; calling it again on the same older Queue
-     * can pay an O(n) step each time.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}, which keeps the result of its O(n) step:
+     * calling it again on the same older Queue is O(1).
      *
      * @return a tuple containing the first element and the remaining elements of this Queue
      * @throws NoSuchElementException if this Queue is empty
@@ -2722,8 +2745,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Removes an element from this Queue.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}; calling it again on the same older Queue
-     * can pay an O(n) step each time.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}, which keeps the result of its O(n) step:
+     * calling it again on the same older Queue is O(1).
      *
      * @return {@code None} if this Queue is empty, otherwise {@code Some} {@code Tuple} containing the first element and the remaining elements of this Queue
      */
@@ -2794,8 +2817,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Dual of {@linkplain #tailOption()}, returning all elements except the last as {@code Option}.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls, as {@link #init()}; calling it again on the same older Queue
-     * can pay an O(n) step each time.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #init()}, which keeps the result of its O(n) step:
+     * calling it again on the same older Queue is O(1).
      *
      * @return {@code Some(Queue)} or {@code None} if this is empty.
      */
@@ -2806,8 +2829,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     /**
      * Returns a new {@code Queue} without its first element as an {@code Option}.
      * <p>
-     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}; calling it again on the same older Queue
-     * can pay an O(n) step each time.
+     * Complexity: amortised O(1) over a chain of calls, as {@link #tail()}, which keeps the result of its O(n) step:
+     * calling it again on the same older Queue is O(1).
      *
      * @return {@code Some(traversable)} if non-empty, otherwise {@code None}
      */
