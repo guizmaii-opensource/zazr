@@ -105,5 +105,6 @@ var before = scores.maxBefore(20);           // Option<Integer>
   earlier removals left, and removing again from an older set can pay it every time. After removals, `tail`,
   `init`, `take`, `drop` and a single step of the iterator can cost O(n).
 - `HashSet.removeAll` and `diff` remove the given elements one by one, effectively O(1) each, and compare a
-  `HashSet` argument part by part. `intersect` is cheap when the argument is a `HashSet`: the smaller set is checked against the larger.
+  `HashSet` argument part by part. `diff` of a larger `LinkedHashSet` looks up each element of the set in it
+  instead. `intersect` is cheap when the argument is a `HashSet`: the smaller set is checked against the larger.
 - `TreeSet` has no `partitionMap`.

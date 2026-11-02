@@ -516,7 +516,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
-     * Complexity: O(m) for a set of m elements, as {@link HashSet#diff(Set)}.
+     * Complexity: O(m) for a set of m elements; O(n) for a LinkedHashSet larger than this set, as
+     * {@link HashSet#diff(Set)}.
      *
      * @param elements A set
      * @return the elements of this set that are not in {@code elements}
