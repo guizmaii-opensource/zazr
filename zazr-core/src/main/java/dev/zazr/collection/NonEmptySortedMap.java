@@ -338,6 +338,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
 
     /**
      * Complexity: O(log n), as {@link TreeMap#put(Object, Object)}.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code key} and {@code value} are the key and the value
+     * already there (the same instances).
      *
      * @param key   A key
      * @param value Its value
@@ -347,11 +350,13 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     public NonEmptySortedMap<K, V> put(K key, V value) {
         Objects.requireNonNull(key, "NonEmptySortedMap.put: key is null");
         Objects.requireNonNull(value, "NonEmptySortedMap.put: value is null");
-        return new NonEmptySortedMap<>(map.put(key, value));
+        return wrap(map.put(key, value));
     }
 
     /**
      * Complexity: O(log n), as {@link TreeMap#put(Tuple2)}.
+     * <p>
+     * Returns this map itself when nothing changes: as {@link #put(Object, Object)}.
      *
      * @param entry An entry
      * @return this map with {@code entry}
@@ -376,7 +381,7 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
             K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(key, "NonEmptySortedMap.put: key is null");
         Objects.requireNonNull(value, "NonEmptySortedMap.put: value is null");
-        return new NonEmptySortedMap<>(map.put(key, value, merge));
+        return wrap(map.put(key, value, merge));
     }
 
     /**
@@ -397,6 +402,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     /**
      * Accepts the possibly empty type and returns the non-empty one; of two entries with the same key, {@code that}'s
      * value wins only where this map has none. {@link #putAll(Iterable)} is the operation where {@code that} wins.
+     * <p>
+     * Returns this map itself when nothing changes: when every key of {@code that} is a key of this map.
      *
      * @param that A map, possibly empty
      * @return the entries of both maps, this map's values kept on shared keys
@@ -413,6 +420,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * {@code NonEmptySortedMap} argument counts as the {@code TreeMap} it wraps.
      * <p>
      * Complexity: O(m log(n + m)) for m entries, as {@link TreeMap#putAll(Iterable)}.
+     * <p>
+     * Returns this map itself when nothing changes: when every entry is the key and the value already there (the
+     * same instances).
      *
      * @param entries the entries to put, possibly empty
      * @return this map with the entries put
@@ -550,6 +560,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
+     * Returns this map itself when nothing changes: when {@code valueMapper} returns every value itself (the same
+     * instance).
+     *
      * @param valueMapper Maps a value
      * @param <V2>        Value type of the result
      * @return the same keys, with mapped values
@@ -557,7 +570,10 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      */
     public <V2 extends @Nullable Object> NonEmptySortedMap<K, V2> mapValues(
             Function<? super V, ? extends V2> valueMapper) {
-        return new NonEmptySortedMap<>(map.mapValues(valueMapper));
+        TreeMap<K, V2> result = map.mapValues(valueMapper);
+        @SuppressWarnings("unchecked")
+        NonEmptySortedMap<K, V2> self = (NonEmptySortedMap<K, V2>) (NonEmptySortedMap<K, ?>) this;
+        return result == (Object) map ? self : new NonEmptySortedMap<>(result);
     }
 
     /**
@@ -644,6 +660,9 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
 
     /**
      * Complexity: O(n), with no key comparison, as {@link TreeMap#replaceAll(BiFunction)}.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code function} returns every value itself (the same
+     * instance).
      *
      * @param function Computes the new value of a key from its current value
      * @return the same keys, with the new values
@@ -654,6 +673,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
+     * Returns this map itself when nothing changes: when {@code key} is absent, or as {@link #put(Object, Object)}.
+     *
      * @param key   A key
      * @param value Its new value
      * @return this map with {@code key} mapped to {@code value} if it was present, or this map

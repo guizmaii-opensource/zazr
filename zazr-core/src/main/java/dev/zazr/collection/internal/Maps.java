@@ -108,10 +108,24 @@ public final class Maps {
         return filter(map, ofEntries, t -> predicate.test(t._1(), t._2()));
     }
 
+    /// The entries that pass `predicate`, called once per entry in iteration order; `map` itself
+    /// when every entry passes. Nothing is built before the first entry that fails: the entries
+    /// before it are then read again, without calling `predicate`, and the walk goes on from it.
+    @SuppressWarnings("Var")
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(
             M map, OfEntries<K, V, M> ofEntries, Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return ofEntries.apply(Iterator.ofAll(map).filter(predicate));
+        java.util.Iterator<Tuple2<K, V>> rest = map.iterator();
+        int kept = 0;
+        while (rest.hasNext()) {
+            if (!predicate.test(rest.next())) {
+                // `rest` is past the first entry that fails
+                return ofEntries.apply(Iterator.concat(
+                        Iterator.ofAll(map).take(kept), Iterator.ofAll(rest).filter(predicate)));
+            }
+            kept++;
+        }
+        return map;
     }
 
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterKeys(
@@ -216,7 +230,14 @@ public final class Maps {
         for (Tuple2<K, V> entry : map) {
             (predicate.test(entry) ? left : right).add(entry);
         }
-        return Tuple.of(ofEntries.apply(left), ofEntries.apply(right));
+        // the map itself is the side that gets every entry
+        if (right.isEmpty()) {
+            return Tuple.of(map, ofEntries.apply(right));
+        } else if (left.isEmpty()) {
+            return Tuple.of(ofEntries.apply(left), map);
+        } else {
+            return Tuple.of(ofEntries.apply(left), ofEntries.apply(right));
+        }
     }
 
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M tap(
@@ -293,13 +314,6 @@ public final class Maps {
         Objects.requireNonNull(newElement, "newElement is null");
         return (M)
                 (map.contains(currentElement) ? map.remove(currentElement._1()).put(newElement) : map);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(
-            M map, BiFunction<? super K, ? super V, ? extends V> function) {
-        Objects.requireNonNull(function, "function is null");
-        return (M) map.map((k, v) -> Tuple.of(k, function.apply(k, v)));
     }
 
     @SuppressWarnings("unchecked")

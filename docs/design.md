@@ -1453,6 +1453,50 @@ head is the same object as the head of the cell before the loop. `Lazy` keeps `L
   first element of an enqueued Queue without reversing its rear. A Queue with nothing at the back iterates its front directly: the
   dedicated iterator measured twice as slow on a small Queue built by `ofAll`.
 
+**The sets and maps return themselves when nothing changes (#313, decided 2026-11-03).** An operation of `HashSet`,
+`HashMap`, `LinkedHashSet`, `LinkedHashMap`, `TreeSet`, `TreeMap` or a non-empty wrapper that can tell cheaply that it
+changed nothing returns the receiver itself, as Scala's do (Scala's conserving operations, part 2 of #147; the
+sequences are #312, a conserving `map` #314). `ConservingSetMapTest` holds the table: each row an operation given
+arguments that change nothing, checked with `isSameAs` on every type at 1, 2, 31, 32, 33 and 1025 elements, a table
+of one-element changes that must give a new collection equal to the expected one, in its order, and a reflective
+check that every public method returning the type is a row or excluded with a reason.
+
+- **Already conserving**, now tested: the lookups behind `Maps.ABSENT`, `add`/`remove` of a present/absent element,
+  the CHAMP `filter`/`reject`, `union`/`addAll`/`diff`/`removeAll`/`putAll`/`merge` of two hash collections, the
+  tree filter family, `take`/`drop`/the ranges and the conversions to the same type (`toSet`, `toLinkedSet`,
+  `toSortedSet` of the same comparator), `HashMap.mapValues`/`replaceAll`, `updateWith`, `tap`, `orElse`.
+- **`TreeMap.put` (and every operation that puts: `putAll`, `put` with a merge, `computeIfPresent`, `replaceValue`,
+  `replace(key, old, new)`)** inserts with `Node.insertEntry`, which compares the key in place and keeps the node
+  whose key and value are the objects given, so the tree comes back unchanged: Scala's `RedBlackTree.upd`, which
+  checks only the value because it keeps the old key. An equal key or value that is another object still replaces
+  the one there. `LinkedHashMap.put` returns the map at the public method, when its slot holds the same two objects,
+  so the check survives a new order representation.
+- **`TreeMap.mapValues`/`replaceAll`** are Scala's `RedBlackTree.transform`: a node whose value comes back the same
+  object, with unchanged subtrees, is kept, and the untouched subtrees are shared when some value changes.
+  `LinkedHashMap.mapValues`/`replaceAll` put only the values that change, on the map itself; the old path built a new
+  map by successive puts. The function is called once per entry in iteration order in both.
+- **`LinkedHashMap`'s filter family** calls the predicate in iteration order and builds nothing until an entry fails;
+  the entries before it are then read again without calling the predicate.
+- **`partition` on `HashSet`, `HashMap`, `LinkedHashSet`, `LinkedHashMap`** returns the receiver as the side that
+  gets everything (the two tree types already did, from the tree walk).
+- **`RedBlackTree.union`/`intersection`** return a subtree shared by both sides as it is, as Scala's `_union` and
+  `_intersect` do; `TreeSet.union`/`intersect`/`TreeMap.putAll` of the receiver itself return it, and `TreeSet.union`
+  on an empty set returns the argument, as `TreeMap.merge` on an empty map now does.
+- **`replace` of an element by the object already there** returns the set (`HashSet` and `TreeSet` look up the
+  stored element where they asked `contains`).
+- **The non-empty wrappers** return themselves through `wrap` where they built a new wrapper: `put`, `put` with a
+  merge and `mapValues` on both maps. Their operations that may empty them return the wrapped collection itself.
+- **Left as they are**, each with its reason:
+  - `TreeSet.union`/`intersect` with another `TreeSet` of the same comparator keep the argument's elements, so an
+    equal argument is not a no-op; `TreeSet.diff` with one rebuilds the tree as Scala's `_difference` does. Sharing
+    the receiver's subtrees there is a follow-up.
+  - `HashMap.retainAll`/`TreeMap.retainAll` keep the given entry objects (3.8.1), which are equal to the map's but not
+    the same.
+  - `HashMap.replace(entry, entry)` and `TreeMap.replace(entry, entry)` of an entry by itself remove and put it back:
+    the check needs the stored key, which the CHAMP nodes give only in a new `Tuple2`.
+  - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: a conserving `map` is decided separately.
+- **Measured**: see below.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.

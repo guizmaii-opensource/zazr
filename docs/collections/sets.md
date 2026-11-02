@@ -87,6 +87,21 @@ var before = scores.maxBefore(20);           // Option<Integer>
 // middle is TreeSet(20, 30), upTo30 is TreeSet(10, 20, 30), next is Some(30), before is Some(10)
 ```
 
+## When nothing changes
+
+An operation that changes nothing returns the set itself, not a copy: no allocation, and `==` tells you nothing
+changed.
+
+- `add` of an element already there, `remove` of an absent one, and `addAll`, `removeAll` or `union` that add or
+  remove nothing.
+- `filter`, `reject` and `retainAll` that keep every element; `partition` returns the set as the side that gets
+  everything.
+- `replace` of an absent element, or by the very object already there.
+- `take`, `drop` and the ranges of a `TreeSet` or `LinkedHashSet` that cut nothing.
+- `union` with an empty set returns the other side when it is a set of the same kind.
+
+An equal element is not the same object: `HashSet.replace(x, equalX)` stores `equalX`, so the result is a new set.
+
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashSet`: it depends on the hashes and may change between versions.

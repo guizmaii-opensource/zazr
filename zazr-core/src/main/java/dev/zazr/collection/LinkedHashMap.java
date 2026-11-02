@@ -997,7 +997,22 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     @Override
     public <W extends @Nullable Object> LinkedHashMap<K, W> mapValues(Function<? super V, ? extends W> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return map((k, v) -> Tuple.of(k, mapper.apply(v)));
+        return transformed((k, v) -> mapper.apply(v));
+    }
+
+    // The same keys in the same order with the values `f` computes, called once per entry in iteration order: each
+    // value that is not the object already there is put, so this map comes back when none changes.
+    @SuppressWarnings({"Var", "unchecked"})
+    private <W extends @Nullable Object> LinkedHashMap<K, W> transformed(
+            BiFunction<? super K, ? super V, ? extends W> f) {
+        LinkedHashMap<K, W> result = (LinkedHashMap<K, W>) (LinkedHashMap<K, ?>) this;
+        for (Tuple2<K, V> entry : this) {
+            W value = f.apply(entry._1(), entry._2());
+            if (value != entry._2()) {
+                result = result.put(entry._1(), value);
+            }
+        }
+        return result;
     }
 
     /**
@@ -1074,7 +1089,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         Objects.requireNonNull(key, "LinkedHashMap: key is null");
         Objects.requireNonNull(value, "LinkedHashMap: value is null");
         Slot<K, V> existing = slotOrNull(key);
-        if (existing != null) {
+        if (existing != null && existing.entry()._1() == key && existing.entry()._2() == value) {
+            // the key and the value are the objects already there
+            return this;
+        } else if (existing != null) {
             // the insertion order holds the key object of the entry, which the positional operations read
             Vector<K> newList = existing.entry()._1() == key ? list : list.update(existing.index() - offset, key);
             return new LinkedHashMap<>(
@@ -1291,7 +1309,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      */
     @Override
     public LinkedHashMap<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-        return Maps.replaceAll(this, function);
+        Objects.requireNonNull(function, "function is null");
+        return transformed(function);
     }
 
     /**
