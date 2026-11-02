@@ -183,8 +183,8 @@ var numbers = builder.result();
 
 </div>
 
-Zazr started as a fork of [Vavr](https://github.com/vavr-io/vavr). Coming from Vavr?
-[This page](vavr.md) lists what changed.
+Zazr started as a fork of [Vavr](https://github.com/vavr-io/vavr). Vavr is Scala 2.12, Zazr is Scala 2.13.
+Coming from Vavr? [This page](vavr.md) lists what changed.
 
 </div>
 
