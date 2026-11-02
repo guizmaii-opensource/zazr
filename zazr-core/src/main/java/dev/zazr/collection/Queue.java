@@ -1724,11 +1724,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: O(1) to create, then O(1) per step, apart from the step that reaches the elements held at the back:
-     * it copies them into an array, O(n) for n of them, read from its end.
+     * it copies them into an array, O(n) for n of them, read from its end. With none at the back, as on a Queue built
+     * by ofAll, it is the iterator of the front.
      */
     @Override
     public java.util.Iterator<T> iterator() {
-        return new QueueIterator<>(front, rear);
+        return rear.isEmpty() ? front.iterator() : new QueueIterator<>(front, rear);
     }
 
     /* The elements of the front, then those of the rear in reverse order. The front is walked cell by cell; the rear,
