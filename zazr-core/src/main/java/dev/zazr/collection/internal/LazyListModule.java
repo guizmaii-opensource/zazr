@@ -228,14 +228,184 @@ public interface LazyListModule {
 
     interface Combinations {
 
+        /// The combinations of `k >= 0` elements, by position, in lexicographic order of the positions, each
+        /// computed when the result reaches it.
         static <T extends @Nullable Object> LazyList<LazyList<T>> apply(LazyList<T> elements, int k) {
             if (k == 0) {
                 return LazyList.of(LazyList.empty());
+            } else if (LazyCell.knownIsEmpty(elements)) {
+                return LazyList.empty();
             } else {
-                return elements.zipWithIndex()
-                        .flatMap(t ->
-                                apply(elements.drop(t._2() + 1), (k - 1)).map((LazyList<T> c) -> c.prepend(t._1())));
+                return LazyCell.ofIterator(new CombinationIterator<>(elements, k));
             }
+        }
+    }
+
+    /// The combinations of k elements of a LazyList, by position, in lexicographic order of the positions: the
+    /// index array of [Arrangements.Combinations], where each index is the cell of the chosen element, so that the
+    /// elements are read in order and never copied. A cell is read only when a combination needs it, or to find
+    /// that the list ends there: the first combination reads the first k cells, and each next one at most one cell
+    /// more. The arrays grow as cells are found, so a k far beyond the length costs only the cells there are. Once
+    /// the end of the list is found, its length tells in O(1) which cells can no longer move.
+    final class CombinationIterator<T extends @Nullable Object> implements java.util.Iterator<LazyList<T>> {
+
+        private static final int UNKNOWN = 0;
+        private static final int READY = 1;
+        private static final int DONE = 2;
+        private static final int INITIAL_CAPACITY = 16;
+
+        private final int k;
+        // the cells of the elements of the current combination, from the first one, and their positions in the list;
+        // the first k slots are used once a combination is found
+        private LazyList<T>[] cells;
+        private int[] positions;
+        // the length of the list once a read reached its end, -1 before
+        private int length = -1;
+        // the list, until the first combination is found
+        private @Nullable LazyList<T> source;
+        private int state = UNKNOWN;
+
+        @SuppressWarnings("unchecked")
+        CombinationIterator(LazyList<T> source, int k) {
+            this.source = source;
+            this.k = k;
+            int capacity = Math.min(k, INITIAL_CAPACITY);
+            this.cells = (LazyList<T>[]) new LazyList<?>[capacity];
+            this.positions = new int[capacity];
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (state == UNKNOWN) {
+                state = advance() ? READY : DONE;
+            }
+            return state == READY;
+        }
+
+        @Override
+        public LazyList<T> next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException("no combination left");
+            }
+            @SuppressWarnings("Var")
+            LazyList<T> combination = LazyList.empty();
+            for (int j = k - 1; j >= 0; j--) {
+                combination = LazyCell.cons(cells[j].head(), combination);
+            }
+            // only once it is built: after a VirtualMachineError, the next read gets the same combination
+            state = UNKNOWN;
+            return combination;
+        }
+
+        private boolean advance() {
+            LazyList<T> first = source;
+            if (first != null) {
+                boolean found = layOut(0, first, 0);
+                source = null;
+                return found;
+            }
+            // the last cell that can move: moving cell j one step on, the cells after it follow it. Once the length is
+            // known, cell j is at its last place when k - 1 - j cells are left after it
+            for (int j = k - 1; j >= 0; j--) {
+                if (length >= 0 && positions[j] == length - k + j) {
+                    continue;
+                }
+                if (layOut(j, cells[j].tail(), positions[j] + 1)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // puts the cells from `from` on at `start`, of position `position`, and the cells after it; false when the
+        // list ends before, its length then known. A VirtualMachineError, which a LazyList does not keep, can only
+        // be met on a cell evaluated for the first time, past the last cell read. Moving cell k - 1 writes nothing
+        // before reading it, and an earlier cell moves only once cell k - 1 could not, after the end was read. So a
+        // move that fails leaves the slots as they were, and the next read makes the same move again
+        @SuppressWarnings("Var")
+        private boolean layOut(int from, LazyList<T> start, int position) {
+            LazyList<T> cell = start;
+            int p = position;
+            for (int j = from; j < k; j++, p++) {
+                if (cell.isEmpty()) {
+                    length = p;
+                    return false;
+                }
+                if (j == cells.length) {
+                    grow();
+                }
+                cells[j] = cell;
+                positions[j] = p;
+                cell = cell.tail();
+            }
+            return true;
+        }
+
+        /// The length of the list once a read reached its end, -1 before.
+        int knownLength() {
+            return length;
+        }
+
+        /// The position in the list of the `j`-th cell of the current combination.
+        int position(int j) {
+            return positions[j];
+        }
+
+        // doubles the arrays, up to k slots; both are copied before either is replaced, so that an OutOfMemoryError
+        // leaves them as they were for the next read
+        private void grow() {
+            int capacity = (int) Math.min(k, 2L * cells.length);
+            LazyList<T>[] grownCells = java.util.Arrays.copyOf(cells, capacity);
+            int[] grownPositions = java.util.Arrays.copyOf(positions, capacity);
+            cells = grownCells;
+            positions = grownPositions;
+        }
+    }
+
+    interface Permutations {
+
+        /// The distinct permutations of `elements`, at least two of them, in the order of
+        /// [Arrangements.Permutations], each computed when the result reaches it. The elements are read when
+        /// this is called.
+        static <T extends @Nullable Object> LazyList<LazyList<T>> apply(LazyList<T> elements) {
+            return LazyCell.ofIterator(new PermutationIterator<T>(elements.toArray()));
+        }
+    }
+
+    /// The permutations of the elements of an array, each built as a LazyList of evaluated cells when it is read.
+    final class PermutationIterator<T extends @Nullable Object> implements java.util.Iterator<LazyList<T>> {
+
+        private final Object[] source;
+        private final Arrangements.Permutations cursor;
+        private int state = CombinationIterator.UNKNOWN;
+
+        PermutationIterator(Object[] source) {
+            this.source = source;
+            this.cursor = new Arrangements.Permutations(source);
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (state == CombinationIterator.UNKNOWN) {
+                state = cursor.advance() ? CombinationIterator.READY : CombinationIterator.DONE;
+            }
+            return state == CombinationIterator.READY;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public LazyList<T> next() {
+            if (!hasNext()) {
+                throw new java.util.NoSuchElementException("no permutation left");
+            }
+            @SuppressWarnings("Var")
+            LazyList<T> permutation = LazyList.empty();
+            for (int level = source.length - 1; level >= 0; level--) {
+                permutation = LazyCell.cons((T) source[cursor.position(level)], permutation);
+            }
+            // only once it is built: after a VirtualMachineError, the next read gets the same permutation
+            state = CombinationIterator.UNKNOWN;
+            return permutation;
         }
     }
 

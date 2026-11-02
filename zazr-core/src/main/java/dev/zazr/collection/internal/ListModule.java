@@ -13,30 +13,85 @@ public interface ListModule {
 
     interface Combinations {
 
+        /// The combinations of `k >= 0` elements, by position, in lexicographic order of the positions.
         static <T extends @Nullable Object> List<List<T>> apply(List<T> elements, int k) {
-            return combine(elements, elements.size(), k);
-        }
-
-        // Walks the tails of elements (of the given length): each element, followed by every combination of k - 1
-        // elements after it. A tail shorter than k gives none, so the walk stops there.
-        private static <T extends @Nullable Object> List<List<T>> combine(List<T> elements, int length, int k) {
             if (k == 0) {
                 return List.of(List.empty());
             }
-            @SuppressWarnings("Var")
-            List<List<T>> reversed = List.empty();
-            @SuppressWarnings("Var")
-            int remaining = length;
-            for (List<T> rest = elements; remaining >= k; rest = rest.tail(), remaining--) {
-                T head = rest.head();
-                for (List<List<T>> tails = combine(rest.tail(), remaining - 1, k - 1);
-                        !tails.isEmpty();
-                        tails = tails.tail()) {
-                    reversed = reversed.prepend(tails.head().prepend(head));
-                }
+            Object[] source = elements.toArray();
+            int n = source.length;
+            if (k > n) {
+                return List.empty();
             }
-            return reversed.reverse();
+            Arrangements.Combinations cursor = new Arrangements.Combinations(n, k);
+            List.Builder<List<T>> result = List.newBuilder();
+            while (cursor.advance()) {
+                @SuppressWarnings("Var")
+                List<T> combination = List.empty();
+                for (int j = k - 1; j >= 0; j--) {
+                    combination = combination.prepend(elementAt(source, cursor.index(j)));
+                }
+                result.add(combination);
+            }
+            return result.result();
         }
+    }
+
+    interface Permutations {
+
+        /// The distinct permutations of at least two elements, in the order of [Arrangements.Permutations].
+        static <T extends @Nullable Object> List<List<T>> apply(List<T> elements) {
+            Object[] source = elements.toArray();
+            int n = source.length;
+            Arrangements.Permutations cursor = new Arrangements.Permutations(source);
+            List.Builder<List<T>> result = List.newBuilder();
+            while (cursor.advance()) {
+                @SuppressWarnings("Var")
+                List<T> permutation = List.empty();
+                for (int level = n - 1; level >= 0; level--) {
+                    permutation = permutation.prepend(elementAt(source, cursor.position(level)));
+                }
+                result.add(permutation);
+            }
+            return result.result();
+        }
+    }
+
+    interface Rotate {
+
+        /// `elements`, of `length` elements, rotated `0 < k < length` positions to the right: its last k
+        /// elements, then the others. Every cell is new, since the last one of each part links to the other
+        /// part: the elements are read into an array once, and the cells built from the end.
+        static <T extends @Nullable Object> List<T> right(List<T> elements, int length, int k) {
+            Object[] source = new Object[length];
+            @SuppressWarnings("Var")
+            List<T> cursor = elements;
+            for (int i = 0; i < length; i++) {
+                source[i] = cursor.head();
+                cursor = cursor.tail();
+            }
+            return fromArrayRotated(source, k);
+        }
+
+        /// The elements of `source` rotated `0 < k < source.length` positions to the right, as a List.
+        @SuppressWarnings("Var")
+        static <T extends @Nullable Object> List<T> fromArrayRotated(Object[] source, int k) {
+            int split = source.length - k;
+            List<T> result = List.empty();
+            for (int i = split - 1; i >= 0; i--) {
+                result = result.prepend(elementAt(source, i));
+            }
+            for (int i = source.length - 1; i >= split; i--) {
+                result = result.prepend(elementAt(source, i));
+            }
+            return result;
+        }
+    }
+
+    // the element at `index` of an array of elements of type T
+    @SuppressWarnings("unchecked")
+    private static <T extends @Nullable Object> T elementAt(Object[] source, int index) {
+        return (T) source[index];
     }
 
     interface SplitAt {
