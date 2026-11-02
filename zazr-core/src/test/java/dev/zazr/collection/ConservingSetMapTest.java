@@ -720,28 +720,7 @@ class ConservingSetMapTest {
     void shouldKeepTheTreeMapValidThroughPutsAndValueChanges() {
         java.util.Random random = new java.util.Random(20261103L);
         for (int round = 0; round < 200; round++) {
-            int n = random.nextInt(70);
-            java.util.TreeMap<Integer, Integer> model = new java.util.TreeMap<>();
-            TreeMap<Integer, Integer> map = TreeMap.empty();
-            for (int i = 0; i < n; i++) {
-                Integer k = element(random.nextInt(100));
-                Integer v = element(random.nextInt(4));
-                TreeMap<Integer, Integer> next = map.put(k, v);
-                Tuple2<Integer, Integer> stored = order(map).stream()
-                        .filter(e -> e._1().equals(k))
-                        .findFirst()
-                        .orElse(null);
-                // the same key and value objects give the same map; anything else a new one
-                boolean same = stored != null && stored._1() == k && stored._2() == v;
-                assertThat(next == map).isEqualTo(same);
-                model.put(k, v);
-                map = next;
-                RedBlackTreeValidity.assertValid(tree(map));
-                assertThat(order(map))
-                        .isEqualTo(order(model.entrySet().stream()
-                                .map(e -> Tuple.of(e.getKey(), e.getValue()))
-                                .toList()));
-            }
+            TreeMap<Integer, Integer> map = randomPuts(random, random.nextInt(70));
             if (map.isEmpty()) {
                 continue;
             }
@@ -754,6 +733,33 @@ class ConservingSetMapTest {
             assertThat(sharedEntries(map, mapped)).isEqualTo(map.size() - 1);
             assertThat(map.replaceAll((k, v) -> v)).isSameAs(map);
         }
+    }
+
+    // n random puts, each checked against a java.util.TreeMap and the red-black invariants; the last map
+    private static TreeMap<Integer, Integer> randomPuts(java.util.Random random, int n) {
+        java.util.TreeMap<Integer, Integer> model = new java.util.TreeMap<>();
+        java.util.List<TreeMap<Integer, Integer>> maps = new ArrayList<>(java.util.List.of(TreeMap.empty()));
+        for (int i = 0; i < n; i++) {
+            TreeMap<Integer, Integer> map = maps.getLast();
+            Integer k = element(random.nextInt(100));
+            Integer v = element(random.nextInt(4));
+            TreeMap<Integer, Integer> next = map.put(k, v);
+            Tuple2<Integer, Integer> stored = order(map).stream()
+                    .filter(e -> e._1().equals(k))
+                    .findFirst()
+                    .orElse(null);
+            // the same key and value objects give the same map; anything else a new one
+            boolean same = stored != null && stored._1() == k && stored._2() == v;
+            assertThat(next == map).isEqualTo(same);
+            model.put(k, v);
+            RedBlackTreeValidity.assertValid(tree(next));
+            assertThat(order(next))
+                    .isEqualTo(order(model.entrySet().stream()
+                            .map(e -> Tuple.of(e.getKey(), e.getValue()))
+                            .toList()));
+            maps.add(next);
+        }
+        return maps.getLast();
     }
 
     // -- an equal object that is not the one there still replaces it
