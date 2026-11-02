@@ -1558,7 +1558,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(i + m) for m inserted elements; the elements before i are copied, the rest of this List is shared.
      * <p>
-     * Returns this List itself when nothing changes.
+     * Returns this List itself when {@code elements} is a collection known to be empty; a one-shot {@code Iterable} is read once, never asked first.
      *
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
@@ -1876,7 +1876,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(n + m) for m replacement elements: the elements before and after the replaced ones are copied.
      * <p>
-     * Returns this List itself when nothing changes.
+     * Returns this List itself when {@code replaced} is 0 or less and {@code that} is a collection known to be empty; a one-shot {@code Iterable} is read once, never asked first.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -2279,7 +2279,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(k) for the k elements before the replaced one; the rest of this List is shared, not copied.
      * <p>
-     * Returns this List itself when nothing changes.
+     * Returns this List itself when no element equals {@code currentElement}.
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
@@ -2309,7 +2309,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(n); the elements after the last replaced one are shared, not copied.
      * <p>
-     * Returns this List itself when nothing changes.
+     * Returns this List itself when no element equals {@code currentElement}.
      *
      * @param currentElement the element to be replaced
      * @param newElement     the replacement element
@@ -2972,7 +2972,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(i); the elements before i are copied, the rest of this List is shared.
      * <p>
-     * Returns this List itself when nothing changes.
+     * Returns this List itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   the position to update
      * @param element the new element
@@ -3012,7 +3012,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(i); the element is read, then the elements before i are copied.
      * <p>
-     * Returns this List itself when nothing changes.
+     * Returns this List itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one

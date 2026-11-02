@@ -534,7 +534,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Object)}.
      * <p>
-     * Returns this NonEmptyVector itself when nothing changes.
+     * Returns this NonEmptyVector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   A position
      * @param element The new element
@@ -550,7 +550,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Function)}.
      * <p>
-     * Returns this NonEmptyVector itself when nothing changes.
+     * Returns this NonEmptyVector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   A position
      * @param updater Computes the new element from the current one
@@ -743,7 +743,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * <p>
      * Complexity: O(m + min(i, n - i)) for m inserted elements, as {@link Vector#insertAll(int, Iterable)}.
      * <p>
-     * Returns this NonEmptyVector itself when nothing changes.
+     * Returns this NonEmptyVector itself when {@code elements} is empty.
      *
      * @param index    A position, {@code 0 <= index <= size()}
      * @param elements The elements to insert
@@ -852,7 +852,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
      * Complexity: O(n) to find the element, then one effectively O(1) update, as
      * {@link Vector#replace(Object, Object)}.
      * <p>
-     * Returns this NonEmptyVector itself when nothing changes.
+     * Returns this NonEmptyVector itself when no element equals {@code currentElement}.
      *
      * @param currentElement The element to replace
      * @param newElement     The replacement
@@ -867,7 +867,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     /**
      * Complexity: O(n) plus one effectively O(1) update per occurrence, as {@link Vector#replaceAll(Object, Object)}.
      * <p>
-     * Returns this NonEmptyVector itself when nothing changes.
+     * Returns this NonEmptyVector itself when no element equals {@code currentElement}.
      *
      * @param currentElement The element to replace
      * @param newElement     The replacement

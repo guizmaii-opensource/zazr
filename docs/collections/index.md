@@ -79,9 +79,10 @@ A sequence operation that changes nothing returns the sequence itself, not a cop
 
 - `filter` that keeps every element, `remove` or `replace` of an absent element.
 - `take(n)` with `n` at least the size, `drop(0)`, a `slice` of the whole range, `padTo` below the size.
-- Appending, prepending or inserting an empty collection. When the receiver is empty, `appendAll` and
-  `prependAll` return the other side.
-- `sorted`, `reverse` and `intersperse` on fewer than two elements, and `update` with the element already there.
+- Appending, prepending or inserting an empty collection. An `Iterable` that can be read only once is never asked
+  first, so it gives a copy. When the receiver is empty, `appendAll` and `prependAll` return the other side.
+- `sorted`, `reverse` and `intersperse` on fewer than two elements.
+- `update` with the same instance as the element already there; an equal but distinct element is a change.
 - `partition`, `span` and `splitAt` return the receiver as the part that gets every element.
 
 A `List` also shares what follows the last change: `filter`, `replaceAll`, `update`, `span` and `splitAt` copy only

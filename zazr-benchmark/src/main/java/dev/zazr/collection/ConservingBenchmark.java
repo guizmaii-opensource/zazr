@@ -106,6 +106,38 @@ public class ConservingBenchmark {
         return list.update(1, -1);
     }
 
+    // -- List: the changes that share least
+
+    @Benchmark
+    public List<Integer> listFilterRemovingTheLast() {
+        return list.filter(x -> x != size - 1);
+    }
+
+    @Benchmark
+    public List<Integer> listFilterKeepingHalf() {
+        return list.filter(x -> x % 2 == 0);
+    }
+
+    @Benchmark
+    public List<Integer> listReplaceAllTheLast() {
+        return list.replaceAll(size - 1, -1);
+    }
+
+    @Benchmark
+    public List<Integer> listUpdateNearTheEnd() {
+        return list.update(size - 2, -1);
+    }
+
+    @Benchmark
+    public Tuple2<List<Integer>, List<Integer>> listSpanUpToTheLast() {
+        return list.span(x -> x < size - 1);
+    }
+
+    @Benchmark
+    public Tuple2<List<Integer>, List<Integer>> listSplitAtTheMiddle() {
+        return list.splitAt(size / 2);
+    }
+
     // -- Vector
 
     @Benchmark
@@ -126,6 +158,11 @@ public class ConservingBenchmark {
     @Benchmark
     public Vector<Integer> vectorUpdateWithTheSameElement() {
         return vector.update(size / 2, middle);
+    }
+
+    @Benchmark
+    public Vector<Integer> vectorUpdateChangingTheMiddle() {
+        return vector.update(size / 2, -1);
     }
 
     // -- Queue
