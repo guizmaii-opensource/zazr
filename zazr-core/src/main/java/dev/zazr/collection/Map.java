@@ -423,8 +423,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * This is Scala's {@code concat} ({@code ++}) on maps; {@link #merge(Map)} is the one where this map's entries
      * win.
      * <p>
-     * Returns this map itself when nothing changes: when every entry is the key and the value already there (the
-     * same instances); an empty map returns {@code entries} when it is a map of the same kind.
+     * Returns this map itself when nothing changes: when {@code entries} is empty or this map itself, or is not a map
+     * of the same kind and every entry is the key and the value already there (the same instances). An empty map
+     * returns {@code entries} when it is a map of the same kind.
      *
      * @param entries the entries to put, possibly another map
      * @return this map with the entries put

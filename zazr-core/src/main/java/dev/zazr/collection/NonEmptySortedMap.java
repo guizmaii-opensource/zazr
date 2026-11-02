@@ -421,8 +421,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
      * <p>
      * Complexity: O(m log(n + m)) for m entries, as {@link TreeMap#putAll(Iterable)}.
      * <p>
-     * Returns this map itself when nothing changes: when every entry is the key and the value already there (the
-     * same instances).
+     * Returns this map itself when nothing changes: when {@code entries} is empty or this map itself, or is not a map
+     * of the same kind and every entry is the key and the value already there (the same instances).
      *
      * @param entries the entries to put, possibly empty
      * @return this map with the entries put

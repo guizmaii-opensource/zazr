@@ -1481,7 +1481,7 @@ check that every public method returning the type is a row or excluded with a re
   gets everything (the two tree types already did, from the tree walk).
 - **`RedBlackTree.union`/`intersection`** return a subtree shared by both sides as it is, as Scala's `_union` and
   `_intersect` do; `TreeSet.union`/`intersect`/`TreeMap.putAll` of the receiver itself return it, and `TreeSet.union`
-  on an empty set returns the argument, as `TreeMap.merge` on an empty map now does.
+  and `addAll` on an empty set return the argument, as `TreeMap.merge` on an empty map now does.
 - **`replace` of an element by the object already there** returns the set (`HashSet` and `TreeSet` look up the
   stored element where they asked `contains`).
 - **The non-empty wrappers** return themselves through `wrap` where they built a new wrapper: `put`, `put` with a
@@ -1490,6 +1490,8 @@ check that every public method returning the type is a row or excluded with a re
   - `TreeSet.union`/`intersect` with another `TreeSet` of the same comparator keep the argument's elements, so an
     equal argument is not a no-op; `TreeSet.diff` with one rebuilds the tree as Scala's `_difference` does. Sharing
     the receiver's subtrees there is a follow-up.
+  - `putAll` of another `HashMap` or `TreeMap` holding some of the same entry objects merges the tries or trees, and
+    builds what is not a shared subtree; entries given one by one, or the map itself, return the map.
   - `HashMap.retainAll`/`TreeMap.retainAll` keep the given entry objects (3.8.1), which are equal to the map's but not
     the same.
   - `HashMap.replace(entry, entry)` and `TreeMap.replace(entry, entry)` of an entry by itself remove and put it back:

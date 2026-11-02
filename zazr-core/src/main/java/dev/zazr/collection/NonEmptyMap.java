@@ -345,8 +345,8 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * Complexity: O(m) for m entries, as {@link HashMap#putAll(Iterable)}; O(n + m) when they are a HashMap, merged
      * part by part.
      * <p>
-     * Returns this map itself when nothing changes: when every entry is the key and the value already there (the
-     * same instances).
+     * Returns this map itself when nothing changes: when {@code entries} is empty or this map itself, or is not a map
+     * of the same kind and every entry is the key and the value already there (the same instances).
      *
      * @param entries the entries to put, possibly empty
      * @return this map with the entries put

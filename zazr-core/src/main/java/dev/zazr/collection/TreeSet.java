@@ -751,7 +751,14 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public TreeSet<T> addAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (tree.isEmpty() || knownSize(elements) >= tree.size()) {
+        if (tree.isEmpty()
+                && elements instanceof TreeSet<?> that
+                && comparator().equals(that.comparator())) {
+            // the elements of the argument, which are distinct and in this order
+            @SuppressWarnings("unchecked")
+            TreeSet<T> same = (TreeSet<T>) that;
+            return same;
+        } else if (tree.isEmpty() || knownSize(elements) >= tree.size()) {
             // many elements: sorted into a tree, the first of equal ones kept, then united with this tree, whose
             // elements win over equal given ones; the same set as adding them one by one below
             RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(tree.comparator(), "TreeSet.Builder", 0, true);

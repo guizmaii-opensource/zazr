@@ -151,6 +151,8 @@ class ConservingSetMapTest {
                 row("addAll of nothing", s -> s.addAll(java.util.List.of())),
                 row("addAll of itself", s -> s.addAll(s)),
                 row("addAll of present elements", s -> s.addAll(Vector.ofAll(s))),
+                row("addAll of a part of itself", s -> s.addAll(s.filter(e -> e % 2 == 0))),
+                row("addAll of itself as a set of another kind", s -> s.addAll(LinkedHashSet.ofAll(s))),
                 row("union with an empty HashSet", s -> s.union(HashSet.empty())),
                 row("union with an empty TreeSet", s -> s.union(TreeSet.<Integer>empty())),
                 row("union with itself", s -> s.union(s)),
@@ -258,6 +260,8 @@ class ConservingSetMapTest {
                 row("putAll of nothing", m -> m.putAll(java.util.List.of())),
                 row("putAll of itself", m -> m.putAll(m)),
                 row("putAll of its entries", m -> m.putAll(Vector.ofAll(m))),
+                row("putAll of its entries as a java.util.List", m -> m.putAll(order(m))),
+                row("merge with a part of itself", m -> m.merge(m.filterKeys(k -> k % 2 == 0))),
                 row("merge with an empty map", m -> m.merge(HashMap.empty())),
                 row("merge with itself", m -> m.merge(m)),
                 row("merge with equal keys", m -> m.merge(HashMap.ofEntries(entries(m.size())))),
@@ -494,6 +498,7 @@ class ConservingSetMapTest {
         assertThat(LinkedHashSet.<Integer>empty().addAll(linkedSet)).isSameAs(linkedSet);
         TreeSet<Integer> treeSet = treeSet(33);
         assertThat(TreeSet.<Integer>empty().union(treeSet)).isSameAs(treeSet);
+        assertThat(TreeSet.<Integer>empty().addAll(treeSet)).isSameAs(treeSet);
         HashMap<Integer, Integer> hashMap = HashMap.ofEntries(entries(33));
         assertThat(HashMap.<Integer, Integer>empty().putAll(hashMap)).isSameAs(hashMap);
         assertThat(HashMap.<Integer, Integer>empty().merge(hashMap)).isSameAs(hashMap);
