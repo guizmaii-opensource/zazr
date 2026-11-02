@@ -1723,13 +1723,17 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             }
         } else {
             newMap = map;
-            java.util.Iterator<K> before = order.iterator();
-            for (int i = 0; i < start; i++) {
-                newMap = newMap.remove(before.next());
+            if (start > 0) {
+                java.util.Iterator<K> before = order.iterator();
+                for (int i = 0; i < start; i++) {
+                    newMap = newMap.remove(before.next());
+                }
             }
-            java.util.Iterator<K> after = order.iterator(end);
-            for (int i = end; i < size; i++) {
-                newMap = newMap.remove(after.next());
+            if (end < size) {
+                java.util.Iterator<K> after = order.iterator(end);
+                for (int i = end; i < size; i++) {
+                    newMap = newMap.remove(after.next());
+                }
             }
         }
         return new LinkedHashMap<>(order.slice(start, end), newMap);

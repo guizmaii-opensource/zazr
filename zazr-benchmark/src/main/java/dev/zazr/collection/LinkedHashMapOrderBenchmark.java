@@ -25,7 +25,8 @@ import org.openjdk.jmh.infra.Blackhole;
  *   {@code dropRight(2)} and {@code takeRight(2)};</li>
  *   <li>{@code removeAtThreshold}: 2 * size keys put, then size of them removed inside the order (one key in two and
  *   one more), and one more removed from that same map at each call;</li>
- *   <li>{@code head}, {@code last} and {@code iterate} on a map with no removal and on the {@code front} map.</li>
+ *   <li>{@code head}, {@code last} and {@code iterate} on a map with no removal and on the {@code front} map, and a
+ *   builder given a map then as many new keys.</li>
  * </ul>
  * {@link LinkedHashMapBenchmark} covers put, get, remove and iteration of a map with no removal. Only the public API
  * is used, so the class runs on two branches.
@@ -175,6 +176,18 @@ public class LinkedHashMapOrderBenchmark {
         for (Tuple2<Integer, Integer> entry : front) {
             bh.consume(entry);
         }
+    }
+
+    @Benchmark
+    public LinkedHashMap<Integer, Integer> builderAdoptThenPut() {
+        // a builder given a map, then as many new keys again
+        LinkedHashMap.Builder<Integer, Integer> builder =
+                LinkedHashMap.<Integer, Integer>newBuilder().putAll(full);
+        int keys = 2 * size;
+        for (int key = keys; key < 2 * keys; key++) {
+            builder.put(key, key);
+        }
+        return builder.result();
     }
 
     @Benchmark
