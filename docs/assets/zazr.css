@@ -195,10 +195,10 @@
 .zz-hero__title {
   margin: 0;
   font-family: "Fraunces", Georgia, serif;
-  font-size: 4.4rem;
+  font-size: 4rem;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.01em;
   background: linear-gradient(100deg, #fff6e6 10%, var(--zz-yuzu-light) 55%, var(--zz-yuzu) 100%);
   -webkit-background-clip: text;
   background-clip: text;
