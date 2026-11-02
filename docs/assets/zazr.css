@@ -32,8 +32,6 @@
   --md-default-fg-color--light: #4d5a5b;
   --md-default-fg-color--lighter: #7e8b8c;
   --md-default-fg-color--lightest: #dde6e6;
-  --md-code-bg-color: #edf4f4;
-  --md-code-fg-color: #263233;
   --zz-card-bg: #ffffff;
   --zz-card-border: #d9e5e4;
   --zz-muted: #5c6a6b;
@@ -55,11 +53,69 @@
   --md-default-fg-color--light: #b7c4c4;
   --md-default-fg-color--lighter: #849191;
   --md-default-fg-color--lightest: #263334;
-  --md-code-bg-color: #142224;
-  --md-code-fg-color: #dfe9e9;
   --zz-card-bg: #132123;
   --zz-card-border: #263637;
   --zz-muted: #9fb0b0;
+}
+
+/* ---- code: IntelliJ's Darcula in the dark palette, IntelliJ Light in the light one ---- */
+[data-md-color-scheme="slate"] {
+  --md-code-bg-color: #2b2b2b;
+  --md-code-fg-color: #a9b7c6;
+  --md-code-hl-keyword-color: #cc7832;
+  --md-code-hl-string-color: #6a8759;
+  --md-code-hl-number-color: #6897bb;
+  --md-code-hl-comment-color: #808080;
+  --md-code-hl-function-color: #ffc66d;
+  --md-code-hl-constant-color: #9876aa;
+  --md-code-hl-special-color: #cc7832;
+  --md-code-hl-name-color: var(--md-code-fg-color);
+  --md-code-hl-operator-color: var(--md-code-fg-color);
+  --md-code-hl-punctuation-color: var(--md-code-fg-color);
+  --md-code-hl-variable-color: var(--md-code-fg-color);
+  --md-code-hl-generic-color: var(--md-code-fg-color);
+  --zz-code-annotation-color: #bbb529;
+  --zz-code-comment-style: normal;
+}
+/* the hero is drawn in the dark palette on every page; its code window follows the page's palette instead */
+[data-md-color-scheme="default"],
+[data-md-color-scheme="default"] .zz-hero .zz-window {
+  --md-code-bg-color: #ffffff;
+  --md-code-fg-color: #080808;
+  --md-code-hl-keyword-color: #0033b3;
+  --md-code-hl-string-color: #067d17;
+  --md-code-hl-number-color: #1750eb;
+  --md-code-hl-comment-color: #8c8c8c;
+  --md-code-hl-function-color: #00627a;
+  --md-code-hl-constant-color: #871094;
+  --md-code-hl-special-color: #0037a6;
+  --md-code-hl-name-color: var(--md-code-fg-color);
+  --md-code-hl-operator-color: var(--md-code-fg-color);
+  --md-code-hl-punctuation-color: var(--md-code-fg-color);
+  --md-code-hl-variable-color: var(--md-code-fg-color);
+  --md-code-hl-generic-color: var(--md-code-fg-color);
+  --zz-code-annotation-color: #9e880d;
+  --zz-code-comment-style: italic;
+}
+/* IntelliJ colours a class name as plain code and only a method declaration as a function, and has its own annotation
+   colour */
+.md-typeset .highlight .nc,
+.md-typeset .highlight .nn,
+.md-typeset .highlight .ne {
+  color: var(--md-code-hl-name-color);
+}
+.md-typeset .highlight .nd {
+  color: var(--zz-code-annotation-color);
+}
+.md-typeset .highlight :is(.c, .c1, .ch, .cm, .cs, .sd) {
+  font-style: var(--zz-code-comment-style);
+}
+/* white code blocks on the light page get a hairline border; inline code keeps a tinted background */
+[data-md-color-scheme="default"] .md-typeset .highlight:not(.zz-window *) pre > code {
+  box-shadow: inset 0 0 0 1px var(--md-default-fg-color--lightest);
+}
+[data-md-color-scheme="default"] .md-typeset :not(pre) > code {
+  background-color: #edf4f4;
 }
 
 /* ---- typography ---- */
@@ -271,7 +327,8 @@
 }
 .zz-window {
   border-radius: var(--zz-radius);
-  background: #0b1617;
+  background: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
   border: 1px solid #ffffff1f;
   box-shadow: 0 30px 80px -30px #000000cc, 0 0 0 1px #f5a52422;
   overflow: hidden;
@@ -309,6 +366,19 @@
 }
 .zz-window .md-clipboard {
   color: #ffffff66;
+}
+[data-md-color-scheme="default"] .zz-hero .zz-window {
+  border-color: #ffffff59;
+}
+[data-md-color-scheme="default"] .zz-hero .zz-window__bar {
+  border-bottom-color: #0000001a;
+  background: #f7f8fa;
+}
+[data-md-color-scheme="default"] .zz-hero .zz-window__bar span:last-child {
+  background: #00000026;
+}
+[data-md-color-scheme="default"] .zz-hero .zz-window .md-clipboard {
+  color: #0000004d;
 }
 
 /* ---- landing page: sections ---- */
