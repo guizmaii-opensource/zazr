@@ -835,11 +835,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the keys are copied into a new HashSet.
+     * Complexity: O(n), with no hashing and no key comparison: the keys are copied from the trie of the entries, in
+     * the same shape.
      */
     @Override
     public Set<K> keySet() {
-        return HashSet.ofAll(trie.keysIterator());
+        return HashSet.wrap(trie.keyTrie());
     }
 
     @Override

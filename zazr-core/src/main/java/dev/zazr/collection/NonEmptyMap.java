@@ -547,13 +547,13 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
-     * Complexity: O(n), the keys copied into a new set, as {@link HashMap#keySet()}.
+     * Complexity: O(n), with no hashing and no key comparison, as {@link HashMap#keySet()}.
      *
      * @return the keys, a non-empty set
      */
     public NonEmptySet<K> keySet() {
-        Set<K> keys = map.keySet();
-        return NonEmptySet.unsafeFromSet(keys instanceof HashSet<K> hashSet ? hashSet : HashSet.ofAll(keys));
+        // HashMap.keySet is always a HashSet
+        return NonEmptySet.unsafeFromSet((HashSet<K>) map.keySet());
     }
 
     /**

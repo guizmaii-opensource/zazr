@@ -132,6 +132,29 @@ public class TreeMapTreeCopyTest {
     }
 
     @Test
+    public void keySetIsUnchangedByLaterUpdatesOfTheMap() {
+        Random random = new Random(SEED + 2);
+        for (Comparator<Integer> order : orders()) {
+            for (int size : SIZES) {
+                TreeMap<Integer, String> map = randomMap(order, Math.min(size, order == MODULO ? 1000 : size), random);
+                SortedSet<Integer> keys = map.keySet();
+                java.util.List<Integer> keysBefore = list(keys);
+                TreeMap<Integer, String> updated = Vector.range(0, 2 * size + 10)
+                        .foldLeft(map, (acc, i) -> {
+                            int key = random.nextInt(4 * size + 1) - 2 * size;
+                            return random.nextBoolean() ? acc.put(key, "u" + key) : acc.remove(key);
+                        });
+                assertThat(list(keys)).isEqualTo(keysBefore);
+                assertThat(keys).isEqualTo(keySetByRebuilding(map));
+                assertThat(updated.keySet()).isEqualTo(keySetByRebuilding(updated));
+                assertThat(list(updated.keySet()))
+                        .isEqualTo(list(Iterator.ofAll(updated).map(Tuple2::_1)));
+                assertThat(list(map.keySet())).isEqualTo(keysBefore);
+            }
+        }
+    }
+
+    @Test
     public void mapValuesEqualsMappingEveryEntryAtEveryBoundary() {
         Random random = new Random(SEED);
         for (Comparator<Integer> order : orders()) {

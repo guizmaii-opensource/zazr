@@ -1101,7 +1101,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> remove(T element) {
-        return new TreeSet<>(tree.delete(element));
+        RedBlackTree<T> removed = tree.delete(element);
+        return removed == tree ? this : new TreeSet<>(removed);
     }
 
     @Override
