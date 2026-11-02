@@ -43,6 +43,12 @@ final class InsertionOrderShapes {
         return shapes;
     }
 
+    /// The ordinal the next new key of `map` gets.
+    static int nextOrdinal(LinkedHashMap<?, ?> map) throws ReflectiveOperationException {
+        Object order = read(LinkedHashMap.class, map, "order");
+        return (int) read(order.getClass(), order, "next");
+    }
+
     private static void collect(Object node, Set<String> shapes) throws ReflectiveOperationException {
         boolean leaf = node.getClass().getSimpleName().equals("Leaf");
         if (holes((int) read(node.getClass(), node, "bitmap"))) {

@@ -255,19 +255,48 @@ public class LinkedHashOrderModelTest {
     }
 
     @Test
-    public void keysAreNumberedAgainWhenTheOrdinalsRunOut() {
-        LinkedHashMap<Key, Integer> start = FAR_START;
-        randomWalk(new Version(start, new ArrayList<>()), 1500, 60, 175);
+    public void keysAreNumberedAgainWhenTheOrdinalsRunOut() throws Exception {
         @SuppressWarnings("Var")
-        Version version = new Version(start, new ArrayList<>());
+        Version version = new Version(FAR_START, new ArrayList<>());
+        java.util.List<Version> versions = new ArrayList<>();
+        @SuppressWarnings("Var")
+        Version full = null;
         for (int id = 0; id < 100; id++) {
             Key key = new Key(id, 0);
+            if (InsertionOrderShapes.nextOrdinal(version.map()) == InsertionOrder.LIMIT) {
+                full = version;
+            }
             version = new Version(version.map().put(key, id), put(version.model(), key, id));
-            if (id % 7 == 0) {
+            if (id % 7 == 6) {
                 Key gone = new Key(id / 2, 0);
                 version = new Version(version.map().remove(gone), remove(version.model(), gone));
             }
             check(version);
+            versions.add(version);
         }
+        // the 41st new key found every ordinal given, and the keys were numbered again from 0
+        assertThat(full).isNotNull();
+        assertThat(InsertionOrderShapes.nextOrdinal(version.map())).isLessThan(100);
+        // the map at the limit stays as it was, and goes on in two ways
+        Version atLimit = java.util.Objects.requireNonNull(full);
+        Key key = new Key(1000, 1);
+        check(new Version(atLimit.map().put(key, 1), put(atLimit.model(), key, 1)));
+        check(new Version(
+                atLimit.map().remove(atLimit.model().get(0)._1()).put(key, 2),
+                put(remove(atLimit.model(), atLimit.model().get(0)._1()), key, 2)));
+        check(new Version(
+                atLimit.map().put(atLimit.model().get(1)._1(), 3),
+                put(atLimit.model(), atLimit.model().get(1)._1(), 3)));
+        for (Version older : versions) {
+            check(older);
+        }
+        // random operations from a map near the limit
+        @SuppressWarnings("Var")
+        Version near = new Version(FAR_START, new ArrayList<>());
+        for (int id = 0; id < 30; id++) {
+            Key k = new Key(id, -1);
+            near = new Version(near.map().put(k, id), put(near.model(), k, id));
+        }
+        randomWalk(near, 1500, 60, 175);
     }
 }
