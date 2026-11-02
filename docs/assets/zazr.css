@@ -1,13 +1,14 @@
 /*
  * Zazr site theme on top of Material for MkDocs, in the colours of Zaz, the capybara with a yuzu on its head:
- * espresso and caramel browns for the chrome, the yuzu yellow-orange as the accent, warm greys for the rest.
+ * onsen teal (the hot spring a capybara sits in) for the chrome, the yuzu yellow-orange as the accent, cool greys
+ * for the rest.
  * Fonts: Inter for text, JetBrains Mono for code (mkdocs.yml, theme.font).
  */
 
 :root {
-  --zz-espresso: #2e2017;
-  --zz-espresso-2: #4a3222;
-  --zz-caramel: #c07d45;
+  --zz-onsen: #0f3d3e;
+  --zz-onsen-2: #165457;
+  --zz-steam: #2a9d96;
   --zz-yuzu: #f5a524;
   --zz-yuzu-light: #ffc94d;
   --zz-yuzu-ink: #2b1a08;
@@ -17,47 +18,47 @@
 
 /* ---- light palette ---- */
 [data-md-color-scheme="default"] {
-  --md-primary-fg-color: var(--zz-espresso);
-  --md-primary-fg-color--light: var(--zz-espresso-2);
-  --md-primary-fg-color--dark: #1f150f;
-  --md-primary-bg-color: #fff8ee;
-  --md-primary-bg-color--light: #fff8eeb3;
+  --md-primary-fg-color: var(--zz-onsen);
+  --md-primary-fg-color--light: var(--zz-onsen-2);
+  --md-primary-fg-color--dark: #0a2b2c;
+  --md-primary-bg-color: #f2fbfa;
+  --md-primary-bg-color--light: #f2fbfab3;
   --md-accent-fg-color: #c46a00;
   --md-accent-fg-color--transparent: #c46a001a;
-  --md-typeset-a-color: #9b5516;
-  --md-default-bg-color: #fdfaf6;
-  --md-default-fg-color: #2a221c;
-  --md-default-fg-color--light: #5e534a;
-  --md-default-fg-color--lighter: #8d8178;
-  --md-default-fg-color--lightest: #e6ddd3;
-  --md-code-bg-color: #f5eee4;
-  --md-code-fg-color: #3a2e25;
+  --md-typeset-a-color: #13777a;
+  --md-default-bg-color: #f8fbfb;
+  --md-default-fg-color: #1d2627;
+  --md-default-fg-color--light: #4d5a5b;
+  --md-default-fg-color--lighter: #7e8b8c;
+  --md-default-fg-color--lightest: #dde6e6;
+  --md-code-bg-color: #edf4f4;
+  --md-code-fg-color: #263233;
   --zz-card-bg: #ffffff;
-  --zz-card-border: #ebe1d4;
-  --zz-muted: #6b6057;
+  --zz-card-border: #d9e5e4;
+  --zz-muted: #5c6a6b;
 }
 
 /* ---- dark palette ---- */
 [data-md-color-scheme="slate"] {
-  --md-hue: 28;
-  --md-primary-fg-color: var(--zz-espresso);
-  --md-primary-fg-color--light: var(--zz-espresso-2);
-  --md-primary-fg-color--dark: #1a120c;
-  --md-primary-bg-color: #fff8ee;
-  --md-primary-bg-color--light: #fff8eeb3;
+  --md-hue: 182;
+  --md-primary-fg-color: var(--zz-onsen);
+  --md-primary-fg-color--light: var(--zz-onsen-2);
+  --md-primary-fg-color--dark: #082223;
+  --md-primary-bg-color: #f2fbfa;
+  --md-primary-bg-color--light: #f2fbfab3;
   --md-accent-fg-color: var(--zz-yuzu-light);
   --md-accent-fg-color--transparent: #ffc94d1a;
   --md-typeset-a-color: #f3b24e;
-  --md-default-bg-color: #1b1613;
-  --md-default-fg-color: #efe6dc;
-  --md-default-fg-color--light: #c9bcae;
-  --md-default-fg-color--lighter: #968a7e;
-  --md-default-fg-color--lightest: #3a322c;
-  --md-code-bg-color: #251f1a;
-  --md-code-fg-color: #e9dfd3;
-  --zz-card-bg: #221c18;
-  --zz-card-border: #3a3029;
-  --zz-muted: #b7aa9c;
+  --md-default-bg-color: #0f1a1b;
+  --md-default-fg-color: #e6eeee;
+  --md-default-fg-color--light: #b7c4c4;
+  --md-default-fg-color--lighter: #849191;
+  --md-default-fg-color--lightest: #263334;
+  --md-code-bg-color: #142224;
+  --md-code-fg-color: #dfe9e9;
+  --zz-card-bg: #132123;
+  --zz-card-border: #263637;
+  --zz-muted: #9fb0b0;
 }
 
 /* ---- typography ---- */
@@ -86,7 +87,7 @@
 }
 .md-header,
 .md-tabs {
-  background: linear-gradient(90deg, var(--zz-espresso) 0%, var(--zz-espresso-2) 100%);
+  background: linear-gradient(90deg, var(--zz-onsen) 0%, var(--zz-onsen-2) 100%);
 }
 .md-tabs__link {
   font-weight: 500;
@@ -145,11 +146,11 @@
 .zz-hero {
   position: relative;
   overflow: hidden;
-  color: #f6ecdf;
+  color: #eaf6f5;
   background:
     radial-gradient(60rem 30rem at 85% -10%, #f5a52433 0%, transparent 60%),
-    radial-gradient(40rem 24rem at 5% 110%, #c07d4540 0%, transparent 60%),
-    linear-gradient(180deg, var(--zz-espresso-2) 0%, var(--zz-espresso) 100%);
+    radial-gradient(40rem 24rem at 5% 110%, #2a9d9640 0%, transparent 60%),
+    linear-gradient(180deg, var(--zz-onsen-2) 0%, var(--zz-onsen) 100%);
   border-bottom: 1px solid #ffffff14;
 }
 .zz-hero__glow {
@@ -207,7 +208,7 @@
   max-width: 26rem;
   font-size: 1.05rem;
   line-height: 1.55;
-  color: #eaddcc;
+  color: #cfe3e1;
 }
 .zz-hero__headline {
   display: block;
@@ -250,7 +251,7 @@
   color: var(--zz-yuzu-ink);
 }
 .zz-hero .zz-button--ghost {
-  color: #fff8ee;
+  color: #f2fbfa;
   border-color: #ffffff4d;
   background: #ffffff0d;
   display: inline-flex;
@@ -258,9 +259,9 @@
   gap: 0.45em;
 }
 .zz-hero .zz-button--ghost:hover {
-  border-color: #fff8ee;
+  border-color: #f2fbfa;
   background: #ffffff1f;
-  color: #fff8ee;
+  color: #f2fbfa;
 }
 .zz-hero .zz-button--ghost svg {
   width: 1.1em;
@@ -269,7 +270,7 @@
 }
 .zz-window {
   border-radius: var(--zz-radius);
-  background: #17110d;
+  background: #0b1617;
   border: 1px solid #ffffff1f;
   box-shadow: 0 30px 80px -30px #000000cc, 0 0 0 1px #f5a52422;
   overflow: hidden;
@@ -335,7 +336,7 @@
   height: 4px;
   margin-bottom: 0.7rem;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--zz-yuzu), var(--zz-caramel));
+  background: linear-gradient(90deg, var(--zz-yuzu), var(--zz-steam));
 }
 .md-typeset .grid.cards.zz-cards > ul > li {
   border: 1px solid var(--zz-card-border);
@@ -393,10 +394,10 @@
 
 /* ---- footer ---- */
 .md-footer-meta {
-  background: var(--zz-espresso);
+  background: var(--zz-onsen);
 }
 .md-copyright__highlight a {
-  color: #fff8eecc;
+  color: #f2fbfacc;
   text-decoration: underline;
 }
 
