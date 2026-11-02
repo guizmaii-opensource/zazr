@@ -560,7 +560,7 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(log n): one deletion from the tree.
+     * Complexity: O(log n): one walk down the tree, then one deletion on the way back up when the element is present.
      */
     @Override
     SortedSet<T> remove(T element);
