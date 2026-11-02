@@ -38,8 +38,9 @@ Every method: [complexity page](complexity.md#queue).
 ## Sharp edges
 
 - `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
-- The amortised cost holds when each `dequeue` works on the queue the previous one returned. Calling `dequeue`
-  again and again on the same old queue can pay the O(n) step every time.
+- The amortised cost holds when each `dequeue` works on the queue the previous one returned. A queue keeps the
+  result of its O(n) step, so calling `dequeue` again on the same old queue pays it once. A new queue made from
+  that old one, by an `enqueue` for example, pays the step again when it is dequeued.
 - Creating an `iterator()` can cost O(n), and so can `get(i)` for a small `i`: on a queue built by `enqueue`, most
   elements are still waiting at the end, in reverse order. `size()` counts the elements; `isEmpty()` is O(1), and
   `sizeCompare(n)` counts at most `n + 1` of them.
