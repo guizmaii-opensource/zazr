@@ -195,4 +195,91 @@ public class ChampKeyTrieTest {
         assertKeyTrie(map);
         assertSameShape(map.keyTrie(), keyTrie, true);
     }
+
+    // `count` random keys, among which a few hashes collide often, so the merge meets collision nodes on both sides
+    private static java.util.List<ChampMapTest.Key> randomKeys(Random random, int count) {
+        java.util.List<ChampMapTest.Key> result = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            result.add(randomKey(random));
+        }
+        return result;
+    }
+
+    @Test
+    public void keyTrieOfAMergedTrieIsTheRebuiltSet() {
+        Random random = new Random(SEED + 2);
+        for (int size : SIZES) {
+            if (size > 1025) {
+                continue;
+            }
+            java.util.List<ChampMapTest.Key> left = randomKeys(random, size);
+            // half of the keys of `left`, in another order, then as many new ones: shared and merged parts
+            java.util.List<ChampMapTest.Key> right = new ArrayList<>(left.subList(0, size / 2));
+            java.util.Collections.shuffle(right, random);
+            right.addAll(randomKeys(random, size));
+            BitmapIndexedMapNode<ChampMapTest.Key, Integer> a = persistentMap(left);
+            BitmapIndexedMapNode<ChampMapTest.Key, Integer> b = builtMap(right);
+            // putAll(HashMap) is b.concat(a) seen from a; merge(HashMap) is a.concat(b) seen from a
+            for (BitmapIndexedMapNode<ChampMapTest.Key, Integer> merged : java.util.List.of(
+                    b.concat(a, 0),
+                    a.concat(b, 0),
+                    a.concat(a, 0),
+                    MapNode.<ChampMapTest.Key, Integer>empty().concat(b, 0))) {
+                ChampValidity.assertValid(merged);
+                assertKeyTrie(merged);
+            }
+        }
+    }
+
+    @Test
+    public void keyTrieOfATransformedTrieSharesTheHashesSafely() {
+        Random random = new Random(SEED + 3);
+        java.util.List<ChampMapTest.Key> keys = randomKeys(random, 2000);
+        BitmapIndexedMapNode<ChampMapTest.Key, Integer> map = builtMap(keys);
+        // mapValues and replaceAll keep the keys in place: the three tries share the hashes arrays of `map`
+        BitmapIndexedMapNode<ChampMapTest.Key, Integer> mapped = map.transform((key, value) -> value + 1);
+        BitmapIndexedSetNode<ChampMapTest.Key> keyTrie = mapped.keyTrie();
+        assertThat(mapped.hashes).isSameAs(map.hashes);
+        assertThat(keyTrie.hashes).isSameAs(map.hashes);
+        assertKeyTrie(mapped);
+        String mapBefore = describe(map);
+        String mappedBefore = describe(mapped);
+        String keysBefore = describe(keyTrie);
+
+        java.util.List<ChampMapTest.Key> more = randomKeys(random, 2000);
+        // each of the three updated persistently, then through a builder that adopts it and writes through its nodes:
+        // values replaced, keys colliding with inline keys (moved down into new children), new keys
+        for (BitmapIndexedMapNode<ChampMapTest.Key, Integer> side : java.util.List.of(map, mapped)) {
+            ChampValidity.assertValid(Vector.ofAll(more)
+                    .foldLeft(side, (acc, key) -> random.nextBoolean() ? acc.updated(key, -1) : acc.removed(key)));
+            HashMapBuilder<ChampMapTest.Key, Integer> builder = new HashMapBuilder<>("test");
+            builder.putAll(side);
+            for (ChampMapTest.Key key : keys) {
+                builder.put(key, -2);
+                builder.put(new ChampMapTest.Key(key.hash() ^ (1 << 30), key.id()), -3);
+            }
+            for (ChampMapTest.Key key : more) {
+                builder.put(key, -4);
+            }
+            ChampValidity.assertValid(builder.result());
+        }
+        assertValid(Vector.ofAll(more)
+                .foldLeft(keyTrie, (acc, key) -> random.nextBoolean() ? acc.updated(key, true) : acc.removed(key)));
+        HashSetBuilder<ChampMapTest.Key> setBuilder = new HashSetBuilder<>("test");
+        setBuilder.addAll(keyTrie);
+        for (ChampMapTest.Key key : keys) {
+            setBuilder.add(new ChampMapTest.Key(key.hash() ^ (1 << 30), key.id()));
+        }
+        for (ChampMapTest.Key key : more) {
+            setBuilder.add(key);
+        }
+        assertValid(setBuilder.result());
+
+        assertThat(describe(map)).isEqualTo(mapBefore);
+        assertThat(describe(mapped)).isEqualTo(mappedBefore);
+        assertThat(describe(keyTrie)).isEqualTo(keysBefore);
+        assertKeyTrie(map);
+        assertKeyTrie(mapped);
+        assertSameShape(mapped.keyTrie(), keyTrie, true);
+    }
 }

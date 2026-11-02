@@ -1805,7 +1805,7 @@ deleted. Attribution in `NOTICE`.
     `retainAll`, and `intersect` with a larger or equal argument, end in `filter` and follow.
   - `HashMap.mapValues` and `replaceAll(BiFunction)` keep the keys in place and replace the values (Scala's
     `transform`), calling the function in iteration order, with the null check and message of a put.
-  - `HashMap.keySet` copies the map trie into a set trie node for node (decided 2026-10-06, #123; Scala returns a
+  - `HashMap.keySet` copies the map trie into a set trie node for node (decided 2026-11-02, #123; Scala returns a
     view of the map instead). The two node types share their layout: the same `dataMap`, `nodeMap`, stored hash codes,
     size and key hash sum, the children at the back of the array in reverse slot order (after `2 * payload` slots in a
     map node, `payload` in a set node), and collision nodes as flat arrays in insertion order. So `MapNode.keyTrie`

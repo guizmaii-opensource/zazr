@@ -179,6 +179,67 @@ public class HashMapKeySetTest {
     }
 
     @Test
+    public void keySetOfAMergedMapIsTheRebuiltSet() {
+        for (int size : SIZES) {
+            HashMap<Colliding, Integer> left = mapOf(size, i -> new Colliding(i / 4, i % 4));
+            // half of the hashes of `left` with other ids, and new hashes: collision nodes met on both sides
+            HashMap<Colliding, Integer> right = mapOf(size, i -> new Colliding(i / 4 + size / 8, i % 6));
+            assertIsTheRebuiltSet(left.putAll(right));
+            assertIsTheRebuiltSet(right.putAll(left));
+            assertIsTheRebuiltSet(left.merge(right));
+            assertIsTheRebuiltSet(left.merge(right, Integer::sum));
+            assertIsTheRebuiltSet(HashMap.<Colliding, Integer>newBuilder()
+                    .putAll(left)
+                    .putAll(right)
+                    .result());
+        }
+    }
+
+    @Test
+    public void keySetOfAMappedMapIsUnchangedByLaterUpdatesOfEachSide() {
+        Random random = new Random(SEED + 2);
+        for (int size : SIZES) {
+            HashMap<Colliding, Integer> map = mapOf(size, i -> new Colliding(i / 4, i % 4));
+            for (HashMap<Colliding, Integer> mapped :
+                    java.util.List.of(map.mapValues(value -> value + 1), map.replaceAll((key, value) -> -value))) {
+                java.util.List<Tuple2<Colliding, Integer>> mapBefore = list(map);
+                java.util.List<Tuple2<Colliding, Integer>> mappedBefore = list(mapped);
+                Set<Colliding> keys = mapped.keySet();
+                java.util.List<Colliding> keysBefore = list(keys);
+                assertIsTheRebuiltSet(mapped);
+
+                for (HashMap<Colliding, Integer> side : java.util.List.of(map, mapped)) {
+                    assertIsTheRebuiltSet(Vector.range(0, size + 10).foldLeft(side, (acc, i) -> {
+                        Colliding key = new Colliding(random.nextInt(size / 4 + 2), random.nextInt(6));
+                        return random.nextBoolean() ? acc.put(key, i) : acc.remove(key);
+                    }));
+                    HashMap.Builder<Colliding, Integer> builder =
+                            HashMap.<Colliding, Integer>newBuilder().putAll(side);
+                    for (Colliding key : keysBefore) {
+                        builder.put(key, -1);
+                        builder.put(new Colliding(key.hash(), key.id() + 4), -2);
+                    }
+                    assertIsTheRebuiltSet(builder.result());
+                }
+                Set<Colliding> grown = Vector.ofAll(keysBefore)
+                        .foldLeft(keys, (acc, key) -> acc.add(new Colliding(key.hash(), key.id() + 4)));
+                assertThat(grown.size()).isEqualTo(2 * size);
+                HashSet.Builder<Colliding> setBuilder = HashSet.newBuilder();
+                setBuilder.addAll(keys);
+                keysBefore.forEach(key -> setBuilder.add(new Colliding(key.hash() + size + 1, key.id())));
+                assertThat(setBuilder.result().size()).isEqualTo(2 * size);
+
+                assertThat(list(map)).isEqualTo(mapBefore);
+                assertThat(list(mapped)).isEqualTo(mappedBefore);
+                assertThat(list(keys)).isEqualTo(keysBefore);
+                assertIsTheRebuiltSet(map);
+                assertIsTheRebuiltSet(mapped);
+                assertThat(list(map.keySet())).isEqualTo(keysBefore);
+            }
+        }
+    }
+
+    @Test
     public void keySetBehavesAsTheRebuiltSetUnderBulkOperations() {
         HashMap<Colliding, Integer> map = mapOf(1025, i -> new Colliding(i / 2, i % 2));
         Set<Colliding> keys = map.keySet();
