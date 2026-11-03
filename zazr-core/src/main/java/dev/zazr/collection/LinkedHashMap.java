@@ -1712,6 +1712,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             return this;
         }
         int kept = end - start;
+        if (kept == size - 1) {
+            // one entry cut off an end (tail, init): taken out of the order by its ordinal, as remove does
+            K key = start == 1 ? order.first() : order.last();
+            return new LinkedHashMap<>(order.remove(slotAt(key).index()), map.remove(key));
+        }
         @SuppressWarnings("Var")
         HashMap<K, Slot<K, V>> newMap;
         if (kept <= size - kept) {
