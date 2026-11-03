@@ -1548,6 +1548,18 @@ kept for its measured win (`ShareSubtreesBenchmark`, below).
   receiver with values replaced returns its argument.
 - Every new tree comes from `join`, `join2` or an existing node, so the `blackHeight` fields stay exact, as deletion
   needs; `RedBlackTreeSharingTest` checks the invariants and deletes from every result.
+- **Measured** (JMH, 3 forks, `-prof gc`, `ShareSubtreesBenchmark` at 10 and 10 000 elements, against #313's head;
+  time, then allocated bytes per operation):
+  - `TreeSet.diff`: disjoint 0.20-0.26x (3.8 MB to 0 at 10 000), a few elements 0.54-0.60x, a derived argument
+    0.47-0.62x, every second element 0.75-0.89x, a small receiver 0.17-0.24x. With an equal tree built on its own,
+    1.23x at 10 000 (a lookup per node), with 72 KB down to 16 B: kept.
+  - `partition`: a random half 0.27-0.52x, by root slot 0.07-0.23x, everything on one side 0.59-0.86x, with 3 to 70
+    times less allocation.
+  - `HashMap.putAll`: derived by removals, a filter or one put 0.31-0.65x, with nothing allocated; disjoint and
+    copies within the error bars.
+  - `TreeMap.putAll`: one value replaced, one key added or removed, an equal copy 0.42-0.65x, mostly nothing
+    allocated; disjoint 1.09-1.14x, kept.
+  - `HashMap.filter` on the shared `rebuilt` measured 1.10x and was reverted; back at 0.96-0.98x of `main`.
 
 ### 3.8 `Vector` builder
 
