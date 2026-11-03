@@ -82,11 +82,13 @@ A sequence operation that changes nothing returns the sequence itself, not a cop
 - Appending, prepending or inserting an empty collection. An `Iterable` that can be read only once is never asked
   first, so it gives a copy. When the receiver is empty, `appendAll` and `prependAll` return the other side.
 - `sorted`, `reverse` and `intersperse` on fewer than two elements.
-- `update` with the same instance as the element already there; an equal but distinct element is a change.
+- On a `List` or a `Queue`, `update` with the same instance as the element already there; an equal but distinct
+  element is a change.
 - `partition`, `span` and `splitAt` return the receiver as the part that gets every element.
 
-A `List` also shares what follows the last change: `filter`, `replaceAll`, `update`, `span` and `splitAt` copy only
-the elements before it.
+A `List` also shares what follows the last change: `filter`, `update`, `span` and `splitAt` copy only the elements
+before it. A `filter` that keeps every element is about three times faster than a copy, and one that removes an
+element near the front two to four and a half times.
 
 A `LazyList` returns itself only when it can tell without reading an element, such as `drop(0)` or a `patch` that
 inserts and removes nothing. Each method's documentation says when it returns the receiver.

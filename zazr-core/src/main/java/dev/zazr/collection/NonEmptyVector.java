@@ -550,8 +550,6 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Object)}.
-     * <p>
-     * Returns this NonEmptyVector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   A position
      * @param element The new element
@@ -566,8 +564,6 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Function)}.
-     * <p>
-     * Returns this NonEmptyVector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   A position
      * @param updater Computes the new element from the current one

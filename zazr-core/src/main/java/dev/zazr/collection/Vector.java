@@ -1910,7 +1910,8 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * {@link #appendAll(Iterable)} joins two Vectors, copying the shorter side. A patch near either end is O(m) plus
      * a few small arrays.
      * <p>
-     * Returns this Vector itself when {@code replaced} is 0 or less and {@code that} is a collection known to be empty; a one-shot {@code Iterable} is read once, never asked first.
+     * Returns this Vector itself when {@code replaced} is 0 or less and {@code that} is a collection known to be
+     * empty; a one-shot {@code Iterable} is read once, never asked first.
      *
      * @param from     the first position to replace
      * @param that     the replacement elements
@@ -2865,8 +2866,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * <p>
      * Complexity: effectively O(1): the array of 32 elements that holds it is copied, with at most five arrays above
      * it; the rest is shared.
-     * <p>
-     * Returns this Vector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   a position, {@code 0 <= index < size()}
      * @param element the new element
@@ -2876,9 +2875,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public Vector<T> update(int index, T element) {
         if (isValid(index)) {
-            if (trie.get(index) == element) {
-                return this;
-            }
             return wrap(trie.updated(index, Objects.requireNonNull(element, "Vector.update: element is null")));
         } else {
             throw new IndexOutOfBoundsException("update(" + index + ")");
@@ -2889,8 +2885,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Replaces the element at {@code index} by {@code updater} applied to it.
      * <p>
      * Complexity: effectively O(1): one {@link #get(int)} and one {@link #update(int, Object)}.
-     * <p>
-     * Returns this Vector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   a position, {@code 0 <= index < size()}
      * @param updater computes the new element from the current one

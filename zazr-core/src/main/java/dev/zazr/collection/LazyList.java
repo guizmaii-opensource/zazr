@@ -2238,12 +2238,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param that     the replacement elements
      * @param replaced how many elements are replaced
      * @return a new LazyList, or this LazyList itself when {@code replaced} is 0 or less and {@code that} is already
-     *         known to be empty (an empty collection, or a LazyList whose emptiness has been read)
+     *         known to be empty: an empty Zazr collection, a LazyList whose emptiness has been read, or an empty
+     *         {@code ArrayList}, {@code List.of()} and the like; any other view is not asked
      * @throws NullPointerException if {@code that} is null
      */
     default LazyList<T> patch(int from, Iterable<? extends T> that, int replaced) {
         Objects.requireNonNull(that, "that is null");
-        if (replaced <= 0 && LazyListModule.knownIsEmpty(that)) {
+        if (replaced <= 0 && LazyListModule.knownIsEmptyWithoutReading(that)) {
             return this;
         }
         return lazily(() -> patchFrom(this, Math.max(from, 0), LazyList.ofAll(that), Math.max(replaced, 0)));

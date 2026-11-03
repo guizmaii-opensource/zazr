@@ -1463,33 +1463,50 @@ and a caller can test identity. On `Vector`, `List`, `Queue`, `LazyList` and `No
   replaced or added. `appendAll`, `prependAll`, `insertAll` and `patch` do when the argument is a collection known to
   be empty (a one-shot `Iterable` is read once, never asked first); an empty receiver of `appendAll` or `prependAll`
   returns the argument when it is of the same type. `sorted*`, `sortBy`, `reverse`, `intersperse` and `shuffle` do
-  on fewer than two elements; `update` does when the element at the index is the new one by reference (`==`), not by
-  `equals`. `partition`, `span`, `splitAt` and `splitAtInclusive` return the receiver as the part that gets every
-  element.
-- `List.filter` (so `reject`, `distinct*`, `removeAll` and `retainAll`), `replaceAll`, `update`, `span` and
-  `splitAt(int)` share the cells after the last change, as Scala's `filterCommon`
-  (`library/src/scala/collection/immutable/List.scala`) does: one pass, the predicate once per element in order, and
-  the cells before the last change copied through a `List.Builder` whose tail is the shared rest. Scala writes the
-  copied cells in place; a `Cons` is a record, so the builder buffers them instead. The helper,
-  `ListModule.Conserve.addCells` (the cells from one cell up to a later one, into a builder), is what a conserving
-  `map` on `List` would use; on `Vector`, `filter` already seeds its builder with the untouched prefix
-  (`trie.take(k)`), the same idea.
+  on fewer than two elements. `partition`, `span`, `splitAt` and `splitAtInclusive` return the receiver as the part
+  that gets every element.
+- `update` on `List` and `Queue` returns the receiver when the element at the index is the new one by reference
+  (`==`), not by `equals`. On `Vector` (so `NonEmptyVector`) it does not: reading the element first made every update
+  that changes it slower, about 7 % on 100 000 elements in the first run.
+- `List.filter` (so `reject`, `distinct*`, `removeAll` and `retainAll`) shares the cells after the last removed
+  element, as Scala's `filterCommon` (`library/src/scala/collection/immutable/List.scala`) does: one pass, the
+  predicate once per element in order. Scala writes the copied cells in place; a `Cons` is a record, so the cells
+  before the last removal are copied most recent first and prepended to the shared rest. The two helpers,
+  `ListModule.Conserve.prependCells` (the cells from one cell up to a later one, prepended to an accumulator) and
+  `prependReversed` (an accumulator put back in order in front of a rest), are what a conserving `map` on `List`
+  would use; on `Vector`, `filter` already seeds its builder with the untouched prefix (`trie.take(k)`), the same
+  idea. `List.span` walks once, copying the prefix and sharing the rest, where it went through two iterators and
+  called the predicate twice on every prefix element.
+- `List.replaceAll`, `update` and `splitAt(int)` keep their one-pass copy loops behind the no-op checks: copying
+  the prefix through a `List.Builder`, or walking to the change before copying, measured slower than prepending and
+  reversing (0.7x for `splitAt` in the middle and `update` near the end of 100 000 elements, 0.4x for `update` near
+  the front).
 - `Queue` asks the `List` it gets from `toList()` and returns itself when the `List` operation returns that very
   list: the checks stay at the public methods, independent of the representation.
 - `NonEmptyVector` returns itself when the wrapped `Vector` returns itself; its methods that return a `Vector`
   (`filter`, `take`, ...) return the wrapped `Vector` itself when nothing changes.
 - `LazyList` returns itself only when it knows without evaluating a cell the operation would not: `drop(0)`,
-  `dropRight(0)`, `padTo`/`leftPadTo` to 0, `rotate*(0)`, `cycle(1)`, `subSequence(0)`, `patch` and `appendAll` /
-  `prependAll` / `removeAll` of an argument already known to be empty, `orElse` once the first cell is known to be
-  non-empty, and the operations that read the whole list anyway (`reverse`, `sorted*`, `shuffle`). The lazy ones
-  (`filter`, `take`, `slice`, `distinct`, `remove*`, ...) return a new lazy list: knowing that nothing changes
-  would read cells the call itself leaves unread.
+  `dropRight(0)`, `padTo`/`leftPadTo` to 0, `rotate*(0)`, `cycle(1)`, `subSequence(0)`, `splitAt(0)`, `patch` and
+  `appendAll` / `prependAll` / `removeAll` of an argument already known to be empty, `orElse` once the first cell is
+  known to be non-empty, and the operations that read the whole list anyway (`reverse`, `sorted*`, `shuffle`). The
+  lazy ones (`filter`, `take`, `slice`, `distinct`, `remove*`, ...) return a new lazy list: knowing that nothing
+  changes would read cells the call itself leaves unread.
 - Left out: `distinctByKeepLast` (it builds its result before it can know that every element is kept), and the
   operations that always change something (`append`, `insert`, `tail`, `init`, `scan`, ...).
   `ConservingOperationsTest` reads every public method that returns the sequence's own type, or a tuple of two, by
   reflection: each is a conserving row or a row saying why it is left out, so a new operation fails the test until it
   gets one. The control types already conserve (`Option.filter`, `Try.filter`, `Either.filterOrElse`, the `orElse`
   family, the mapping of the other side). The conserving map is `mapConserve`, below.
+- **Measured** (JMH, 3 forks, `-prof gc`, `ConservingBenchmark` and `ConservingSmallBenchmark` in `zazr-benchmark`,
+  `main` and the branch back to back; the table is in the pull request). The no-ops allocate nothing: `List.filter`
+  keeping every element is 3.1x to 3.5x faster, `span` over everything 8x to 13x, `splitAt` at the end 1.9x to 4.2x,
+  `update` with the same element 1.6x to 2.1x, `insertAll` of nothing 2.3x to 6.8x; `Vector.insertAll` and `patch`
+  of nothing 20x to 730x; the one-element `sorted`, `reverse` and `intersperse` 7x to 39x; the `LazyList` no-ops about
+  5x. `List.filter` removing one element near the front is 1.9x to 4.7x faster and allocates 48 bytes in place of a
+  copy. `List.filter`'s worst cases are slower on 10 elements (0.73x removing the last, 0.86x keeping half) and win
+  from 1000 on removing half (1.2x to 2.1x) or 100 000 removing the last (1.6x); filter keeps the sharing, which the
+  ticket asks for, because the gains of the shared cases are far larger than these losses. The `Queue` no-ops save
+  the wrapper and the reversal (1.04x to 1.7x): `toList()` still copies the elements.
 
 **`mapConserve`, not a conserving `map` (decided 2026-11-03).** `map` is unchanged. A separate
 `mapConserve(Function<? super T, ? extends T>)`, Scala's name (`List.mapConserve` in the Scala 3 standard library,
@@ -1509,7 +1526,7 @@ conserving was rejected for three reasons, whatever its cost:
 What each type shares when something changes:
 
 - `List` (`ListModule.Conserve.map`): the cells after the last changed element, as `filter` does, through
-  `ListModule.Conserve.addCells`. The mapper runs once per element, in order.
+  `ListModule.Conserve.prependCells` and `prependReversed`. The mapper runs once per element, in order.
 - `Vector`: the arrays whose elements are all unchanged. The trie's `map` already returned an unchanged array itself
   (`mapElems`, after Scala's `VectorStatics.mapElems`); each `VectorN.map` now returns the trie itself when every one
   of its arrays is unchanged. The mapper runs once per element, in order. `NonEmptyVector` wraps it.

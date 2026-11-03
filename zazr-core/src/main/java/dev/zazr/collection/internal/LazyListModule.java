@@ -26,6 +26,36 @@ public interface LazyListModule {
         }
     }
 
+    // whether elements is known to be empty without reading anything, even through an opaque view: an evaluated
+    // empty LazyList (or its asJava() view), an empty strict Zazr collection (or its asJava() view), or an empty
+    // java.util collection whose elements it holds itself. Any other Collection may be a view over a LazyList
+    // (Collections.unmodifiableList(lazyList.asJava()), asJava().reversed()), whose isEmpty would evaluate it.
+    static boolean knownIsEmptyWithoutReading(Iterable<?> elements) {
+        Object underlying = JavaConverters.underlying(elements);
+        Object source = (underlying == null) ? elements : underlying;
+        if (source instanceof LazyList<?> list) {
+            return LazyCell.knownIsEmpty(list);
+        } else if (source instanceof dev.zazr.collection.Traversable<?> traversable) {
+            return !(source instanceof java.util.Iterator) && traversable.isEmpty();
+        } else if (holdsItsElements(source)) {
+            return ((java.util.Collection<?>) source).isEmpty();
+        } else {
+            return false;
+        }
+    }
+
+    // a java.util collection that stores its elements, so that asking whether it is empty reads nothing else
+    private static boolean holdsItsElements(Object source) {
+        Class<?> type = source.getClass();
+        return type == java.util.ArrayList.class
+                || type == java.util.LinkedList.class
+                || type == java.util.ArrayDeque.class
+                || type == java.util.HashSet.class
+                || type == java.util.LinkedHashSet.class
+                || type == java.util.TreeSet.class
+                || type.getName().startsWith("java.util.ImmutableCollections$");
+    }
+
     // the elements f produces from state, each computed when the list reaches it
     static <A extends @Nullable Object, S extends @Nullable Object> LazyList<A> unfolded(
             S state, Function<? super S, ? extends Option<? extends Tuple2<? extends A, ? extends S>>> f) {

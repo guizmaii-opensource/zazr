@@ -363,7 +363,7 @@ The methods without a note of their own (map, flatMap, the folds, groupBy, the c
 | `removeAll(T)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `removeAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m given elements: they are put in a hash set, then this List is filtered once.">O(n + m)</abbr> | O(n + m) for m given elements: they are put in a hash set, then this List is filtered once. |
 | `replace(T, T)` | <abbr class="cx cx-linear" title="O(k) for the k elements before the replaced one; the rest of this List is shared, not copied.">O(k)</abbr> | O(k) for the k elements before the replaced one; the rest of this List is shared, not copied. |
-| `replaceAll(T, T)` | <abbr class="cx cx-linear" title="O(n); the elements after the last replaced one are shared, not copied.">O(n)</abbr> | O(n); the elements after the last replaced one are shared, not copied. |
+| `replaceAll(T, T)` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `retainAll(Iterable<? extends T>)` | <abbr class="cx cx-linear" title="O(n + m) for m given elements: they are put in a hash set, then this List is filtered once.">O(n + m)</abbr> | O(n + m) for m given elements: they are put in a hash set, then this List is filtered once. |
 | `reverse()` | <abbr class="cx cx-linear" title="O(n).">O(n)</abbr> | O(n). |
 | `rotateLeft(int)` | <abbr class="cx cx-linear" title="O(n); O(1) when the distance is 0: this List is returned without being walked.">O(n)</abbr> | O(n); O(1) when the distance is 0: this List is returned without being walked. |

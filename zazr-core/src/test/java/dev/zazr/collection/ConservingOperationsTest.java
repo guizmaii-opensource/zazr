@@ -99,6 +99,8 @@ class ConservingOperationsTest {
     private static final String KEEP_LAST =
             "builds its result before it can know that every element is kept: a check after the copy saves nothing";
     private static final String NEVER_EMPTY = "its argument is a NonEmptyVector, never empty: it always adds";
+    private static final String IDENTITY_READ =
+            "reading the element first slowed every update that changes it, on a Vector of 100 000 elements";
     private static final String LAZY =
             "decides lazily: knowing that nothing changes would read cells the call itself leaves unread";
 
@@ -408,18 +410,7 @@ class ConservingOperationsTest {
                         Vector.of(1, 2))
                 .same("tap(Consumer)", v -> v.tap(x -> {}))
                 .same("toVector()", Vector::toVector)
-                .keep(
-                        "update(int, Function)",
-                        v -> v.update(0, x -> x),
-                        abc,
-                        v -> v.update(0, x -> 9),
-                        Vector.of(9, 2, 3))
-                .keep(
-                        "update(int, Object)",
-                        v -> v.update(v.size() - 1, v.last()),
-                        abc,
-                        v -> v.update(2, 9),
-                        Vector.of(1, 2, 9))
+                .leave(IDENTITY_READ, "update(int, Function)", "update(int, Object)")
                 .leave(ALWAYS_CHANGES, "append(Object)", "init()", "insert(int, Object)", "prepend(Object)")
                 .leave(ALWAYS_CHANGES, "removeAt(int)", "scan(Object, BiFunction)", "tail()")
                 .leave(NEW_COLLECTION, "duplicates()", "duplicatesBy(Function)")
@@ -1204,13 +1195,7 @@ class ConservingOperationsTest {
                         n -> n.sorted(Comparator.reverseOrder()),
                         Vector.of(3, 2, 1))
                 .same("tap(Consumer)", n -> n.tap(x -> {}))
-                .keep(
-                        "update(int, Function)",
-                        n -> n.update(0, x -> x),
-                        abc,
-                        n -> n.update(0, x -> 9),
-                        Vector.of(9, 2, 3))
-                .keep("update(int, Object)", n -> n.update(0, n.head()), abc, n -> n.update(2, 9), Vector.of(1, 2, 9))
+                .leave(IDENTITY_READ, "update(int, Function)", "update(int, Object)")
                 .leave(
                         ALWAYS_CHANGES,
                         "append(Object)",
@@ -1285,11 +1270,9 @@ class ConservingOperationsTest {
     }
 
     @Test
-    void listReplaceAllSharesTheCellsAfterTheLastReplacedElement() {
+    void listReplaceAllRejectsANullReplacementOnlyWhenItReplaces() {
         List<Integer> list = List.of(0, 1, 2, 1, 4, 5);
-        List<Integer> replaced = list.replaceAll(1, 9);
-        assertThat(replaced).containsExactly(0, 9, 2, 9, 4, 5);
-        assertThat(replaced.drop(4)).isSameAs(list.drop(4));
+        assertThat(list.replaceAll(1, 9)).containsExactly(0, 9, 2, 9, 4, 5);
         assertThat(list.replaceAll(7, null)).isSameAs(list);
         assertThatThrownBy(() -> list.replaceAll(1, null))
                 .isInstanceOf(NullPointerException.class)
@@ -1317,15 +1300,20 @@ class ConservingOperationsTest {
         Integer stored = Integer.valueOf(1000);
         Integer other = Integer.valueOf(1000);
         assertThat(other).isEqualTo(stored).isNotSameAs(stored);
-        assertThat(Vector.of(stored).update(0, other))
-                .isNotSameAs(Vector.of(stored))
-                .containsExactly(1000);
-        List<Integer> list = List.of(stored);
-        assertThat(list.update(0, other)).isNotSameAs(list).containsExactly(1000);
-        Queue<Integer> queue = Queue.of(stored);
-        assertThat(queue.update(0, other)).isNotSameAs(queue).containsExactly(1000);
         Vector<Integer> vector = Vector.of(stored);
-        assertThat(vector.update(0, stored)).isSameAs(vector);
+        Vector<Integer> updatedVector = vector.update(0, other);
+        assertThat(updatedVector).isNotSameAs(vector).containsExactly(1000);
+        assertThat(updatedVector.head()).isSameAs(other);
+        List<Integer> list = List.of(stored);
+        List<Integer> updatedList = list.update(0, other);
+        assertThat(updatedList).isNotSameAs(list).containsExactly(1000);
+        assertThat(updatedList.head()).isSameAs(other);
+        Queue<Integer> queue = Queue.of(stored);
+        Queue<Integer> updatedQueue = queue.update(0, other);
+        assertThat(updatedQueue).isNotSameAs(queue).containsExactly(1000);
+        assertThat(updatedQueue.head()).isSameAs(other);
+        assertThat(list.update(0, stored)).isSameAs(list);
+        assertThat(queue.update(0, stored)).isSameAs(queue);
     }
 
     @Test
@@ -1420,6 +1408,25 @@ class ConservingOperationsTest {
         assertThat(pending).isNotSameAs(read).containsExactly(1, 2, 3);
         assertThat(read.orElse(List.of(9))).isSameAs(read);
         assertThat(LazyList.<Integer>empty().orElse(() -> List.of(9))).containsExactly(9);
+    }
+
+    @Test
+    void aLazyListPatchDoesNotAskAnOpaqueViewWhetherItIsEmpty() {
+        LazyList<Integer> unread = LazyList.continually(() -> {
+            throw new AssertionError("an element was read");
+        });
+        LazyList<Integer> list = LazyList.of(1, 2, 3);
+        java.util.List<Integer> unmodifiable = java.util.Collections.unmodifiableList(unread.asJava());
+        java.util.List<Integer> reversed = unread.asJava().reversed();
+        assertThat(list.patch(1, unmodifiable, 0)).isNotSameAs(list);
+        assertThat(list.patch(1, reversed, 0)).isNotSameAs(list);
+        // known to be empty without reading anything else
+        assertThat(list.patch(1, java.util.List.of(), 0)).isSameAs(list);
+        assertThat(list.patch(1, new ArrayList<Integer>(), 0)).isSameAs(list);
+        assertThat(list.patch(1, Vector.<Integer>empty().asJava(), 0)).isSameAs(list);
+        assertThat(list.patch(1, java.util.Collections.unmodifiableList(new ArrayList<Integer>()), 0))
+                .isNotSameAs(list)
+                .containsExactly(1, 2, 3);
     }
 
     @SafeVarargs

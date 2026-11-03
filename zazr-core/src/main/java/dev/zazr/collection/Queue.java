@@ -1673,7 +1673,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n + m) for m inserted elements.
      * <p>
-     * Returns this Queue itself when {@code elements} is a collection known to be empty; a one-shot {@code Iterable} is read once, never asked first.
+     * Returns this Queue itself when {@code elements} is a collection known to be empty; a one-shot {@code Iterable}
+     * is read once, never asked first.
      *
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
@@ -1933,7 +1934,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n + m) for m replacement elements.
      * <p>
-     * Returns this Queue itself when {@code replaced} is 0 or less and {@code that} is a collection known to be empty; a one-shot {@code Iterable} is read once, never asked first.
+     * Returns this Queue itself when {@code replaced} is 0 or less and {@code that} is a collection known to be empty;
+     * a one-shot {@code Iterable} is read once, never asked first.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -2651,7 +2653,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n).
      * <p>
-     * Returns this Queue itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
+     * Returns this Queue itself when the element at {@code index} is the new element itself ({@code ==}); an equal but
+     * distinct element is a change.
      *
      * @param index   the position to update
      * @param element the new element
@@ -2668,7 +2671,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * <p>
      * Complexity: O(n).
      * <p>
-     * Returns this Queue itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
+     * Returns this Queue itself when the element at {@code index} is the new element itself ({@code ==}); an equal but
+     * distinct element is a change.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one
