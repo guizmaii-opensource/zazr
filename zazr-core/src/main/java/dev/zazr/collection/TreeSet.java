@@ -998,9 +998,10 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
                 for (int i = 0; i < unchanged; i++) {
                     builder.add(kept.next());
                 }
-                builder.add(result);
+                builder.add(Objects.requireNonNull(result, "TreeSet: element is null"));
                 while (elements.hasNext()) {
-                    builder.add(mapper.apply(elements.next()));
+                    builder.add(Objects.requireNonNull(
+                            mapper.apply(elements.next()), "TreeSet: element is null"));
                 }
                 return builder.result();
             }

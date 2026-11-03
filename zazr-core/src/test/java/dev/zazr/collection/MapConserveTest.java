@@ -151,6 +151,26 @@ class MapConserveTest {
             }
             assertThatNullPointerException().isThrownBy(() -> Queue.of(1).mapConserve(null));
         }
+
+        @Test
+        public void keepsTheUnchangedSide() throws ReflectiveOperationException {
+            // 0, 1, 2 at the front, 3 and 4 at the back
+            Queue<Integer> queue = Queue.ofAll(List.range(0, 3)).enqueue(3).enqueue(4);
+            assertThat((Iterable<?>) side(queue, "rear")).isNotEmpty();
+            Queue<Integer> rearChanged = queue.mapConserve(changing(4));
+            assertThat(rearChanged).containsExactly(0, 1, 2, 3, 1004);
+            assertThat(side(rearChanged, "front")).isSameAs(side(queue, "front"));
+            Queue<Integer> frontChanged = queue.mapConserve(changing(0));
+            assertThat(frontChanged).containsExactly(1000, 1, 2, 3, 4);
+            assertThat(side(frontChanged, "rear")).isSameAs(side(queue, "rear"));
+        }
+
+        // the List at one end of a Queue
+        private static Object side(Queue<?> queue, String name) throws ReflectiveOperationException {
+            java.lang.reflect.Field field = Queue.class.getDeclaredField(name);
+            field.setAccessible(true);
+            return field.get(queue);
+        }
     }
 
     @Nested
@@ -203,6 +223,13 @@ class MapConserveTest {
             assertThat(set.mapConserve(half)).containsExactlyElementsOf(set.map(half));
             assertThat(set).containsExactly(5, 3, 1, 4, 2);
             assertThatNullPointerException().isThrownBy(() -> set.mapConserve(null));
+            // a null result names the set, at the first change and after it
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.mapConserve(x -> null))
+                    .withMessage("LinkedHashSet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.mapConserve(x -> (x == 2) ? null : fresh(x)))
+                    .withMessage("LinkedHashSet: element is null");
         }
 
         @Test
@@ -220,6 +247,13 @@ class MapConserveTest {
             assertThat(set.mapConserve(x -> fresh(x % 2))).containsExactly(1001, 1000);
             assertThat(set).containsExactly(4, 3, 2, 1);
             assertThatNullPointerException().isThrownBy(() -> set.mapConserve(null));
+            // a null result names the set, at the first change and after it
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.mapConserve(x -> null))
+                    .withMessage("TreeSet: element is null");
+            assertThatNullPointerException()
+                    .isThrownBy(() -> set.mapConserve(x -> (x == 1) ? null : fresh(x)))
+                    .withMessage("TreeSet: element is null");
         }
 
         @Test

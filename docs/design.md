@@ -1489,7 +1489,38 @@ and a caller can test identity. On `Vector`, `List`, `Queue`, `LazyList` and `No
   `ConservingOperationsTest` reads every public method that returns the sequence's own type, or a tuple of two, by
   reflection: each is a conserving row or a row saying why it is left out, so a new operation fails the test until it
   gets one. The control types already conserve (`Option.filter`, `Try.filter`, `Either.filterOrElse`, the `orElse`
-  family, the mapping of the other side). A conserving `map` is a separate decision.
+  family, the mapping of the other side). The conserving map is `mapConserve`, below.
+
+**`mapConserve`, not a conserving `map` (decided 2026-11-03).** `map` is unchanged. A separate
+`mapConserve(Function<? super T, ? extends T>)`, Scala's name (`List.mapConserve` in the Scala 3 standard library,
+`library/src/scala/collection/immutable/List.scala`), returns the receiver itself when the mapper returns every
+element itself (`==`, not `equals`). It is on `Vector`, `NonEmptyVector`, `List`, `Queue`, `Set`,
+`SortedSet`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet` and `NonEmptySortedSet`. Making `map` itself
+conserving was rejected for three reasons, whatever its cost:
+
+- `map` would sometimes return its receiver, which code that compares results with `==`, keys an `IdentityHashMap`
+  with them or locks on them can see. An opt-in method changes nothing for existing callers.
+- `TreeSet.map(Function)` orders its result by the natural comparator. Returning the receiver would keep the
+  receiver's comparator: `TreeSet.of(reverseOrder(), 1, 2, 3).map(x -> x)` iterates 1, 2, 3 today and would iterate
+  3, 2, 1. `mapConserve`, typed `T -> T`, keeps the receiver's comparator, as its documentation says.
+- `LazyList` cannot tell that nothing changed without evaluating every cell, so a conserving `map` would conserve on
+  the strict sequences only. `LazyList` has no `mapConserve`.
+
+What each type shares when something changes:
+
+- `List` (`ListModule.Conserve.map`): the cells after the last changed element, as `filter` does, through
+  `ListModule.Conserve.addCells`. The mapper runs once per element, in order.
+- `Vector`: the arrays whose elements are all unchanged. The trie's `map` already returned an unchanged array itself
+  (`mapElems`, after Scala's `VectorStatics.mapElems`); each `VectorN.map` now returns the trie itself when every one
+  of its arrays is unchanged. The mapper runs once per element, in order. `NonEmptyVector` wraps it.
+- `Queue`: its front or its rear, whichever is unchanged. The mapper runs over the front, then over the rear in its
+  stored order, which is the reverse of the queue's order, as `Queue.map` does.
+- The sets: nothing is allocated until the first change; then the set is rebuilt, with the elements before the
+  change added as they are and the mapper not called again for them. The hashes of a changed element differ, so no
+  subtree of a `HashSet` can be kept. Of two equal results, the one kept is the one `map` keeps.
+
+`MapConserveBenchmark` compares `map`, `mapConserve` and a plain `List.Builder` map on `List` and `Vector` at sizes
+10, 1,000 and 100,000, with no element, every element or only the first one changed.
 
 ### 3.8 `Vector` builder
 

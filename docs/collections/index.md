@@ -91,6 +91,24 @@ the elements before it.
 A `LazyList` returns itself only when it can tell without reading an element, such as `drop(0)` or a `patch` that
 inserts and removes nothing. Each method's documentation says when it returns the receiver.
 
+### `mapConserve`
+
+`map` builds a new collection. `mapConserve` maps the elements to elements of the same type, and returns the
+receiver itself when the function returns every element itself (`==`, not `equals`). Use it for a pass that
+usually changes nothing, such as rewriting a tree of immutable nodes.
+
+```java
+var names     = List.of("ada", "Bob", "cy");
+var same      = names.mapConserve(n -> n);                            // List<String>
+var titled    = names.mapConserve(n -> n.equals("Bob") ? "BOB" : n);  // List<String>
+var unchanged = same == names;                                        // boolean
+// unchanged is true; titled is List(ada, BOB, cy) and shares the cell of "cy" with names
+```
+
+It is on `Vector`, `NonEmptyVector`, `List`, `Queue` and the sets. A `List` shares the elements after the last
+change, a `Vector` the parts that hold no changed element. A sorted set keeps its own order. `LazyList` has no
+`mapConserve`: it would have to evaluate every element to know that nothing changed.
+
 ## Grouping
 
 `groupBy` splits a collection into groups by a key. Two variants change the elements as they group them, in one pass:
