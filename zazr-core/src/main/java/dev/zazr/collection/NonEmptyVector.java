@@ -46,7 +46,8 @@ import org.jspecify.annotations.Nullable;
  * {@code subSequence}, {@code patch}, {@code remove*}, {@code retainAll}, {@code duplicates*}, {@code partition},
  * {@code partitionMap}, {@code span}, {@code splitAt}, the {@code zip}, {@code zipWith} and {@code crossProduct} of
  * any {@code Iterable}, {@code crossProduct(int)}, {@code combinations(int)};</li>
- * <li>operations that are partial on a {@code Vector} are total here: {@code head}, {@code last}, {@code max}, {@code min},
+ * <li>operations that are partial on a {@code Vector} are total here: {@code head}, {@code last}, {@code max}, {@code
+ * min},
  * {@code maxBy}, {@code minBy}, {@code reduce*}, {@code reduceMap}, {@code average};</li>
  * <li>narrowing back to a {@code NonEmptyVector} returns an {@link Option}: {@code tailNonEmpty}, {@code initNonEmpty},
  * as do the searches {@code find}, {@code findLast}, the {@code *Option} index searches and {@code arrangeBy}.</li>
@@ -105,7 +106,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * A {@code NonEmptyVector} of {@code head} followed by the elements of {@code tail}, in iteration order (ZIO's
-     * {@code NonEmptyChunk.fromIterable(a, as)}). Not an overload of {@link #of(Object, Object...)}: when the elements are
+     * {@code NonEmptyChunk.fromIterable(a, as)}). Not an overload of {@link #of(Object, Object...)}: when the elements
+     * are
      * themselves iterables, {@code of(x, y)} would silently pick the {@code Iterable} overload and splice {@code y}.
      *
      * @param head The first element
@@ -533,8 +535,6 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Object)}.
-     * <p>
-     * Returns this NonEmptyVector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   A position
      * @param element The new element
@@ -549,8 +549,6 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * Complexity: effectively O(1), as {@link Vector#update(int, Function)}.
-     * <p>
-     * Returns this NonEmptyVector itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
      *
      * @param index   A position
      * @param updater Computes the new element from the current one
@@ -628,7 +626,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
 
     /**
      * The elements grouped by the key {@code key} computes, the values {@code value} returns for the elements of a
-     * group combined from the left with {@code reduce} in the order of this vector, as {@link Vector#groupMapReduce} does.
+     * group combined from the left with {@code reduce} in the order of this vector, as {@link Vector#groupMapReduce}
+     * does.
      * <p>
      * Complexity: O(n): one key, one value, one hash lookup and at most one reduce per element.
      *
@@ -2609,7 +2608,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * The elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys; of two entries
+     * with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.
@@ -2628,7 +2628,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * The elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} in the natural order of the keys; of two entries
+     * with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.
@@ -2646,7 +2647,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * The elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}; of two entries
+     * with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.
@@ -2667,7 +2669,8 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
-     * The elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}; of two entries with the
+     * The elements as the entries of a new {@link NonEmptySortedMap} ordered by {@code comparator}; of two entries
+     * with the
      * same key, the later one wins.
      * <p>
      * Complexity: O(n log n), one entry built per element.

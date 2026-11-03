@@ -21,7 +21,8 @@ import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An immutable {@code List} is an eager sequence of elements. Its immutability makes it suitable for concurrent programming.
+ * An immutable {@code List} is an eager sequence of elements. Its immutability makes it suitable for concurrent
+ * programming.
  * <p>
  * A {@code List} is composed of a {@code head} element and a {@code tail} {@code List}.
  * <p>
@@ -120,7 +121,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Complexity: the methods without a note of their own (map, flatMap, the folds, groupBy, the conversions,
  * {@code equals}, {@code hashCode}, {@code toString}) walk the elements once: O(n); an {@code Option} variant costs
- * what the method it wraps costs, and {@code toLazyList()} is O(1), its elements being read as the LazyList reaches them.
+ * what the method it wraps costs, and {@code toLazyList()} is O(1), its elements being read as the LazyList reaches
+ * them.
  * A List does not store its size, so {@code equals}, {@code toArray()}, {@code stream()} and {@code spliterator()}
  * count the elements before they start, and {@code containsAll} is O(n * m) for m elements: each one is looked for by
  * a walk.
@@ -500,7 +502,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * Creates a List of double numbers starting from {@code from}, extending up to but not including {@code toExclusive},
+     * Creates a List of double numbers starting from {@code from}, extending up to but not including {@code
+     * toExclusive},
      * with {@code step}.
      * <p>
      * Examples:
@@ -684,7 +687,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero and {@code from != toInclusive}
-     *                                  (if {@code from == toInclusive}, a singleton list is returned regardless of {@code step})
+     *                                  (if {@code from == toInclusive}, a singleton list is returned regardless of
+     * {@code step})
      */
     static List<Double> rangeClosedBy(double from, double toInclusive, double step) {
         return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
@@ -1558,7 +1562,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(i + m) for m inserted elements; the elements before i are copied, the rest of this List is shared.
      * <p>
-     * Returns this List itself when {@code elements} is a collection known to be empty; a one-shot {@code Iterable} is read once, never asked first.
+     * Returns this List itself when {@code elements} is a collection known to be empty; a one-shot {@code Iterable} is
+     * read once, never asked first.
      *
      * @param index    the position of the first inserted element
      * @param elements the elements to insert
@@ -1877,7 +1882,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(n + m) for m replacement elements: the elements before and after the replaced ones are copied.
      * <p>
-     * Returns this List itself when {@code replaced} is 0 or less and {@code that} is a collection known to be empty; a one-shot {@code Iterable} is read once, never asked first.
+     * Returns this List itself when {@code replaced} is 0 or less and {@code that} is a collection known to be empty;
+     * a one-shot {@code Iterable} is read once, never asked first.
      *
      * @param from     the first replaced position
      * @param that     the replacement elements
@@ -2604,11 +2610,28 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default Tuple2<List<T>, List<T>> span(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         @SuppressWarnings("Var")
+        List<T> prefix = Nil.instance();
+        @SuppressWarnings("Var")
         List<T> cut = this;
         while (!cut.isEmpty() && predicate.test(cut.head())) {
+            prefix = prefix.prepend(cut.head());
             cut = cut.tail();
         }
-        return ListModule.Conserve.splitAt(this, cut);
+        return cutAt(this, prefix, cut);
+    }
+
+    // this List cut at `cut`, one of its tails, with `prefix` its elements before `cut`, most recent first: this List
+    // itself as the part that gets every element
+    @SuppressWarnings("ObjectEquality")
+    private static <T extends @Nullable Object> Tuple2<List<T>, List<T>> cutAt(
+            List<T> list, List<T> prefix, List<T> cut) {
+        if (cut.isEmpty()) {
+            return Tuple.of(list, empty());
+        } else if (cut == list) {
+            return Tuple.of(empty(), list);
+        } else {
+            return Tuple.of(prefix.reverse(), cut);
+        }
     }
 
     /**
@@ -2623,11 +2646,14 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      */
     default Tuple2<List<T>, List<T>> splitAt(int n) {
         @SuppressWarnings("Var")
+        List<T> prefix = Nil.instance();
+        @SuppressWarnings("Var")
         List<T> cut = this;
         for (int i = n; i > 0 && !cut.isEmpty(); i--) {
+            prefix = prefix.prepend(cut.head());
             cut = cut.tail();
         }
-        return ListModule.Conserve.splitAt(this, cut);
+        return cutAt(this, prefix, cut);
     }
 
     /**
@@ -2973,7 +2999,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(i); the elements before i are copied, the rest of this List is shared.
      * <p>
-     * Returns this List itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
+     * Returns this List itself when the element at {@code index} is the new element itself ({@code ==}); an equal but
+     * distinct element is a change.
      *
      * @param index   the position to update
      * @param element the new element
@@ -2988,24 +3015,22 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (index < 0) {
             throw new IndexOutOfBoundsException("update(" + index + ", e)");
         }
-        List<T> target = this;
-        for (int i = index; i > 0; i--, target = target.tail()) {
-            if (target.isEmpty()) {
+        List<T> preceding = Nil.instance();
+        List<T> tail = this;
+        for (int i = index; i > 0; i--, tail = tail.tail()) {
+            if (tail.isEmpty()) {
                 throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + size());
             }
+            preceding = preceding.prepend(tail.head());
         }
-        if (target.isEmpty()) {
+        if (tail.isEmpty()) {
             throw new IndexOutOfBoundsException("update(" + index + ", e) on List of length " + size());
         }
-        if (target.head() == element) {
+        if (tail.head() == element) {
             return this;
         }
-        // the cells before the updated one are copied, the ones after it are shared
-        List.Builder<T> result = newBuilder();
-        ListModule.Conserve.addCells(result, this, target);
-        return result.add(Objects.requireNonNull(element, "List: element is null"))
-                .addAll(target.tail())
-                .result();
+        // skip the current head element because it is replaced
+        return ListModule.Conserve.prependReversed(preceding, tail.tail().prepend(element));
     }
 
     /**
@@ -3013,7 +3038,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * <p>
      * Complexity: O(i); the element is read, then the elements before i are copied.
      * <p>
-     * Returns this List itself when the element at {@code index} is the new element itself ({@code ==}); an equal but distinct element is a change.
+     * Returns this List itself when the element at {@code index} is the new element itself ({@code ==}); an equal but
+     * distinct element is a change.
      *
      * @param index   the position to update
      * @param updater computes the new element from the current one
@@ -3285,7 +3311,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * The empty {@code List}. {@link List#empty()} and {@link #instance()} return a shared instance; {@code new Nil<>()}
+     * The empty {@code List}. {@link List#empty()} and {@link #instance()} return a shared instance; {@code new
+     * Nil<>()}
      * is legal, a record constructor is public, and equal to it.
      * <p>
      * Equality is that of every {@code List}: a {@code Nil} equals any empty sequence, not only another {@code Nil},
@@ -3679,7 +3706,8 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * Combines the elements with {@code op}, each result with the next element. The same as {@link #reduceLeft(BiFunction)}.
+     * Combines the elements with {@code op}, each result with the next element. The same as {@link
+     * #reduceLeft(BiFunction)}.
      *
      * @param op combines two elements
      * @return the combined result

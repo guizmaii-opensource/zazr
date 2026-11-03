@@ -156,11 +156,6 @@ public class ConservingBenchmark {
     }
 
     @Benchmark
-    public Vector<Integer> vectorUpdateWithTheSameElement() {
-        return vector.update(size / 2, middle);
-    }
-
-    @Benchmark
     public Vector<Integer> vectorUpdateChangingTheMiddle() {
         return vector.update(size / 2, -1);
     }

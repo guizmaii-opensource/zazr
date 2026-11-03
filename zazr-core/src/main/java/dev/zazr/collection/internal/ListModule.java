@@ -95,73 +95,63 @@ public interface ListModule {
     }
 
     /// The operations that return the List they are given when they change nothing, and otherwise share the cells
-    /// after the last change: the cells before it are copied once, through a `List.Builder`, and the rest is the
-    /// builder's tail. This is how Scala 3's `List.filter` works (`filterCommon` in
+    /// after the last change: the cells before it are copied once, most recent first, then prepended in turn to the
+    /// shared rest. This is how Scala 3's `List.filter` works (`filterCommon` in
     /// `library/src/scala/collection/immutable/List.scala`, the Scala 2.13 collection library that Scala 3 ships
     /// unchanged), without its in-place writes to the cells: a `Cons` is a record and never changes.
     interface Conserve {
 
-        /// The elements of the cells of a List from `from` up to `until`, excluded, added to `builder` in order.
-        /// `until` is `from` or one of its tails, reached by walking from `from`; no element is tested.
-        @SuppressWarnings("ObjectEquality")
-        static <T extends @Nullable Object> void addCells(List.Builder<T> builder, List<T> from, List<T> until) {
+        /// The elements of the cells of a List from `from` up to `until`, excluded, prepended in turn to
+        /// `reversed`: the copied elements, most recent first. `until` is `from` or one of its tails,
+        /// reached by walking from `from`; no element is tested.
+        @SuppressWarnings({"ObjectEquality", "Var"})
+        static <T extends @Nullable Object> List<T> prependCells(List<T> reversed, List<T> from, List<T> until) {
+            List<T> result = reversed;
             for (List<T> cell = from; cell != until; cell = cell.tail()) {
-                builder.add(cell.head());
+                result = result.prepend(cell.head());
             }
+            return result;
+        }
+
+        /// The elements of `reversed`, most recent first, put back in order in front of `rest`.
+        @SuppressWarnings("Var")
+        static <T extends @Nullable Object> List<T> prependReversed(List<T> reversed, List<T> rest) {
+            List<T> result = rest;
+            for (List<T> cell = reversed; !cell.isEmpty(); cell = cell.tail()) {
+                result = result.prepend(cell.head());
+            }
+            return result;
         }
 
         /// The elements of `list` that satisfy `predicate`, which is called once per element, in order: `list`
         /// itself when it keeps them all, and the cells after the last rejected element shared.
-        @SuppressWarnings("Var")
+        @SuppressWarnings({"ObjectEquality", "Var"})
         static <T extends @Nullable Object> List<T> filter(List<T> list, Predicate<? super T> predicate) {
-            List.@Nullable Builder<T> kept = null;
+            List<T> kept = Nil.instance();
             // the first cell not yet copied: every element from it up to the current cell is kept
             List<T> pending = list;
             for (List<T> cell = list; !cell.isEmpty(); cell = cell.tail()) {
                 if (!predicate.test(cell.head())) {
-                    if (kept == null) {
-                        kept = List.newBuilder();
-                    }
-                    addCells(kept, pending, cell);
+                    kept = prependCells(kept, pending, cell);
                     pending = cell.tail();
                 }
             }
-            return (kept == null) ? list : kept.addAll(pending).result();
+            return (pending == list) ? list : prependReversed(kept, pending);
         }
 
         /// `list` with every element equal to `current` replaced by `replacement`: `list` itself when no element is
         /// equal to `current`, and the cells after the last replaced element shared.
-        @SuppressWarnings("Var")
+        @SuppressWarnings({"ObjectEquality", "Var"})
         static <T extends @Nullable Object> List<T> replaceAll(List<T> list, T current, T replacement) {
-            List.@Nullable Builder<T> result = null;
+            List<T> result = Nil.instance();
             List<T> pending = list;
             for (List<T> cell = list; !cell.isEmpty(); cell = cell.tail()) {
                 if (Objects.equals(cell.head(), current)) {
-                    if (result == null) {
-                        Objects.requireNonNull(replacement, "List: element is null");
-                        result = List.newBuilder();
-                    }
-                    addCells(result, pending, cell);
-                    result.add(replacement);
+                    result = prependCells(result, pending, cell).prepend(replacement);
                     pending = cell.tail();
                 }
             }
-            return (result == null) ? list : result.addAll(pending).result();
-        }
-
-        /// The cells of `list` before `cut`, copied, and `cut` itself, one of the tails of `list`: `(list, Nil)`
-        /// when `cut` is empty and `(Nil, list)` when `cut` is `list`, with nothing copied.
-        @SuppressWarnings("ObjectEquality")
-        static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitAt(List<T> list, List<T> cut) {
-            if (cut.isEmpty()) {
-                return Tuple.of(list, List.empty());
-            } else if (cut == list) {
-                return Tuple.of(List.empty(), list);
-            } else {
-                List.Builder<T> prefix = List.newBuilder();
-                addCells(prefix, list, cut);
-                return Tuple.of(prefix.result(), cut);
-            }
+            return (pending == list) ? list : prependReversed(result, pending);
         }
     }
 

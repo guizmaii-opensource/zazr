@@ -99,6 +99,8 @@ class ConservingOperationsTest {
     private static final String KEEP_LAST =
             "builds its result before it can know that every element is kept: a check after the copy saves nothing";
     private static final String NEVER_EMPTY = "its argument is a NonEmptyVector, never empty: it always adds";
+    private static final String IDENTITY_READ =
+            "reading the element first slowed every update that changes it, on a Vector of 100 000 elements";
     private static final String LAZY =
             "decides lazily: knowing that nothing changes would read cells the call itself leaves unread";
 
@@ -402,18 +404,7 @@ class ConservingOperationsTest {
                         Vector.of(1, 2))
                 .same("tap(Consumer)", v -> v.tap(x -> {}))
                 .same("toVector()", Vector::toVector)
-                .keep(
-                        "update(int, Function)",
-                        v -> v.update(0, x -> x),
-                        abc,
-                        v -> v.update(0, x -> 9),
-                        Vector.of(9, 2, 3))
-                .keep(
-                        "update(int, Object)",
-                        v -> v.update(v.size() - 1, v.last()),
-                        abc,
-                        v -> v.update(2, 9),
-                        Vector.of(1, 2, 9))
+                .leave(IDENTITY_READ, "update(int, Function)", "update(int, Object)")
                 .leave(ALWAYS_CHANGES, "append(Object)", "init()", "insert(int, Object)", "prepend(Object)")
                 .leave(ALWAYS_CHANGES, "removeAt(int)", "scan(Object, BiFunction)", "tail()")
                 .leave(NEW_COLLECTION, "duplicates()", "duplicatesBy(Function)")
@@ -1180,13 +1171,7 @@ class ConservingOperationsTest {
                         n -> n.sorted(Comparator.reverseOrder()),
                         Vector.of(3, 2, 1))
                 .same("tap(Consumer)", n -> n.tap(x -> {}))
-                .keep(
-                        "update(int, Function)",
-                        n -> n.update(0, x -> x),
-                        abc,
-                        n -> n.update(0, x -> 9),
-                        Vector.of(9, 2, 3))
-                .keep("update(int, Object)", n -> n.update(0, n.head()), abc, n -> n.update(2, 9), Vector.of(1, 2, 9))
+                .leave(IDENTITY_READ, "update(int, Function)", "update(int, Object)")
                 .leave(
                         ALWAYS_CHANGES,
                         "append(Object)",
@@ -1300,8 +1285,8 @@ class ConservingOperationsTest {
         assertThat(list.update(0, other)).isNotSameAs(list).containsExactly(1000);
         Queue<Integer> queue = Queue.of(stored);
         assertThat(queue.update(0, other)).isNotSameAs(queue).containsExactly(1000);
-        Vector<Integer> vector = Vector.of(stored);
-        assertThat(vector.update(0, stored)).isSameAs(vector);
+        assertThat(list.update(0, stored)).isSameAs(list);
+        assertThat(queue.update(0, stored)).isSameAs(queue);
     }
 
     @Test
