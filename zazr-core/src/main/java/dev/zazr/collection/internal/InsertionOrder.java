@@ -6,7 +6,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The insertion order of a {@code LinkedHashMap}: its keys, each stored under the ordinal it was given when it was
- * put, an int that grows by one with every new key and is never given twice in the maps made from one another.
+ * put, an int that grows by one with every new key and is never given twice within one map, so that the keys of a
+ * map have distinct ordinals, in their order.
  * <p>
  * The keys are in a trie indexed by ordinal, as a {@code Vector} is indexed by position: 32 children per node, the
  * ordinal read 5 bits at a time from the root. A removed key leaves no trace: its leaf holds only the keys still

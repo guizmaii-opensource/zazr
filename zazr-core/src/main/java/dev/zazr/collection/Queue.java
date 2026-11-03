@@ -61,9 +61,10 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     private final dev.zazr.collection.List<T> rear;
 
     /* The result of the one call that rebalances this Queue, kept by its first call: tail() when the front holds one
-     * element and the rear is not empty, init() when the rear is empty. The two never hold on the same Queue. Written without a lock, as String.hash is: two threads may both compute it,
-     * and each sees either null or a whole Queue, whose fields are final. It takes the padding of the object, so a
-     * Queue is no larger with it. */
+     * element and the rear is not empty, init() when the rear is empty. The two never hold on the same Queue.
+     * Written without a lock, as String.hash is: two threads may both compute it, and each sees either null or a
+     * whole Queue, whose fields are final. With compressed references, it takes the padding of the object, so a
+     * Queue is no larger with it (24 bytes); without them a Queue grows from 32 to 40 bytes. */
     private @Nullable Queue<T> rebalanced;
 
     /**

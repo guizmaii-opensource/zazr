@@ -1475,12 +1475,14 @@ The two follow-ups the cost review (#93, above) left documented. Each part stand
       so one field serves both.
     - The field is written without a lock, as `String.hash` is: two threads may both compute it, and each reads
       either null or a whole Queue, whose fields, and those of the `List` cells, are final.
-    - The field takes the padding of the object: with compressed references, a Queue is 24 bytes with or without it.
+    - With compressed references (the default), the field takes the padding of the object: a Queue is 24 bytes with
+      or without it. Without them it grows from 32 to 40 bytes.
   - **The guarantee:** an older Queue pays its O(n) rebalancing at most once; calling `tail`, `dequeue` or `init`
     again on it is O(1). A new version made from it (`q.enqueue(x)`, then `tail`) is about to be rebalanced too and
     pays the O(n) step once itself. Only the lazy rotation of the real-time queue removes that case.
-  - The cost: an older Queue kept alive also keeps its rebalanced result, so it holds the elements at the back
-    twice, once in each order.
+  - The cost: an older Queue kept alive also keeps its rebalanced result, so it holds up to about twice its cells:
+    the back again in order after `tail()`, or the whole front rebuilt after `init()`. A kept result can keep its
+    own (a `tail()` result whose `init()` was called), each one smaller than the Queue it hangs from.
 - **`LinkedHashMap` and `LinkedHashSet`: the insertion order is a trie indexed by ordinal, with no markers.**
   - The options compared:
     - Scala 3's `VectorMap` (`library/src/scala/collection/immutable/VectorMap.scala`) keeps markers, as Zazr's old
@@ -1494,7 +1496,8 @@ The two follow-ups the cost review (#93, above) left documented. Each part stand
       rank) would cut by rank in O(log n). But a new key would copy about 17 tree nodes at 100,000 entries, where
       `Vector.append` copies one leaf.
   - Decided: the order is a trie indexed by ordinal (`InsertionOrder` in the collection internals).
-    - Every new key gets the next ordinal, an int that is never given twice in the maps made from one another. The
+    - Every new key gets the next ordinal, an int that is never given twice within one map: the keys of a map have
+      distinct ordinals, in their order. (An emptied map, the renumbering and the builder start again at 0.) The
       `HashMap` maps each key to its entry and its ordinal, as before.
     - The trie is read 5 bits at a time from the root, as `Vector` is indexed. A leaf holds only the keys present,
       in a compact array beside a 32-bit map of the ordinals they occupy, as `HashMap`'s nodes do.
