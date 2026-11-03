@@ -1347,6 +1347,17 @@ class ConservingOperationsTest {
     }
 
     @Test
+    void aNullSeparatorIsRejectedOnlyWhereItWouldBeInserted() {
+        assertThat(Vector.of(1).intersperse(null)).containsExactly(1);
+        assertThat(List.of(1).intersperse(null)).containsExactly(1);
+        assertThat(Queue.of(1).intersperse(null)).containsExactly(1);
+        assertThat(Vector.<Integer>empty().intersperse(null)).isEmpty();
+        assertThatThrownBy(() -> Vector.of(1, 2).intersperse(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> List.of(1, 2).intersperse(null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> Queue.of(1, 2).intersperse(null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
     void anEmptyOneShotArgumentIsReadOnce() {
         Vector<Integer> vector = Vector.of(1, 2, 3);
         assertThat(vector.insertAll(1, once())).isEqualTo(vector);
