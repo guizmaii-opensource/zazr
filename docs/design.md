@@ -1499,6 +1499,35 @@ check that every public method returning the type is a row or excluded with a re
   - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: a conserving `map` is decided separately.
 - **Measured**: see below.
 
+**More shared subtrees (#323, 2026-11-03).** Three operations that rebuilt what they could share now share it, each
+kept for its measured win (`ShareSubtreesBenchmark`, below).
+
+- **`TreeSet.diff` with a `TreeSet` of the same comparator** walks the receiver, not the argument: each subtree is
+  matched with the smallest subtree of the argument that holds every argument element within its bounds, found by
+  going down from its parent's match (no split, no allocation on the argument's side). A subtree with nothing of the
+  argument within its bounds is kept whole; one whose element stays and whose children come back unchanged is kept;
+  the rest is rejoined with `join`/`join2`, as the tree `filter` does. Scala 3's `_difference` (the Scala 2.13
+  collection library, which Scala 3 ships unchanged) splits the receiver by each root of the argument and rebuilds
+  everything; its one shortcut, a subtree shared by both sides being removed whole, is kept. The receiver comes back
+  when nothing is removed. Same cost bound, O(m log(n / m + 1)).
+- **`HashSet.partition` and `HashMap.partition`** split the trie node by node in one walk (Scala's own comment on its
+  `HashMap.partition` names this as a possible optimisation; there is no Scala code to port): each node computes the
+  inline elements that go left, gets both results of each child from one holder object (no pair per node), and builds
+  each side with the `rebuilt` step of `filter`, which keeps a node or child whole when it loses nothing. The
+  predicate is called once per element in iteration order. `HashMap.filter` now uses the same `rebuilt` step, as
+  `HashSet.filter` already did.
+- **`putAll` of a map of the same kind.** The CHAMP `concat` returned the argument's node when the receiver added
+  nothing to it; it now also returns the receiver's node when the argument brings no other entry and no other key or
+  value object. When either result is still possible, the children both sides hold are united first, before anything
+  is built, and kept for the build if neither holds. So `HashMap.putAll` of a map made from the receiver by removals,
+  or of its entries in another trie, returns the receiver. The red-black `union` behind `TreeMap.putAll` (and
+  `TreeSet.union`) takes the children of the receiver as they are when the two roots are equal, instead of splitting
+  (whose recolouring copied every red child, so no subtree below it was found shared), and returns a subtree of the
+  argument (or of the receiver, holding the same object) when its children come back as they are. So `putAll` of the
+  receiver with values replaced returns its argument.
+- Every new tree comes from `join`, `join2` or an existing node, so the `blackHeight` fields stay exact, as deletion
+  needs; `RedBlackTreeSharingTest` checks the invariants and deletes from every result.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.

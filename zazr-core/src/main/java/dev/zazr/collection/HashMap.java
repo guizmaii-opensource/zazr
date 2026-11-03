@@ -933,9 +933,22 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
                 : this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry, in iteration order; the trie is split node by node, and
+     * the parts whose entries all go to one side are shared, not copied.
+     */
     @Override
     public Tuple2<HashMap<K, V>, HashMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate) {
-        return Maps.partition(this, this::createFromEntries, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        MapNode.Partition<K, V> sides = trie.partition((k, v) -> predicate.test(Tuple.of(k, v)));
+        return Tuple.of(side(sides.kept()), side(sides.rejected()));
+    }
+
+    // a side of the partition: this map when it gets every entry
+    private HashMap<K, V> side(BitmapIndexedMapNode<K, V> result) {
+        return (result == trie && result.size() != 0) ? this : wrap(result);
     }
 
     @Override
@@ -979,8 +992,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@inheritDoc}
      * <p>
      * Returns this map when {@code entries} is empty, and a HashMap given as {@code entries} itself when this map is
-     * empty. Entries that are not a HashMap also give this map back when each one's key and value objects are already
-     * there.
+     * empty. A HashMap given as {@code entries} also comes back itself when this map adds nothing to it, and gives this
+     * map back when each of its key and value objects is already here; so do entries that are not a HashMap.
      * <p>
      * Complexity: O(n + m) for a HashMap of m entries (or the {@link #asJava()} view of one): the two maps are merged
      * part by part, and a part only one of them holds is shared without being walked. For other entries, O(m): one

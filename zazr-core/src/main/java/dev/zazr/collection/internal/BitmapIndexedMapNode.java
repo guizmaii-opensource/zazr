@@ -436,6 +436,8 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         int minimumBitPos = bitposFrom(Integer.numberOfTrailingZeros(allMap));
         int maximumBitPos = bitposFrom(BRANCHING_FACTOR - Integer.numberOfLeadingZeros(allMap) - 1);
 
+        // set when an entry of `bm` replaces one of this node by another key or value object
+        boolean overwritesChangeThis = false;
         int leftNodeRightNode = 0;
         int leftDataRightNode = 0;
         int leftNodeRightData = 0;
@@ -456,6 +458,9 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                     int leftHash = hashes[leftIdx];
                     if (leftHash == bm.hashes[rightIdx] && Objects.equals(getKey(leftIdx), bm.getKey(rightIdx))) {
                         leftDataRightDataRightOverwrites |= bitpos;
+                        if (getKey(leftIdx) != bm.getKey(rightIdx) || getValue(leftIdx) != bm.getValue(rightIdx)) {
+                            overwritesChangeThis = true;
+                        }
                     } else {
                         leftDataRightDataMigrateToNode |= bitpos;
                         dataToNodeMigrationTargets |= bitposFrom(maskFrom(leftHash, shift));
@@ -499,6 +504,50 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
             // nothing of this node makes it into the result
             return bm;
         }
+        int nextShift = shift + BIT_PARTITION_SIZE;
+
+        // When the result can still be one of the two nodes, the children both hold are united first, so that
+        // nothing is built when it is: this node when `bm` brings no other entry, no other key or value object, and
+        // every united child is the child of this node (an entry of `bm` facing a child of this node is then
+        // looked up in it); `bm` when this node brings no other entry and every united child is the child of `bm`.
+        // Once neither holds, the children united so far are kept for the build below, which reads them instead of
+        // uniting them again.
+        boolean asThis = !overwritesChangeThis
+                && (rightDataOnly | rightNodeOnly | leftDataRightNode | leftDataRightDataMigrateToNode) == 0;
+        boolean asThat =
+                (leftDataOnly | leftNodeOnly | leftDataRightNode | leftNodeRightData | leftDataRightDataMigrateToNode)
+                        == 0;
+        MapNode<K, V>[] united = null;
+        if (asThis || asThat) {
+            int bits = leftNodeRightNode;
+            for (int k = 0; bits != 0; k++) {
+                int bit = Integer.lowestOneBit(bits);
+                bits ^= bit;
+                MapNode<K, V> leftNode = getNode(indexFrom(nodeMap, bit));
+                MapNode<K, V> rightNode = bm.getNode(indexFrom(bm.nodeMap, bit));
+                MapNode<K, V> newNode = leftNode.concat(rightNode, nextShift);
+                if (united == null) {
+                    boolean keepsThis = asThis && newNode == leftNode;
+                    boolean keepsThat = asThat && newNode == rightNode;
+                    if (!keepsThis && !keepsThat) {
+                        united = unitedSoFar(bm, leftNodeRightNode, k, asThis);
+                    }
+                    asThis = keepsThis;
+                    asThat = keepsThat;
+                }
+                if (united != null) {
+                    united[k] = newNode;
+                }
+            }
+            if (asThat) {
+                return bm;
+            } else if (asThis && holdsEntriesOf(bm, leftNodeRightData, nextShift)) {
+                return this;
+            } else if (united == null) {
+                // every united child is the child of this node, but an entry of `bm` changes one of its children
+                united = unitedSoFar(bm, leftNodeRightNode, bitCount(leftNodeRightNode), true);
+            }
+        }
 
         int newDataSize = bitCount(newDataMap);
         int newContentSize = 2 * newDataSize + bitCount(newNodeMap);
@@ -511,14 +560,15 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         int rightDataIdx = 0;
         int leftNodeIdx = 0;
         int rightNodeIdx = 0;
-        int nextShift = shift + BIT_PARTITION_SIZE;
+        int unitedIdx = 0;
         int compressedDataIdx = 0;
         int compressedNodeIdx = 0;
         bitpos = minimumBitPos;
         while (true) {
             if ((bitpos & leftNodeRightNode) != 0) {
                 MapNode<K, V> rightNode = bm.getNode(rightNodeIdx);
-                MapNode<K, V> newNode = getNode(leftNodeIdx).concat(rightNode, nextShift);
+                MapNode<K, V> newNode =
+                        (united != null) ? united[unitedIdx++] : getNode(leftNodeIdx).concat(rightNode, nextShift);
                 if (rightNode != newNode) {
                     anyChangesMadeSoFar = true;
                 }
@@ -626,51 +676,148 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 : bm;
     }
 
+    // `true` when each entry of `bm` in a slot of `slots`, where this node has a child, is the very key and value
+    // object that child holds
+    @SuppressWarnings("Var")
+    private boolean holdsEntriesOf(BitmapIndexedMapNode<K, V> bm, int slots, int nextShift) {
+        int bits = slots;
+        while (bits != 0) {
+            int bit = Integer.lowestOneBit(bits);
+            bits ^= bit;
+            MapNode<K, V> child = getNode(indexFrom(nodeMap, bit));
+            int index = indexFrom(bm.dataMap, bit);
+            if (child.updated(bm.getKey(index), bm.getValue(index), bm.hashes[index], nextShift, true) != child) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // the array of the united children of `concat`, holding its first `count` ones: the children of this node when
+    // `ofThis`, else those of `bm`, which is what each of them united to
+    @SuppressWarnings("Var")
+    private MapNode<K, V>[] unitedSoFar(BitmapIndexedMapNode<K, V> bm, int leftNodeRightNode, int count, boolean ofThis) {
+        @SuppressWarnings("unchecked")
+        MapNode<K, V>[] united = (MapNode<K, V>[]) new MapNode<?, ?>[bitCount(leftNodeRightNode)];
+        int bits = leftNodeRightNode;
+        for (int k = 0; k < count; k++) {
+            int bit = Integer.lowestOneBit(bits);
+            bits ^= bit;
+            united[k] = ofThis ? getNode(indexFrom(nodeMap, bit)) : bm.getNode(indexFrom(bm.nodeMap, bit));
+        }
+        return united;
+    }
+
     @Override
     @SuppressWarnings("Var")
     public BitmapIndexedMapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
-        int payload = payloadArity();
-        int children = nodeArity();
         // the entries first, then the children, as the iteration goes
+        int payload = payloadArity();
         int keptDataMap = 0;
-        int newSize = 0;
-        int newKeyHashSum = 0;
         int bits = dataMap;
         for (int i = 0; i < payload; i++) {
             int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
             if (predicate.test(getKey(i), getValue(i)) == keep) {
                 keptDataMap |= bitpos;
+            }
+        }
+        int children = nodeArity();
+        MapNode<K, V>[] newChildren = null;
+        for (int i = 0; i < children; i++) {
+            MapNode<K, V> child = getNode(i);
+            MapNode<K, V> newChild = child.filter(predicate, keep);
+            newChildren = withChild(newChildren, children, i, child, newChild);
+        }
+        return rebuilt(keptDataMap, newChildren);
+    }
+
+    /// The partition of this trie, as two roots: see [MapNode#partition].
+    public MapNode.Partition<K, V> partition(BiPredicate<? super K, ? super V> predicate) {
+        MapNode.Partition<K, V> into = new MapNode.Partition<>(this);
+        partition(predicate, into);
+        return into;
+    }
+
+    // the walk of `filter`, with the children's two results read from `into` and both sides rebuilt from them
+    @Override
+    @SuppressWarnings("Var")
+    void partition(BiPredicate<? super K, ? super V> predicate, MapNode.Partition<K, V> into) {
+        int payload = payloadArity();
+        int keptDataMap = 0;
+        int bits = dataMap;
+        for (int i = 0; i < payload; i++) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if (predicate.test(getKey(i), getValue(i))) {
+                keptDataMap |= bitpos;
+            }
+        }
+        int children = nodeArity();
+        MapNode<K, V>[] keptChildren = null;
+        MapNode<K, V>[] rejectedChildren = null;
+        for (int i = 0; i < children; i++) {
+            MapNode<K, V> child = getNode(i);
+            child.partition(predicate, into);
+            keptChildren = withChild(keptChildren, children, i, child, into.kept);
+            rejectedChildren = withChild(rejectedChildren, children, i, child, into.rejected);
+        }
+        into.kept = rebuilt(keptDataMap, keptChildren);
+        into.rejected = rebuilt(dataMap ^ keptDataMap, rejectedChildren);
+    }
+
+    // records the new child at `index` once one child has changed: null while every child is the old one
+    private static <K extends @Nullable Object, V extends @Nullable Object> MapNode<K, V> @Nullable [] withChild(
+            MapNode<K, V> @Nullable [] newChildren, int children, int index, MapNode<K, V> child, MapNode<K, V> newChild) {
+        if (newChildren != null) {
+            newChildren[index] = newChild;
+            return newChildren;
+        }
+        if (newChild == child) {
+            return null;
+        }
+        @SuppressWarnings("unchecked")
+        MapNode<K, V>[] array = (MapNode<K, V>[]) new MapNode<?, ?>[children];
+        array[index] = newChild;
+        return array;
+    }
+
+    // the node of the inline entries of `keptDataMap` and of the new children (null entries, or a null array: the
+    // old child), where a child down to one entry comes back inline and an empty one goes; this node when nothing
+    // was dropped
+    @SuppressWarnings("Var")
+    private BitmapIndexedMapNode<K, V> rebuilt(int keptDataMap, MapNode<K, V> @Nullable [] newChildren) {
+        if (keptDataMap == dataMap && newChildren == null) {
+            return this;
+        }
+        int newNodeMap = 0;
+        int migratedDataMap = 0;
+        int newSize = 0;
+        int newKeyHashSum = 0;
+        int payload = payloadArity();
+        int bits = dataMap;
+        for (int i = 0; i < payload; i++) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if ((bitpos & keptDataMap) != 0) {
                 newSize++;
                 newKeyHashSum += hashes[i];
             }
         }
-        MapNode<K, V>[] newChildren = null;
-        int newNodeMap = 0;
-        // the children down to one entry, whose entry comes back inline
-        int migratedDataMap = 0;
         bits = nodeMap;
+        int children = nodeArity();
         for (int i = 0; i < children; i++) {
             int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
-            MapNode<K, V> child = getNode(i);
-            MapNode<K, V> newChild = child.filter(predicate, keep);
-            int childSize = newChild.size();
-            if (newChild != child && newChildren == null) {
-                @SuppressWarnings("unchecked")
-                MapNode<K, V>[] array = (MapNode<K, V>[]) new MapNode<?, ?>[children];
-                newChildren = array;
-            }
-            if (newChildren != null) {
-                newChildren[i] = newChild;
-            }
+            MapNode<K, V> child = newChild(newChildren, i);
+            int childSize = child.size();
             if (childSize >= 2) {
                 newNodeMap |= bitpos;
             } else if (childSize == 1) {
                 migratedDataMap |= bitpos;
             }
             newSize += childSize;
-            newKeyHashSum += newChild.keyHashSum();
+            newKeyHashSum += child.keyHashSum();
         }
         if (newSize == size) {
             return this;
@@ -697,22 +844,23 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 }
                 oldDataIdx++;
             } else {
-                // a child changes only when the filter drops one of its entries, so newChildren is set here
-                @SuppressWarnings("NullAway")
-                MapNode<K, V> newChild = (newChildren == null || newChildren[oldNodeIdx] == null)
-                        ? getNode(oldNodeIdx)
-                        : newChildren[oldNodeIdx];
+                MapNode<K, V> child = newChild(newChildren, oldNodeIdx);
                 if ((bitpos & migratedDataMap) != 0) {
-                    newContent[2 * dataIdx] = newChild.getKey(0);
-                    newContent[2 * dataIdx + 1] = newChild.getValue(0);
-                    newHashes[dataIdx++] = newChild.getHash(0);
+                    newContent[2 * dataIdx] = child.getKey(0);
+                    newContent[2 * dataIdx + 1] = child.getValue(0);
+                    newHashes[dataIdx++] = child.getHash(0);
                 } else if ((bitpos & newNodeMap) != 0) {
-                    newContent[newContent.length - 1 - nodeIdx++] = newChild;
+                    newContent[newContent.length - 1 - nodeIdx++] = child;
                 }
                 oldNodeIdx++;
             }
         }
         return new BitmapIndexedMapNode<>(null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum);
+    }
+
+    private MapNode<K, V> newChild(MapNode<K, V> @Nullable [] newChildren, int index) {
+        MapNode<K, V> child = (newChildren == null) ? null : newChildren[index];
+        return (child == null) ? getNode(index) : child;
     }
 
     @Override

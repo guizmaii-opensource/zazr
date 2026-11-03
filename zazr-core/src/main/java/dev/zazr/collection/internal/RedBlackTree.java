@@ -118,15 +118,17 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
         return Node.deleteByKey(this, value, comparator(), false);
     }
 
+    /**
+     * The elements of this tree that are not in {@code tree}, which is ordered by the same comparator, through
+     * {@link Node#difference}: every subtree of this tree that loses nothing is shared, and {@code this} is returned
+     * when no element is removed.
+     *
+     * @param tree the elements to remove
+     * @return this tree without the elements of {@code tree}
+     */
     default RedBlackTree<T> difference(RedBlackTree<T> tree) {
         Objects.requireNonNull(tree, "tree is null");
-        if (isEmpty() || tree.isEmpty()) {
-            return this;
-        } else {
-            Node<T> that = (Node<T>) tree;
-            Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
-            return Node.merge(split._1().difference(that.left), split._2().difference(that.right));
-        }
+        return Node.difference(this, tree);
     }
 
     /**
@@ -219,27 +221,16 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
 
     /**
      * Adds all of the elements of the given {@code tree} to this tree. When an element of the given tree is
-     * comparator-equal to one already present in this tree, the given tree's element replaces this tree's.
+     * comparator-equal to one already present in this tree, the given tree's element replaces this tree's. Through
+     * {@link Node#union}, every subtree of either side that the other leaves as it is is shared.
      *
      * @param tree The RedBlackTree to form the union with.
      * @return A RedBlackTree that contains all distinct elements of this and the given {@code tree}
-     *         (may be {@code this} or the given {@code tree} itself if the other one is empty).
+     *         (may be {@code this} or the given {@code tree} itself, when the result holds the same objects).
      */
     default RedBlackTree<T> union(RedBlackTree<T> tree) {
         Objects.requireNonNull(tree, "tree is null");
-        if (tree.isEmpty() || tree == this) {
-            // a subtree shared by both sides is its own union, as in Scala's `_union`
-            return this;
-        } else {
-            Node<T> that = (Node<T>) tree;
-            if (isEmpty()) {
-                return that.color(BLACK);
-            } else {
-                Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = Node.split(this, that.value);
-                return Node.join(
-                        split._1().union(that.left), that.value, split._2().union(that.right));
-            }
-        }
+        return Node.color(Node.union(this, tree), BLACK);
     }
 
     /**

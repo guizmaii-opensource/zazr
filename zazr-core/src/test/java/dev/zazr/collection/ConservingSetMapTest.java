@@ -246,7 +246,10 @@ class ConservingSetMapTest {
                         row("union with itself as a TreeSet", s -> s.union(TreeSet.ofAll(s))),
                         row(
                                 "union with an empty TreeSet of the same comparator",
-                                s -> s.union(TreeSet.empty(s.comparator())))));
+                                s -> s.union(TreeSet.empty(s.comparator()))),
+                        row(
+                                "diff with a disjoint TreeSet of the same comparator",
+                                s -> s.diff(TreeSet.of(s.comparator(), ABSENT, s.last() + 1)))));
     }
 
     // -- maps
@@ -314,6 +317,7 @@ class ConservingSetMapTest {
                 mapRows(),
                 java.util.List.of(
                         row("putAll of an empty HashMap", m -> m.putAll(HashMap.empty())),
+                        row("putAll of itself without its first key", m -> m.putAll(m.remove(first(m)._1()))),
                         row("merge with an empty HashMap", m -> m.merge(HashMap.empty()))));
     }
 

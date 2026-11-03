@@ -48,13 +48,41 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     // -- the operations on whole subtrees
 
     /// The node of the entries of this node and of `that`, which sits at the same place in its trie: of equal keys,
-    /// the entry of `that` is kept, key and value. Returns `that` when this node adds nothing to it, and shares the
+    /// the entry of `that` is kept, key and value. Returns `that` when this node adds nothing to it, this node when
+    /// `that` adds nothing to it (each of its entries is a key and value object already here), and shares the
     /// subtrees of either side that the other side does not touch.
     abstract MapNode<K, V> concat(MapNode<K, V> that, int shift);
 
     /// The node of the entries for which `predicate` answers `keep`; this node when that is all of them. The
     /// predicate sees the entries in iteration order.
     abstract MapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep);
+
+    /// Sets `into.kept` to the node of the entries for which `predicate` holds and `into.rejected` to the node of
+    /// the others, in one walk that calls `predicate` once per entry, in iteration order. Each side is this node
+    /// when it gets every entry, and shares every child whose entries all go to it.
+    abstract void partition(BiPredicate<? super K, ? super V> predicate, Partition<K, V> into);
+
+    /// The two results of [#partition], written in place of a pair per node.
+    public static final class Partition<K extends @Nullable Object, V extends @Nullable Object> {
+
+        MapNode<K, V> kept;
+        MapNode<K, V> rejected;
+
+        Partition(MapNode<K, V> root) {
+            this.kept = root;
+            this.rejected = root;
+        }
+
+        /// The root of the entries for which the predicate holds, after a partition of a root.
+        public BitmapIndexedMapNode<K, V> kept() {
+            return (BitmapIndexedMapNode<K, V>) kept;
+        }
+
+        /// The root of the other entries, after a partition of a root.
+        public BitmapIndexedMapNode<K, V> rejected() {
+            return (BitmapIndexedMapNode<K, V>) rejected;
+        }
+    }
 
     /// The node of the same keys, each value replaced by `f(key, value)`, called in iteration order; this node when
     /// every new value is the same object as the old one. A null value is rejected as a put rejects it.

@@ -933,9 +933,22 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
                 : this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per element, in iteration order; the trie is split node by node, and
+     * the parts whose elements all go to one side are shared, not copied.
+     */
     @Override
     public Tuple2<HashSet<T>, HashSet<T>> partition(Predicate<? super T> predicate) {
-        return Collections.partition(this, HashSet::ofAll, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        SetNode.Partition<T> sides = tree.partition(predicate);
+        return Tuple.of(side(sides.kept()), side(sides.rejected()));
+    }
+
+    // a side of the partition: this set when it gets every element
+    private HashSet<T> side(BitmapIndexedSetNode<T> result) {
+        return (result == tree && result.size() != 0) ? this : wrap(result);
     }
 
     /**

@@ -828,7 +828,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return this;
         } else if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
-            return that.isEmpty() ? this : new TreeSet<>(tree.difference(that.tree));
+            return withTree(tree.difference(that.tree));
         } else {
             return removeAll(elements);
         }
@@ -1151,7 +1151,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             } else if (isEmpty()) {
                 return that;
             } else {
-                return withTree(tree.union(that.tree));
+                RedBlackTree<T> result = tree.union(that.tree);
+                return (result == that.tree) ? that : withTree(result);
             }
         } else {
             return addAll(elements);
