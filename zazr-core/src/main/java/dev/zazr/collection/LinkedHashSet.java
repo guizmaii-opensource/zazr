@@ -873,8 +873,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
                 }
                 builder.add(Objects.requireNonNull(result, "LinkedHashSet: element is null"));
                 while (elements.hasNext()) {
-                    builder.add(Objects.requireNonNull(
-                            mapper.apply(elements.next()), "LinkedHashSet: element is null"));
+                    builder.add(
+                            Objects.requireNonNull(mapper.apply(elements.next()), "LinkedHashSet: element is null"));
                 }
                 return builder.result();
             }
