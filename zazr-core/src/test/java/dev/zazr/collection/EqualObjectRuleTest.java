@@ -3,6 +3,7 @@ package dev.zazr.collection;
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -172,6 +173,69 @@ class EqualObjectRuleTest {
                     }
                 }
             }
+        }
+    }
+
+    // -- a TreeSet whose comparator equates keys that are not equal: the comparator decides, the receiver's stays
+
+    // Key(2v) and Key(2v + 1) compare as equal, while they are not equal and are different objects
+    private static final Comparator<Key> HALVES = Comparator.comparingInt(k -> k.value / 2);
+
+    // the element `set` holds for `element` under its comparator
+    private static Key storedUnder(TreeSet<Key> set, Key element) {
+        for (Key k : set) {
+            if (set.comparator().compare(k, element) == 0) {
+                return k;
+            }
+        }
+        throw new AssertionError(element + " is not in " + set);
+    }
+
+    // `count` keys 2i + parity, for i from 0
+    private static java.util.List<Key> halves(int count, int parity) {
+        java.util.List<Key> result = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            result.add(new Key(2 * i + parity, 2 * i + parity));
+        }
+        return result;
+    }
+
+    @Test
+    void shouldKeepTheReceiversElementUnderAComparatorThatEquatesUnequalElements() {
+        for (int n : Hashing.SPREAD.sizes()) {
+            // the even keys, and as many odd ones, comparator-equal to them, plus one more beyond them
+            java.util.List<Key> own = halves(n, 0);
+            java.util.List<Key> odd = halves(n + 1, 1);
+            TreeSet<Key> set = TreeSet.ofAll(HALVES, own);
+            TreeSet<Key> argument = TreeSet.ofAll(HALVES, odd);
+            String at = "TreeSet of " + n;
+
+            TreeSet<Key> union = set.union(argument);
+            assertThat(union.size()).as(at).isEqualTo(n + 1);
+            TreeSet<Key> added = set.addAll(odd);
+            TreeSet<Key> addedFew = set.addAll(odd.subList(n - 1, n + 1));
+            for (Key k : own) {
+                assertThat(storedUnder(union, k)).as("union " + at).isSameAs(k);
+                assertThat(storedUnder(added, k)).as("addAll " + at).isSameAs(k);
+                assertThat(storedUnder(addedFew, k)).as("addAll of a few " + at).isSameAs(k);
+            }
+            assertThat(storedUnder(union, odd.getLast())).as("union, the new element, " + at).isSameAs(odd.getLast());
+
+            TreeSet<Key> intersection = set.intersect(argument);
+            assertThat(intersection).as("intersect " + at).isSameAs(set);
+            TreeSet<Key> part = set.intersect(TreeSet.ofAll(HALVES, odd.subList(0, 1)));
+            assertThat(part.size()).as(at).isOne();
+            assertThat(storedUnder(part, own.getFirst())).as("intersect of one " + at).isSameAs(own.getFirst());
+
+            assertThat(set.union(TreeSet.ofAll(HALVES, odd.subList(0, n)))).as("union " + at).isSameAs(set);
+            assertThat(set.add(odd.getFirst())).as("add " + at).isSameAs(set);
+
+            // replace stores the element given, which the comparator equates with the one there
+            TreeSet<Key> replaced = set.replace(own.getFirst(), odd.getFirst());
+            assertThat(replaced).as(at).isNotSameAs(set);
+            assertThat(storedUnder(replaced, own.getFirst())).as("replace " + at).isSameAs(odd.getFirst());
+            assertThat(set.replace(odd.getFirst(), own.getFirst())).as("replace by the object there, " + at)
+                    .isSameAs(set);
         }
     }
 
