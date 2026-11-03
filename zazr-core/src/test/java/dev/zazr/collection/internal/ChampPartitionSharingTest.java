@@ -57,11 +57,10 @@ class ChampPartitionSharingTest {
         if (original.containsKey(node)) {
             return 0;
         }
-        int count = 1;
-        for (int i = 0; i < node.nodeArity(); i++) {
-            count += fresh((ChampNode<?>) node.getNode(i), original);
-        }
-        return count;
+        return 1
+                + java.util.stream.IntStream.range(0, node.nodeArity())
+                        .map(i -> fresh((ChampNode<?>) node.getNode(i), original))
+                        .sum();
     }
 
     private static <T> T field(Object owner, Class<?> type, String name) {
