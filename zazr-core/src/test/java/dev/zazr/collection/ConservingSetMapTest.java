@@ -711,6 +711,17 @@ class ConservingSetMapTest {
                         m -> m.filterKeys(k -> !k.equals(element(m.size() - 1))),
                         n -> ofEntries.apply(entriesWithout(n, n - 1))),
                 change(
+                        "filter dropping every other entry",
+                        m -> m.filterKeys(k -> k % 2 == 0),
+                        n -> ofEntries.apply(
+                                entries(n).stream().filter(e -> e._1() % 2 == 0).toList())),
+                change(
+                        "filter dropping the last eleven",
+                        m -> m.filterKeys(k -> k < element(m.size() - 11)),
+                        n -> ofEntries.apply(entries(n).stream()
+                                .filter(e -> e._1() < element(n - 11))
+                                .toList())),
+                change(
                         "filter of entries dropping the last",
                         m -> m.filter(e -> !e._1().equals(element(m.size() - 1))),
                         n -> ofEntries.apply(entriesWithout(n, n - 1))),
