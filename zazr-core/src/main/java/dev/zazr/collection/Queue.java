@@ -1717,6 +1717,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      *
      * @param element the separator
      * @return a new Queue, or this Queue if it has fewer than two elements
+     * @throws NullPointerException if {@code element} is null and this Queue has at least two elements
      */
     public Queue<T> intersperse(T element) {
         if (sizeCompare(1) <= 0) {

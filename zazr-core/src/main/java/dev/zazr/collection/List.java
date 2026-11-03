@@ -1605,6 +1605,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      *
      * @param element the separator
      * @return a new List, or this List if it has fewer than two elements
+     * @throws NullPointerException if {@code element} is null and this List has at least two elements
      */
     default List<T> intersperse(T element) {
         if (isEmpty() || tail().isEmpty()) {
