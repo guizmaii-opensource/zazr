@@ -1520,9 +1520,23 @@ The two follow-ups the cost review (#93, above) left documented. Each part stand
     - A probe run on `main` and on the branch gave byte-identical output.
   - The `Builder` keeps an adopted map and puts into it, as Scala's `VectorMapBuilder` does with its `aliased` map,
     instead of copying its order into its list.
-- **Measured:** the `QueueRebalanceBenchmark` and `LinkedHashMapOrderBenchmark` classes in `zazr-benchmark`, with
-  `QueueIteratorBenchmark` and `LinkedHashMapBenchmark` for the operations that must not regress; the table is in
-  the pull request.
+- **Measured** (JMH, 3 forks, `-prof gc`, `main` and the branch back to back; `QueueRebalanceBenchmark` and
+  `LinkedHashMapOrderBenchmark` in `zazr-benchmark`, with the neighbouring classes for the operations that must not
+  regress; the table is in the pull request). Both parts keep their change.
+  - `Queue`: `tail`, `dequeue` and `init` again on an older Queue go from O(n) to a field read, 12x faster at 10
+    elements and 180,000x to 545,000x at 100,000, allocating nothing. An `init` chain is 1.5x faster with 40 % less
+    allocation, since each step reads what the previous one kept. A new version of an older Queue
+    (`tail` after `enqueue`) is unchanged, as expected. The enqueue-then-drain and alternating chains allocate the
+    same bytes and measure 4 % to 10 % slower, inside or near the error at most sizes.
+  - `LinkedHashMap`: `tail`, `init`, `take`, `drop` and their mirrors past a run of removed keys are 15x to 50x
+    faster at 1,000 entries and 1,000x to 5,700x at 100,000; one more removal from a map with as many removed keys
+    as kept ones goes from a rebuild (22 ms, 71 MB at 100,000) to 0.2 µs. Removing every key is 1.3x to 1.8x faster
+    with up to a third less allocation, and `put`, iteration and the builders and collectors are unchanged.
+  - The losing rows: `head` takes 2 ns more (a walk from the root), `tail` on a map with no removal 1.2x to 1.3x
+    slower and a chain of them 1.25x to 1.33x slower (the first leaf is copied without its key, where `Vector`
+    shares its first array), one `remove` 1.2x slower at 100,000, the builder given a map then new keys 1.03x to
+    1.1x slower, and random `get` hits on a map of 100,000 1.6x slower though `get` does not touch the order (the
+    entries end up spread differently in memory; the same at 1,000).
 
 ### 3.8 `Vector` builder
 
