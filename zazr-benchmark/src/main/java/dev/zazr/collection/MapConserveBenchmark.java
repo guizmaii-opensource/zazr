@@ -18,8 +18,8 @@ import org.openjdk.jmh.annotations.Warmup;
 /**
  * `map` against `mapConserve` on a `List` and a `Vector` of `size` elements (`0, 1, ..., size - 1`), with a mapper
  * that changes no element (`unchanged`, the identity), every element (`all`, `x + 1`) or only the first one
- * (`first`). The `map` methods use only the API of `main`, so they run on both branches; `mapConserve` runs on the
- * branch that has it.
+ * (`first`). The `map` methods and `listBuilderMap` use only the API of `main`, so they run on both branches;
+ * `mapConserve` runs on the branch that has it.
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -60,6 +60,16 @@ public class MapConserveBenchmark {
     @Benchmark
     public List<Integer> listMapConserve() {
         return list.mapConserve(mapper);
+    }
+
+    /** A map through the public `List.Builder`, with no identity check: what the check costs on its own. */
+    @Benchmark
+    public List<Integer> listBuilderMap() {
+        List.Builder<Integer> builder = List.newBuilder();
+        for (Integer element : list) {
+            builder.add(mapper.apply(element));
+        }
+        return builder.result();
     }
 
     @Benchmark

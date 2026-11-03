@@ -75,7 +75,9 @@ class MapConserveTest {
             assertThatNullPointerException()
                     .isThrownBy(() -> List.of(1).mapConserve(null))
                     .withMessage("mapper is null");
-            assertThatNullPointerException().isThrownBy(() -> List.of(1, 2).mapConserve(x -> null));
+            assertThatNullPointerException()
+                    .isThrownBy(() -> List.of(1, 2).mapConserve(x -> null))
+                    .withMessage("List: element is null");
         }
     }
 

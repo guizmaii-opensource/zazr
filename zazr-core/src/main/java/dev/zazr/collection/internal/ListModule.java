@@ -147,7 +147,7 @@ public interface ListModule {
                     }
                     // the elements of the unchanged cells are their own results: they are of type U
                     addCells((List.Builder<T>) (List.Builder<?>) mapped, pending, cell);
-                    mapped.add(result);
+                    mapped.add(Objects.requireNonNull(result, "List: element is null"));
                     pending = cell.tail();
                 }
             }
