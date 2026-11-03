@@ -1138,19 +1138,27 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m) for m given entries: each is looked up in this map and, when present, put in a new map.
+     * The entries kept are this map's: its key and value objects, not the given ones that equal them, so this map is
+     * returned when every entry is given.
+     * <p>
+     * Complexity: O(m) for m given entries: each is looked up in this map and, when present, this map's entry is put
+     * in a new map.
      */
+    @SuppressWarnings("unchecked")
     @Override
     public HashMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
         Objects.requireNonNull(elements, "elements is null");
         @SuppressWarnings("Var")
         BitmapIndexedMapNode<K, V> tree = MapNode.empty();
         for (Tuple2<K, V> entry : elements) {
-            if (contains(entry)) {
-                tree = putChecked(tree, entry._1(), entry._2());
+            V value = trie.getOrElse(entry._1(), (V) Maps.ABSENT);
+            if (value != Maps.ABSENT && Objects.equals(value, entry._2())) {
+                // the key object of this map, found only for the entries kept
+                K key = Objects.requireNonNull(trie.findKey(entry._1()));
+                tree = tree.updated(key, value);
             }
         }
-        return wrap(tree);
+        return (tree.size() == trie.size()) ? this : wrap(tree);
     }
 
     /**

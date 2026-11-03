@@ -1487,17 +1487,65 @@ check that every public method returning the type is a row or excluded with a re
 - **The non-empty wrappers** return themselves through `wrap` where they built a new wrapper: `put`, `put` with a
   merge and `mapValues` on both maps. Their operations that may empty them return the wrapped collection itself.
 - **Left as they are**, each with its reason:
-  - `TreeSet.union`/`intersect` with another `TreeSet` of the same comparator keep the argument's elements, so an
-    equal argument is not a no-op; `TreeSet.diff` with one rebuilds the tree as Scala's `_difference` does. Sharing
-    the receiver's subtrees there is a follow-up.
+  - `TreeSet.diff` with another `TreeSet` of the same comparator rebuilds the tree as Scala's `_difference` does.
+    Sharing the receiver's subtrees there is a follow-up. (`TreeSet.union`/`intersect` with one kept the argument's
+    elements here; they keep the receiver's since the consistency fixes below, and return it for an equal argument.)
   - `putAll` of another `HashMap` or `TreeMap` holding some of the same entry objects merges the tries or trees, and
     builds what is not a shared subtree; entries given one by one, or the map itself, return the map.
-  - `HashMap.retainAll`/`TreeMap.retainAll` keep the given entry objects (3.8.1), which are equal to the map's but not
-    the same.
   - `HashMap.replace(entry, entry)` and `TreeMap.replace(entry, entry)` of an entry by itself remove and put it back:
     the check needs the stored key, which the CHAMP nodes give only in a new `Tuple2`.
   - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: a conserving `map` is decided separately.
 - **Measured**: see below.
+
+**Which of two equal objects a set or a map keeps (#320, #321, #322, decided 2026-11-03).** Three consistency fixes
+that apply #313's rule (an equal object that is another object still replaces the one there, and the receiver comes
+back only when the very objects are there) where it was not yet, and fix which side's object the set algebra keeps.
+They change behaviour, so they are not measured.
+
+- **`replace` stores an equal but distinct object on every set and map.** `LinkedHashSet.replace` returned the set
+  when the new element merely equalled the old one, so `LinkedHashSet.of(a).replace(a, new String("a"))` kept `a`;
+  `LinkedHashMap.replace(entry, newEntry)` did the same with equal entries. They now compare the new element with the
+  stored object, as `HashSet` and `TreeSet` do: `LinkedHashSet` reads the stored key (a set made by
+  `LinkedHashMap.keySet()` has values that are not its elements), and `LinkedHashMap` returns the map only when the
+  key and the value of `newEntry` are the objects of the slot of `entry`'s key, `put`'s check and `TreeMap.replace`'s.
+  The identity of the `Tuple2` itself plays no part: `HashMap` stores no tuples. The equal object takes the
+  position of the old one. Both checks live in the public methods, over the slot lookup, so they do not depend on how
+  the insertion order is represented.
+- **The set algebra keeps the receiver's element (#321).** When the receiver and the argument hold equal elements
+  that are different objects, `add`, `addAll`, `union`, `intersect` and `retainAll` keep the receiver's, on
+  `HashSet`, `LinkedHashSet` and `TreeSet`, so that equal sets compose without churn and an equal argument returns
+  the receiver. This is Scala's rule. `RedBlackTree.split` returns the left tree's key when it meets an equal one,
+  and `_union` and `_intersect` then `join(tl, k1, t2.value, tr)`: the left key, the right value (null on a set).
+  `TreeSet.concat`/`intersect` call `RB.union(tree, ts.tree)`/`RB.intersect(tree, ts.tree)` with the receiver on the
+  left, and `incl` and `concat` of any other iterable call `RB.update(..., overwrite = false)`
+  (`library/src/scala/collection/immutable/RedBlackTree.scala` and `TreeSet.scala` of Scala 3, which ship the Scala
+  2.13 collection library unchanged). Scala's `HashSet.concat` resolves two equal payloads as
+  `leftDataRightDataLeftOverwrites` (the receiver's), `incl` keeps an equal element there, and `intersect` is the
+  `filter` of the receiver.
+  - `HashSet` and `LinkedHashSet` already did this: `HashSet.union` merges with the receiver on the right of a
+    right-wins CHAMP `concat`, its `intersect` keeps `find`'s stored element or filters the receiver, `add` does not
+    replace an equal element; `LinkedHashSet` inserts only absent elements and filters for `intersect`.
+  - `TreeSet.add`/`addAll` already kept the receiver's, `union`/`intersect` with a `TreeSet` of the same comparator
+    kept the argument's. The red-black `union`/`intersection` keep their argument's element, which `TreeMap.putAll`
+    needs (the argument wins, 2026-09-28) and `TreeSet.addAll` uses with the receiver's tree as the argument; they
+    are unchanged, and `TreeSet` calls them with the operands swapped (`that.tree.union(tree)`). A result as large
+    as the receiver then holds exactly its objects, so the receiver is returned.
+  - `TreeMap` is left as it is: a map's put takes the given key and value, and `putAll`'s argument wins by decision.
+- **`retainAll` keeps the receiver's entries on every map (#322).** `HashMap.retainAll` and `TreeMap.retainAll` kept
+  the given entry objects, `LinkedHashMap.retainAll` its own. The recorded reason for the first (3.8.1, "keeping the
+  last of equal elements as the insertions did") only kept what the old loop of `put`s of the given entries
+  happened to do when it was moved to the builder; it is not a rule about which entry should stay. The receiver's
+  entries are the better rule for all three: `java.util.Collection.retainAll` removes from the receiver, the three
+  sets' `retainAll` filter the receiver, it agrees with `intersect` above, and it lets `retainAll` of every entry
+  return the map. So `LinkedHashMap` is unchanged, and `HashMap` and `TreeMap` keep their O(m) walk over the given
+  entries but put the stored key and value: `TreeMap` reads the stored entry with `Node.findByKey`, and `HashMap`
+  the stored key with `BitmapIndexedMapNode.findKey`, added for this (`getEntry` makes a `Tuple2`), only for the
+  entries kept. A result with as many entries as the map is the map itself. The non-empty wrappers delegate, and
+  return the wrapped map then.
+- **Tests**: `EqualObjectRuleTest` checks the stored objects with `isSameAs`/`isNotSameAs` for each type and each
+  operation, with the equal element as a single entry, beside a larger set, and inside a deeper trie node or a hash
+  collision on the other side; `ConservingSetMapTest` lists `retainAll` of every entry, and `union`/`intersect` of an
+  equal set, as rows on every type.
 
 ### 3.8 `Vector` builder
 
@@ -1780,7 +1828,8 @@ Each comes with a JMH before/after on `ofAll`, `collector()`, `map`, `groupBy`.
   time and about 1.8x the bytes of the rebuild. `groupBy` stays on the builder: sharing would need one walk per group.
 - **The remaining unsorted one-at-a-time paths (decided 2026-09-25)**, each rerouted on a rough probe showing a win:
   `RedBlackTree.of(varargs)` (so `TreeSet.of`, `tabulate`, `fill`), `TreeSet.flatten` and `TreeMap.retainAll` use the
-  builder, keeping the last of equal elements as the insertions did (for `retainAll`, the given entry objects).
+  builder, keeping the last of equal elements as the insertions did (for `retainAll`, the given entry objects, until
+  it kept the map's own, 2026-11-03).
   `TreeSet.addAll` keeps the element already present, or else the first given, as its `contains`-then-`insert` loop
   did: the builder has a keep-first mode, and the sorted tree of the given elements is united with the receiver's
   (`union` lets the argument tree's elements win). It is used only when the receiver is empty or the argument is a

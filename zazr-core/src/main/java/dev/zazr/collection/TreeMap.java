@@ -1730,17 +1730,28 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return result == (Object) entries ? (TreeMap<K, W>) this : new TreeMap<>(result);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The entries kept are this map's: its key and value objects, not the given ones that equal them, so this map is
+     * returned when every entry is given.
+     * <p>
+     * Complexity: O(m log n) for m given entries: each is looked up in this map, and the entries of this map found,
+     * at most n, are sorted into a new tree.
+     */
     @Override
     public TreeMap<K, V> retainAll(Iterable<? extends Tuple2<K, V>> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        // of equal given entries, the last one is kept, as successive insertions would
         RedBlackTreeBuilder<Tuple2<K, V>> tree = new RedBlackTreeBuilder<>(entries.comparator(), "TreeMap.Builder");
         for (Tuple2<K, V> entry : elements) {
-            if (contains(entry)) {
-                tree.add(entry);
+            // the stored entry, whose key and value objects are kept
+            Tuple2<K, V> stored = entryOf(entry._1());
+            if (stored != null && Objects.equals(stored._2(), entry._2())) {
+                tree.add(stored);
             }
         }
-        return new TreeMap<>(tree.result());
+        RedBlackTree<Tuple2<K, V>> result = tree.result();
+        return (result.size() == entries.size()) ? this : new TreeMap<>(result);
     }
 
     /**

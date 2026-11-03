@@ -72,6 +72,11 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         return getEntry(key, Objects.hashCode(key), 0);
     }
 
+    /// The key kept for `key`, or null when absent.
+    public @Nullable K findKey(K key) {
+        return findKey(key, Objects.hashCode(key), 0);
+    }
+
     /// The trie with `key` mapped to `value`, the key and value of an equal key replaced; this trie when both are the
     /// objects already there.
     public BitmapIndexedMapNode<K, V> updated(K key, V value) {
@@ -202,6 +207,21 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                     : null;
         } else if ((nodeMap & bitpos) != 0) {
             return getNode(indexFrom(nodeMap, bitpos)).getEntry(key, hash, shift + BIT_PARTITION_SIZE);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    @Nullable
+    K findKey(K key, int hash, int shift) {
+        int bitpos = bitposFrom(maskFrom(hash, shift));
+        if ((dataMap & bitpos) != 0) {
+            int index = indexFrom(dataMap, bitpos);
+            K stored = getKey(index);
+            return (hashes[index] == hash && Objects.equals(key, stored)) ? stored : null;
+        } else if ((nodeMap & bitpos) != 0) {
+            return getNode(indexFrom(nodeMap, bitpos)).findKey(key, hash, shift + BIT_PARTITION_SIZE);
         } else {
             return null;
         }

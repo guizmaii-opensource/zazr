@@ -712,6 +712,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Keeps only the entries that are also in {@code elements}.
+     * <p>
+     * The entries kept are this map's: its key and value objects stay, not the equal ones of {@code elements}.
      *
      * @param elements the entries to keep
      * @return a map of the entries of this map that are in {@code elements}; may be this instance if all are

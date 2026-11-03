@@ -19,8 +19,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * The filter family of TreeSet and TreeMap (a walk that keeps the untouched subtrees) and the bulk operations that go
  * through the tree builder ({@code TreeSet.addAll}, {@code flatten}, {@code of}, {@code tabulate}, {@code fill},
- * {@code TreeMap.retainAll}): the same elements as the one-at-a-time path, the same object kept of equal ones, a valid
- * tree after every operation, the receiver itself when nothing changes, and the receiver left intact.
+ * {@code TreeMap.retainAll}): the same elements as the one-at-a-time path, the same object kept of equal ones (for
+ * {@code retainAll}, the map's own), a valid tree after every operation, the receiver itself when nothing changes, and
+ * the receiver left intact.
  */
 public class TreeFilterAndBulkTest {
 
@@ -491,10 +492,10 @@ public class TreeFilterAndBulkTest {
         assertThatThrownBy(() -> TreeSet.tabulate(3, i -> i == 1 ? null : i)).isInstanceOf(NullPointerException.class);
     }
 
-    // -- TreeMap.retainAll: of equal given entries, the last one is kept
+    // -- TreeMap.retainAll: the map's own entries are kept, not the equal given ones
 
     @Test
-    public void shouldRetainAllAsInsertingThePresentEntriesOneByOneWould() {
+    public void shouldRetainAllKeepingTheMapsOwnEntries() {
         Random random = new Random(SEED + 9);
         for (Comparator<Integer> order : orders()) {
             for (int size : SIZES) {
@@ -508,20 +509,23 @@ public class TreeFilterAndBulkTest {
                         given.add(Tuple.of(key, "other"));
                     }
                 }
-                TreeMap<Integer, String> expected = Vector.ofAll(given)
-                        .filter(map::contains)
-                        .foldLeft(
-                                TreeMap.<Integer, String>empty(order), (acc, entry) -> acc.put(entry._1(), entry._2()));
+                // a key equal to the comparator and an equal value
+                TreeMap<Integer, String> expected = map.filter(entry -> given.stream()
+                        .anyMatch(e -> order.compare(e._1(), entry._1()) == 0 && e._2().equals(entry._2())));
                 for (Iterable<Tuple2<Integer, String>> input :
                         java.util.List.<Iterable<Tuple2<Integer, String>>>of(given, oneShot(given))) {
                     TreeMap<Integer, String> retained = map.retainAll(input);
                     assertValid(retained);
                     assertThat(list(retained)).isEqualTo(list(expected));
-                    // the keys kept are the given objects, the last given of equal ones
+                    // the keys and values kept are the map's objects
                     java.util.List<Tuple2<Integer, String>> actual = list(retained);
                     java.util.List<Tuple2<Integer, String>> wanted = list(expected);
                     for (int i = 0; i < wanted.size(); i++) {
                         assertThat(actual.get(i)._1()).isSameAs(wanted.get(i)._1());
+                        assertThat(actual.get(i)._2()).isSameAs(wanted.get(i)._2());
+                    }
+                    if (wanted.size() == size) {
+                        assertThat(retained).isSameAs(map);
                     }
                 }
                 assertValid(map);

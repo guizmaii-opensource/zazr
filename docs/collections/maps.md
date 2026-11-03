@@ -134,8 +134,9 @@ changed.
   replaces the one there, so that `put` returns a new map.
 - `remove` of an absent key, `removeAll` of absent keys, and `merge` with keys this map already has.
 - `putAll` of the map itself, or of entries given one by one that are the keys and values already there.
-- The filters (`filter`, `filterKeys`, `filterValues` and their `reject` forms) that keep every entry; `partition`
-  returns the map as the side that gets everything.
+- The filters (`filter`, `filterKeys`, `filterValues` and their `reject` forms) and `retainAll` that keep every
+  entry; `partition` returns the map as the side that gets everything. `retainAll` keeps the map's own keys and
+  values, not the equal ones it is given.
 - `mapValues` and `replaceAll` whose function returns every value itself.
 - `take` and `drop` of a `LinkedHashMap` or `TreeMap`, and the ranges of a `TreeMap`, that cut nothing.
 - `putAll` or `merge` on an empty map returns the argument when it is a map of the same kind.

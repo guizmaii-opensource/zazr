@@ -889,6 +889,12 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return (that == tree) ? this : new TreeSet<>(that);
     }
 
+    // `that`, the result of a union or an intersection with this tree that keeps this tree's elements: of the same size,
+    // it holds exactly this set's element objects, so this set is returned
+    private TreeSet<T> withElementsOf(RedBlackTree<T> that) {
+        return (that.size() == tree.size()) ? this : new TreeSet<>(that);
+    }
+
     @Override
     public <U extends @Nullable Object> TreeSet<U> flatMap(
             Comparator<? super U> comparator, Function<? super T, ? extends Iterable<? extends U>> mapper) {
@@ -951,7 +957,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return this;
         } else if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
-            return withTree(tree.intersection(that.tree));
+            // the red-black intersection keeps the elements of its argument, here this tree's
+            return withElementsOf(that.tree.intersection(tree));
         } else {
             return retainAll(elements);
         }
@@ -1151,7 +1158,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             } else if (isEmpty()) {
                 return that;
             } else {
-                return withTree(tree.union(that.tree));
+                // the red-black union keeps the elements of its argument, here this tree's
+                return withElementsOf(that.tree.union(tree));
             }
         } else {
             return addAll(elements);
