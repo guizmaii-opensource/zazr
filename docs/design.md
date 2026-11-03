@@ -1483,7 +1483,9 @@ check that every public method returning the type is a row or excluded with a re
   `_intersect` do; `TreeSet.union`/`intersect`/`TreeMap.putAll` of the receiver itself return it, and `TreeSet.union`
   and `addAll` on an empty set return the argument, as `TreeMap.merge` on an empty map now does.
 - **`replace` of an element by the object already there** returns the set (`HashSet` and `TreeSet` look up the
-  stored element where they asked `contains`).
+  stored element where they asked `contains`). `TreeMap.replace(entry, newEntry)` returns the map when `newEntry`'s
+  key and value are the objects the tree holds for the key of `entry`: `Node.findByKey` gives the stored entry with no
+  allocation.
 - **The non-empty wrappers** return themselves through `wrap` where they built a new wrapper: `put`, `put` with a
   merge and `mapValues` on both maps. Their operations that may empty them return the wrapped collection itself.
 - **Left as they are**, each with its reason:
@@ -1492,8 +1494,8 @@ check that every public method returning the type is a row or excluded with a re
     elements here; they keep the receiver's since the consistency fixes below, and return it for an equal argument.)
   - `putAll` of another `HashMap` or `TreeMap` holding some of the same entry objects merges the tries or trees, and
     builds what is not a shared subtree; entries given one by one, or the map itself, return the map.
-  - `HashMap.replace(entry, entry)` and `TreeMap.replace(entry, entry)` of an entry by itself remove and put it back:
-    the check needs the stored key, which the CHAMP nodes give only in a new `Tuple2`.
+  - `HashMap.replace(entry, entry)` of an entry by itself removes and puts it back: the check needs the stored key,
+    which the CHAMP nodes give only in a new `Tuple2`.
   - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: a conserving `map` is decided separately.
 - **Measured**: see below.
 
