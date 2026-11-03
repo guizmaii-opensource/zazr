@@ -1698,6 +1698,18 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(newElement, "newElement is null");
         Objects.requireNonNull(newElement._1(), "TreeMap: key is null");
         Objects.requireNonNull(newElement._2(), "TreeMap: value is null");
+        Objects.requireNonNull(currentElement, "currentElement is null");
+        if (currentElement._1() != null) {
+            Tuple2<K, V> stored = RedBlackTreeModule.Node.findByKey(entries, newElement._1(), comparator(), true);
+            // the entry of currentElement's key replaced by the key and value objects already there
+            if (stored != null
+                    && stored._1() == newElement._1()
+                    && stored._2() == newElement._2()
+                    && comparator().compare(currentElement._1(), newElement._1()) == 0
+                    && Objects.equals(stored._2(), currentElement._2())) {
+                return this;
+            }
+        }
         return Maps.replace(this, currentElement, newElement);
     }
 
