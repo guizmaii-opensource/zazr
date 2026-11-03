@@ -219,22 +219,31 @@ class EqualObjectRuleTest {
                 assertThat(storedUnder(added, k)).as("addAll " + at).isSameAs(k);
                 assertThat(storedUnder(addedFew, k)).as("addAll of a few " + at).isSameAs(k);
             }
-            assertThat(storedUnder(union, odd.getLast())).as("union, the new element, " + at).isSameAs(odd.getLast());
+            assertThat(storedUnder(union, odd.getLast()))
+                    .as("union, the new element, " + at)
+                    .isSameAs(odd.getLast());
 
             TreeSet<Key> intersection = set.intersect(argument);
             assertThat(intersection).as("intersect " + at).isSameAs(set);
             TreeSet<Key> part = set.intersect(TreeSet.ofAll(HALVES, odd.subList(0, 1)));
             assertThat(part.size()).as(at).isOne();
-            assertThat(storedUnder(part, own.getFirst())).as("intersect of one " + at).isSameAs(own.getFirst());
+            assertThat(storedUnder(part, own.getFirst()))
+                    .as("intersect of one " + at)
+                    .isSameAs(own.getFirst());
 
-            assertThat(set.union(TreeSet.ofAll(HALVES, odd.subList(0, n)))).as("union " + at).isSameAs(set);
+            assertThat(set.union(TreeSet.ofAll(HALVES, odd.subList(0, n))))
+                    .as("union " + at)
+                    .isSameAs(set);
             assertThat(set.add(odd.getFirst())).as("add " + at).isSameAs(set);
 
             // replace stores the element given, which the comparator equates with the one there
             TreeSet<Key> replaced = set.replace(own.getFirst(), odd.getFirst());
             assertThat(replaced).as(at).isNotSameAs(set);
-            assertThat(storedUnder(replaced, own.getFirst())).as("replace " + at).isSameAs(odd.getFirst());
-            assertThat(set.replace(odd.getFirst(), own.getFirst())).as("replace by the object there, " + at)
+            assertThat(storedUnder(replaced, own.getFirst()))
+                    .as("replace " + at)
+                    .isSameAs(odd.getFirst());
+            assertThat(set.replace(odd.getFirst(), own.getFirst()))
+                    .as("replace by the object there, " + at)
                     .isSameAs(set);
         }
     }
