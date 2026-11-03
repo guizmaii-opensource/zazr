@@ -3,6 +3,7 @@ package dev.zazr.collection;
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import java.util.ArrayList;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
@@ -225,18 +226,35 @@ class EqualObjectRuleTest {
 
     // -- maps: retainAll keeps the receiver's entries
 
-    private record MapKind(String name, Function<java.util.List<Tuple2<Key, Key>>, Map<Key, Key>> ofEntries) {}
+    /// A kind of map: how to build one, its `retainAll`, and the map a `retainAll` that keeps everything returns (a
+    /// non-empty map returns the map it wraps).
+    private record MapKind(
+            String name,
+            Function<java.util.List<Tuple2<Key, Key>>, Iterable<Tuple2<Key, Key>>> ofEntries,
+            BiFunction<Iterable<Tuple2<Key, Key>>, Iterable<Tuple2<Key, Key>>, Map<Key, Key>> retainAll,
+            Function<Iterable<Tuple2<Key, Key>>, Object> unchanged) {}
 
+    @SuppressWarnings("unchecked")
     private static final java.util.List<MapKind> MAPS = java.util.List.of(
-            new MapKind("HashMap", HashMap::ofEntries),
-            new MapKind("LinkedHashMap", LinkedHashMap::ofEntries),
-            new MapKind("TreeMap", TreeMap::ofEntries),
+            new MapKind(
+                    "HashMap", HashMap::ofEntries, (m, given) -> ((HashMap<Key, Key>) m).retainAll(given), m -> m),
+            new MapKind(
+                    "LinkedHashMap",
+                    LinkedHashMap::ofEntries,
+                    (m, given) -> ((LinkedHashMap<Key, Key>) m).retainAll(given),
+                    m -> m),
+            new MapKind(
+                    "TreeMap", TreeMap::ofEntries, (m, given) -> ((TreeMap<Key, Key>) m).retainAll(given), m -> m),
             new MapKind(
                     "NonEmptyMap",
-                    entries -> NonEmptyMap.fromIterable(entries.getFirst(), entries.subList(1, entries.size()))),
+                    entries -> NonEmptyMap.fromIterable(entries.getFirst(), entries.subList(1, entries.size())),
+                    (m, given) -> ((NonEmptyMap<Key, Key>) m).retainAll(given),
+                    m -> ((NonEmptyMap<Key, Key>) m).toMap()),
             new MapKind(
                     "NonEmptySortedMap",
-                    entries -> NonEmptySortedMap.fromIterable(entries.getFirst(), entries.subList(1, entries.size()))));
+                    entries -> NonEmptySortedMap.fromIterable(entries.getFirst(), entries.subList(1, entries.size())),
+                    (m, given) -> ((NonEmptySortedMap<Key, Key>) m).retainAll(given),
+                    m -> ((NonEmptySortedMap<Key, Key>) m).toSortedMap()));
 
     // `count` entries of the keys from 0, each with a value of the key's value plus a million
     private static java.util.List<Tuple2<Key, Key>> entries(Hashing hashing, int count) {
@@ -264,10 +282,12 @@ class EqualObjectRuleTest {
                 for (int n : hashing.sizes()) {
                     java.util.List<Tuple2<Key, Key>> own = entries(hashing, n);
                     java.util.List<Tuple2<Key, Key>> copies = entries(hashing, n);
-                    Map<Key, Key> map = kind.ofEntries().apply(own);
+                    Iterable<Tuple2<Key, Key>> map = kind.ofEntries().apply(own);
                     String at = kind.name() + " " + hashing + " of " + n;
 
-                    assertThat(map.retainAll(copies)).as("retainAll of equal entries, " + at).isSameAs(map);
+                    assertThat(kind.retainAll().apply(map, copies))
+                            .as("retainAll of equal entries, " + at)
+                            .isSameAs(kind.unchanged().apply(map));
 
                     // the last entry, a copy given twice, an equal key with another value, an absent key
                     Tuple2<Key, Key> last = own.getLast();
@@ -276,17 +296,17 @@ class EqualObjectRuleTest {
                             copies.getLast(),
                             Tuple.of(hashing.key(0), new Key(-1, 0)),
                             Tuple.of(hashing.key(n), new Key(1_000_000 + n, n)));
-                    Map<Key, Key> retained = map.retainAll(given);
+                    Map<Key, Key> retained = kind.retainAll().apply(map, given);
                     assertThat(retained.size()).as(at).isOne();
                     Tuple2<Key, Key> entry = storedEntry(retained, last._1());
                     assertThat(entry._1()).as("retainAll, the key, " + at).isSameAs(last._1());
                     assertThat(entry._2()).as("retainAll, the value, " + at).isSameAs(last._2());
                     if (n > 1) {
-                        assertThat(retained).as(at).isNotSameAs(map);
+                        assertThat(retained).as(at).isNotSameAs(kind.unchanged().apply(map));
                     }
 
                     // every entry but the first, as copies
-                    Map<Key, Key> most = map.retainAll(copies.subList(1, n));
+                    Map<Key, Key> most = kind.retainAll().apply(map, copies.subList(1, n));
                     assertThat(most.size()).as(at).isEqualTo(n - 1);
                     for (Tuple2<Key, Key> kept : own.subList(1, n)) {
                         Tuple2<Key, Key> stored = storedEntry(most, kept._1());
