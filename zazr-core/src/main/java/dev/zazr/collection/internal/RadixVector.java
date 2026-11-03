@@ -385,7 +385,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
 
     /**
      * The vector of {@code f} applied to every element, of the same shape; an array whose elements {@code f} all returns
-     * unchanged (by identity) is shared, not copied.
+     * unchanged (by identity) is shared, not copied, and this vector itself is returned when every element is.
      *
      * @throws NullPointerException if {@code f} returns null
      */
@@ -563,8 +563,10 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         @Override
+        @SuppressWarnings({"unchecked", "ObjectEquality"})
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
-            return new Vector1<>(mapElems1(prefix1, f));
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            return (mPrefix1 == prefix1) ? (RadixVector<U>) this : new Vector1<>(mPrefix1);
         }
 
         @Override
@@ -692,8 +694,15 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         @Override
+        @SuppressWarnings({"unchecked", "ObjectEquality"})
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
-            return new Vector2<>(mapElems1(prefix1, f), len1, mapElems(2, data2, f), mapElems1(suffix1, f), length0);
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mData2 = mapElems(2, data2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1 && mData2 == data2 && mSuffix1 == suffix1) {
+                return (RadixVector<U>) this;
+            }
+            return new Vector2<>(mPrefix1, len1, mData2, mSuffix1, length0);
         }
 
         @Override
@@ -932,16 +941,21 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         @Override
+        @SuppressWarnings({"unchecked", "ObjectEquality"})
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
-            return new Vector3<>(
-                    mapElems1(prefix1, f),
-                    len1,
-                    mapElems(2, prefix2, f),
-                    len12,
-                    mapElems(3, data3, f),
-                    mapElems(2, suffix2, f),
-                    mapElems1(suffix1, f),
-                    length0);
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mData3 = mapElems(3, data3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mData3 == data3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return (RadixVector<U>) this;
+            }
+            return new Vector3<>(mPrefix1, len1, mPrefix2, len12, mData3, mSuffix2, mSuffix1, length0);
         }
 
         @Override
@@ -1343,19 +1357,26 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         @Override
+        @SuppressWarnings({"unchecked", "ObjectEquality"})
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mPrefix3 = mapElems(3, prefix3, f);
+            Object[] mData4 = mapElems(4, data4, f);
+            Object[] mSuffix3 = mapElems(3, suffix3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mPrefix3 == prefix3
+                    && mData4 == data4
+                    && mSuffix3 == suffix3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return (RadixVector<U>) this;
+            }
             return new Vector4<>(
-                    mapElems1(prefix1, f),
-                    len1,
-                    mapElems(2, prefix2, f),
-                    len12,
-                    mapElems(3, prefix3, f),
-                    len123,
-                    mapElems(4, data4, f),
-                    mapElems(3, suffix3, f),
-                    mapElems(2, suffix2, f),
-                    mapElems1(suffix1, f),
-                    length0);
+                    mPrefix1, len1, mPrefix2, len12, mPrefix3, len123, mData4, mSuffix3, mSuffix2, mSuffix1, length0);
         }
 
         @Override
@@ -1936,22 +1957,31 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         @Override
+        @SuppressWarnings({"unchecked", "ObjectEquality"})
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mPrefix3 = mapElems(3, prefix3, f);
+            Object[] mPrefix4 = mapElems(4, prefix4, f);
+            Object[] mData5 = mapElems(5, data5, f);
+            Object[] mSuffix4 = mapElems(4, suffix4, f);
+            Object[] mSuffix3 = mapElems(3, suffix3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mPrefix3 == prefix3
+                    && mPrefix4 == prefix4
+                    && mData5 == data5
+                    && mSuffix4 == suffix4
+                    && mSuffix3 == suffix3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return (RadixVector<U>) this;
+            }
             return new Vector5<>(
-                    mapElems1(prefix1, f),
-                    len1,
-                    mapElems(2, prefix2, f),
-                    len12,
-                    mapElems(3, prefix3, f),
-                    len123,
-                    mapElems(4, prefix4, f),
-                    len1234,
-                    mapElems(5, data5, f),
-                    mapElems(4, suffix4, f),
-                    mapElems(3, suffix3, f),
-                    mapElems(2, suffix2, f),
-                    mapElems1(suffix1, f),
-                    length0);
+                    mPrefix1, len1, mPrefix2, len12, mPrefix3, len123, mPrefix4, len1234, mData5, mSuffix4, mSuffix3,
+                    mSuffix2, mSuffix1, length0);
         }
 
         @Override
@@ -2689,25 +2719,35 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
 
         @Override
+        @SuppressWarnings({"unchecked", "ObjectEquality"})
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mPrefix3 = mapElems(3, prefix3, f);
+            Object[] mPrefix4 = mapElems(4, prefix4, f);
+            Object[] mPrefix5 = mapElems(5, prefix5, f);
+            Object[] mData6 = mapElems(6, data6, f);
+            Object[] mSuffix5 = mapElems(5, suffix5, f);
+            Object[] mSuffix4 = mapElems(4, suffix4, f);
+            Object[] mSuffix3 = mapElems(3, suffix3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mPrefix3 == prefix3
+                    && mPrefix4 == prefix4
+                    && mPrefix5 == prefix5
+                    && mData6 == data6
+                    && mSuffix5 == suffix5
+                    && mSuffix4 == suffix4
+                    && mSuffix3 == suffix3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return (RadixVector<U>) this;
+            }
             return new Vector6<>(
-                    mapElems1(prefix1, f),
-                    len1,
-                    mapElems(2, prefix2, f),
-                    len12,
-                    mapElems(3, prefix3, f),
-                    len123,
-                    mapElems(4, prefix4, f),
-                    len1234,
-                    mapElems(5, prefix5, f),
-                    len12345,
-                    mapElems(6, data6, f),
-                    mapElems(5, suffix5, f),
-                    mapElems(4, suffix4, f),
-                    mapElems(3, suffix3, f),
-                    mapElems(2, suffix2, f),
-                    mapElems1(suffix1, f),
-                    length0);
+                    mPrefix1, len1, mPrefix2, len12, mPrefix3, len123, mPrefix4, len1234, mPrefix5, len12345, mData6,
+                    mSuffix5, mSuffix4, mSuffix3, mSuffix2, mSuffix1, length0);
         }
 
         @Override

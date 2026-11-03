@@ -975,6 +975,40 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return tree.iterator();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The result is ordered by the comparator of this TreeSet.
+     * <p>
+     * Complexity: O(n log n) once an element changes, to build the new set; O(n) when nothing changes.
+     */
+    @Override
+    @SuppressWarnings({"Var", "ObjectEquality"})
+    public TreeSet<T> mapConserve(Function<? super T, ? extends T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        java.util.Iterator<T> elements = tree.iterator();
+        int unchanged = 0;
+        while (elements.hasNext()) {
+            T element = elements.next();
+            T result = mapper.apply(element);
+            if (result != element) {
+                // the elements before the first change are their own results; the rest are mapped into the builder
+                Builder<T> builder = newBuilder(tree.comparator());
+                java.util.Iterator<T> kept = tree.iterator();
+                for (int i = 0; i < unchanged; i++) {
+                    builder.add(kept.next());
+                }
+                builder.add(result);
+                while (elements.hasNext()) {
+                    builder.add(mapper.apply(elements.next()));
+                }
+                return builder.result();
+            }
+            unchanged++;
+        }
+        return this;
+    }
+
     @Override
     public <U extends @Nullable Object> TreeSet<U> map(
             Comparator<? super U> comparator, Function<? super T, ? extends U> mapper) {

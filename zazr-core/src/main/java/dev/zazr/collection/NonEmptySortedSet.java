@@ -324,6 +324,20 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
+     * The elements transformed by {@code mapper}, as {@link #map(Function)}, keeping what does not change: an element
+     * for which {@code mapper} returns that same object ({@code ==}, not {@code equals}) is unchanged.
+     * <p>
+     * Returns this set itself when nothing changes.
+     *
+     * @param mapper transforms an element, returning it itself to leave it unchanged
+     * @return this set when every element is unchanged, otherwise the distinct results, in the order of this set
+     * @throws NullPointerException if {@code mapper} is null or returns null
+     */
+    public NonEmptySortedSet<A> mapConserve(Function<? super A, ? extends A> mapper) {
+        return wrap(set.mapConserve(mapper));
+    }
+
+    /**
      * @param comparator The order of the result
      * @param mapper     A function
      * @param <B>        Component type of the result

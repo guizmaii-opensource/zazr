@@ -252,6 +252,20 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
     }
 
     /**
+     * The elements transformed by {@code mapper}, as {@link #map(Function)}, keeping what does not change: an element
+     * for which {@code mapper} returns that same object ({@code ==}, not {@code equals}) is unchanged.
+     * <p>
+     * Returns this set itself when nothing changes.
+     *
+     * @param mapper transforms an element, returning it itself to leave it unchanged
+     * @return this set when every element is unchanged, otherwise the distinct results, never none
+     * @throws NullPointerException if {@code mapper} is null or returns null
+     */
+    public NonEmptySet<A> mapConserve(Function<? super A, ? extends A> mapper) {
+        return wrap(set.mapConserve(mapper));
+    }
+
+    /**
      * The union of the non-empty sets {@code mapper} returns for each element. For a function that returns any
      * {@code Iterable}, possibly empty, see {@link #flatMapAll(Function)}.
      *

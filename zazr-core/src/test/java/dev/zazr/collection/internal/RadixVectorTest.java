@@ -477,6 +477,54 @@ public class RadixVectorTest {
     }
 
     // ---------------------------------------------------------------------------------------------------------------
+    // map returns the vector itself when nothing changes, and copies only the slices holding a changed element
+
+    @Test
+    public void mapReturnsTheVectorItselfWhenNothingChanges() {
+        // Vector0 to Vector5
+        for (int n : new int[] {0, 1, 32, 33, 1024, 1025, 1 << 15, (1 << 15) + 1, 1 << 20, (1 << 20) + 1}) {
+            checkConservingMap(RadixVector.ofAll(Vector.range(0, n)), false);
+        }
+    }
+
+    @Test
+    public void mapOfAVector6CopiesOnlyTheChangedSlices() {
+        RadixVector<Integer> v = sharedLeafVector(1 << 25).appended(WIDTH);
+        assertThat(v).isInstanceOf(RadixVector.Vector6.class);
+        checkConservingMap(v, true);
+    }
+
+    /* the identity returns v itself; an element changed in a slice copies that slice only, every other one shared. On
+     * a large vector only the first, middle and last slices are changed, each map walking every element */
+    private static void checkConservingMap(RadixVector<Integer> v, boolean fewSlices) {
+        assertThat(v.map(Function.identity())).isSameAs(v);
+        int count = v.vectorSliceCount();
+        for (int i = 0; i < count; i++) {
+            int start = (i == 0) ? 0 : v.vectorSlicePrefixLength(i - 1);
+            boolean picked = !fewSlices || i == 0 || i == count / 2 || i == count - 1;
+            if (picked && start < v.vectorSlicePrefixLength(i)) {
+                RadixVector<Integer> marked = v.updated(start, -1);
+                assertThat(marked.map(Function.identity())).isSameAs(marked);
+                RadixVector<Integer> mapped = marked.map(x -> (x == -1) ? Integer.valueOf(-2) : x);
+                assertThat(mapped).isNotSameAs(marked);
+                assertThat(mapped.get(start)).isEqualTo(-2);
+                assertThat(marked.get(start)).isEqualTo(-1);
+                for (int j = 0; j < count; j++) {
+                    if (j == i) {
+                        assertThat(mapped.vectorSlice(j))
+                                .as("slice %d of %d", j, count)
+                                .isNotSameAs(marked.vectorSlice(j));
+                    } else {
+                        assertThat(mapped.vectorSlice(j))
+                                .as("slice %d of %d", j, count)
+                                .isSameAs(marked.vectorSlice(j));
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
     // Vector6, reached by sharing (2^25 + 1 elements, but only 2^20 distinct leaves' worth of memory)
 
     @Test

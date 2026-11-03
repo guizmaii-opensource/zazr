@@ -5,6 +5,7 @@ import dev.zazr.Tuple2;
 import dev.zazr.collection.List;
 import dev.zazr.collection.List.Nil;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import org.jspecify.annotations.Nullable;
@@ -127,6 +128,32 @@ public interface ListModule {
                 }
             }
             return (kept == null) ? list : kept.addAll(pending).result();
+        }
+
+        /// The results of `mapper` on the elements of `list`, called once per element, in order: `list` itself when
+        /// every result is the element itself (`==`), and the cells after the last changed element shared.
+        @SuppressWarnings({"Var", "ObjectEquality", "unchecked"})
+        static <T extends @Nullable Object, U extends @Nullable Object> List<U> map(
+                List<T> list, Function<? super T, ? extends U> mapper) {
+            List.@Nullable Builder<U> mapped = null;
+            // the first cell not yet copied: every element from it up to the current cell is its own result
+            List<T> pending = list;
+            for (List<T> cell = list; !cell.isEmpty(); cell = cell.tail()) {
+                T element = cell.head();
+                U result = mapper.apply(element);
+                if (result != element) {
+                    if (mapped == null) {
+                        mapped = List.newBuilder();
+                    }
+                    // the elements of the unchanged cells are their own results: they are of type U
+                    addCells((List.Builder<T>) (List.Builder<?>) mapped, pending, cell);
+                    mapped.add(result);
+                    pending = cell.tail();
+                }
+            }
+            return (mapped == null)
+                    ? (List<U>) list
+                    : mapped.addAll((List<U>) pending).result();
         }
 
         /// `list` with every element equal to `current` replaced by `replacement`: `list` itself when no element is

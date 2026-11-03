@@ -1801,6 +1801,24 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         return list.reverse();
     }
 
+    /**
+     * The elements transformed by {@code mapper}, in order, as {@link #map(Function)}, keeping what does not change:
+     * an element for which {@code mapper} returns that same object ({@code ==}, not {@code equals}) is unchanged.
+     * <p>
+     * Complexity: O(n); {@code mapper} runs once per element, in order, and the elements after the last changed one
+     * are shared, not copied.
+     * <p>
+     * Returns this List itself when nothing changes.
+     *
+     * @param mapper transforms an element, returning it itself to leave it unchanged
+     * @return this List when every element is unchanged, otherwise a new List of the results
+     * @throws NullPointerException if {@code mapper} is null or returns null
+     */
+    default List<T> mapConserve(Function<? super T, ? extends T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        return ListModule.Conserve.map(this, mapper);
+    }
+
     default <U extends @Nullable Object> List<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         @SuppressWarnings("Var")

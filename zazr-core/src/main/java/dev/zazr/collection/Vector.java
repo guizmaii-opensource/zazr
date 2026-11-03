@@ -1793,6 +1793,26 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return ofAll(trie.map(mapper));
     }
 
+    /**
+     * The elements transformed by {@code mapper}, in order, as {@link #map(Function)}, keeping what does not change:
+     * an element for which {@code mapper} returns that same object ({@code ==}, not {@code equals}) is unchanged.
+     * <p>
+     * Complexity: O(n); {@code mapper} runs once per element, in order, and the arrays whose elements are all
+     * unchanged are shared, not copied.
+     * <p>
+     * Returns this Vector itself when nothing changes.
+     *
+     * @param mapper transforms an element, returning it itself to leave it unchanged
+     * @return this Vector when every element is unchanged, otherwise a new Vector of the results
+     * @throws NullPointerException if {@code mapper} is null or returns null
+     */
+    @SuppressWarnings("ObjectEquality")
+    public Vector<T> mapConserve(Function<? super T, ? extends T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        RadixVector<T> mapped = trie.map(mapper);
+        return (mapped == trie) ? this : ofAll(mapped);
+    }
+
     public <U extends @Nullable Object> Vector<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // one pass over the leaves straight into the builder, like flatMap: no intermediate collection

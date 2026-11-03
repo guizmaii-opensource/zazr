@@ -297,6 +297,12 @@ class ConservingOperationsTest {
                         abc,
                         v -> v.replaceAll(2, 9),
                         Vector.of(1, 9, 3))
+                .keep(
+                        "mapConserve(Function)",
+                        v -> v.mapConserve(x -> x),
+                        abc,
+                        v -> v.mapConserve(x -> (x == 2) ? Integer.valueOf(9) : x),
+                        Vector.of(1, 9, 3))
                 .keep("retainAll(Iterable)", v -> v.retainAll(v), abc, v -> v.retainAll(List.of(1, 3)), Vector.of(1, 3))
                 .keepOn("reverse()", v -> v.take(1), Vector::reverse, abc, Vector::reverse, Vector.of(3, 2, 1))
                 .keep("rotateLeft(int)", v -> v.rotateLeft(v.size()), abc, v -> v.rotateLeft(1), Vector.of(2, 3, 1))
@@ -560,6 +566,12 @@ class ConservingOperationsTest {
                         abc,
                         l -> l.replaceAll(2, 9),
                         Vector.of(1, 9, 3))
+                .keep(
+                        "mapConserve(Function)",
+                        l -> l.mapConserve(x -> x),
+                        abc,
+                        l -> l.mapConserve(x -> (x == 2) ? Integer.valueOf(9) : x),
+                        Vector.of(1, 9, 3))
                 .keep("retainAll(Iterable)", l -> l.retainAll(l), abc, l -> l.retainAll(List.of(1, 3)), Vector.of(1, 3))
                 .keepOn("reverse()", l -> l.take(1), List::reverse, abc, List::reverse, Vector.of(3, 2, 1))
                 .keep("rotateLeft(int)", l -> l.rotateLeft(l.size()), abc, l -> l.rotateLeft(1), Vector.of(2, 3, 1))
@@ -822,6 +834,12 @@ class ConservingOperationsTest {
                         q -> q.replaceAll(0, 9),
                         abc,
                         q -> q.replaceAll(2, 9),
+                        Vector.of(1, 9, 3))
+                .keep(
+                        "mapConserve(Function)",
+                        q -> q.mapConserve(x -> x),
+                        abc,
+                        q -> q.mapConserve(x -> (x == 2) ? Integer.valueOf(9) : x),
                         Vector.of(1, 9, 3))
                 .keep("retainAll(Iterable)", q -> q.retainAll(q), abc, q -> q.retainAll(List.of(1, 3)), Vector.of(1, 3))
                 .keepOn("reverse()", q -> q.take(1), Queue::reverse, abc, Queue::reverse, Vector.of(3, 2, 1))
@@ -1134,6 +1152,12 @@ class ConservingOperationsTest {
                         n -> n.replaceAll(0, 9),
                         abc,
                         n -> n.replaceAll(2, 9),
+                        Vector.of(1, 9, 3))
+                .keep(
+                        "mapConserve(Function)",
+                        n -> n.mapConserve(x -> x),
+                        abc,
+                        n -> n.mapConserve(x -> (x == 2) ? Integer.valueOf(9) : x),
                         Vector.of(1, 9, 3))
                 .keepOn(
                         "reverse()",
