@@ -242,7 +242,8 @@ public class RedBlackTreeSharingTest {
     }
 
     // a tree of `elements` in one of three shapes: inserted in random order, in ascending order, or built balanced
-    private static RedBlackTree<Integer> shaped(Comparator<Integer> order, List<Integer> elements, int shape, Random random) {
+    private static RedBlackTree<Integer> shaped(
+            Comparator<Integer> order, List<Integer> elements, int shape, Random random) {
         List<Integer> sorted = new ArrayList<>(elements);
         sorted.sort(order);
         if (shape == 2) {
