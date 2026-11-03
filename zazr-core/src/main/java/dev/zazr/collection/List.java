@@ -2314,7 +2314,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     /**
      * Replaces all occurrences of {@code currentElement} with {@code newElement}.
      * <p>
-     * Complexity: O(n); the elements after the last replaced one are shared, not copied.
+     * Complexity: O(n).
      * <p>
      * Returns this List itself when no element equals {@code currentElement}.
      *
@@ -2323,7 +2323,20 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @return a new List with all occurrences of {@code currentElement} replaced by {@code newElement}
      */
     default List<T> replaceAll(T currentElement, T newElement) {
-        return ListModule.Conserve.replaceAll(this, currentElement, newElement);
+        @SuppressWarnings("Var")
+        List<T> result = Nil.instance();
+        @SuppressWarnings("Var")
+        boolean changed = false;
+        for (List<T> list = this; !list.isEmpty(); list = list.tail()) {
+            T head = list.head();
+            if (Objects.equals(head, currentElement)) {
+                result = result.prepend(newElement);
+                changed = true;
+            } else {
+                result = result.prepend(head);
+            }
+        }
+        return changed ? result.reverse() : this;
     }
 
     /**
@@ -2644,16 +2657,21 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param n the position of the split
      * @return the prefix and the suffix
      */
+    @SuppressWarnings("Var")
     default Tuple2<List<T>, List<T>> splitAt(int n) {
-        @SuppressWarnings("Var")
-        List<T> prefix = Nil.instance();
-        @SuppressWarnings("Var")
-        List<T> cut = this;
-        for (int i = n; i > 0 && !cut.isEmpty(); i--) {
-            prefix = prefix.prepend(cut.head());
-            cut = cut.tail();
+        if (isEmpty()) {
+            return Tuple.of(empty(), empty());
+        } else {
+            List<T> init = Nil.instance();
+            List<T> tail = this;
+            while (n > 0 && !tail.isEmpty()) {
+                init = init.prepend(tail.head());
+                tail = tail.tail();
+                n--;
+            }
+            // every element taken: this List itself, without reversing the copy
+            return tail.isEmpty() ? Tuple.of(this, tail) : Tuple.of(init.reverse(), tail);
         }
-        return cutAt(this, prefix, cut);
     }
 
     /**
@@ -3030,7 +3048,11 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
             return this;
         }
         // skip the current head element because it is replaced
-        return ListModule.Conserve.prependReversed(preceding, tail.tail().prepend(element));
+        List<T> result = tail.tail().prepend(element);
+        for (T next : preceding) {
+            result = result.prepend(next);
+        }
+        return result;
     }
 
     /**

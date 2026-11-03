@@ -1246,11 +1246,9 @@ class ConservingOperationsTest {
     }
 
     @Test
-    void listReplaceAllSharesTheCellsAfterTheLastReplacedElement() {
+    void listReplaceAllRejectsANullReplacementOnlyWhenItReplaces() {
         List<Integer> list = List.of(0, 1, 2, 1, 4, 5);
-        List<Integer> replaced = list.replaceAll(1, 9);
-        assertThat(replaced).containsExactly(0, 9, 2, 9, 4, 5);
-        assertThat(replaced.drop(4)).isSameAs(list.drop(4));
+        assertThat(list.replaceAll(1, 9)).containsExactly(0, 9, 2, 9, 4, 5);
         assertThat(list.replaceAll(7, null)).isSameAs(list);
         assertThatThrownBy(() -> list.replaceAll(1, null))
                 .isInstanceOf(NullPointerException.class)

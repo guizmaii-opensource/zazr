@@ -138,21 +138,6 @@ public interface ListModule {
             }
             return (pending == list) ? list : prependReversed(kept, pending);
         }
-
-        /// `list` with every element equal to `current` replaced by `replacement`: `list` itself when no element is
-        /// equal to `current`, and the cells after the last replaced element shared.
-        @SuppressWarnings({"ObjectEquality", "Var"})
-        static <T extends @Nullable Object> List<T> replaceAll(List<T> list, T current, T replacement) {
-            List<T> result = Nil.instance();
-            List<T> pending = list;
-            for (List<T> cell = list; !cell.isEmpty(); cell = cell.tail()) {
-                if (Objects.equals(cell.head(), current)) {
-                    result = prependCells(result, pending, cell).prepend(replacement);
-                    pending = cell.tail();
-                }
-            }
-            return (pending == list) ? list : prependReversed(result, pending);
-        }
     }
 
     interface SplitAt {
