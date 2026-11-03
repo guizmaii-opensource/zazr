@@ -889,7 +889,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return (that == tree) ? this : new TreeSet<>(that);
     }
 
-    // `that`, the result of a union or an intersection with this tree that keeps this tree's elements: of the same size,
+    // `that`, the result of a union or an intersection with this tree that keeps this tree's elements: of the same
+    // size,
     // it holds exactly this set's element objects, so this set is returned
     private TreeSet<T> withElementsOf(RedBlackTree<T> that) {
         return (that.size() == tree.size()) ? this : new TreeSet<>(that);

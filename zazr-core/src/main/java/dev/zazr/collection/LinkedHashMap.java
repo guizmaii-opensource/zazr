@@ -1251,7 +1251,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /// with the new element, since the values of a key set are not its elements.
     ///
     /// Complexity: effectively O(1): one hash lookup.
-    @Nullable K keyOrNull(K key) {
+    @Nullable
+    K keyOrNull(K key) {
         Slot<K, V> slot = slotOrNull(key);
         return slot == null ? null : slot.entry()._1();
     }

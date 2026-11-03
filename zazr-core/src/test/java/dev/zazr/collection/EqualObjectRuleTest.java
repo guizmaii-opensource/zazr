@@ -162,8 +162,12 @@ class EqualObjectRuleTest {
                         Set<Key> argument = argumentKind.ofAll().apply(copies);
                         String at = kind.name() + " " + hashing + " of " + n + " with " + argumentKind.name();
                         assertThat(set.union(argument)).as("union " + at).isSameAs(set);
-                        assertThat(set.intersect(argument)).as("intersect " + at).isSameAs(set);
-                        assertThat(set.retainAll(argument)).as("retainAll " + at).isSameAs(set);
+                        assertThat(set.intersect(argument))
+                                .as("intersect " + at)
+                                .isSameAs(set);
+                        assertThat(set.retainAll(argument))
+                                .as("retainAll " + at)
+                                .isSameAs(set);
                         assertThat(set.addAll(argument)).as("addAll " + at).isSameAs(set);
                     }
                 }
@@ -179,7 +183,8 @@ class EqualObjectRuleTest {
         NonEmptySortedSet<Key> sorted = NonEmptySortedSet.fromIterable(own, java.util.List.of(new Key(2, 2)));
         assertThat(stored(set.union(HashSet.of(equal, new Key(3, 3))), equal)).isSameAs(own);
         assertThat(stored(set.intersect(HashSet.of(equal)), equal)).isSameAs(own);
-        assertThat(stored(sorted.union(TreeSet.of(equal, new Key(3, 3))), equal)).isSameAs(own);
+        assertThat(stored(sorted.union(TreeSet.of(equal, new Key(3, 3))), equal))
+                .isSameAs(own);
         assertThat(stored(sorted.intersect(TreeSet.of(equal)), equal)).isSameAs(own);
     }
 
@@ -195,7 +200,9 @@ class EqualObjectRuleTest {
                     sets.add(kind.ofAll().apply(own));
                 }
                 // a key set, whose map holds values that are not its elements
-                sets.add(LinkedHashMap.ofEntries(own.stream().map(k -> Tuple.of(k, "v")).toList()).keySet());
+                sets.add(LinkedHashMap.ofEntries(
+                                own.stream().map(k -> Tuple.of(k, "v")).toList())
+                        .keySet());
                 for (Set<Key> set : sets) {
                     String at = set.getClass().getSimpleName() + " " + hashing + " of " + n;
                     Key replacedKey = own.get(n / 2);
@@ -211,8 +218,12 @@ class EqualObjectRuleTest {
                                 .containsExactlyElementsOf(own);
                         assertThat(replaced.toVector().get(n / 2)).as(at).isSameAs(equal);
                     }
-                    assertThat(set.replace(equal, replacedKey)).as("replace by the object there, " + at).isSameAs(set);
-                    assertThat(set.replace(hashing.key(n), equal)).as("replace of an absent, " + at).isSameAs(set);
+                    assertThat(set.replace(equal, replacedKey))
+                            .as("replace by the object there, " + at)
+                            .isSameAs(set);
+                    assertThat(set.replace(hashing.key(n), equal))
+                            .as("replace of an absent, " + at)
+                            .isSameAs(set);
                 }
             }
         }
@@ -236,15 +247,13 @@ class EqualObjectRuleTest {
 
     @SuppressWarnings("unchecked")
     private static final java.util.List<MapKind> MAPS = java.util.List.of(
-            new MapKind(
-                    "HashMap", HashMap::ofEntries, (m, given) -> ((HashMap<Key, Key>) m).retainAll(given), m -> m),
+            new MapKind("HashMap", HashMap::ofEntries, (m, given) -> ((HashMap<Key, Key>) m).retainAll(given), m -> m),
             new MapKind(
                     "LinkedHashMap",
                     LinkedHashMap::ofEntries,
                     (m, given) -> ((LinkedHashMap<Key, Key>) m).retainAll(given),
                     m -> m),
-            new MapKind(
-                    "TreeMap", TreeMap::ofEntries, (m, given) -> ((TreeMap<Key, Key>) m).retainAll(given), m -> m),
+            new MapKind("TreeMap", TreeMap::ofEntries, (m, given) -> ((TreeMap<Key, Key>) m).retainAll(given), m -> m),
             new MapKind(
                     "NonEmptyMap",
                     entries -> NonEmptyMap.fromIterable(entries.getFirst(), entries.subList(1, entries.size())),
@@ -334,14 +343,20 @@ class EqualObjectRuleTest {
 
                 LinkedHashMap<Key, Key> newKey = map.replace(current, Tuple.of(copy._1(), current._2()));
                 assertThat(newKey).as(at).isNotSameAs(map).isEqualTo(map);
-                assertThat(newKey.toVector().get(i)._1()).as("the new key, in place, " + at).isSameAs(copy._1());
+                assertThat(newKey.toVector().get(i)._1())
+                        .as("the new key, in place, " + at)
+                        .isSameAs(copy._1());
                 assertThat(newKey.toVector().get(i)._2()).as(at).isSameAs(current._2());
-                assertThat(newKey.keySet().toVector().get(i)).as("the key set, " + at).isSameAs(copy._1());
+                assertThat(newKey.keySet().toVector().get(i))
+                        .as("the key set, " + at)
+                        .isSameAs(copy._1());
 
                 LinkedHashMap<Key, Key> newValue = map.replace(current, Tuple.of(current._1(), copy._2()));
                 assertThat(newValue).as(at).isNotSameAs(map).isEqualTo(map);
                 assertThat(newValue.toVector().get(i)._1()).as(at).isSameAs(current._1());
-                assertThat(newValue.toVector().get(i)._2()).as("the new value, in place, " + at).isSameAs(copy._2());
+                assertThat(newValue.toVector().get(i)._2())
+                        .as("the new value, in place, " + at)
+                        .isSameAs(copy._2());
 
                 // a new tuple of the objects already there, asked for with an equal copy
                 assertThat(map.replace(copy, Tuple.of(current._1(), current._2())))
