@@ -182,8 +182,8 @@ class ConservingSetMapTest {
                 row("replace of an element by itself", s -> s.replace(first(s), first(s))),
                 row("replaceAll of an element by itself", s -> s.replaceAll(first(s), first(s))),
                 row("tap", s -> s.tap(e -> {})),
-                row("orElse", s -> s.orElse(HashSet.of(ABSENT))),
-                row("orElse of a supplier", s -> s.orElse(() -> HashSet.of(ABSENT))));
+                row("orElse(Iterable)", s -> s.orElse(HashSet.of(ABSENT))),
+                row("orElse(Supplier) of a supplier", s -> s.orElse(() -> HashSet.of(ABSENT))));
     }
 
     private static <C> java.util.List<Row<C>> concat(java.util.List<Row<C>> rows, java.util.List<Row<C>> more) {
@@ -253,30 +253,34 @@ class ConservingSetMapTest {
 
     private static <M extends Map<Integer, Integer>> java.util.List<Row<M>> mapRows() {
         return java.util.List.of(
-                row("put of a present key and value", m -> m.put(first(m)._1(), first(m)._2())),
-                row("put of a present entry", m -> m.put(first(m))),
-                row("put with a merge keeping the value", m -> m.put(first(m)._1(), first(m)._2(), (a, b) -> a)),
-                row("put of an entry with a merge keeping the value", m -> m.put(first(m), (a, b) -> a)),
+                row("put(Object,Object) of a present key and value", m -> m.put(first(m)._1(), first(m)._2())),
+                row("put(Tuple2) of a present entry", m -> m.put(first(m))),
+                row(
+                        "put(Object,Object,BiFunction) with a merge keeping the value",
+                        m -> m.put(first(m)._1(), first(m)._2(), (a, b) -> a)),
+                row(
+                        "put(Tuple2,BiFunction) of an entry with a merge keeping the value",
+                        m -> m.put(first(m), (a, b) -> a)),
                 row("putAll of nothing", m -> m.putAll(java.util.List.of())),
                 row("putAll of itself", m -> m.putAll(m)),
                 row("putAll of its entries", m -> m.putAll(Vector.ofAll(m))),
                 row("putAll of its entries as a java.util.List", m -> m.putAll(order(m))),
-                row("merge with a part of itself", m -> m.merge(m.filterKeys(k -> k % 2 == 0))),
-                row("merge with an empty map", m -> m.merge(HashMap.empty())),
-                row("merge with itself", m -> m.merge(m)),
-                row("merge with equal keys", m -> m.merge(HashMap.ofEntries(entries(m.size())))),
+                row("merge(Map) with a part of itself", m -> m.merge(m.filterKeys(k -> k % 2 == 0))),
+                row("merge(Map) with an empty map", m -> m.merge(HashMap.empty())),
+                row("merge(Map) with itself", m -> m.merge(m)),
+                row("merge(Map) with equal keys", m -> m.merge(HashMap.ofEntries(entries(m.size())))),
                 row(
-                        "merge with a resolution, of an empty map",
+                        "merge(Map,BiFunction) with a resolution, of an empty map",
                         m -> m.merge(HashMap.<Integer, Integer>empty(), (a, b) -> a)),
                 row("remove of an absent key", m -> m.remove(ABSENT)),
                 row("removeAll of nothing", m -> m.removeAll(java.util.List.of())),
                 row("removeAll of absent keys", m -> m.removeAll(java.util.List.of(ABSENT, -2))),
-                row("filter keeping everything", m -> m.filter((k, v) -> true)),
-                row("filter of entries keeping everything", m -> m.filter(e -> true)),
+                row("filter(BiPredicate) keeping everything", m -> m.filter((k, v) -> true)),
+                row("filter(Predicate) of entries keeping everything", m -> m.filter(e -> true)),
                 row("filterKeys keeping everything", m -> m.filterKeys(k -> true)),
                 row("filterValues keeping everything", m -> m.filterValues(v -> true)),
-                row("reject dropping nothing", m -> m.reject((k, v) -> false)),
-                row("reject of entries dropping nothing", m -> m.reject(e -> false)),
+                row("reject(BiPredicate) dropping nothing", m -> m.reject((k, v) -> false)),
+                row("reject(Predicate) of entries dropping nothing", m -> m.reject(e -> false)),
                 row("rejectKeys dropping nothing", m -> m.rejectKeys(k -> false)),
                 row("rejectValues dropping nothing", m -> m.rejectValues(v -> false)),
                 row(
@@ -285,13 +289,17 @@ class ConservingSetMapTest {
                 row(
                         "partition, everything on the right",
                         m -> m.partition(e -> false)._2()),
-                row("replace of an absent entry", m -> m.replace(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
-                row("replaceAll of an absent entry", m -> m.replaceAll(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
+                row("replace(Tuple2,Tuple2) of an absent entry", m -> m.replace(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
+                row(
+                        "replaceAll(Tuple2,Tuple2) of an absent entry",
+                        m -> m.replaceAll(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
                 row("replaceValue of an absent key", m -> m.replaceValue(ABSENT, 1)),
                 row("replaceValue by the same value", m -> m.replaceValue(first(m)._1(), first(m)._2())),
-                row("replace of an absent value", m -> m.replace(first(m)._1(), ABSENT, 1)),
-                row("replace of a value by itself", m -> m.replace(first(m)._1(), first(m)._2(), first(m)._2())),
-                row("replaceAll with the same values", m -> m.replaceAll((k, v) -> v)),
+                row("replace(Object,Object,Object) of an absent value", m -> m.replace(first(m)._1(), ABSENT, 1)),
+                row(
+                        "replace(Object,Object,Object) of a value by itself",
+                        m -> m.replace(first(m)._1(), first(m)._2(), first(m)._2())),
+                row("replaceAll(BiFunction) with the same values", m -> m.replaceAll((k, v) -> v)),
                 row("mapValues to the same values", m -> m.mapValues(v -> v)),
                 row(
                         "computeIfAbsent of a present key",
@@ -305,8 +313,8 @@ class ConservingSetMapTest {
                 row("updateWith to the same value", m -> m.updateWith(first(m)._1(), o -> o)),
                 row("updateWith of an absent key to nothing", m -> m.updateWith(ABSENT, o -> Option.none())),
                 row("tap", m -> m.tap(e -> {})),
-                row("orElse", m -> m.orElse(HashMap.of(ABSENT, 1))),
-                row("orElse of a supplier", m -> m.orElse(() -> HashMap.of(ABSENT, 1))));
+                row("orElse(Iterable)", m -> m.orElse(HashMap.of(ABSENT, 1))),
+                row("orElse(Supplier) of a supplier", m -> m.orElse(() -> HashMap.of(ABSENT, 1))));
     }
 
     private static java.util.List<Row<HashMap<Integer, Integer>>> hashMapRows() {
@@ -314,13 +322,14 @@ class ConservingSetMapTest {
                 mapRows(),
                 java.util.List.of(
                         row("putAll of an empty HashMap", m -> m.putAll(HashMap.empty())),
-                        row("merge with an empty HashMap", m -> m.merge(HashMap.empty()))));
+                        row("merge(Map) with an empty HashMap", m -> m.merge(HashMap.empty()))));
     }
 
     private static java.util.List<Row<LinkedHashMap<Integer, Integer>>> linkedMapRows() {
         return concat(
                 mapRows(),
                 java.util.List.of(
+                        row("replace(Tuple2,Tuple2) of a present entry by itself", m -> m.replace(first(m), first(m))),
                         row("take of the size", m -> m.take(m.size())),
                         row("take of more", m -> m.take(m.size() + 1)),
                         row("takeRight of the size", m -> m.takeRight(m.size())),
@@ -339,6 +348,7 @@ class ConservingSetMapTest {
         return concat(
                 mapRows(),
                 java.util.List.of(
+                        row("replace(Tuple2,Tuple2) of a present entry by itself", m -> m.replace(first(m), first(m))),
                         row("take of the size", m -> m.take(m.size())),
                         row("take of more", m -> m.take(m.size() + 1)),
                         row("takeRight of the size", m -> m.takeRight(m.size())),
@@ -414,21 +424,29 @@ class ConservingSetMapTest {
     private static java.util.List<Row<NonEmptyMap<Integer, Integer>>> nonEmptyMapRows() {
         Function<NonEmptyMap<Integer, Integer>, ?> wrapped = NonEmptyMap::toMap;
         return java.util.List.of(
-                row("put of a present key and value", m -> m.put(first(m)._1(), first(m)._2())),
-                row("put of a present entry", m -> m.put(first(m))),
-                row("put with a merge keeping the value", m -> m.put(first(m)._1(), first(m)._2(), (a, b) -> a)),
-                row("put of an entry with a merge keeping the value", m -> m.put(first(m), (a, b) -> a)),
+                row("put(Object,Object) of a present key and value", m -> m.put(first(m)._1(), first(m)._2())),
+                row("put(Tuple2) of a present entry", m -> m.put(first(m))),
+                row(
+                        "put(Object,Object,BiFunction) with a merge keeping the value",
+                        m -> m.put(first(m)._1(), first(m)._2(), (a, b) -> a)),
+                row(
+                        "put(Tuple2,BiFunction) of an entry with a merge keeping the value",
+                        m -> m.put(first(m), (a, b) -> a)),
                 row("putAll of nothing", m -> m.putAll(java.util.List.of())),
                 row("putAll of itself", m -> m.putAll(m)),
-                row("merge with an empty map", m -> m.merge(HashMap.empty())),
+                row("merge(Map) with an empty map", m -> m.merge(HashMap.empty())),
                 row(
-                        "merge with a resolution, of an empty map",
+                        "merge(Map,BiFunction) with a resolution, of an empty map",
                         m -> m.merge(HashMap.<Integer, Integer>empty(), (a, b) -> a)),
-                row("replace of an absent entry", m -> m.replace(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
-                row("replaceAll of an absent entry", m -> m.replaceAll(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
-                row("replace of a value by itself", m -> m.replace(first(m)._1(), first(m)._2(), first(m)._2())),
+                row("replace(Tuple2,Tuple2) of an absent entry", m -> m.replace(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
+                row(
+                        "replaceAll(Tuple2,Tuple2) of an absent entry",
+                        m -> m.replaceAll(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
+                row(
+                        "replace(Object,Object,Object) of a value by itself",
+                        m -> m.replace(first(m)._1(), first(m)._2(), first(m)._2())),
                 row("replaceValue of an absent key", m -> m.replaceValue(ABSENT, 1)),
-                row("replaceAll with the same values", m -> m.replaceAll((k, v) -> v)),
+                row("replaceAll(BiFunction) with the same values", m -> m.replaceAll((k, v) -> v)),
                 row("mapValues to the same values", m -> m.mapValues(v -> v)),
                 row(
                         "computeIfAbsent of a present key",
@@ -437,7 +455,7 @@ class ConservingSetMapTest {
                         "computeIfPresent to the same value",
                         m -> m.computeIfPresent(first(m)._1(), (k, v) -> v)._2()),
                 row("tap", m -> m.tap(e -> {})),
-                row("filter keeping everything", m -> m.filter((k, v) -> true), wrapped),
+                row("filter(BiPredicate) keeping everything", m -> m.filter((k, v) -> true), wrapped),
                 row("remove of an absent key", m -> m.remove(ABSENT), wrapped),
                 row(
                         "partition, everything on the left",
@@ -449,26 +467,30 @@ class ConservingSetMapTest {
         Function<NonEmptySortedMap<Integer, Integer>, ?> wrapped = NonEmptySortedMap::toSortedMap;
         return java.util.List.of(
                 row(
-                        "put of a present key and value",
+                        "put(Object,Object) of a present key and value",
                         m -> m.put(m.head()._1(), m.head()._2())),
-                row("put of a present entry", m -> m.put(m.head())),
+                row("put(Tuple2) of a present entry", m -> m.put(m.head())),
                 row(
-                        "put with a merge keeping the value",
+                        "put(Object,Object,BiFunction) with a merge keeping the value",
                         m -> m.put(m.head()._1(), m.head()._2(), (a, b) -> a)),
-                row("put of an entry with a merge keeping the value", m -> m.put(m.head(), (a, b) -> a)),
+                row(
+                        "put(Tuple2,BiFunction) of an entry with a merge keeping the value",
+                        m -> m.put(m.head(), (a, b) -> a)),
                 row("putAll of nothing", m -> m.putAll(java.util.List.of())),
                 row("putAll of itself", m -> m.putAll(m)),
-                row("merge with an empty map", m -> m.merge(HashMap.empty())),
+                row("merge(Map) with an empty map", m -> m.merge(HashMap.empty())),
                 row(
-                        "merge with a resolution, of an empty map",
+                        "merge(Map,BiFunction) with a resolution, of an empty map",
                         m -> m.merge(HashMap.<Integer, Integer>empty(), (a, b) -> a)),
-                row("replace of an absent entry", m -> m.replace(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
-                row("replaceAll of an absent entry", m -> m.replaceAll(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
+                row("replace(Tuple2,Tuple2) of an absent entry", m -> m.replace(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
                 row(
-                        "replace of a value by itself",
+                        "replaceAll(Tuple2,Tuple2) of an absent entry",
+                        m -> m.replaceAll(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
+                row(
+                        "replace(Object,Object,Object) of a value by itself",
                         m -> m.replace(m.head()._1(), m.head()._2(), m.head()._2())),
                 row("replaceValue of an absent key", m -> m.replaceValue(ABSENT, 1)),
-                row("replaceAll with the same values", m -> m.replaceAll((k, v) -> v)),
+                row("replaceAll(BiFunction) with the same values", m -> m.replaceAll((k, v) -> v)),
                 row("mapValues to the same values", m -> m.mapValues(v -> v)),
                 row(
                         "computeIfAbsent of a present key",
@@ -476,8 +498,9 @@ class ConservingSetMapTest {
                 row(
                         "computeIfPresent to the same value",
                         m -> m.computeIfPresent(m.head()._1(), (k, v) -> v)._2()),
+                row("replace(Tuple2,Tuple2) of a present entry by itself", m -> m.replace(m.head(), m.head())),
                 row("tap", m -> m.tap(e -> {})),
-                row("filter keeping everything", m -> m.filter((k, v) -> true), wrapped),
+                row("filter(BiPredicate) keeping everything", m -> m.filter((k, v) -> true), wrapped),
                 row("remove of an absent key", m -> m.remove(ABSENT), wrapped),
                 row("take of the size", m -> m.take(m.size()), wrapped),
                 row(
@@ -767,6 +790,38 @@ class ConservingSetMapTest {
         return maps.getLast();
     }
 
+    // -- the LinkedHashMap filters call the predicate once per entry, in iteration order
+
+    @Test
+    void shouldCallTheLinkedHashMapPredicateOncePerEntryInOrder() {
+        // removed and put-back keys leave gaps in the insertion order and move 3 and 0 to the end
+        LinkedHashMap<Integer, Integer> map = LinkedHashMap.ofEntries(entries(12))
+                .removeAll(java.util.List.of(element(0), element(3), element(7)))
+                .put(element(3), 3)
+                .put(element(0), 0);
+        java.util.List<Integer> keys = order(map.keySet());
+        java.util.List<Integer> rejectedKeys = new ArrayList<>(java.util.List.of(ABSENT));
+        rejectedKeys.addAll(java.util.List.of(keys.getFirst(), keys.get(4), keys.getLast(), element(3)));
+        for (Integer rejected : rejectedKeys) {
+            java.util.List<Integer> calls = new ArrayList<>();
+            LinkedHashMap<Integer, Integer> filtered = map.filter((k, v) -> {
+                calls.add(k);
+                return !k.equals(rejected);
+            });
+            assertThat(calls).as("filter without " + rejected).isEqualTo(keys);
+            java.util.List<Integer> kept = new ArrayList<>(keys);
+            kept.remove(rejected);
+            assertThat(order(filtered.keySet())).isEqualTo(kept);
+            assertThat(filtered == map).isEqualTo(rejected.equals(ABSENT));
+            java.util.List<Integer> keyCalls = new ArrayList<>();
+            map.rejectKeys(k -> {
+                keyCalls.add(k);
+                return k.equals(rejected);
+            });
+            assertThat(keyCalls).as("rejectKeys of " + rejected).isEqualTo(keys);
+        }
+    }
+
     // -- an equal object that is not the one there still replaces it
 
     @Test
@@ -820,14 +875,28 @@ class ConservingSetMapTest {
             java.util.Map.entry("NonEmptyMap::retainAll", "keeps the given entries"),
             java.util.Map.entry("NonEmptySortedMap::retainAll", "keeps the given entries"));
 
+    // An overloaded method is named with its parameter types, as `filter(BiPredicate)`, and so is the row for it: the
+    // first word of a row's name. A method with one form is named alone.
+    private static String signature(Method method, boolean overloaded) {
+        if (!overloaded) {
+            return method.getName();
+        }
+        java.util.StringJoiner parameters = new java.util.StringJoiner(",", method.getName() + "(", ")");
+        for (Class<?> type : method.getParameterTypes()) {
+            parameters.add(type.getSimpleName());
+        }
+        return parameters.toString();
+    }
+
     @Test
     void shouldCoverEveryOperationReturningTheType() {
         java.util.List<String> missing = new ArrayList<>();
         for (Table<?> table : tables()) {
             java.util.Set<String> covered = new java.util.TreeSet<>();
             for (Row<?> row : table.rows()) {
-                covered.add(row.name().split("[ ,]")[0]);
+                covered.add(row.name().split(" ")[0].replaceAll(",$", ""));
             }
+            java.util.List<Method> methods = new ArrayList<>();
             for (Method method : table.cls().getDeclaredMethods()) {
                 int modifiers = method.getModifiers();
                 boolean returnsItself = method.getReturnType() == table.cls()
@@ -840,10 +909,19 @@ class ConservingSetMapTest {
                         && !method.isBridge()
                         && !method.isSynthetic()
                         && returnsItself
-                        && !covered.contains(method.getName())
                         && !EXCLUDED.containsKey(method.getName())
                         && !EXCLUDED.containsKey(table.type() + "::" + method.getName())) {
-                    missing.add(table.type() + "::" + method.getName());
+                    methods.add(method);
+                }
+            }
+            for (Method method : methods) {
+                boolean overloaded = methods.stream()
+                                .filter(m -> m.getName().equals(method.getName()))
+                                .count()
+                        > 1;
+                String signature = signature(method, overloaded);
+                if (!covered.contains(signature)) {
+                    missing.add(table.type() + "::" + signature);
                 }
             }
         }
