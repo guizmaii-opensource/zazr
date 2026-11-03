@@ -191,6 +191,22 @@ class HashSharingTest {
         assertThat(actual.hashCode()).isEqualTo(expected.hashCode());
     }
 
+    // equal, with the very key and value objects; the order within a node of colliding keys can differ from that of
+    // successive puts, as it always could
+    private static void assertSameEntries(HashMap<Key, Object> expected, HashMap<Key, Object> actual) {
+        assertThat(actual).isEqualTo(expected);
+        java.util.Map<Key, Tuple2<Key, Object>> byKey = new java.util.HashMap<>();
+        for (Tuple2<Key, Object> entry : order(actual)) {
+            byKey.put(entry._1(), entry);
+        }
+        for (Tuple2<Key, Object> entry : order(expected)) {
+            Tuple2<Key, Object> found = byKey.get(entry._1());
+            assertThat(found._1()).isSameAs(entry._1());
+            assertThat(found._2()).isSameAs(entry._2());
+        }
+        assertThat(actual.hashCode()).isEqualTo(expected.hashCode());
+    }
+
     @Test
     void hashMapPartitionRejectsANullPredicate() {
         assertThatNullPointerException()
@@ -213,7 +229,7 @@ class HashSharingTest {
                     for (Tuple2<Key, Object> entry : order(other)) {
                         expected = expected.put(entry._1(), entry._2());
                     }
-                    assertSameMap(expected, result);
+                    assertSameEntries(expected, result);
                     if (expected == map) {
                         assertThat(result).isSameAs(map);
                     }
@@ -249,7 +265,8 @@ class HashSharingTest {
                 HashMap<Key, Object> map = mapOf(randomKeys(random, size, round));
                 List<Key> keys = order(map.keySet());
                 assertThat(map.putAll(map)).isSameAs(map);
-                assertThat(map.putAll(map.filter((k, v) -> (k.hash() & 3) != 0))).isSameAs(map);
+                assertThat(map.putAll(map.filter((k, v) -> (k.hash() & 3) != 0)))
+                        .isSameAs(map);
                 assertThat(map.putAll(map.filter((k, v) -> k.id() == 0))).isSameAs(map);
                 if (!keys.isEmpty()) {
                     Key key = keys.get(random.nextInt(keys.size()));
@@ -258,10 +275,12 @@ class HashSharingTest {
                             .isSameAs(map);
                     // another key object: the entry of the argument wins, key and value
                     Key twin = new Key(key.hash(), key.id());
-                    HashMap<Key, Object> other = map.remove(key).put(twin, map.get(key).get());
+                    HashMap<Key, Object> other =
+                            map.remove(key).put(twin, map.get(key).get());
                     HashMap<Key, Object> result = map.putAll(other);
                     assertThat(result).isNotSameAs(map).isEqualTo(map);
-                    assertThat(order(result.keySet()).stream().filter(k -> k == twin)).hasSize(1);
+                    assertThat(order(result.keySet()).stream().filter(k -> k == twin))
+                            .hasSize(1);
                 }
             }
         }

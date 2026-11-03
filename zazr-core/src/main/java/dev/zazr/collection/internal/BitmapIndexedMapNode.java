@@ -567,8 +567,9 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         while (true) {
             if ((bitpos & leftNodeRightNode) != 0) {
                 MapNode<K, V> rightNode = bm.getNode(rightNodeIdx);
-                MapNode<K, V> newNode =
-                        (united != null) ? united[unitedIdx++] : getNode(leftNodeIdx).concat(rightNode, nextShift);
+                MapNode<K, V> newNode = (united != null)
+                        ? united[unitedIdx++]
+                        : getNode(leftNodeIdx).concat(rightNode, nextShift);
                 if (rightNode != newNode) {
                     anyChangesMadeSoFar = true;
                 }
@@ -696,7 +697,8 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     // the array of the united children of `concat`, holding its first `count` ones: the children of this node when
     // `ofThis`, else those of `bm`, which is what each of them united to
     @SuppressWarnings("Var")
-    private MapNode<K, V>[] unitedSoFar(BitmapIndexedMapNode<K, V> bm, int leftNodeRightNode, int count, boolean ofThis) {
+    private MapNode<K, V>[] unitedSoFar(
+            BitmapIndexedMapNode<K, V> bm, int leftNodeRightNode, int count, boolean ofThis) {
         @SuppressWarnings("unchecked")
         MapNode<K, V>[] united = (MapNode<K, V>[]) new MapNode<?, ?>[bitCount(leftNodeRightNode)];
         int bits = leftNodeRightNode;
@@ -768,7 +770,11 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
 
     // records the new child at `index` once one child has changed: null while every child is the old one
     private static <K extends @Nullable Object, V extends @Nullable Object> MapNode<K, V> @Nullable [] withChild(
-            MapNode<K, V> @Nullable [] newChildren, int children, int index, MapNode<K, V> child, MapNode<K, V> newChild) {
+            MapNode<K, V> @Nullable [] newChildren,
+            int children,
+            int index,
+            MapNode<K, V> child,
+            MapNode<K, V> newChild) {
         if (newChildren != null) {
             newChildren[index] = newChild;
             return newChildren;

@@ -517,15 +517,16 @@ public interface RedBlackTreeModule {
             }
         }
 
-        /// The elements of `tree` not in `other`, which is ordered by the same comparator, with a black root. The
-        /// walk follows `tree`: each subtree of it is matched with the smallest subtree of `other` that holds every
-        /// element of `other` within its bounds, found by going down `other` from the subtree matched with its
-        /// parent, so nothing of `other` is rebuilt. A subtree with nothing of `other` within its bounds is kept as it
-        /// is, so is one whose children lose nothing and whose element is not in `other`, and a subtree that is also
-        /// the matched one of `other` is removed whole, as in `_difference` of the Scala 3 standard library's
-        /// `RedBlackTree` (the Scala 2.13 collection library, which Scala 3 ships unchanged). The kept parts are
-        /// rejoined with [#join] or [#join2], as in [#filter]. So `tree` itself comes back when nothing is removed.
-        /// Each element of `tree` that is visited is the first argument of the comparator; a subtree is visited when
+        /// The elements of `tree` not in `other`, which is ordered by the same comparator, with a black
+        /// root. The walk follows `tree`: each subtree of it is matched with the smallest subtree of
+        /// `other` that holds every element of `other` within its bounds, found by going down `other` from
+        /// the subtree matched with its parent, so nothing of `other` is rebuilt. A subtree with nothing of
+        /// `other` within its bounds is kept as it is, so is one whose children lose nothing and whose
+        /// element is not in `other`, and a subtree that is also the matched one of `other` is removed
+        /// whole, as in `_difference` of the Scala 3 standard library's `RedBlackTree` (the Scala 2.13
+        /// collection library, which Scala 3 ships unchanged). The kept parts are rejoined with [#join] or
+        /// [#join2], as in [#filter]. So `tree` itself comes back when nothing is removed. Each element of
+        /// `tree` that is visited is the first argument of the comparator; a subtree is visited when
         /// `other` holds an element within its bounds, so O(m log(n / m + 1)) for m elements of `other`.
         static <T extends @Nullable Object> RedBlackTree<T> difference(RedBlackTree<T> tree, RedBlackTree<T> other) {
             if (tree.isEmpty() || other.isEmpty()) {
@@ -554,9 +555,8 @@ public interface RedBlackTreeModule {
                 // the same subtree on both sides: every element of it is in `other`
                 return node.empty;
             }
-            RedBlackTree<T> left = node.left.isEmpty()
-                    ? node.left
-                    : difference((Node<T>) node.left, within, low, node, comparator);
+            RedBlackTree<T> left =
+                    node.left.isEmpty() ? node.left : difference((Node<T>) node.left, within, low, node, comparator);
             boolean removed = within.contains(node.value);
             RedBlackTree<T> right = node.right.isEmpty()
                     ? node.right
@@ -588,14 +588,15 @@ public interface RedBlackTreeModule {
             return current;
         }
 
-        /// The elements of `tree` and of `other`, which is ordered by the same comparator; of equal elements, the one
-        /// of `other`. The root can be red. `_union` of the Scala 3 standard library's `RedBlackTree` (the Scala 2.13
-        /// collection library, which Scala 3 ships unchanged): `tree` is split by the root element of `other`, the
-        /// halves are united with the children of `other`, then rejoined around that element. A subtree shared by
-        /// both sides is its own union, as in Scala; past Scala, when the roots are equal the children of `tree` are
-        /// taken as they are, with no split, and a subtree whose united children are the children of `other` (or of
-        /// `tree`, holding the same object as `other`) is that subtree itself, so `other` or `tree` comes back when the
-        /// union holds the same objects.
+        /// The elements of `tree` and of `other`, which is ordered by the same comparator; of equal
+        /// elements, the one of `other`. The root can be red. `_union` of the Scala 3 standard library's
+        /// `RedBlackTree` (the Scala 2.13 collection library, which Scala 3 ships unchanged): `tree` is
+        /// split by the root element of `other`, the halves are united with the children of `other`, then
+        /// rejoined around that element. A subtree shared by both sides is its own union, as in Scala; past
+        /// Scala, when the roots are equal the children of `tree` are taken as they are, with no split, and
+        /// a subtree whose united children are the children of `other` (or of `tree`, holding the same
+        /// object as `other`) is that subtree itself, so `other` or `tree` comes back when the union holds
+        /// the same objects.
         // the depth of the recursion is the height of `other`, at most 2 log2(n + 1)
         static <T extends @Nullable Object> RedBlackTree<T> union(RedBlackTree<T> tree, RedBlackTree<T> other) {
             if (other.isEmpty() || tree == other) {
