@@ -1511,7 +1511,14 @@ kept for its measured win (`ShareSubtreesBenchmark`, below).
   the rest is rejoined with `join`/`join2`, as the tree `filter` does. Scala 3's `_difference` (the Scala 2.13
   collection library, which Scala 3 ships unchanged) splits the receiver by each root of the argument and rebuilds
   everything; its one shortcut, a subtree shared by both sides being removed whole, is kept. The receiver comes back
-  when nothing is removed. Same cost bound, O(m log(n / m + 1)).
+  when nothing is removed. Cost: a node of the receiver goes past its match only when the argument holds an element
+  within its bounds, and the bounds of a node hold an element exactly when the node is on that element's search path.
+  So k such nodes, k at most n and at most m times the receiver's height (2 log2(n + 1)), for n elements of the
+  receiver and m of the argument. Each runs the match and the `contains` of its element, walks down the argument of
+  at most its height, 2 log2(m + 1); its two children run one match each and stop. So O(k log m) comparisons: O(m
+  log n log m) for a small argument, O(n log m) for arguments of any size. Scala's `_difference` is
+  O(m log(n / m + 1)); the walk here gives up that bound for the sharing, and its comparator calls are counted by
+  `RedBlackTreeSharingTest`.
 - **`HashSet.partition` and `HashMap.partition`** split the trie node by node in one walk (Scala's own comment on its
   `HashMap.partition` names this as a possible optimisation; there is no Scala code to port): each node computes the
   inline elements that go left, gets both results of each child from one holder object (no pair per node), and builds

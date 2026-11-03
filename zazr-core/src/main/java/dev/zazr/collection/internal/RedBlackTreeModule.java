@@ -526,8 +526,11 @@ public interface RedBlackTreeModule {
         /// whole, as in `_difference` of the Scala 3 standard library's `RedBlackTree` (the Scala 2.13
         /// collection library, which Scala 3 ships unchanged). The kept parts are rejoined with [#join] or
         /// [#join2], as in [#filter]. So `tree` itself comes back when nothing is removed. Each element of
-        /// `tree` that is visited is the first argument of the comparator; a subtree is visited when
-        /// `other` holds an element within its bounds, so O(m log(n / m + 1)) for m elements of `other`.
+        /// `tree` that is visited is the first argument of the comparator. A node goes further than its
+        /// match when `other` holds an element within its bounds, which makes it a node on the search path
+        /// of that element: k such nodes, at most n and at most m times the height of `tree`, for n
+        /// elements of `tree` and m of `other`. Each costs a walk down `other`, at most its height, so
+        /// O(k log m) comparisons; the children of these nodes stop at their match.
         static <T extends @Nullable Object> RedBlackTree<T> difference(RedBlackTree<T> tree, RedBlackTree<T> other) {
             if (tree.isEmpty() || other.isEmpty()) {
                 return tree;

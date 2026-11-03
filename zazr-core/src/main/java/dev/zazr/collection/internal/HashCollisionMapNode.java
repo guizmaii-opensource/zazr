@@ -112,6 +112,12 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
+    boolean holdsEntry(K key, V value, int hash, int shift) {
+        int index = (this.hash == hash) ? indexOf(key) : -1;
+        return index >= 0 && getKey(index) == key && getValue(index) == value;
+    }
+
+    @Override
     @Nullable
     Tuple2<K, V> getEntry(K key, int hash, int shift) {
         if (this.hash == hash) {
@@ -172,17 +178,6 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     }
 
     // `that` is a collision node too: two nodes at the same place below the last level hold keys of the same hash
-    // `true` when every entry of `that` is here, the very key and value objects
-    private boolean holdsEntriesOf(HashCollisionMapNode<K, V> that) {
-        for (int i = 0; i < that.content.length; i += 2) {
-            int index = indexOf(that.content[i]);
-            if (index < 0 || content[2 * index] != that.content[i] || content[2 * index + 1] != that.content[i + 1]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     @Override
     MapNode<K, V> concat(MapNode<K, V> that, int shift) {
         HashCollisionMapNode<K, V> right = (HashCollisionMapNode<K, V>) that;
@@ -204,6 +199,17 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
             }
         }
         return (result == null) ? right : new HashCollisionMapNode<>(hash, java.util.Arrays.copyOf(result, length));
+    }
+
+    // `true` when every entry of `that` is here, the very key and value objects
+    private boolean holdsEntriesOf(HashCollisionMapNode<K, V> that) {
+        for (int i = 0; i < that.content.length; i += 2) {
+            int index = indexOf(that.content[i]);
+            if (index < 0 || content[2 * index] != that.content[i] || content[2 * index + 1] != that.content[i + 1]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

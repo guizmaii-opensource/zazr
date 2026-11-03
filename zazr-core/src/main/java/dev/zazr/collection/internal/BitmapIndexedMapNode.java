@@ -192,6 +192,19 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     }
 
     @Override
+    boolean holdsEntry(K key, V value, int hash, int shift) {
+        int bitpos = bitposFrom(maskFrom(hash, shift));
+        if ((dataMap & bitpos) != 0) {
+            int index = indexFrom(dataMap, bitpos);
+            return getKey(index) == key && getValue(index) == value;
+        } else if ((nodeMap & bitpos) != 0) {
+            return getNode(indexFrom(nodeMap, bitpos)).holdsEntry(key, value, hash, shift + BIT_PARTITION_SIZE);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     @Nullable
     Tuple2<K, V> getEntry(K key, int hash, int shift) {
         int bitpos = bitposFrom(maskFrom(hash, shift));
@@ -687,7 +700,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
             bits ^= bit;
             MapNode<K, V> child = getNode(indexFrom(nodeMap, bit));
             int index = indexFrom(bm.dataMap, bit);
-            if (child.updated(bm.getKey(index), bm.getValue(index), bm.hashes[index], nextShift, true) != child) {
+            if (!child.holdsEntry(bm.getKey(index), bm.getValue(index), bm.hashes[index], nextShift)) {
                 return false;
             }
         }

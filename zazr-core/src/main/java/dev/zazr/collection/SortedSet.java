@@ -454,8 +454,10 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * <p>
      * Complexity: O(n + m) for a set of m elements: they are put in a hash set, then one walk of this tree keeps
      * whole every part that loses no element.
-     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
-     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), this tree is
+     * walked and each element it visits is looked up in the part of the other tree within its bounds, found by
+     * going down that tree: O(k log m) for the k nodes visited, at most n and at most about 2m log2 n. A part of
+     * this tree that loses no element is kept whole, and nothing of the other tree is copied.
      */
     @Override
     SortedSet<T> diff(Set<? extends T> elements);
@@ -498,8 +500,10 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * <p>
      * Complexity: O(n + m) for a set of m elements: they are put in a hash set, then one walk of this tree keeps
      * whole every part that loses no element.
-     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
-     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), this tree is
+     * walked and each element it visits is looked up in the part of the other tree within its bounds, found by
+     * going down that tree: O(k log m) for the k nodes visited, at most n and at most about 2m log2 n. A part of
+     * this tree that loses no element is kept whole, and nothing of the other tree is copied.
      */
     @Override
     SortedSet<T> intersect(Set<? extends T> elements);
@@ -603,8 +607,10 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: O(m log(n + m)) for a set of m elements: one lookup each, then one insertion for each new one.
-     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
-     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), this tree is
+     * walked and each element it visits is looked up in the part of the other tree within its bounds, found by
+     * going down that tree: O(k log m) for the k nodes visited, at most n and at most about 2m log2 n. A part of
+     * this tree that loses no element is kept whole, and nothing of the other tree is copied.
      */
     @Override
     SortedSet<T> union(Set<? extends T> elements);

@@ -33,6 +33,10 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
     /// The key kept for `key` and its value, or null when absent.
     abstract @Nullable Tuple2<K, V> getEntry(K key, int hash, int shift);
 
+    /// `true` when this node holds `key` and `value` themselves, the very objects, as one entry. Nothing is
+    /// allocated.
+    abstract boolean holdsEntry(K key, V value, int hash, int shift);
+
     /// The node with `key` mapped to `value`. When an equal key is present: with `replace`, its key and value are both
     /// replaced (and this node is returned if they are the same objects); without, this node is returned unchanged.
     abstract MapNode<K, V> updated(K key, V value, int hash, int shift, boolean replace);

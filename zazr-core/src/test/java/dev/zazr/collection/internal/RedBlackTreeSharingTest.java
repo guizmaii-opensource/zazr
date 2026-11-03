@@ -229,6 +229,80 @@ public class RedBlackTreeSharingTest {
         assertValidAndDeletable(result, "difference of a tree and its deletions");
     }
 
+    // the comparator calls of `difference`, counted
+    private static final class Counting implements Comparator<Integer> {
+
+        private int calls;
+
+        @Override
+        public int compare(Integer a, Integer b) {
+            calls++;
+            return Integer.compare(a, b);
+        }
+    }
+
+    // a tree of `elements` in one of three shapes: inserted in random order, in ascending order, or built balanced
+    private static RedBlackTree<Integer> shaped(Comparator<Integer> order, List<Integer> elements, int shape, Random random) {
+        List<Integer> sorted = new ArrayList<>(elements);
+        sorted.sort(order);
+        if (shape == 2) {
+            Object[] array = sorted.toArray();
+            return RedBlackTreeModule.Node.fromOrdered(new RedBlackTreeModule.Empty<>(order), array, array.length);
+        }
+        List<Integer> inOrder = new ArrayList<>(sorted);
+        if (shape == 0) {
+            Collections.shuffle(inOrder, random);
+        }
+        @SuppressWarnings("Var")
+        RedBlackTree<Integer> tree = RedBlackTree.empty(order);
+        for (Integer element : inOrder) {
+            tree = tree.insert(element);
+        }
+        return tree;
+    }
+
+    @Test
+    void differenceCallsTheComparatorAtMostOnceForEachLevelOfTheArgumentPerNodeOnASearchPath() {
+        Random random = new Random(SEED + 6);
+        for (int n : new int[] {1000, 1024, 1025}) {
+            List<Integer> even = new ArrayList<>();
+            List<Integer> odd = new ArrayList<>();
+            List<Integer> copies = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                even.add(Integer.valueOf(1_000_000 + 2 * i));
+                odd.add(Integer.valueOf(1_000_001 + 2 * i));
+                copies.add(Integer.valueOf(1_000_000 + 2 * i));
+            }
+            List<Integer> random50 = new ArrayList<>();
+            for (int i = 0; i < 2 * n; i++) {
+                if (random.nextBoolean()) {
+                    random50.add(Integer.valueOf(1_000_000 + i));
+                }
+            }
+            List<Integer> few = List.of(even.get(0), even.get(n / 2), odd.get(n - 1));
+            for (List<Integer> argument : List.of(odd, copies, random50, few)) {
+                for (int treeShape = 0; treeShape < 3; treeShape++) {
+                    for (int argumentShape = 0; argumentShape < 3; argumentShape++) {
+                        Counting counting = new Counting();
+                        RedBlackTree<Integer> tree = shaped(counting, even, treeShape, random);
+                        RedBlackTree<Integer> other = shaped(counting, argument, argumentShape, random);
+                        counting.calls = 0;
+                        RedBlackTree<Integer> result = tree.difference(other);
+                        int calls = counting.calls;
+                        // the nodes on the search paths of the elements of `other`, and for each of them and its
+                        // two children a walk down `other`, then for each of them a lookup in `other`
+                        int onPaths = Math.min(tree.size(), other.size() * height(tree));
+                        int bound = onPaths * 4 * (height(other) + 1);
+                        String context = "difference of shapes " + treeShape + " and " + argumentShape + ", n = " + n
+                                + ", m = " + other.size();
+                        assertThat(calls).as(context).isLessThanOrEqualTo(bound);
+                        assertValid(result);
+                    }
+                }
+            }
+        }
+    }
+
     // -- union
 
     @Test
