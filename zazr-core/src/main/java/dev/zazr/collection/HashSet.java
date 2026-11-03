@@ -899,7 +899,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(n): one walk, and the new set built once an element changes.
+     * Complexity: O(n), effectively: one walk, and the new set built once an element changes.
      */
     @Override
     @SuppressWarnings({"Var", "ObjectEquality"})

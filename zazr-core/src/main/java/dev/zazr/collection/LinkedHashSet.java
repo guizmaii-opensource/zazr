@@ -852,7 +852,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: effectively O(n): one walk, and the new set built once an element changes. The results keep
+     * Complexity: O(n), effectively: one walk, and the new set built once an element changes. The results keep
      * the order of their elements; of two equal results, the first one is kept.
      */
     @Override
