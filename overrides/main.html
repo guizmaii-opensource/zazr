@@ -7,7 +7,26 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
+  {#-
+    The repository facts in the header (latest release, stars, forks) are fetched from GitHub once and kept in the
+    tab's session storage, which a long-lived tab never clears. This drops them after an hour, before the theme's
+    bundle reads them, so a new release shows up.
+  #}
+  <script>
+    try {
+      var zzKey = new URL("{{ config.extra.scope | d(base_url) }}", location).pathname + ".__source";
+      var zzAt = Number(sessionStorage.getItem(zzKey + ".at"));
+      if (!zzAt || Date.now() - zzAt > 3600000) {
+        sessionStorage.removeItem(zzKey);
+        sessionStorage.setItem(zzKey + ".at", String(Date.now()));
+      }
+    } catch (_) {}
+  </script>
   <link rel="apple-touch-icon" sizes="180x180" href="{{ 'assets/zaz-head-180.png' | url }}">
+  {%- if page and page.is_homepage %}
+  {#- the wordmark of the hero, overrides/home.html: Fraunces, in the one weight and the four letters it shows #}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@800&text=Zazr&display=swap">
+  {%- endif %}
   {%- set is_post = page and page.config and page.config.date and page.config.date.created %}
   {%- if not page or page.is_homepage %}
     {%- set preview_title = config.site_name %}

@@ -27,6 +27,10 @@ public final class Maps {
      */
     public static final Object ABSENT = new Object();
 
+    private static final int[] NO_POSITIONS = {};
+
+    private static final Object[] NO_KEYS = {};
+
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> V getOrAbsent(Map<K, V> map, K key) {
         return map.getOrElse(key, (V) ABSENT);
@@ -109,23 +113,73 @@ public final class Maps {
     }
 
     /// The entries that pass `predicate`, called once per entry in iteration order; `map` itself
-    /// when every entry passes. Nothing is built before the first entry that fails: the entries
-    /// before it are then read again, without calling `predicate`, and the walk goes on from it.
-    @SuppressWarnings("Var")
+    /// when every entry passes. The first few entries that fail are only noted: if no more fail,
+    /// they are removed from the map, so a filter that drops one or two entries costs one walk and
+    /// a removal or two. When more fail, the entries before that one are read again, without
+    /// calling `predicate` and skipping the noted ones, and the result is built from them and the
+    /// rest of the walk.
+    @SuppressWarnings({"Var", "unchecked"})
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(
             M map, OfEntries<K, V, M> ofEntries, Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
+        // removals are cheap against a rebuild only while they are few
+        int budget = Math.min(8, map.size() >> 3);
         java.util.Iterator<Tuple2<K, V>> rest = map.iterator();
-        int kept = 0;
+        // the positions and keys of the failing entries, made at the first one
+        int[] positions = NO_POSITIONS;
+        Object[] keys = NO_KEYS;
+        int failed = 0;
+        int position = 0;
         while (rest.hasNext()) {
-            if (!predicate.test(rest.next())) {
-                // `rest` is past the first entry that fails
-                return ofEntries.apply(Iterator.concat(
-                        Iterator.ofAll(map).take(kept), Iterator.ofAll(rest).filter(predicate)));
+            Tuple2<K, V> entry = rest.next();
+            if (!predicate.test(entry)) {
+                if (failed == budget) {
+                    return ofEntries.apply(Iterator.concat(
+                            before(map, position, positions, failed),
+                            Iterator.ofAll(rest).filter(predicate)));
+                }
+                if (failed == 0) {
+                    positions = new int[budget];
+                    keys = new Object[budget];
+                }
+                positions[failed] = position;
+                keys[failed] = entry._1();
+                failed++;
             }
-            kept++;
+            position++;
         }
-        return map;
+        M result = map;
+        for (int i = 0; i < failed; i++) {
+            result = (M) result.remove((K) keys[i]);
+        }
+        return result;
+    }
+
+    // the entries of `map` before `end`, except those at the first `count` of `skipped`, which are in order
+    private static <K extends @Nullable Object, V extends @Nullable Object> Iterator<Tuple2<K, V>> before(
+            Map<K, V> map, int end, int[] skipped, int count) {
+        java.util.Iterator<Tuple2<K, V>> entries = map.iterator();
+        return new AbstractIterator<>() {
+            private int position = 0;
+            private int next = 0;
+
+            @Override
+            public boolean hasNext() {
+                // past the skipped entries that come next
+                while (next < count && skipped[next] == position) {
+                    entries.next();
+                    position++;
+                    next++;
+                }
+                return position < end;
+            }
+
+            @Override
+            protected Tuple2<K, V> getNext() {
+                position++;
+                return entries.next();
+            }
+        };
     }
 
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterKeys(

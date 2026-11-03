@@ -118,6 +118,12 @@ public class ConservingSetMapBenchmark {
         return linkedMap.filter((k, v) -> !k.equals(last));
     }
 
+    // half of the entries dropped: past the first few, the result is built
+    @Benchmark
+    public LinkedHashMap<Integer, Integer> linkedMapFilterHalf() {
+        return linkedMap.filter((k, v) -> (k & 1) == 0);
+    }
+
     @Benchmark
     public LinkedHashMap<Integer, Integer> linkedMapMapValuesSame() {
         return linkedMap.mapValues(v -> v);

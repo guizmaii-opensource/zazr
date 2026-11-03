@@ -1475,8 +1475,11 @@ check that every public method returning the type is a row or excluded with a re
   object, with unchanged subtrees, is kept, and the untouched subtrees are shared when some value changes.
   `LinkedHashMap.mapValues`/`replaceAll` put only the values that change, on the map itself; the old path built a new
   map by successive puts. The function is called once per entry in iteration order in both.
-- **`LinkedHashMap`'s filter family** calls the predicate in iteration order and builds nothing until an entry fails;
-  the entries before it are then read again without calling the predicate.
+- **`LinkedHashMap`'s filter family** calls the predicate once per entry in iteration order and builds nothing while
+  every entry passes. The first entries that fail, up to one per eight entries and at most eight, are only noted; if no
+  more fail, they are removed from the map. When more fail, the entries before that one are read again without
+  calling the predicate, skipping the noted ones, and the result is built. A first version that always read the
+  prefix again measured 1.48x slower at 10 entries and 1.19x at 10 000 when only the last entry was dropped.
 - **`partition` on `HashSet`, `HashMap`, `LinkedHashSet`, `LinkedHashMap`** returns the receiver as the side that
   gets everything (the two tree types already did, from the tree walk).
 - **`RedBlackTree.union`/`intersection`** return a subtree shared by both sides as it is, as Scala's `_union` and
@@ -1499,7 +1502,16 @@ check that every public method returning the type is a row or excluded with a re
   - `HashMap.replace(entry, entry)` of an entry by itself removes and puts it back: the check needs the stored key,
     which the CHAMP nodes give only in a new `Tuple2`.
   - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: a conserving `map` is decided separately.
-- **Measured**: see below.
+- **Measured** (JMH, 3 forks, `-prof gc`, `main` then the branch back to back on the same benchmark classes,
+  `ConservingSetMapBenchmark`, the table in the pull request). The no-op cases win everywhere: `partition` with
+  everything on one side 4x to 14x faster, `LinkedHashMap.filter` keeping everything and `mapValues` to the same values
+  7x and down to about 100 B from 2 to 7 MB at 10 000 entries, `LinkedHashMap.put` and `TreeMap.put` of the same
+  objects 2x to 8x with no allocation, `TreeMap.mapValues` to the same values 1.5x to 1.7x, `TreeSet.union` and
+  `intersect` with itself and `HashSet.replace` by itself O(1). The changing controls are flat (`put` of a new value,
+  `TreeMap.mapValues` changing every value, `HashSet.partition` in halves, `LinkedHashMap.filter` dropping half at
+  10 000), except two small ones at 10 entries: `LinkedHashMap.mapValues` changing every value is 1.30x slower there
+  but 0.79x with a fifth less allocation at 10 000, and `LinkedHashMap.filter` dropping half is 1.32x slower (0.35 to
+  0.47 µs). `LinkedHashMap.filter` dropping the last entry is 2.5x faster at 10 and 6x at 10 000.
 
 **More shared subtrees (#323, 2026-11-03).** Three operations that rebuilt what they could share now share it, each
 kept for its measured win (`ShareSubtreesBenchmark`, below).
