@@ -552,8 +552,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @return a Queue over the specified double range, or empty if the step
      *         direction does not match the direction from {@code from} to {@code toInclusive}
      * @throws IllegalArgumentException if {@code step} is zero and {@code from != toInclusive}
-     *                                  (if {@code from == toInclusive}, a singleton Queue is returned regardless of
-     * {@code step})
+     *                                  (if {@code from == toInclusive}, a singleton Queue is returned regardless of {@code step})
      */
     public static Queue<Double> rangeClosedBy(double from, double toInclusive, double step) {
         return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
@@ -3215,8 +3214,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     }
 
     /**
-     * Combines the elements with {@code op}, each result with the next element. The same as {@link
-     * #reduceLeft(BiFunction)}.
+     * Combines the elements with {@code op}, each result with the next element. The same as {@link #reduceLeft(BiFunction)}.
      *
      * @param op combines two elements
      * @return the combined result

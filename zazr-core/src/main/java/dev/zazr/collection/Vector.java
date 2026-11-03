@@ -439,8 +439,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * Creates a Vector of double numbers starting from {@code from}, extending up to (but not including) {@code
-     * toExclusive},
+     * Creates a Vector of double numbers starting from {@code from}, extending up to (but not including) {@code toExclusive},
      * with {@code step}.
      * <p>
      * Examples:
@@ -766,8 +765,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * Concatenates nested iterables into one Vector, in one pass over the builder. Static, like every {@code flatten}
-     * in
+     * Concatenates nested iterables into one Vector, in one pass over the builder. Static, like every {@code flatten} in
      * Zazr, because Java cannot demand of an instance method that the receiver's element type be a collection.
      * <p>
      * Complexity: O(m) for m inner elements in total, each added to the result once.
@@ -1994,8 +1992,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * The length of the longest prefix whose elements all satisfy {@code predicate}: {@code segmentLength(predicate,
-     * 0)}.
+     * The length of the longest prefix whose elements all satisfy {@code predicate}: {@code segmentLength(predicate, 0)}.
      * <p>
      * Complexity: O(k) for a prefix of k elements.
      *
@@ -3011,8 +3008,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /**
      * A mutable, single-use accumulator that builds a {@link Vector} element by element. Its invariant is that there is
-     * never a full-size intermediate buffer: elements are written into 32-wide leaf arrays, each completed leaf is
-     * handed
+     * never a full-size intermediate buffer: elements are written into 32-wide leaf arrays, each completed leaf is handed
      * to the Vector as it is (or, when the elements come from another Vector through {@link #addAll(Iterable)}, that
      * Vector's arrays are shared or copied whole instead of element by element), and {@link #result()} copies only the
      * arrays cut at the end, once. The arrays above the leaves are allocated as leaves complete.
@@ -3384,8 +3380,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /**
-     * Combines the elements with {@code op}, each result with the next element. The same as {@link
-     * #reduceLeft(BiFunction)}.
+     * Combines the elements with {@code op}, each result with the next element. The same as {@link #reduceLeft(BiFunction)}.
      *
      * @param op combines two elements
      * @return the combined result

@@ -1276,13 +1276,18 @@ class ConservingOperationsTest {
         Integer stored = Integer.valueOf(1000);
         Integer other = Integer.valueOf(1000);
         assertThat(other).isEqualTo(stored).isNotSameAs(stored);
-        assertThat(Vector.of(stored).update(0, other))
-                .isNotSameAs(Vector.of(stored))
-                .containsExactly(1000);
+        Vector<Integer> vector = Vector.of(stored);
+        Vector<Integer> updatedVector = vector.update(0, other);
+        assertThat(updatedVector).isNotSameAs(vector).containsExactly(1000);
+        assertThat(updatedVector.head()).isSameAs(other);
         List<Integer> list = List.of(stored);
-        assertThat(list.update(0, other)).isNotSameAs(list).containsExactly(1000);
+        List<Integer> updatedList = list.update(0, other);
+        assertThat(updatedList).isNotSameAs(list).containsExactly(1000);
+        assertThat(updatedList.head()).isSameAs(other);
         Queue<Integer> queue = Queue.of(stored);
-        assertThat(queue.update(0, other)).isNotSameAs(queue).containsExactly(1000);
+        Queue<Integer> updatedQueue = queue.update(0, other);
+        assertThat(updatedQueue).isNotSameAs(queue).containsExactly(1000);
+        assertThat(updatedQueue.head()).isSameAs(other);
         assertThat(list.update(0, stored)).isSameAs(list);
         assertThat(queue.update(0, stored)).isSameAs(queue);
     }
@@ -1379,6 +1384,25 @@ class ConservingOperationsTest {
         assertThat(pending).isNotSameAs(read).containsExactly(1, 2, 3);
         assertThat(read.orElse(List.of(9))).isSameAs(read);
         assertThat(LazyList.<Integer>empty().orElse(() -> List.of(9))).containsExactly(9);
+    }
+
+    @Test
+    void aLazyListPatchDoesNotAskAnOpaqueViewWhetherItIsEmpty() {
+        LazyList<Integer> unread = LazyList.continually(() -> {
+            throw new AssertionError("an element was read");
+        });
+        LazyList<Integer> list = LazyList.of(1, 2, 3);
+        java.util.List<Integer> unmodifiable = java.util.Collections.unmodifiableList(unread.asJava());
+        java.util.List<Integer> reversed = unread.asJava().reversed();
+        assertThat(list.patch(1, unmodifiable, 0)).isNotSameAs(list);
+        assertThat(list.patch(1, reversed, 0)).isNotSameAs(list);
+        // known to be empty without reading anything else
+        assertThat(list.patch(1, java.util.List.of(), 0)).isSameAs(list);
+        assertThat(list.patch(1, new ArrayList<Integer>(), 0)).isSameAs(list);
+        assertThat(list.patch(1, Vector.<Integer>empty().asJava(), 0)).isSameAs(list);
+        assertThat(list.patch(1, java.util.Collections.unmodifiableList(new ArrayList<Integer>()), 0))
+                .isNotSameAs(list)
+                .containsExactly(1, 2, 3);
     }
 
     @SafeVarargs

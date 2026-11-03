@@ -21,8 +21,7 @@ import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
 /**
- * An immutable {@code List} is an eager sequence of elements. Its immutability makes it suitable for concurrent
- * programming.
+ * An immutable {@code List} is an eager sequence of elements. Its immutability makes it suitable for concurrent programming.
  * <p>
  * A {@code List} is composed of a {@code head} element and a {@code tail} {@code List}.
  * <p>
@@ -121,8 +120,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Complexity: the methods without a note of their own (map, flatMap, the folds, groupBy, the conversions,
  * {@code equals}, {@code hashCode}, {@code toString}) walk the elements once: O(n); an {@code Option} variant costs
- * what the method it wraps costs, and {@code toLazyList()} is O(1), its elements being read as the LazyList reaches
- * them.
+ * what the method it wraps costs, and {@code toLazyList()} is O(1), its elements being read as the LazyList reaches them.
  * A List does not store its size, so {@code equals}, {@code toArray()}, {@code stream()} and {@code spliterator()}
  * count the elements before they start, and {@code containsAll} is O(n * m) for m elements: each one is looked for by
  * a walk.
@@ -502,8 +500,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * Creates a List of double numbers starting from {@code from}, extending up to but not including {@code
-     * toExclusive},
+     * Creates a List of double numbers starting from {@code from}, extending up to but not including {@code toExclusive},
      * with {@code step}.
      * <p>
      * Examples:
@@ -687,8 +684,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
      * @throws IllegalArgumentException if {@code step} is zero and {@code from != toInclusive}
-     *                                  (if {@code from == toInclusive}, a singleton list is returned regardless of
-     * {@code step})
+     *                                  (if {@code from == toInclusive}, a singleton list is returned regardless of {@code step})
      */
     static List<Double> rangeClosedBy(double from, double toInclusive, double step) {
         return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
@@ -3333,8 +3329,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * The empty {@code List}. {@link List#empty()} and {@link #instance()} return a shared instance; {@code new
-     * Nil<>()}
+     * The empty {@code List}. {@link List#empty()} and {@link #instance()} return a shared instance; {@code new Nil<>()}
      * is legal, a record constructor is public, and equal to it.
      * <p>
      * Equality is that of every {@code List}: a {@code Nil} equals any empty sequence, not only another {@code Nil},
@@ -3728,8 +3723,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     }
 
     /**
-     * Combines the elements with {@code op}, each result with the next element. The same as {@link
-     * #reduceLeft(BiFunction)}.
+     * Combines the elements with {@code op}, each result with the next element. The same as {@link #reduceLeft(BiFunction)}.
      *
      * @param op combines two elements
      * @return the combined result
