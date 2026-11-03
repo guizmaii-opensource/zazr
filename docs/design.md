@@ -1523,8 +1523,8 @@ kept for its measured win (`ShareSubtreesBenchmark`, below).
   `HashMap.partition` names this as a possible optimisation; there is no Scala code to port): each node computes the
   inline elements that go left, gets both results of each child from one holder object (no pair per node), and builds
   each side with the `rebuilt` step of `filter`, which keeps a node or child whole when it loses nothing. The
-  predicate is called once per element in iteration order. `HashMap.filter` now uses the same `rebuilt` step, as
-  `HashSet.filter` already did.
+  predicate is called once per element in iteration order. `HashMap.filter` keeps its own inline rebuild: moved onto
+  `rebuilt`, it measured 1.10x slower.
 - **`putAll` of a map of the same kind.** The CHAMP `concat` returned the argument's node when the receiver added
   nothing to it; it now also returns the receiver's node when the argument brings no other entry and no other key or
   value object. When either result is still possible, the children both sides hold are united first, before anything

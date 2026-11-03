@@ -726,25 +726,90 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
     @Override
     @SuppressWarnings("Var")
     public BitmapIndexedMapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
-        // the entries first, then the children, as the iteration goes
         int payload = payloadArity();
+        int children = nodeArity();
+        // the entries first, then the children, as the iteration goes
         int keptDataMap = 0;
+        int newSize = 0;
+        int newKeyHashSum = 0;
         int bits = dataMap;
         for (int i = 0; i < payload; i++) {
             int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
             if (predicate.test(getKey(i), getValue(i)) == keep) {
                 keptDataMap |= bitpos;
+                newSize++;
+                newKeyHashSum += hashes[i];
             }
         }
-        int children = nodeArity();
         MapNode<K, V>[] newChildren = null;
+        int newNodeMap = 0;
+        // the children down to one entry, whose entry comes back inline
+        int migratedDataMap = 0;
+        bits = nodeMap;
         for (int i = 0; i < children; i++) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
             MapNode<K, V> child = getNode(i);
             MapNode<K, V> newChild = child.filter(predicate, keep);
-            newChildren = withChild(newChildren, children, i, child, newChild);
+            int childSize = newChild.size();
+            if (newChild != child && newChildren == null) {
+                @SuppressWarnings("unchecked")
+                MapNode<K, V>[] array = (MapNode<K, V>[]) new MapNode<?, ?>[children];
+                newChildren = array;
+            }
+            if (newChildren != null) {
+                newChildren[i] = newChild;
+            }
+            if (childSize >= 2) {
+                newNodeMap |= bitpos;
+            } else if (childSize == 1) {
+                migratedDataMap |= bitpos;
+            }
+            newSize += childSize;
+            newKeyHashSum += newChild.keyHashSum();
         }
-        return rebuilt(keptDataMap, newChildren);
+        if (newSize == size) {
+            return this;
+        } else if (newSize == 0) {
+            return MapNode.empty();
+        }
+        int newDataMap = keptDataMap | migratedDataMap;
+        int newDataSize = bitCount(newDataMap);
+        Object[] newContent = new Object[2 * newDataSize + bitCount(newNodeMap)];
+        int[] newHashes = new int[newDataSize];
+        int dataIdx = 0;
+        int nodeIdx = 0;
+        int oldDataIdx = 0;
+        int oldNodeIdx = 0;
+        bits = dataMap | nodeMap;
+        while (bits != 0) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if ((bitpos & dataMap) != 0) {
+                if ((bitpos & keptDataMap) != 0) {
+                    newContent[2 * dataIdx] = content[2 * oldDataIdx];
+                    newContent[2 * dataIdx + 1] = content[2 * oldDataIdx + 1];
+                    newHashes[dataIdx++] = hashes[oldDataIdx];
+                }
+                oldDataIdx++;
+            } else {
+                // a child changes only when the filter drops one of its entries, so newChildren is set here
+                @SuppressWarnings("NullAway")
+                MapNode<K, V> newChild = (newChildren == null || newChildren[oldNodeIdx] == null)
+                        ? getNode(oldNodeIdx)
+                        : newChildren[oldNodeIdx];
+                if ((bitpos & migratedDataMap) != 0) {
+                    newContent[2 * dataIdx] = newChild.getKey(0);
+                    newContent[2 * dataIdx + 1] = newChild.getValue(0);
+                    newHashes[dataIdx++] = newChild.getHash(0);
+                } else if ((bitpos & newNodeMap) != 0) {
+                    newContent[newContent.length - 1 - nodeIdx++] = newChild;
+                }
+                oldNodeIdx++;
+            }
+        }
+        return new BitmapIndexedMapNode<>(null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum);
     }
 
     /// The partition of this trie, as two roots: see [MapNode#partition].
