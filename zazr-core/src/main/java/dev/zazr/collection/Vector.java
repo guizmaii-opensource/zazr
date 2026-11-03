@@ -1809,7 +1809,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     @SuppressWarnings("ObjectEquality")
     public Vector<T> mapConserve(Function<? super T, ? extends T> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        RadixVector<T> mapped = trie.map(mapper);
+        RadixVector<T> mapped = trie.mapConserve(mapper);
         return (mapped == trie) ? this : ofAll(mapped);
     }
 

@@ -1528,8 +1528,10 @@ What each type shares when something changes:
 - `List` (`ListModule.Conserve.map`): the cells after the last changed element, as `filter` does, through
   `ListModule.Conserve.prependCells` and `prependReversed`. The mapper runs once per element, in order.
 - `Vector`: the arrays whose elements are all unchanged. The trie's `map` already returned an unchanged array itself
-  (`mapElems`, after Scala's `VectorStatics.mapElems`); each `VectorN.map` now returns the trie itself when every one
-  of its arrays is unchanged. The mapper runs once per element, in order. `NonEmptyVector` wraps it.
+  (`mapElems`, after Scala's `VectorStatics.mapElems`); each `VectorN` has a `mapConserve` beside its `map` that
+  returns the trie itself when every one of its arrays is unchanged. `map` keeps its own body: the same check in it
+  made `Vector.map` of 10 elements about 30 % slower when an element changes, in the first measurement, and the
+  re-run without it matched the base. The mapper runs once per element, in order. `NonEmptyVector` wraps it.
 - `Queue`: its front or its rear, whichever is unchanged. The mapper runs over the front, then over the rear in its
   stored order, which is the reverse of the queue's order, as `Queue.map` does.
 - The sets: nothing is allocated until the first change; then the set is rebuilt, with the elements before the
@@ -1537,7 +1539,13 @@ What each type shares when something changes:
   subtree of a `HashSet` can be kept. Of two equal results, the one kept is the one `map` keeps.
 
 `MapConserveBenchmark` compares `map`, `mapConserve` and a plain `List.Builder` map on `List` and `Vector` at sizes
-10, 1,000 and 100,000, with no element, every element or only the first one changed.
+10, 1,000 and 100,000, with no element, every element or only the first one changed (JMH, 3 forks, `-prof gc`; the
+table is in the pull request). When nothing changes, `mapConserve` allocates nothing and is 2x to 3.6x faster than
+`map` on `List`, 1.0x to 1.4x on `Vector`. With only the first element changed, on `List` it allocates 48
+bytes and is 1.1x to 2.7x faster; on `Vector` it is level from 1,000 elements and slower on 10 (0.021 µs against
+0.013 µs). When every element changes it costs more than `map`: up to 14 % on a `List` of 1,000 (5 % on 100,000),
+and on a `Vector` of 10 elements 0.033 µs against 0.019 µs; from 1,000 elements on `Vector` it is level.
+That is the price of the check, paid only by the callers who ask for it.
 
 ### 3.8 `Vector` builder
 
