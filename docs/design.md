@@ -1538,6 +1538,61 @@ The two follow-ups the cost review (#93, above) left documented. Each part stand
     1.1x slower, and random `get` hits on a map of 100,000 1.6x slower though `get` does not touch the order (the
     entries end up spread differently in memory; the same at 1,000).
 
+**Operations that change nothing return the receiver: the sequences (decided 2026-11-03).** Scala's rule, from the
+Scala 3 standard library (the Scala 2.13 collection library that Scala 3 ships unchanged): an operation that can tell
+cheaply that it changes nothing returns the receiver itself (`result == this`), so a no-op call allocates nothing
+and a caller can test identity. On `Vector`, `List`, `Queue`, `LazyList` and `NonEmptyVector`:
+
+- The filter family, `distinct*`, `remove*`, `replace*`, `take*`, `drop*`, `slice`, `subSequence`, `padTo`,
+  `leftPadTo`, `rotate*`, `orElse` and the conversions to the same type return the receiver when nothing is removed,
+  replaced or added. `appendAll`, `prependAll`, `insertAll` and `patch` do when the argument is a collection known to
+  be empty (a one-shot `Iterable` is read once, never asked first); an empty receiver of `appendAll` or `prependAll`
+  returns the argument when it is of the same type. `sorted*`, `sortBy`, `reverse`, `intersperse` and `shuffle` do
+  on fewer than two elements. `partition`, `span`, `splitAt` and `splitAtInclusive` return the receiver as the part
+  that gets every element.
+- `update` on `List` and `Queue` returns the receiver when the element at the index is the new one by reference
+  (`==`), not by `equals`. On `Vector` (so `NonEmptyVector`) it does not: reading the element first made every update
+  that changes it slower, about 7 % on 100 000 elements in the first run.
+- `List.filter` (so `reject`, `distinct*`, `removeAll` and `retainAll`) shares the cells after the last removed
+  element, as Scala's `filterCommon` (`library/src/scala/collection/immutable/List.scala`) does: one pass, the
+  predicate once per element in order. Scala writes the copied cells in place; a `Cons` is a record, so the cells
+  before the last removal are copied most recent first and prepended to the shared rest. The two helpers,
+  `ListModule.Conserve.prependCells` (the cells from one cell up to a later one, prepended to an accumulator) and
+  `prependReversed` (an accumulator put back in order in front of a rest), are what a conserving `map` on `List`
+  would use; on `Vector`, `filter` already seeds its builder with the untouched prefix (`trie.take(k)`), the same
+  idea. `List.span` walks once, copying the prefix and sharing the rest, where it went through two iterators and
+  called the predicate twice on every prefix element.
+- `List.replaceAll`, `update` and `splitAt(int)` keep their one-pass copy loops behind the no-op checks: copying
+  the prefix through a `List.Builder`, or walking to the change before copying, measured slower than prepending and
+  reversing (0.7x for `splitAt` in the middle and `update` near the end of 100 000 elements, 0.4x for `update` near
+  the front).
+- `Queue` asks the `List` it gets from `toList()` and returns itself when the `List` operation returns that very
+  list: the checks stay at the public methods, independent of the representation.
+- `NonEmptyVector` returns itself when the wrapped `Vector` returns itself; its methods that return a `Vector`
+  (`filter`, `take`, ...) return the wrapped `Vector` itself when nothing changes.
+- `LazyList` returns itself only when it knows without evaluating a cell the operation would not: `drop(0)`,
+  `dropRight(0)`, `padTo`/`leftPadTo` to 0, `rotate*(0)`, `cycle(1)`, `subSequence(0)`, `splitAt(0)`, `patch` and
+  `appendAll` / `prependAll` / `removeAll` of an argument already known to be empty, `orElse` once the first cell is
+  known to be non-empty, and the operations that read the whole list anyway (`reverse`, `sorted*`, `shuffle`). The
+  lazy ones (`filter`, `take`, `slice`, `distinct`, `remove*`, ...) return a new lazy list: knowing that nothing
+  changes would read cells the call itself leaves unread.
+- Left out: `distinctByKeepLast` (it builds its result before it can know that every element is kept), and the
+  operations that always change something (`append`, `insert`, `tail`, `init`, `scan`, ...).
+  `ConservingOperationsTest` reads every public method that returns the sequence's own type, or a tuple of two, by
+  reflection: each is a conserving row or a row saying why it is left out, so a new operation fails the test until it
+  gets one. The control types already conserve (`Option.filter`, `Try.filter`, `Either.filterOrElse`, the `orElse`
+  family, the mapping of the other side). A conserving `map` is a separate decision.
+- **Measured** (JMH, 3 forks, `-prof gc`, `ConservingBenchmark` and `ConservingSmallBenchmark` in `zazr-benchmark`,
+  `main` and the branch back to back; the table is in the pull request). The no-ops allocate nothing: `List.filter`
+  keeping every element is 3.1x to 3.5x faster, `span` over everything 8x to 13x, `splitAt` at the end 1.9x to 4.2x,
+  `update` with the same element 1.6x to 2.1x, `insertAll` of nothing 2.3x to 6.8x; `Vector.insertAll` and `patch`
+  of nothing 20x to 730x; the one-element `sorted`, `reverse` and `intersperse` 7x to 39x; the `LazyList` no-ops about
+  5x. `List.filter` removing one element near the front is 1.9x to 4.7x faster and allocates 48 bytes in place of a
+  copy. `List.filter`'s worst cases are slower on 10 elements (0.73x removing the last, 0.86x keeping half) and win
+  from 1000 on removing half (1.2x to 2.1x) or 100 000 removing the last (1.6x); filter keeps the sharing, which the
+  ticket asks for, because the gains of the shared cases are far larger than these losses. The `Queue` no-ops save
+  the wrapper and the reversal (1.04x to 1.7x): `toList()` still copies the elements.
+
 **The sets and maps return themselves when nothing changes (#313, decided 2026-11-03).** An operation of `HashSet`,
 `HashMap`, `LinkedHashSet`, `LinkedHashMap`, `TreeSet`, `TreeMap` or a non-empty wrapper that can tell cheaply that it
 changed nothing returns the receiver itself, as Scala's do (Scala's conserving operations, part 2 of #147; the
