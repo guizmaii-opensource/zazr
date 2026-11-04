@@ -1715,7 +1715,11 @@ kept for its measured win (`ShareSubtreesBenchmark`, below).
   inline elements that go left, gets both results of each child from one holder object (no pair per node), and builds
   each side with the `rebuilt` step of `filter`, which keeps a node or child whole when it loses nothing. The
   predicate is called once per element in iteration order. `HashMap.filter` keeps its own inline rebuild: moved onto
-  `rebuilt`, it measured 1.10x slower.
+  `rebuilt`, it measured 1.10x slower. A side allocates nothing for the subtrees that miss it (#336): a child that
+  gives the side nothing is recorded in a bitmap of dropped children, the array of new children is made only at the
+  first child that is partly on the side, and a collision node copies its content only at the first element that goes
+  the other way (`filter` and `reject` likewise, and `HashSet.diff` through the same `rebuilt`). So a side that gets
+  nothing allocates nothing, and one that gets a whole subtree allocates only for the nodes above it.
 - **`putAll` of a map of the same kind.** The CHAMP `concat` returned the argument's node when the receiver added
   nothing to it; it now also returns the receiver's node when the argument brings no other entry and no other key or
   value object. When either result is still possible, the children both sides hold are united first, before anything
