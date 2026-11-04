@@ -311,6 +311,44 @@ public interface RedBlackTreeModule {
             }
         }
 
+        /// [#insert] of the entry `key -> value` into a tree of entries, with a black root. `key` is
+        /// compared with the key of each entry in place, as the first argument as the probe entry was,
+        /// and the entry is made only where it is written. The entry of an equal key is replaced, key
+        /// and value, unless both are the objects already there: then `tree` itself is returned. So does
+        /// `upd` of the Scala 3 standard library's `RedBlackTree` (the Scala 2.13 collection library,
+        /// which Scala 3 ships unchanged) when the value is the same object; it keeps the old key.
+        public static <K extends @Nullable Object, V extends @Nullable Object> RedBlackTree<Tuple2<K, V>> insertEntry(
+                RedBlackTree<Tuple2<K, V>> tree, K key, V value, Comparator<? super K> comparator) {
+            return color(insertEntryNode(tree, key, value, comparator), BLACK);
+        }
+
+        private static <K extends @Nullable Object, V extends @Nullable Object> Node<Tuple2<K, V>> insertEntryNode(
+                RedBlackTree<Tuple2<K, V>> tree, K key, V value, Comparator<? super K> comparator) {
+            if (tree.isEmpty()) {
+                Empty<Tuple2<K, V>> empty = (Empty<Tuple2<K, V>>) tree;
+                return new Node<>(RED, 1, empty, Tuple.of(key, value), empty, empty);
+            }
+            Node<Tuple2<K, V>> node = (Node<Tuple2<K, V>>) tree;
+            Tuple2<K, V> entry = node.value;
+            int comparison = comparator.compare(key, entry._1());
+            if (comparison < 0) {
+                Node<Tuple2<K, V>> newLeft = insertEntryNode(node.left, key, value, comparator);
+                return (newLeft == node.left)
+                        ? node
+                        : Node.balanceLeft(node.color, node.blackHeight, newLeft, entry, node.right, node.empty);
+            } else if (comparison > 0) {
+                Node<Tuple2<K, V>> newRight = insertEntryNode(node.right, key, value, comparator);
+                return (newRight == node.right)
+                        ? node
+                        : Node.balanceRight(node.color, node.blackHeight, node.left, entry, newRight, node.empty);
+            } else if (entry._1() == key && entry._2() == value) {
+                return node;
+            } else {
+                return new Node<>(
+                        node.color, node.blackHeight, node.left, Tuple.of(key, value), node.right, node.empty);
+            }
+        }
+
         /// Returns a valid tree holding the elements of `t1`, then `value`, then the elements of `t2`. Every element
         /// of `t1` is less than `value` and every element of `t2` greater. The roots of `t1` and `t2` can be
         /// red.
@@ -567,6 +605,37 @@ public interface RedBlackTreeModule {
             R value = mapper.apply(node.value);
             RedBlackTree<R> right = mapOrdered(node.right, empty, mapper);
             return new Node<>(node.color, node.blackHeight, left, value, right, empty);
+        }
+
+        /// A tree of entries with each value replaced by `f.apply(key, value)`, called once per entry
+        /// in ascending order. The keys do not change, so neither do the shape and the colours. A node
+        /// whose new value is the object it holds and whose subtrees come back unchanged is kept as it
+        /// is, so `tree` itself is returned when every value is the same object. A port of `transform`
+        /// of the Scala 3 standard library's `RedBlackTree` (the Scala 2.13 collection library, which
+        /// Scala 3 ships unchanged).
+        // the depth of the recursion is the height of the tree, at most 2 log2(n + 1)
+        @SuppressWarnings("unchecked")
+        public static <K extends @Nullable Object, V extends @Nullable Object, W extends @Nullable Object>
+                RedBlackTree<Tuple2<K, W>> transform(
+                        RedBlackTree<Tuple2<K, V>> tree,
+                        java.util.function.BiFunction<? super K, ? super V, ? extends W> f) {
+            if (tree.isEmpty()) {
+                return (RedBlackTree<Tuple2<K, W>>) (RedBlackTree<?>) tree;
+            }
+            Node<Tuple2<K, V>> node = (Node<Tuple2<K, V>>) tree;
+            Tuple2<K, V> entry = node.value;
+            RedBlackTree<Tuple2<K, W>> left = transform(node.left, f);
+            W value = f.apply(entry._1(), entry._2());
+            RedBlackTree<Tuple2<K, W>> right = transform(node.right, f);
+            if (value == entry._2() && left == (Object) node.left && right == (Object) node.right) {
+                return (RedBlackTree<Tuple2<K, W>>) (RedBlackTree<?>) node;
+            }
+            // the keys are compared by the same comparator whatever the type of the values
+            Empty<Tuple2<K, W>> empty = (Empty<Tuple2<K, W>>) (Empty<?>) node.empty;
+            // a node above a change keeps its entry when its own value is the same object
+            Tuple2<K, W> newEntry =
+                    value == entry._2() ? (Tuple2<K, W>) (Tuple2<K, ?>) entry : Tuple.of(entry._1(), value);
+            return new Node<>(node.color, node.blackHeight, left, newEntry, right, empty);
         }
 
         public static <T extends @Nullable Object> T maximum(Node<T> node) {

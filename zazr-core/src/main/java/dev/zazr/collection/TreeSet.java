@@ -751,7 +751,14 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public TreeSet<T> addAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (tree.isEmpty() || knownSize(elements) >= tree.size()) {
+        if (tree.isEmpty()
+                && elements instanceof TreeSet<?> that
+                && comparator().equals(that.comparator())) {
+            // the elements of the argument, which are distinct and in this order
+            @SuppressWarnings("unchecked")
+            TreeSet<T> same = (TreeSet<T>) that;
+            return same;
+        } else if (tree.isEmpty() || knownSize(elements) >= tree.size()) {
             // many elements: sorted into a tree, the first of equal ones kept, then united with this tree, whose
             // elements win over equal given ones; the same set as adding them one by one below
             RedBlackTreeBuilder<T> builder = new RedBlackTreeBuilder<>(tree.comparator(), "TreeSet.Builder", 0, true);
@@ -944,7 +951,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return this;
         } else if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
-            return new TreeSet<>(tree.intersection(that.tree));
+            return withTree(tree.intersection(that.tree));
         } else {
             return retainAll(elements);
         }
@@ -1113,10 +1120,12 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public TreeSet<T> replace(T currentElement, T newElement) {
         Objects.requireNonNull(newElement, "TreeSet: element is null");
-        if (tree.contains(currentElement)) {
-            return new TreeSet<>(tree.delete(currentElement).insert(newElement));
-        } else {
+        T current = RedBlackTreeModule.Node.findByKey(tree, currentElement, tree.comparator(), false);
+        if (current == null || current == newElement) {
+            // absent, or replaced by the object already there
             return this;
+        } else {
+            return new TreeSet<>(tree.delete(currentElement).insert(newElement));
         }
     }
 
@@ -1137,7 +1146,13 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         Objects.requireNonNull(elements, "elements is null");
         if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
-            return that.isEmpty() ? this : new TreeSet<>(tree.union(that.tree));
+            if (that.isEmpty()) {
+                return this;
+            } else if (isEmpty()) {
+                return that;
+            } else {
+                return withTree(tree.union(that.tree));
+            }
         } else {
             return addAll(elements);
         }

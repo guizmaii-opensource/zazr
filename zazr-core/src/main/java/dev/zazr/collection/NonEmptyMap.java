@@ -262,6 +262,9 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
 
     /**
      * Complexity: effectively O(1), as {@link HashMap#put(Object, Object)}.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code key} and {@code value} are the key and the value
+     * already there (the same instances).
      *
      * @param key   A key
      * @param value Its value
@@ -271,11 +274,13 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public NonEmptyMap<K, V> put(K key, V value) {
         Objects.requireNonNull(key, "NonEmptyMap.put: key is null");
         Objects.requireNonNull(value, "NonEmptyMap.put: value is null");
-        return new NonEmptyMap<>(map.put(key, value));
+        return wrap(map.put(key, value));
     }
 
     /**
      * Complexity: effectively O(1), as {@link HashMap#put(Tuple2)}.
+     * <p>
+     * Returns this map itself when nothing changes: as {@link #put(Object, Object)}.
      *
      * @param entry An entry
      * @return this map with {@code entry}
@@ -299,7 +304,7 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     public <U extends V> NonEmptyMap<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge) {
         Objects.requireNonNull(key, "NonEmptyMap.put: key is null");
         Objects.requireNonNull(value, "NonEmptyMap.put: value is null");
-        return new NonEmptyMap<>(map.put(key, value, merge));
+        return wrap(map.put(key, value, merge));
     }
 
     /**
@@ -320,6 +325,8 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     /**
      * Accepts the possibly empty type and returns the non-empty one; of two entries with the same key, {@code that}'s
      * value wins only where this map has none. {@link #putAll(Iterable)} is the operation where {@code that} wins.
+     * <p>
+     * Returns this map itself when nothing changes: when every key of {@code that} is a key of this map.
      *
      * @param that A map, possibly empty
      * @return the entries of both maps, this map's values kept on shared keys
@@ -337,6 +344,9 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
      * <p>
      * Complexity: O(m) for m entries, as {@link HashMap#putAll(Iterable)}; O(n + m) when they are a HashMap, merged
      * part by part.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code entries} is empty or this map itself, or is not a map
+     * of the same kind and every entry is the key and the value already there (the same instances).
      *
      * @param entries the entries to put, possibly empty
      * @return this map with the entries put
@@ -439,13 +449,19 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
+     * Returns this map itself when nothing changes: when {@code valueMapper} returns every value itself (the same
+     * instance).
+     *
      * @param valueMapper Maps a value
      * @param <V2>        Value type of the result
      * @return the same keys, with mapped values
      * @throws NullPointerException if {@code valueMapper} is null or returns null
      */
     public <V2 extends @Nullable Object> NonEmptyMap<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper) {
-        return new NonEmptyMap<>(map.mapValues(valueMapper));
+        HashMap<K, V2> result = map.mapValues(valueMapper);
+        @SuppressWarnings("unchecked")
+        NonEmptyMap<K, V2> self = (NonEmptyMap<K, V2>) (NonEmptyMap<K, ?>) this;
+        return result == (Object) map ? self : new NonEmptyMap<>(result);
     }
 
     /**
@@ -514,6 +530,9 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
 
     /**
      * Complexity: O(n), as {@link HashMap#replaceAll(BiFunction)}.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code function} returns every value itself (the same
+     * instance).
      *
      * @param function Computes the new value of a key from its current value
      * @return the same keys, with the new values
@@ -524,6 +543,8 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
     }
 
     /**
+     * Returns this map itself when nothing changes: when {@code key} is absent, or as {@link #put(Object, Object)}.
+     *
      * @param key   A key
      * @param value Its new value
      * @return this map with {@code key} mapped to {@code value} if it was present, or this map

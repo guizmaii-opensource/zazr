@@ -1521,7 +1521,12 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public TreeMap<K, V> merge(Map<? extends K, ? extends V> that) {
+        if (isEmpty() && that instanceof TreeMap<?, ?> other && hasSameComparator(other)) {
+            // the entries of `that`, in the same order
+            return (TreeMap<K, V>) other;
+        }
         return Maps.merge(this, this::createFromEntries, that);
     }
 
@@ -1591,7 +1596,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     public TreeMap<K, V> put(K key, V value) {
         Objects.requireNonNull(key, "TreeMap: key is null");
         Objects.requireNonNull(value, "TreeMap: value is null");
-        return new TreeMap<>(entries.insert(new Tuple2<>(key, value)));
+        return withEntries(RedBlackTreeModule.Node.insertEntry(entries, key, value, comparator()));
     }
 
     @Override
@@ -1614,13 +1619,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         } else if (JavaConverters.underlying(entries) instanceof TreeMap<?, ?> other && hasSameComparator(other)) {
             return union((TreeMap<K, V>) other);
         }
+        Comparator<K> comparator = comparator();
         @SuppressWarnings("Var")
         RedBlackTree<Tuple2<K, V>> result = this.entries;
         for (Tuple2<? extends K, ? extends V> entry : entries) {
             Objects.requireNonNull(entry, "entry is null");
             Objects.requireNonNull(entry._1(), "TreeMap: key is null");
             Objects.requireNonNull(entry._2(), "TreeMap: value is null");
-            result = result.insert(new Tuple2<>(entry._1(), entry._2()));
+            result = RedBlackTreeModule.Node.insertEntry(result, entry._1(), entry._2(), comparator);
         }
         return withEntries(result);
     }
@@ -1632,7 +1638,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         } else if (isEmpty()) {
             return that;
         } else {
-            return new TreeMap<>(entries.union(that.entries));
+            return withEntries(entries.union(that.entries));
         }
     }
 
@@ -1689,6 +1695,18 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(newElement, "newElement is null");
         Objects.requireNonNull(newElement._1(), "TreeMap: key is null");
         Objects.requireNonNull(newElement._2(), "TreeMap: value is null");
+        Objects.requireNonNull(currentElement, "currentElement is null");
+        if (currentElement._1() != null) {
+            Tuple2<K, V> stored = RedBlackTreeModule.Node.findByKey(entries, newElement._1(), comparator(), true);
+            // the entry of currentElement's key replaced by the key and value objects already there
+            if (stored != null
+                    && stored._1() == newElement._1()
+                    && stored._2() == newElement._2()
+                    && comparator().compare(currentElement._1(), newElement._1()) == 0
+                    && Objects.equals(stored._2(), currentElement._2())) {
+                return this;
+            }
+        }
         return Maps.replace(this, currentElement, newElement);
     }
 
@@ -1714,15 +1732,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
     }
 
     // The same keys with the values `function` computes, called in key order. The keys do not change, so the tree
-    // keeps its shape and colours: a copy with no key comparison.
+    // keeps its shape and colours, with no key comparison; the nodes whose value is the same object are shared, and
+    // this map comes back when every value is.
     @SuppressWarnings("unchecked")
     private <W extends @Nullable Object> TreeMap<K, W> withValues(
             BiFunction<? super K, ? super V, ? extends W> function) {
-        EntryComparator<K, W> entryComparator = (EntryComparator<K, W>) (EntryComparator<K, ?>) entries.comparator();
-        return new TreeMap<>(RedBlackTreeModule.Node.mapOrdered(
-                entries,
-                entryComparator,
-                entry -> Tuple.of(entry._1(), requireValue(function.apply(entry._1(), entry._2())))));
+        RedBlackTree<Tuple2<K, W>> result =
+                RedBlackTreeModule.Node.transform(entries, (k, v) -> requireValue(function.apply(k, v)));
+        return result == (Object) entries ? (TreeMap<K, W>) this : new TreeMap<>(result);
     }
 
     @Override

@@ -532,6 +532,8 @@ public final class Collections {
         });
     }
 
+    /// The elements that pass `predicate` and those that fail it, each side made by `creator`; `collection` itself is
+    /// the side that gets every element.
     public static <C extends Traversable<T>, T extends @Nullable Object> Tuple2<C, C> partition(
             C collection, Function<Iterable<T>, C> creator, Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
@@ -540,7 +542,13 @@ public final class Collections {
         for (T element : collection) {
             (predicate.test(element) ? left : right).add(element);
         }
-        return Tuple.of(creator.apply(left), creator.apply(right));
+        if (right.isEmpty()) {
+            return Tuple.of(collection, creator.apply(right));
+        } else if (left.isEmpty()) {
+            return Tuple.of(creator.apply(left), collection);
+        } else {
+            return Tuple.of(creator.apply(left), creator.apply(right));
+        }
     }
 
     /**

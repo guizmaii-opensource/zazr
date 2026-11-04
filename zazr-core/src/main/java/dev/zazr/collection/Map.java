@@ -97,6 +97,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * If the specified key is not already associated with a value,
      * attempts to compute its value using the given mapping
      * function and enters it into this map.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code key} is present.
      *
      * @param key             key whose presence in this map is to be tested
      * @param mappingFunction mapping function
@@ -146,55 +148,67 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     }
 
     /**
-     * Returns a new Map consisting of all elements which satisfy the given predicate.
+     * The entries that satisfy the given predicate.
+     * <p>
+     * Returns this map itself when nothing changes: when every entry satisfies {@code predicate}.
      *
      * @param predicate the predicate used to test elements
-     * @return a new Map
+     * @return the entries that satisfy {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> filter(BiPredicate<? super K, ? super V> predicate);
 
     /**
-     * Returns a new Map consisting of all elements which do not satisfy the given predicate.
+     * The entries that do not satisfy the given predicate.
+     * <p>
+     * Returns this map itself when nothing changes: when no entry satisfies {@code predicate}.
      *
      * @param predicate the predicate used to test elements
-     * @return a new Map
+     * @return the entries that do not satisfy {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> reject(BiPredicate<? super K, ? super V> predicate);
 
     /**
-     * Returns a new Map consisting of all elements with keys which satisfy the given predicate.
+     * The entries whose key satisfies the given predicate.
+     * <p>
+     * Returns this map itself when nothing changes: when every key satisfies {@code predicate}.
      *
      * @param predicate the predicate used to test keys of elements
-     * @return a new Map
+     * @return the entries whose key satisfies {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> filterKeys(Predicate<? super K> predicate);
 
     /**
-     * Returns a new Map consisting of all elements with keys which do not satisfy the given predicate.
+     * The entries whose key does not satisfy the given predicate.
+     * <p>
+     * Returns this map itself when nothing changes: when no key satisfies {@code predicate}.
      *
      * @param predicate the predicate used to test keys of elements
-     * @return a new Map
+     * @return the entries whose key does not satisfy {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> rejectKeys(Predicate<? super K> predicate);
 
     /**
-     * Returns a new Map consisting of all elements with values which satisfy the given predicate.
+     * The entries whose value satisfies the given predicate.
+     * <p>
+     * Returns this map itself when nothing changes: when every value satisfies {@code predicate}.
      *
      * @param predicate the predicate used to test values of elements
-     * @return a new Map
+     * @return the entries whose value satisfies {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> filterValues(Predicate<? super V> predicate);
 
     /**
-     * Returns a new Map consisting of all elements with values which do not satisfy the given predicate.
+     * The entries whose value does not satisfy the given predicate.
+     * <p>
+     * Returns this map itself when nothing changes: when no value satisfies {@code predicate}.
      *
      * @param predicate the predicate used to test values of elements
-     * @return a new Map
+     * @return the entries whose value does not satisfy {@code predicate}
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> rejectValues(Predicate<? super V> predicate);
@@ -334,10 +348,13 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Maps the values of this {@code Map} while preserving the corresponding keys.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code valueMapper} returns every value itself (the same
+     * instance).
      *
      * @param <V2>        the new value type
      * @param valueMapper a {@code Function} that maps values of type {@code V} to values of type {@code V2}
-     * @return a new {@code Map}
+     * @return the same keys with the mapped values
      * @throws NullPointerException if {@code valueMapper} is null
      */
     <V2 extends @Nullable Object> Map<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper);
@@ -347,6 +364,9 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * <p>
      * If collisions occur, the value of {@code this} map is taken. {@link #putAll(Iterable)} is the operation where
      * {@code that} wins.
+     * <p>
+     * Returns this map itself when nothing changes: when every key of {@code that} is a key of this map; an empty
+     * map returns {@code that} when it is a map of the same kind.
      *
      * @param that the other map
      * @return A merged map
@@ -374,18 +394,23 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for the key, the old value is
      * replaced by the specified value.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code key} and {@code value} are the key and the value
+     * already there (the same instances); an equal key or value that is another object replaces the one there.
      *
      * @param key   key with which the specified value is to be associated
      * @param value value to be associated with the specified key
-     * @return A new Map containing these elements and that entry.
+     * @return this map with that entry
      */
     Map<K, V> put(K key, V value);
 
     /**
      * Convenience method for {@code put(entry._1(), entry._2())}.
+     * <p>
+     * Returns this map itself when nothing changes: as {@link #put(Object, Object)}.
      *
      * @param entry A Tuple2 containing the key and value
-     * @return A new Map containing these elements and that entry.
+     * @return this map with that entry
      */
     Map<K, V> put(Tuple2<? extends K, ? extends V> entry);
 
@@ -397,6 +422,10 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * <p>
      * This is Scala's {@code concat} ({@code ++}) on maps; {@link #merge(Map)} is the one where this map's entries
      * win.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code entries} is empty or this map itself, or is not a map
+     * of the same kind and every entry is the key and the value already there (the same instances). An empty map
+     * returns {@code entries} when it is a map of the same kind.
      *
      * @param entries the entries to put, possibly another map
      * @return this map with the entries put
@@ -409,31 +438,37 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
      * If the map previously contained a mapping for the key, the merge
      * function is used to combine the previous value to the value to
      * be inserted, and the result of that call is inserted in the map.
+     * <p>
+     * Returns this map itself when nothing changes: when the value put is the one already there, with the same key,
+     * as {@link #put(Object, Object)}.
      *
      * @param <U>   the value type
      * @param key   key with which the specified value is to be associated
      * @param value value to be associated with the specified key
      * @param merge function taking the old and new values and merging them.
-     * @return A new Map containing these elements and that entry.
+     * @return this map with that entry
      */
     <U extends V> Map<K, V> put(K key, U value, BiFunction<? super V, ? super U, ? extends V> merge);
 
     /**
      * Convenience method for {@code put(entry._1(), entry._2(), merge)}.
+     * <p>
+     * Returns this map itself when nothing changes: as {@link #put(Object, Object, BiFunction)}.
      *
      * @param <U>   the value type
      * @param entry A Tuple2 containing the key and value
      * @param merge function taking the old and new values and merging them.
-     * @return A new Map containing these elements and that entry.
+     * @return this map with that entry
      */
     <U extends V> Map<K, V> put(Tuple2<? extends K, U> entry, BiFunction<? super V, ? super U, ? extends V> merge);
 
     /**
      * Removes the mapping for a key from this map if it is present.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code key} is absent.
      *
      * @param key key whose mapping is to be removed from the map
-     * @return A new Map containing these elements without the entry
-     * specified by that key.
+     * @return this map without the entry of {@code key}
      */
     Map<K, V> remove(K key);
 
@@ -465,10 +500,11 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Removes the mapping for a key from this map if it is present.
+     * <p>
+     * Returns this map itself when nothing changes: when none of {@code keys} is present.
      *
      * @param keys keys are to be removed from the map
-     * @return A new Map containing these elements without the entries
-     * specified by that keys.
+     * @return this map without the entries of {@code keys}
      */
     Map<K, V> removeAll(Iterable<? extends K> keys);
 
@@ -508,18 +544,22 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * The entries that satisfy {@code predicate}.
+     * <p>
+     * Returns this map itself when nothing changes: when every entry satisfies {@code predicate}.
      *
      * @param predicate the condition to keep an entry
-     * @return a map of the matching entries; may be this instance if all of them match
+     * @return a map of the matching entries
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> filter(Predicate<? super Tuple2<K, V>> predicate);
 
     /**
      * The entries that do not satisfy {@code predicate}; the same as {@code filter(predicate.negate())}.
+     * <p>
+     * Returns this map itself when nothing changes: when no entry satisfies {@code predicate}.
      *
      * @param predicate the condition to drop an entry
-     * @return a map of the entries that do not match; may be this instance if none of them matches
+     * @return a map of the entries that do not match
      * @throws NullPointerException if {@code predicate} is null
      */
     Map<K, V> reject(Predicate<? super Tuple2<K, V>> predicate);
@@ -594,6 +634,8 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Splits the entries into those that satisfy {@code predicate} and those that do not.
+     * <p>
+     * Returns this map itself when nothing changes: it is the side that gets every entry.
      *
      * @param predicate the condition
      * @return the matching entries and the others, as two maps
@@ -625,28 +667,36 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
 
     /**
      * Replaces the entry for the specified key only if it is currently mapped to some value.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code key} is absent, or as {@link #put(Object, Object)}.
      *
      * @param key   the key of the element to be substituted.
      * @param value the new value to be associated with the key
-     * @return a new map containing key mapped to value if key was contained before. The old map otherwise.
+     * @return this map with {@code key} mapped to {@code value} if {@code key} was present
      */
     Map<K, V> replaceValue(K key, V value);
 
     /**
      * Replaces the entry for the specified key only if currently mapped to the specified value.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code key} is not mapped to {@code oldValue}, or as
+     * {@link #put(Object, Object)}.
      *
      * @param key      the key of the element to be substituted.
      * @param oldValue the expected current value that the key is currently mapped to
      * @param newValue the new value to be associated with the key
-     * @return a new map containing key mapped to newValue if key was contained before and oldValue matched. The old map otherwise.
+     * @return this map with {@code key} mapped to {@code newValue} if it was mapped to {@code oldValue}
      */
     Map<K, V> replace(K key, V oldValue, V newValue);
 
     /**
      * Replaces each entry's value with the result of invoking the given function on that entry until all entries have been processed or the function throws an exception.
+     * <p>
+     * Returns this map itself when nothing changes: when {@code function} returns every value itself (the same
+     * instance).
      *
      * @param function function transforming key and current value to a new value
-     * @return a new map with the same keySet but transformed values.
+     * @return the same keys with the transformed values
      */
     Map<K, V> replaceAll(BiFunction<? super K, ? super V, ? extends V> function);
 

@@ -207,6 +207,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
 
     /**
      * Complexity: effectively O(1), as {@link HashSet#add(Object)}.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code element} is already a member.
      *
      * @param element An element
      * @return this set with {@code element}
@@ -221,6 +223,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
      * Accepts the possibly empty type and returns the non-empty one; a {@code NonEmptySet} is an {@code Iterable} too.
      * <p>
      * Complexity: O(m) for m elements, each an effectively O(1) insertion, as {@link HashSet#addAll(Iterable)}.
+     * <p>
+     * Returns this set itself when nothing changes: when every element is already a member.
      *
      * @param elements Elements to add, possibly none, read once
      * @return this set with {@code elements}
@@ -232,6 +236,8 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
 
     /**
      * Complexity: O(m) for a set of m elements, each an effectively O(1) insertion, as {@link HashSet#union(Set)}.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code elements} is empty or adds no element.
      *
      * @param elements A set, possibly empty
      * @return the elements of both sets
@@ -284,6 +290,9 @@ public final class NonEmptySet<A extends @Nullable Object> implements Iterable<A
 
     /**
      * Complexity: effectively O(1), as {@link HashSet#replace(Object, Object)}.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code currentElement} is not a member, or
+     * {@code newElement} is the element already there.
      *
      * @param currentElement An element
      * @param newElement     Its replacement

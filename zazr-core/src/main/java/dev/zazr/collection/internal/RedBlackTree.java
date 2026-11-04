@@ -150,7 +150,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
 
     default RedBlackTree<T> intersection(RedBlackTree<T> tree) {
         Objects.requireNonNull(tree, "tree is null");
-        if (isEmpty()) {
+        if (isEmpty() || tree == this) {
+            // a subtree shared by both sides is its own intersection, as in Scala's `_intersect`
             return this;
         } else if (tree.isEmpty()) {
             return tree;
@@ -226,7 +227,8 @@ public interface RedBlackTree<T extends @Nullable Object> extends Iterable<T> {
      */
     default RedBlackTree<T> union(RedBlackTree<T> tree) {
         Objects.requireNonNull(tree, "tree is null");
-        if (tree.isEmpty()) {
+        if (tree.isEmpty() || tree == this) {
+            // a subtree shared by both sides is its own union, as in Scala's `_union`
             return this;
         } else {
             Node<T> that = (Node<T>) tree;
