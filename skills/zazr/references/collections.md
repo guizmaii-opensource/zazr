@@ -39,7 +39,7 @@ https://zazr.dev/collections/, every cost: https://zazr.dev/collections/complexi
 | Operation | `HashSet` / `HashMap` | `LinkedHashSet` / `LinkedHashMap` | `TreeSet` / `TreeMap` |
 |---|---|---|---|
 | `contains`, `get`, `containsKey` | effectively O(1) | effectively O(1) | O(log n) |
-| `add`, `put`, `remove` | effectively O(1) | effectively O(1), `remove` amortised | O(log n) |
+| `add`, `put`, `remove` | effectively O(1) | effectively O(1) | O(log n) |
 | `head`, `take`, `drop` | none | yes | O(log n) |
 | `rangeFrom`, `rangeFromUntil`, `minAfter` | none | none | O(log n) |
 
@@ -214,7 +214,9 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
 - `LazyList`: nothing is computed before it is read, not even the first element (`LazyList.defer(() -> ...)` for a
   lazy first element too); `size`, `last`, `reverse`, `sorted`, `foldLeft`, `mkString` and `toVector` never return
   on an infinite one; it keeps every element it computed, and every exception.
-- `Queue`'s amortised cost holds only when each `dequeue` works on the queue the previous one returned.
+- `Queue`'s amortised cost holds when each `dequeue` works on the queue the previous one returned, or on the same
+  old queue again, which keeps its result; a new queue made from an old one (an `enqueue`, then a `dequeue`) can pay
+  O(n) once.
   `dequeue()` on an empty queue throws; `dequeueOption()` returns an `Option`.
 - `List.size()` and `Queue.size()` are O(n); `isEmpty()` is O(1).
 - `grouped`, `sliding` and `crossProduct` return a collection, not an iterator. On `Vector`, `List`, `Queue` and

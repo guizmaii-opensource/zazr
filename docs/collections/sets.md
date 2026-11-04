@@ -101,9 +101,6 @@ var before = scores.maxBefore(20);           // Option<Integer>
 - `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator, and `union`, `diff`,
   `containsAll` and `equals` on two `HashSet`s: they work on whole parts of the trees. With different comparators,
   or another kind of set, they process the elements one by one.
-- `LinkedHashSet.remove` is amortised, as on `LinkedHashMap`: now and then a call pays O(n) to close the gaps
-  earlier removals left, and removing again from an older set can pay it every time. After removals, `tail`,
-  `init`, `take`, `drop` and a single step of the iterator can cost O(n).
 - `HashSet.removeAll` and `diff` remove the given elements one by one, effectively O(1) each, and compare a
   `HashSet` argument part by part. `diff` of a larger `LinkedHashSet` looks up each element of the set in it
   instead. `intersect` is cheap when the argument is a `HashSet`: the smaller set is checked against the larger.

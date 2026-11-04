@@ -2665,7 +2665,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
         }
 
         private static Object orderStructureOf(LinkedHashMap<?, ?> map) throws Exception {
-            var list = LinkedHashMap.class.getDeclaredField("list");
+            var list = LinkedHashMap.class.getDeclaredField("order");
             list.setAccessible(true);
             return list.get(map);
         }
@@ -2760,7 +2760,7 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
             LinkedHashMap<Integer, String> five = mk(5, 3, 9, 1, 7);
             LinkedHashMap<Integer, String> everyThirdRemoved =
                     Vector.rangeBy(0, 70, 3).foldLeft(mk(Vector.range(0, 70)), LinkedHashMap::remove);
-            // 35 markers for 35 entries: the most the insertion order keeps before it is rebuilt
+            // 35 entries removed inside the order of 70
             LinkedHashMap<Integer, String> atThreshold =
                     Vector.range(10, 45).foldLeft(mk(Vector.range(0, 70)), LinkedHashMap::remove);
             java.util.List<Integer> shuffled =
@@ -2779,7 +2779,11 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
                     mk(Vector.range(0, 70)),
                     mk(shuffled),
                     everyThirdRemoved,
-                    atThreshold);
+                    atThreshold,
+                    // a root that is one leaf, an emptied last block, and a leaf removed from the middle
+                    mk(Vector.range(0, 40)),
+                    mk(Vector.range(0, 70)).take(64),
+                    Vector.range(32, 64).foldLeft(mk(Vector.range(0, 100)), LinkedHashMap::remove));
         }
 
         private int[] counts(int size) {
@@ -3132,30 +3136,11 @@ public class LinkedHashMapTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCoverEveryRepresentationOfTheInsertionOrder() throws Exception {
-            // offset > 0, markers of removed keys in the middle, and as many markers as keys (one more rebuilds)
-            java.util.List<LinkedHashMap<Integer, String>> receivers = receivers();
             java.util.Set<String> shapes = new java.util.HashSet<>();
-            for (LinkedHashMap<Integer, String> receiver : receivers) {
-                int offset = representation(receiver, "offset");
-                int tombstones = representation(receiver, "tombstones");
-                if (offset > 0) {
-                    shapes.add(tombstones > 0 ? "offset and markers" : "offset");
-                }
-                if (tombstones > 0 && tombstones == receiver.size()) {
-                    shapes.add("markers at the rebuild threshold");
-                } else if (tombstones > 0) {
-                    shapes.add("markers");
-                }
+            for (LinkedHashMap<Integer, String> receiver : receivers()) {
+                shapes.addAll(InsertionOrderShapes.of(receiver));
             }
-            assertEquals(
-                    java.util.Set.of("offset", "offset and markers", "markers", "markers at the rebuild threshold"),
-                    shapes);
-        }
-
-        private int representation(LinkedHashMap<Integer, String> receiver, String field) throws Exception {
-            java.lang.reflect.Field declared = LinkedHashMap.class.getDeclaredField(field);
-            declared.setAccessible(true);
-            return (int) declared.get(receiver);
+            assertEquals(InsertionOrderShapes.ALL, shapes);
         }
 
         private Vector<Integer> keys(LinkedHashMap<Integer, String> map) {
