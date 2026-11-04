@@ -1862,6 +1862,27 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
         return new Queue<>(front.map(mapper), rear.map(mapper));
     }
 
+    /**
+     * The elements transformed by {@code mapper}, in order, as {@link #map(Function)}, keeping what does not change:
+     * an element for which {@code mapper} returns that same object ({@code ==}, not {@code equals}) is unchanged.
+     * <p>
+     * Complexity: O(n); {@code mapper} runs once per element, and the elements after the last changed one, at the
+     * front and at the back, are shared, not copied.
+     * <p>
+     * Returns this Queue itself when nothing changes.
+     *
+     * @param mapper transforms an element, returning it itself to leave it unchanged
+     * @return this Queue when every element is unchanged, otherwise a new Queue of the results
+     * @throws NullPointerException if {@code mapper} is null or returns null
+     */
+    @SuppressWarnings("ObjectEquality")
+    public Queue<T> mapConserve(Function<? super T, ? extends T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        dev.zazr.collection.List<T> mappedFront = front.mapConserve(mapper);
+        dev.zazr.collection.List<T> mappedRear = rear.mapConserve(mapper);
+        return (mappedFront == front && mappedRear == rear) ? this : new Queue<>(mappedFront, mappedRear);
+    }
+
     public <U extends @Nullable Object> Queue<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // the null check runs here so that the message names this type, not the List that does the walking

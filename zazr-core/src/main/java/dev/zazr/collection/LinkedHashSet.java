@@ -846,6 +846,40 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), effectively: one walk, and the new set built once an element changes. The results keep
+     * the order of their elements; of two equal results, the first one is kept.
+     */
+    @Override
+    @SuppressWarnings({"Var", "ObjectEquality"})
+    public LinkedHashSet<T> mapConserve(Function<? super T, ? extends T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        java.util.Iterator<T> elements = iterator();
+        int unchanged = 0;
+        while (elements.hasNext()) {
+            T element = elements.next();
+            T result = mapper.apply(element);
+            if (result != element) {
+                // the elements before the first change are their own results; the rest are mapped into the builder
+                Builder<T> builder = newBuilder();
+                java.util.Iterator<T> kept = iterator();
+                for (int i = 0; i < unchanged; i++) {
+                    builder.add(kept.next());
+                }
+                builder.add(Objects.requireNonNull(result, "LinkedHashSet: element is null"));
+                while (elements.hasNext()) {
+                    builder.add(
+                            Objects.requireNonNull(mapper.apply(elements.next()), "LinkedHashSet: element is null"));
+                }
+                return builder.result();
+            }
+            unchanged++;
+        }
+        return this;
+    }
+
     @Override
     public <U extends @Nullable Object> LinkedHashSet<U> collect(
             Function<? super T, ? extends Option<? extends U>> mapper) {

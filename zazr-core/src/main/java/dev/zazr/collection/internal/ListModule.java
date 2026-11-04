@@ -5,6 +5,7 @@ import dev.zazr.Tuple2;
 import dev.zazr.collection.List;
 import dev.zazr.collection.List.Nil;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import org.jspecify.annotations.Nullable;
@@ -137,6 +138,29 @@ public interface ListModule {
                 }
             }
             return (pending == list) ? list : prependReversed(kept, pending);
+        }
+
+        /// The results of `mapper` on the elements of `list`, called once per element, in order: `list` itself when
+        /// every result is the element itself (`==`), and the cells after the last changed element shared.
+        @SuppressWarnings({"ObjectEquality", "Var", "unchecked"})
+        static <T extends @Nullable Object, U extends @Nullable Object> List<U> map(
+                List<T> list, Function<? super T, ? extends U> mapper) {
+            // the results so far, most recent first; an unchanged element is its own result, so it is of type U
+            List<Object> mapped = Nil.instance();
+            // the first cell not yet copied: every element from it up to the current cell is its own result
+            List<T> pending = list;
+            for (List<T> cell = list; !cell.isEmpty(); cell = cell.tail()) {
+                T element = cell.head();
+                U result = mapper.apply(element);
+                if (result != element) {
+                    mapped = prependCells(mapped, (List<Object>) (List<?>) pending, (List<Object>) (List<?>) cell)
+                            .prepend(Objects.requireNonNull(result, "List: element is null"));
+                    pending = cell.tail();
+                }
+            }
+            return (pending == list)
+                    ? (List<U>) list
+                    : (List<U>) (List<?>) prependReversed(mapped, (List<Object>) (List<?>) pending);
         }
     }
 

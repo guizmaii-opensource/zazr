@@ -391,6 +391,13 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      */
     public abstract <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f);
 
+    /**
+     * {@link #map(Function)} that returns this vector itself when {@code f} returns every element itself (by identity).
+     *
+     * @throws NullPointerException if {@code f} returns null
+     */
+    public abstract RadixVector<T> mapConserve(Function<? super T, ? extends T> f);
+
     /* copies the first n elements into dest from index start, one whole-leaf copy at a time */
     final void copyToArray(Object[] dest, int start, int n) {
         int end = start + n;
@@ -475,6 +482,11 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
             return empty();
+        }
+
+        @Override
+        public RadixVector<T> mapConserve(Function<? super T, ? extends T> f) {
+            return this;
         }
 
         @Override
@@ -565,6 +577,13 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
             return new Vector1<>(mapElems1(prefix1, f));
+        }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public RadixVector<T> mapConserve(Function<? super T, ? extends T> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            return (mPrefix1 == prefix1) ? this : new Vector1<>(mPrefix1);
         }
 
         @Override
@@ -694,6 +713,18 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         @Override
         public <U extends @Nullable Object> RadixVector<U> map(Function<? super T, ? extends U> f) {
             return new Vector2<>(mapElems1(prefix1, f), len1, mapElems(2, data2, f), mapElems1(suffix1, f), length0);
+        }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public RadixVector<T> mapConserve(Function<? super T, ? extends T> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mData2 = mapElems(2, data2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1 && mData2 == data2 && mSuffix1 == suffix1) {
+                return this;
+            }
+            return new Vector2<>(mPrefix1, len1, mData2, mSuffix1, length0);
         }
 
         @Override
@@ -942,6 +973,24 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                     mapElems(2, suffix2, f),
                     mapElems1(suffix1, f),
                     length0);
+        }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public RadixVector<T> mapConserve(Function<? super T, ? extends T> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mData3 = mapElems(3, data3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mData3 == data3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return this;
+            }
+            return new Vector3<>(mPrefix1, len1, mPrefix2, len12, mData3, mSuffix2, mSuffix1, length0);
         }
 
         @Override
@@ -1356,6 +1405,29 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                     mapElems(2, suffix2, f),
                     mapElems1(suffix1, f),
                     length0);
+        }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public RadixVector<T> mapConserve(Function<? super T, ? extends T> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mPrefix3 = mapElems(3, prefix3, f);
+            Object[] mData4 = mapElems(4, data4, f);
+            Object[] mSuffix3 = mapElems(3, suffix3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mPrefix3 == prefix3
+                    && mData4 == data4
+                    && mSuffix3 == suffix3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return this;
+            }
+            return new Vector4<>(
+                    mPrefix1, len1, mPrefix2, len12, mPrefix3, len123, mData4, mSuffix3, mSuffix2, mSuffix1, length0);
         }
 
         @Override
@@ -1952,6 +2024,34 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                     mapElems(2, suffix2, f),
                     mapElems1(suffix1, f),
                     length0);
+        }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public RadixVector<T> mapConserve(Function<? super T, ? extends T> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mPrefix3 = mapElems(3, prefix3, f);
+            Object[] mPrefix4 = mapElems(4, prefix4, f);
+            Object[] mData5 = mapElems(5, data5, f);
+            Object[] mSuffix4 = mapElems(4, suffix4, f);
+            Object[] mSuffix3 = mapElems(3, suffix3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mPrefix3 == prefix3
+                    && mPrefix4 == prefix4
+                    && mData5 == data5
+                    && mSuffix4 == suffix4
+                    && mSuffix3 == suffix3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return this;
+            }
+            return new Vector5<>(
+                    mPrefix1, len1, mPrefix2, len12, mPrefix3, len123, mPrefix4, len1234, mData5, mSuffix4, mSuffix3,
+                    mSuffix2, mSuffix1, length0);
         }
 
         @Override
@@ -2708,6 +2808,38 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
                     mapElems(2, suffix2, f),
                     mapElems1(suffix1, f),
                     length0);
+        }
+
+        @Override
+        @SuppressWarnings("ObjectEquality")
+        public RadixVector<T> mapConserve(Function<? super T, ? extends T> f) {
+            Object[] mPrefix1 = mapElems1(prefix1, f);
+            Object[] mPrefix2 = mapElems(2, prefix2, f);
+            Object[] mPrefix3 = mapElems(3, prefix3, f);
+            Object[] mPrefix4 = mapElems(4, prefix4, f);
+            Object[] mPrefix5 = mapElems(5, prefix5, f);
+            Object[] mData6 = mapElems(6, data6, f);
+            Object[] mSuffix5 = mapElems(5, suffix5, f);
+            Object[] mSuffix4 = mapElems(4, suffix4, f);
+            Object[] mSuffix3 = mapElems(3, suffix3, f);
+            Object[] mSuffix2 = mapElems(2, suffix2, f);
+            Object[] mSuffix1 = mapElems1(suffix1, f);
+            if (mPrefix1 == prefix1
+                    && mPrefix2 == prefix2
+                    && mPrefix3 == prefix3
+                    && mPrefix4 == prefix4
+                    && mPrefix5 == prefix5
+                    && mData6 == data6
+                    && mSuffix5 == suffix5
+                    && mSuffix4 == suffix4
+                    && mSuffix3 == suffix3
+                    && mSuffix2 == suffix2
+                    && mSuffix1 == suffix1) {
+                return this;
+            }
+            return new Vector6<>(
+                    mPrefix1, len1, mPrefix2, len12, mPrefix3, len123, mPrefix4, len1234, mPrefix5, len12345, mData6,
+                    mSuffix5, mSuffix4, mSuffix3, mSuffix2, mSuffix1, length0);
         }
 
         @Override

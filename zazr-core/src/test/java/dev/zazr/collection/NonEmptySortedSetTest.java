@@ -527,6 +527,7 @@ public class NonEmptySortedSetTest {
             calls.put("addAll(Iterable)", s -> java.util.List.of(s.addAll(List.empty()), s.addAll(s)));
             calls.put("union(Set)", s -> java.util.List.of(s.union(HashSet.empty()), s.union(s.toSortedSet())));
             calls.put("map(Function)", s -> java.util.List.of(s.map(i -> 0)));
+            calls.put("mapConserve(Function)", s -> java.util.List.of(s.mapConserve(i -> 0), s.mapConserve(i -> i)));
             calls.put("map(Comparator, Function)", s -> java.util.List.of(s.map(reverse, i -> 0)));
             calls.put("flatMap(Function)", s -> java.util.List.of(s.flatMap(i -> NonEmptySortedSet.single(0))));
             calls.put(

@@ -1290,6 +1290,19 @@ public class DocsExamplesTest {
         }
 
         @Test
+        void mapConserve() {
+            var names = List.of("ada", "Bob", "cy");
+            var same = names.mapConserve(n -> n); // List<String>
+            var titled = names.mapConserve(n -> n.equals("Bob") ? "BOB" : n); // List<String>
+            var unchanged = same == names; // boolean
+            // unchanged is true; titled is List(ada, BOB, cy) and shares the cell of "cy" with names
+
+            assertThat(unchanged).isTrue();
+            assertThat(titled).hasToString("List(ada, BOB, cy)");
+            assertThat(titled.drop(2)).isSameAs(names.drop(2));
+        }
+
+        @Test
         void grouping() {
             var words = List.of("apple", "bob", "avocado", "cherry", "banana");
             var lengths = words.groupMap(w -> w.charAt(0), String::length); // Map<Character, List<Integer>>
