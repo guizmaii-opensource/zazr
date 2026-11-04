@@ -565,12 +565,20 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         }
         int children = nodeArity();
         SetNode<T>[] newChildren = null;
+        int droppedNodeMap = 0;
+        bits = nodeMap;
         for (int i = 0; i < children; i++) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
             SetNode<T> child = getNode(i);
             SetNode<T> newChild = child.filter(predicate, keep);
-            newChildren = withChild(newChildren, children, i, child, newChild);
+            if (newChild.size() == 0) {
+                droppedNodeMap |= bitpos;
+            } else {
+                newChildren = withChild(newChildren, children, i, child, newChild);
+            }
         }
-        return rebuilt(keptDataMap, newChildren);
+        return rebuilt(keptDataMap, droppedNodeMap, newChildren);
     }
 
     /// The partition of this trie, as two roots: see [SetNode#partition].
@@ -597,14 +605,28 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         int children = nodeArity();
         SetNode<T>[] keptChildren = null;
         SetNode<T>[] rejectedChildren = null;
+        // the children of which a side gets nothing: no array of new children until one is only partly on that side
+        int keptDroppedNodeMap = 0;
+        int rejectedDroppedNodeMap = 0;
+        bits = nodeMap;
         for (int i = 0; i < children; i++) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
             SetNode<T> child = getNode(i);
             child.partition(predicate, into);
-            keptChildren = withChild(keptChildren, children, i, child, into.kept);
-            rejectedChildren = withChild(rejectedChildren, children, i, child, into.rejected);
+            if (into.kept.size() == 0) {
+                keptDroppedNodeMap |= bitpos;
+            } else {
+                keptChildren = withChild(keptChildren, children, i, child, into.kept);
+            }
+            if (into.rejected.size() == 0) {
+                rejectedDroppedNodeMap |= bitpos;
+            } else {
+                rejectedChildren = withChild(rejectedChildren, children, i, child, into.rejected);
+            }
         }
-        into.kept = rebuilt(keptDataMap, keptChildren);
-        into.rejected = rebuilt(dataMap ^ keptDataMap, rejectedChildren);
+        into.kept = rebuilt(keptDataMap, keptDroppedNodeMap, keptChildren);
+        into.rejected = rebuilt(dataMap ^ keptDataMap, rejectedDroppedNodeMap, rejectedChildren);
     }
 
     @Override
@@ -623,6 +645,7 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         }
         int children = nodeArity();
         SetNode<T>[] newChildren = null;
+        int droppedNodeMap = 0;
         bits = nodeMap;
         for (int i = 0; i < children; i++) {
             int bitpos = Integer.lowestOneBit(bits);
@@ -637,12 +660,17 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
             } else {
                 newChild = child;
             }
-            newChildren = withChild(newChildren, children, i, child, newChild);
+            if (newChild.size() == 0) {
+                droppedNodeMap |= bitpos;
+            } else {
+                newChildren = withChild(newChildren, children, i, child, newChild);
+            }
         }
-        return rebuilt(keptDataMap, newChildren);
+        return rebuilt(keptDataMap, droppedNodeMap, newChildren);
     }
 
-    // records the new child at `index` once one child has changed: null while every child is the old one
+    // records the new child at `index`, not empty, once one child has changed into a non-empty node: null while
+    // every child is the old one or dropped
     private static <T extends @Nullable Object> SetNode<T> @Nullable [] withChild(
             SetNode<T> @Nullable [] newChildren, int children, int index, SetNode<T> child, SetNode<T> newChild) {
         if (newChildren != null) {
@@ -658,13 +686,15 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         return array;
     }
 
-    // the node of the inline elements of `keptDataMap` and of the new children (null entries, or a null array: the
-    // old child), where a child down to one element comes back inline and an empty one goes; this node when nothing
-    // was dropped
+    // the node of the inline elements of `keptDataMap` and of the children: none of those of `droppedNodeMap`, the
+    // new ones of `newChildren` and the old ones elsewhere (null entries, or a null array), where a child down to one
+    // element comes back inline; this node when nothing was dropped
     @SuppressWarnings("Var")
-    private BitmapIndexedSetNode<T> rebuilt(int keptDataMap, SetNode<T> @Nullable [] newChildren) {
-        if (keptDataMap == dataMap && newChildren == null) {
+    private BitmapIndexedSetNode<T> rebuilt(int keptDataMap, int droppedNodeMap, SetNode<T> @Nullable [] newChildren) {
+        if (keptDataMap == dataMap && droppedNodeMap == 0 && newChildren == null) {
             return this;
+        } else if (keptDataMap == 0 && droppedNodeMap == nodeMap) {
+            return SetNode.empty();
         }
         int newNodeMap = 0;
         int migratedDataMap = 0;
@@ -685,11 +715,14 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         for (int i = 0; i < children; i++) {
             int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
+            if ((bitpos & droppedNodeMap) != 0) {
+                continue;
+            }
             SetNode<T> child = newChild(newChildren, i);
             int childSize = child.size();
             if (childSize >= 2) {
                 newNodeMap |= bitpos;
-            } else if (childSize == 1) {
+            } else {
                 migratedDataMap |= bitpos;
             }
             newSize += childSize;
@@ -719,12 +752,12 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
                 }
                 oldDataIdx++;
             } else {
-                SetNode<T> child = newChild(newChildren, oldNodeIdx);
                 if ((bitpos & migratedDataMap) != 0) {
+                    SetNode<T> child = newChild(newChildren, oldNodeIdx);
                     newContent[dataIdx] = child.getPayload(0);
                     newHashes[dataIdx++] = child.getHash(0);
                 } else if ((bitpos & newNodeMap) != 0) {
-                    newContent[newContent.length - 1 - nodeIdx++] = child;
+                    newContent[newContent.length - 1 - nodeIdx++] = newChild(newChildren, oldNodeIdx);
                 }
                 oldNodeIdx++;
             }
