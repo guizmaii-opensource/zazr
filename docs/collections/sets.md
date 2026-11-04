@@ -92,16 +92,21 @@ var before = scores.maxBefore(20);           // Option<Integer>
 An operation that changes nothing returns the set itself, not a copy: no allocation, and `==` tells you nothing
 changed.
 
-- `add` of an element already there, `remove` of an absent one, and `addAll`, `removeAll` or `diff` that add or
-  remove nothing. `union` too, except with another `TreeSet` of the same comparator, whose elements replace the
-  equal ones.
-- `filter`, `reject` and `retainAll` that keep every element; `partition` returns the set as the side that gets
-  everything.
+- `add` of an element already there, `remove` of an absent one, and `addAll`, `union`, `removeAll` or `diff` that
+  add or remove nothing.
+- `filter`, `reject`, `intersect` and `retainAll` that keep every element; `partition` returns the set as the side
+  that gets everything.
 - `replace` of an absent element, or by the very object already there.
 - `take` and `drop` of a `LinkedHashSet` or `TreeSet`, and the ranges of a `TreeSet`, that cut nothing.
 - `union` or `addAll` on an empty set returns the argument when it is a set of the same kind.
 
-An equal element is not the same object: `HashSet.replace(x, equalX)` stores `equalX`, so the result is a new set.
+An equal element is not the same object: `replace(x, equalX)` stores `equalX`, so the result is a new set.
+
+## Which of two equal elements stays
+
+When the set and the argument hold equal elements that are different objects, `add`, `addAll`, `union`,
+`intersect` and `retainAll` keep the set's own. So a set united with, or intersected with, an equal set comes back
+unchanged.
 
 When something changes, the parts of the tree or trie that do not are shared with the set, not copied: `diff` of a
 `TreeSet` copies only the paths to the elements it removes, and `partition` of a `HashSet` gives each side the parts

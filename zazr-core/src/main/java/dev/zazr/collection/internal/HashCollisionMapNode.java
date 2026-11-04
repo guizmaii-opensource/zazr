@@ -129,6 +129,17 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
+    @Nullable
+    K findKey(K key, int hash, int shift) {
+        if (this.hash == hash) {
+            int index = indexOf(key);
+            return index >= 0 ? getKey(index) : null;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     MapNode<K, V> updated(K key, V value, int hash, int shift, boolean replace) {
         int index = indexOf(key);
         if (index >= 0) {

@@ -157,6 +157,7 @@ class ConservingSetMapTest {
                 row("union with an empty TreeSet", s -> s.union(TreeSet.<Integer>empty())),
                 row("union with itself", s -> s.union(s)),
                 row("union with equal elements", s -> s.union(LinkedHashSet.ofAll(elements(s.size())))),
+                row("union with an equal TreeSet", s -> s.union(TreeSet.ofAll(elements(s.size())))),
                 row("remove of an absent element", s -> s.remove(ABSENT)),
                 row("removeAll of nothing", s -> s.removeAll(java.util.List.of())),
                 row("removeAll of absent elements", s -> s.removeAll(java.util.List.of(ABSENT, -2))),
@@ -169,6 +170,9 @@ class ConservingSetMapTest {
                         s -> s.intersect(HashSet.ofAll(s).add(ABSENT))),
                 row("retainAll of itself", s -> s.retainAll(s)),
                 row("retainAll of a superset", s -> s.retainAll(Vector.ofAll(s).append(ABSENT))),
+                row("retainAll of equal elements", s -> s.retainAll(elements(s.size()))),
+                row("intersect with an equal HashSet", s -> s.intersect(HashSet.ofAll(elements(s.size())))),
+                row("intersect with an equal TreeSet", s -> s.intersect(TreeSet.ofAll(elements(s.size())))),
                 row("filter keeping everything", s -> s.filter(e -> true)),
                 row("reject dropping nothing", s -> s.reject(e -> false)),
                 row(
@@ -304,6 +308,7 @@ class ConservingSetMapTest {
                         "replace(Object,Object,Object) of a value by itself",
                         m -> m.replace(first(m)._1(), first(m)._2(), first(m)._2())),
                 row("replaceAll(BiFunction) with the same values", m -> m.replaceAll((k, v) -> v)),
+                row("retainAll of equal entries", m -> m.retainAll(entries(m.size()))),
                 row("mapValues to the same values", m -> m.mapValues(v -> v)),
                 row(
                         "computeIfAbsent of a present key",
@@ -454,6 +459,7 @@ class ConservingSetMapTest {
                         m -> m.replace(first(m)._1(), first(m)._2(), first(m)._2())),
                 row("replaceValue of an absent key", m -> m.replaceValue(ABSENT, 1)),
                 row("replaceAll(BiFunction) with the same values", m -> m.replaceAll((k, v) -> v)),
+                row("retainAll of equal entries", m -> m.retainAll(entries(m.size())), wrapped),
                 row("mapValues to the same values", m -> m.mapValues(v -> v)),
                 row(
                         "computeIfAbsent of a present key",
@@ -498,6 +504,7 @@ class ConservingSetMapTest {
                         m -> m.replace(m.head()._1(), m.head()._2(), m.head()._2())),
                 row("replaceValue of an absent key", m -> m.replaceValue(ABSENT, 1)),
                 row("replaceAll(BiFunction) with the same values", m -> m.replaceAll((k, v) -> v)),
+                row("retainAll of equal entries", m -> m.retainAll(entries(m.size())), wrapped),
                 row("mapValues to the same values", m -> m.mapValues(v -> v)),
                 row(
                         "computeIfAbsent of a present key",
@@ -868,8 +875,7 @@ class ConservingSetMapTest {
             assertThat(first(newKeySameValue)._1()).isSameAs(equalKey);
             assertThat(map.put(key, value)).isSameAs(map);
         }
-        // a LinkedHashSet keeps the element there when given an equal one
-        java.util.List<Set<Integer>> sets = java.util.List.of(HashSet.of(key), TreeSet.of(key));
+        java.util.List<Set<Integer>> sets = java.util.List.of(HashSet.of(key), LinkedHashSet.of(key), TreeSet.of(key));
         for (Set<Integer> set : sets) {
             Set<Integer> replaced = set.replace(key, equalKey);
             assertThat(replaced).isNotSameAs(set);
@@ -895,12 +901,7 @@ class ConservingSetMapTest {
             java.util.Map.entry("groupMap", "groups the entries"),
             java.util.Map.entry("groupMapReduce", "groups the entries"),
             java.util.Map.entry("init", "removes an element"),
-            java.util.Map.entry("tail", "removes an element"),
-            // the result holds the given entry objects, which are equal to those of the map, not the same
-            java.util.Map.entry("HashMap::retainAll", "keeps the given entries"),
-            java.util.Map.entry("TreeMap::retainAll", "keeps the given entries"),
-            java.util.Map.entry("NonEmptyMap::retainAll", "keeps the given entries"),
-            java.util.Map.entry("NonEmptySortedMap::retainAll", "keeps the given entries"));
+            java.util.Map.entry("tail", "removes an element"));
 
     // An overloaded method is named with its parameter types, as `filter(BiPredicate)`, and so is the row for it: the
     // first word of a row's name. A method with one form is named alone.

@@ -990,17 +990,22 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
+     * The new element takes the position of the replaced one. An element equal to the one there that is another
+     * object is stored, as on the other sets.
+     * <p>
      * Complexity: effectively O(1): the element is replaced, and {@code newElement} is removed from its old position if
-     * it is already in the set, as {@link #remove(Object)}. The new element takes the position of the replaced one.
+     * it is already in the set, as {@link #remove(Object)}.
      */
     @Override
     public LinkedHashSet<T> replace(T currentElement, T newElement) {
-        if (!Objects.equals(currentElement, newElement) && contains(currentElement)) {
-            // by key: the map may be the one of a LinkedHashMap.keySet(), whose values are not the elements
+        // by key: the map may be the one of a LinkedHashMap.keySet(), whose values are not the elements
+        T current = map.keyOrNull(currentElement);
+        if (current == null || current == newElement) {
+            // absent, or replaced by the object already there
+            return this;
+        } else {
             Objects.requireNonNull(newElement, "LinkedHashSet: element is null");
             return new LinkedHashSet<>(map.replaceKey(currentElement, Tuple.of(newElement, newElement)));
-        } else {
-            return this;
         }
     }
 

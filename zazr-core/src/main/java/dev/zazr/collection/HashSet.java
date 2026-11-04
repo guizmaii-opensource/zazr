@@ -1083,7 +1083,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             // absent, or replaced by the object already there
             return this;
         } else {
-            return remove(currentElement).add(newElement);
+            // `newElement` replaces an equal element elsewhere in the set too, as on the other sets
+            return wrap(tree.removed(currentElement).updated(newElement, true));
         }
     }
 

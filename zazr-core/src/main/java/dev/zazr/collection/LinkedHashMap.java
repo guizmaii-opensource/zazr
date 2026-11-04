@@ -1204,8 +1204,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
+     * The new entry takes the position of the replaced one. This map is returned when the key and the value of
+     * {@code newElement} are the objects already there; an equal key or value that is another object is stored.
+     * <p>
      * Complexity: effectively O(1): the entry is replaced, and an entry of the key of {@code newElement} elsewhere in
-     * the map is removed, as {@link #remove(Object)}. The new entry takes the position of the replaced one.
+     * the map is removed, as {@link #remove(Object)}.
      */
     @Override
     public LinkedHashMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
@@ -1214,12 +1217,26 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         Objects.requireNonNull(newElement._1(), "LinkedHashMap: key is null");
         Objects.requireNonNull(newElement._2(), "LinkedHashMap: value is null");
 
-        // We replace the whole element, i.e. key and value have to be present.
-        if (!Objects.equals(currentElement, newElement) && contains(currentElement)) {
-            return replaceKey(currentElement._1(), newElement);
-        } else {
+        // the whole entry is replaced, so its key and its value must both be there
+        Slot<K, V> existing = slotOrNull(currentElement._1());
+        if (existing == null || !Objects.equals(existing.entry()._2(), currentElement._2())) {
             return this;
+        } else if (existing.entry()._1() == newElement._1() && existing.entry()._2() == newElement._2()) {
+            // replaced by the key and the value objects already there
+            return this;
+        } else {
+            return replaceKey(currentElement._1(), newElement);
         }
+    }
+
+    /// The key object this map holds for `key`, or `null` when `key` is absent: what [LinkedHashSet#replace] compares
+    /// with the new element, since the values of a key set are not its elements.
+    ///
+    /// Complexity: effectively O(1): one hash lookup.
+    @Nullable
+    K keyOrNull(K key) {
+        Slot<K, V> slot = slotOrNull(key);
+        return slot == null ? null : slot.entry()._1();
     }
 
     /// This map with the entry of `currentKey`, which must be present, replaced by `newElement` at the same position

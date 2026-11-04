@@ -29,6 +29,10 @@ import org.jspecify.annotations.Nullable;
  * {@code groupBy}), the reductions that a set can answer ({@code fold}, {@code reduce}, {@code max}, {@code min},
  * {@code sum}) and the conversions. Nothing positional ({@code head}, {@code take}, {@code zip},
  * {@code sliding}, ...) is declared: a set has no first element.
+ * <p>
+ * When this set and an argument hold equal elements that are different objects, {@code add}, {@code addAll},
+ * {@code union}, {@code intersect} and {@code retainAll} keep this set's element; {@code replace} stores the new
+ * element, unless it is the object already there.
  *
  * @param <T> the element type
  * @author Daniel Dietrich
@@ -91,6 +95,9 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Returns a set containing only the elements present in both this set and the given set.
+     * <p>
+     * The elements kept are this set's, not the equal ones of {@code that}, so this set is returned when every one
+     * of its elements is in {@code that}.
      *
      * @param that the set to intersect with
      * @return a set with elements common to both sets; may be this instance if unchanged
@@ -132,6 +139,9 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Returns a set containing all distinct elements from this set and the given set.
+     * <p>
+     * An element of {@code that} equal to one of this set is not added: this set's stays, so this set is returned
+     * when {@code that} holds nothing new.
      *
      * @param that the set to union with
      * @return a set with all elements from both sets; may be this instance (or {@code that} itself) if no change was necessary
