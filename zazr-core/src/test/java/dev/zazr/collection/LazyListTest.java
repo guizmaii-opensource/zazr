@@ -7732,4 +7732,195 @@ public class LazyListTest extends AbstractTraversableTest {
             assertThat(infinite.equals(infinite)).isTrue();
         }
     }
+
+    @Nested
+    class OpaqueViewTests {
+
+        // a LazyList of the given elements that counts how often its first cell is computed
+        private <T> LazyList<T> counted(AtomicInteger reads, Vector<T> elements) {
+            return LazyList.defer(() -> {
+                reads.incrementAndGet();
+                return LazyList.ofAll(elements);
+            });
+        }
+
+        private record View<T>(String name, Function<LazyList<T>, java.util.Collection<T>> show) {}
+
+        // the java.util views over a LazyList that do not say which value they show: asking one whether it is empty
+        // asks the LazyList
+        private <T> Vector<View<T>> views() {
+            return Vector.of(
+                    new View<T>("unmodifiableList", list -> java.util.Collections.unmodifiableList(list.asJava())),
+                    new View<T>(
+                            "unmodifiableCollection",
+                            list -> java.util.Collections.unmodifiableCollection(list.asJava())),
+                    new View<T>("synchronizedList", list -> java.util.Collections.synchronizedList(list.asJava())),
+                    new View<T>("reversed", list -> list.asJava().reversed()),
+                    new View<T>("custom", list -> new java.util.AbstractCollection<T>() {
+                        @Override
+                        public java.util.Iterator<T> iterator() {
+                            return list.iterator();
+                        }
+
+                        @Override
+                        public int size() {
+                            return list.size();
+                        }
+                    }));
+        }
+
+        private static final Vector<Integer> ELEMENTS = Vector.of(1, 2);
+
+        private Vector<Integer> shown(String view) {
+            return view.equals("reversed") ? ELEMENTS.reverse() : ELEMENTS;
+        }
+
+        @Test
+        public void ofAllReadsNothingFromAnOpaqueView() {
+            for (View<Integer> view : this.<Integer>views()) {
+                AtomicInteger reads = new AtomicInteger();
+                LazyList<Integer> result = LazyList.ofAll(view.show().apply(counted(reads, ELEMENTS)));
+                assertThat(reads.get()).as(view.name()).isZero();
+                assertThat(result).as(view.name()).containsExactlyElementsOf(shown(view.name()));
+                assertThat(reads.get()).as(view.name()).isEqualTo(1);
+            }
+        }
+
+        @Test
+        public void concatReadsNothingFromAnOpaqueView() {
+            for (View<Iterable<Integer>> view : this.<Iterable<Integer>>views()) {
+                AtomicInteger reads = new AtomicInteger();
+                Vector<Iterable<Integer>> inner = Vector.of(List.of(1, 2), Vector.empty(), List.of(3));
+                LazyList<Integer> result = LazyList.concat(view.show().apply(counted(reads, inner)));
+                assertThat(reads.get()).as(view.name()).isZero();
+                Vector<Integer> expected = view.name().equals("reversed") ? Vector.of(3, 1, 2) : Vector.of(1, 2, 3);
+                assertThat(result).as(view.name()).containsExactlyElementsOf(expected);
+                assertThat(reads.get()).as(view.name()).isEqualTo(1);
+            }
+        }
+
+        @Test
+        public void flattenReadsNothingFromAnOpaqueView() {
+            for (View<Iterable<Integer>> view : this.<Iterable<Integer>>views()) {
+                AtomicInteger reads = new AtomicInteger();
+                Vector<Iterable<Integer>> inner = Vector.of(List.of(1, 2), Vector.empty(), List.of(3));
+                LazyList<Integer> result = LazyList.flatten(view.show().apply(counted(reads, inner)));
+                assertThat(reads.get()).as(view.name()).isZero();
+                Vector<Integer> expected = view.name().equals("reversed") ? Vector.of(3, 1, 2) : Vector.of(1, 2, 3);
+                assertThat(result).as(view.name()).containsExactlyElementsOf(expected);
+                assertThat(reads.get()).as(view.name()).isEqualTo(1);
+            }
+        }
+
+        @Test
+        public void removeAllReadsNothingFromAnOpaqueView() {
+            for (View<Integer> view : this.<Integer>views()) {
+                AtomicInteger reads = new AtomicInteger();
+                LazyList<Integer> list = LazyList.of(1, 2, 3);
+                LazyList<Integer> result = list.removeAll(view.show().apply(counted(reads, ELEMENTS)));
+                assertThat(reads.get()).as(view.name()).isZero();
+                assertThat(result).as(view.name()).isNotSameAs(list).containsExactly(3);
+                assertThat(reads.get()).as(view.name()).isEqualTo(1);
+            }
+        }
+
+        @Test
+        public void anOpaqueViewOfAnEmptyLazyListGivesAnEmptyResult() {
+            for (View<Integer> view : this.<Integer>views()) {
+                AtomicInteger reads = new AtomicInteger();
+                LazyList<Integer> list = LazyList.of(1, 2, 3);
+                LazyList<Integer> ofAll = LazyList.ofAll(view.show().apply(counted(reads, Vector.empty())));
+                LazyList<Integer> removed = list.removeAll(view.show().apply(counted(reads, Vector.empty())));
+                assertThat(reads.get()).as(view.name()).isZero();
+                assertThat(ofAll).as(view.name()).isEmpty();
+                assertThat(removed).as(view.name()).containsExactly(1, 2, 3);
+                assertThat(reads.get()).as(view.name()).isEqualTo(2);
+            }
+        }
+
+        @Test
+        public void aThrowingLazyListBehindAnOpaqueViewIsNotReadBeforeTraversal() {
+            for (View<Integer> view : this.<Integer>views()) {
+                LazyList<Integer> unread = LazyList.continually(() -> {
+                    throw new AssertionError("an element was read");
+                });
+                LazyList<Integer> ofAll = LazyList.ofAll(view.show().apply(unread));
+                LazyList<Integer> removed = LazyList.of(1).removeAll(view.show().apply(unread));
+                assertThatThrownBy(ofAll::head).as(view.name()).isInstanceOf(AssertionError.class);
+                assertThatThrownBy(removed::head).as(view.name()).isInstanceOf(AssertionError.class);
+            }
+        }
+
+        @Test
+        public void anEmptyCollectionWhoseEmptinessIsStoredGivesTheEmptyLazyListAtOnce() {
+            java.util.List<java.util.Collection<Integer>> known = java.util.List.of(
+                    new ArrayList<>(),
+                    new java.util.LinkedList<>(),
+                    new java.util.ArrayDeque<>(),
+                    new java.util.HashSet<>(),
+                    new java.util.LinkedHashSet<>(),
+                    new java.util.TreeSet<>(),
+                    java.util.List.of(),
+                    java.util.Set.of(),
+                    Vector.<Integer>empty().asJava(),
+                    List.<Integer>empty().asJava(),
+                    LazyList.<Integer>empty().asJava());
+            LazyList<Integer> list = LazyList.of(1, 2, 3);
+            for (java.util.Collection<Integer> empty : known) {
+                assertThat(LazyList.ofAll(empty)).as("%s", empty.getClass()).isSameAs(LazyList.empty());
+                assertThat(list.removeAll(empty)).as("%s", empty.getClass()).isSameAs(list);
+            }
+            java.util.List<Iterable<Integer>> noIterables = new ArrayList<>();
+            assertThat(LazyList.concat(noIterables)).isSameAs(LazyList.empty());
+            assertThat(LazyList.flatten(noIterables)).isSameAs(LazyList.empty());
+            assertThat(LazyList.concat(java.util.List.<Iterable<Integer>>of())).isSameAs(LazyList.empty());
+            assertThat(LazyList.flatten(Vector.<Iterable<Integer>>empty().asJava()))
+                    .isSameAs(LazyList.empty());
+        }
+
+        @Test
+        public void anEmptyZazrCollectionGivesTheEmptyLazyListAtOnce() {
+            LazyList<Integer> list = LazyList.of(1, 2, 3);
+            for (Traversable<Integer> empty :
+                    Vector.<Traversable<Integer>>of(Vector.empty(), List.empty(), Queue.empty(), HashSet.empty())) {
+                assertThat(LazyList.ofAll(empty)).as("%s", empty.getClass()).isSameAs(LazyList.empty());
+                assertThat(list.removeAll(empty)).as("%s", empty.getClass()).isSameAs(list);
+            }
+            assertThat(LazyList.concat(List.<Iterable<Integer>>empty())).isSameAs(LazyList.empty());
+            assertThat(LazyList.flatten(Vector.<Iterable<Integer>>empty())).isSameAs(LazyList.empty());
+            LazyList<Integer> evaluatedEmpty =
+                    LazyList.ofAll(new ArrayList<Integer>(java.util.List.of(1))).tail();
+            assertThat(evaluatedEmpty.isEmpty()).isTrue();
+            assertThat(list.removeAll(evaluatedEmpty)).isSameAs(list);
+            assertThat(LazyList.<Integer>empty()
+                            .removeAll(java.util.Collections.unmodifiableList(
+                                    List.of(1).asJava())))
+                    .isSameAs(LazyList.empty());
+        }
+
+        @Test
+        public void anOpaqueViewOfAStrictEmptyCollectionIsAskedOnlyWhenRead() {
+            java.util.List<Integer> view = java.util.Collections.unmodifiableList(new ArrayList<Integer>());
+            LazyList<Integer> list = LazyList.of(1, 2, 3);
+            assertThat(LazyList.ofAll(view)).isNotSameAs(LazyList.empty()).isEmpty();
+            assertThat(list.removeAll(view)).isNotSameAs(list).containsExactly(1, 2, 3);
+            java.util.List<Iterable<Integer>> noIterables = java.util.Collections.emptyList();
+            assertThat(LazyList.concat(noIterables))
+                    .isNotSameAs(LazyList.empty())
+                    .isEmpty();
+            assertThat(LazyList.flatten(noIterables))
+                    .isNotSameAs(LazyList.empty())
+                    .isEmpty();
+        }
+
+        @Test
+        public void aNonEmptyStrictCollectionIsReadWhenTheResultIs() {
+            assertThat(LazyList.ofAll(new ArrayList<>(java.util.List.of(1, 2)))).containsExactly(1, 2);
+            assertThat(LazyList.of(1, 2, 3).removeAll(java.util.Set.of(2))).containsExactly(1, 3);
+            assertThat(LazyList.concat(java.util.List.of(List.of(1), Vector.of(2))))
+                    .containsExactly(1, 2);
+            assertThat(LazyList.flatten(java.util.List.of(List.of(1), Vector.of(2))))
+                    .containsExactly(1, 2);
+        }
+    }
 }
