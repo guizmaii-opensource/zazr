@@ -1581,7 +1581,7 @@ and a caller can test identity. On `Vector`, `List`, `Queue`, `LazyList` and `No
   `ConservingOperationsTest` reads every public method that returns the sequence's own type, or a tuple of two, by
   reflection: each is a conserving row or a row saying why it is left out, so a new operation fails the test until it
   gets one. The control types already conserve (`Option.filter`, `Try.filter`, `Either.filterOrElse`, the `orElse`
-  family, the mapping of the other side). A conserving `map` is a separate decision.
+  family, the mapping of the other side). The conserving map is `mapConserve`, below.
 - **Measured** (JMH, 3 forks, `-prof gc`, `ConservingBenchmark` and `ConservingSmallBenchmark` in `zazr-benchmark`,
   `main` and the branch back to back; the table is in the pull request). The no-ops allocate nothing: `List.filter`
   keeping every element is 3.1x to 3.5x faster, `span` over everything 8x to 13x, `splitAt` at the end 1.9x to 4.2x,
@@ -1641,7 +1641,8 @@ check that every public method returning the type is a row or excluded with a re
     the same.
   - `HashMap.replace(entry, entry)` of an entry by itself removes and puts it back: the check needs the stored key,
     which the CHAMP nodes give only in a new `Tuple2`.
-  - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: a conserving `map` is decided separately.
+  - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: `map` is unchanged, and the sets have
+    `mapConserve` (below).
 - **Measured** (JMH, 3 forks, `-prof gc`, `main` then the branch back to back on the same benchmark classes,
   `ConservingSetMapBenchmark`, the table in the pull request). The no-op cases win everywhere: `partition` with
   everything on one side 4x to 14x faster, `LinkedHashMap.filter` keeping everything and `mapValues` to the same values
@@ -1652,6 +1653,45 @@ check that every public method returning the type is a row or excluded with a re
   10 000), except two small ones at 10 entries: `LinkedHashMap.mapValues` changing every value is 1.30x slower there
   but 0.79x with a fifth less allocation at 10 000, and `LinkedHashMap.filter` dropping half is 1.32x slower (0.35 to
   0.47 µs). `LinkedHashMap.filter` dropping the last entry is 2.5x faster at 10 and 6x at 10 000.
+
+**`mapConserve`, not a conserving `map` (decided 2026-11-03).** `map` is unchanged. A separate
+`mapConserve(Function<? super T, ? extends T>)`, Scala's name (`List.mapConserve` in the Scala 3 standard library,
+`library/src/scala/collection/immutable/List.scala`), returns the receiver itself when the mapper returns every
+element itself (`==`, not `equals`). It is on `Vector`, `NonEmptyVector`, `List`, `Queue`, `Set`,
+`SortedSet`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet` and `NonEmptySortedSet`. Making `map` itself
+conserving was rejected for three reasons, whatever its cost:
+
+- `map` would sometimes return its receiver, which code that compares results with `==`, keys an `IdentityHashMap`
+  with them or locks on them can see. An opt-in method changes nothing for existing callers.
+- `TreeSet.map(Function)` orders its result by the natural comparator. Returning the receiver would keep the
+  receiver's comparator: `TreeSet.of(reverseOrder(), 1, 2, 3).map(x -> x)` iterates 1, 2, 3 today and would iterate
+  3, 2, 1. `mapConserve`, typed `T -> T`, keeps the receiver's comparator, as its documentation says.
+- `LazyList` cannot tell that nothing changed without evaluating every cell, so a conserving `map` would conserve on
+  the strict sequences only. `LazyList` has no `mapConserve`.
+
+What each type shares when something changes:
+
+- `List` (`ListModule.Conserve.map`): the cells after the last changed element, as `filter` does, through
+  `ListModule.Conserve.prependCells` and `prependReversed`. The mapper runs once per element, in order.
+- `Vector`: the arrays whose elements are all unchanged. The trie's `map` already returned an unchanged array itself
+  (`mapElems`, after Scala's `VectorStatics.mapElems`); each `VectorN` has a `mapConserve` beside its `map` that
+  returns the trie itself when every one of its arrays is unchanged. `map` keeps its own body: the same check in it
+  made `Vector.map` of 10 elements about 30 % slower when an element changes, in the first measurement, and the
+  re-run without it matched the base. The mapper runs once per element, in order. `NonEmptyVector` wraps it.
+- `Queue`: its front or its rear, whichever is unchanged. The mapper runs over the front, then over the rear in its
+  stored order, which is the reverse of the queue's order, as `Queue.map` does.
+- The sets: nothing is allocated until the first change; then the set is rebuilt, with the elements before the
+  change added as they are and the mapper not called again for them. The hashes of a changed element differ, so no
+  subtree of a `HashSet` can be kept. Of two equal results, the one kept is the one `map` keeps.
+
+`MapConserveBenchmark` compares `map`, `mapConserve` and a plain `List.Builder` map on `List` and `Vector` at sizes
+10, 1,000 and 100,000, with no element, every element or only the first one changed (JMH, 3 forks, `-prof gc`; the
+table is in the pull request). When nothing changes, `mapConserve` allocates nothing and is 2x to 3.6x faster than
+`map` on `List`, 1.0x to 1.4x on `Vector`. With only the first element changed, on `List` it allocates 48
+bytes and is 1.1x to 2.7x faster; on `Vector` it is level from 1,000 elements and slower on 10 (0.021 µs against
+0.013 µs). When every element changes it costs more than `map`: up to 14 % on a `List` of 1,000 (5 % on 100,000),
+and on a `Vector` of 10 elements 0.033 µs against 0.019 µs; from 1,000 elements on `Vector` it is level.
+That is the price of the check, paid only by the callers who ask for it.
 
 **More shared subtrees (#323, 2026-11-03).** Three operations that rebuilt what they could share now share it, each
 kept for its measured win (`ShareSubtreesBenchmark`, below).

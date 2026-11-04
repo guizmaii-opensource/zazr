@@ -520,6 +520,16 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
+     * The result is ordered by the comparator of this set.
+     * <p>
+     * Complexity: O(n log n) once an element changes, to build the new set; O(n) when nothing changes.
+     */
+    @Override
+    SortedSet<T> mapConserve(Function<? super T, ? extends T> mapper);
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Complexity: O(n log n): the collected elements are sorted, then the new tree is built in one pass; O(n) when
      * they come out in order.
      */

@@ -248,6 +248,23 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     }
 
     /**
+     * The elements transformed by {@code mapper}, in order, as {@link #map(Function)}, keeping what does not change:
+     * an element for which {@code mapper} returns that same object ({@code ==}, not {@code equals}) is unchanged.
+     * <p>
+     * Complexity: O(n); {@code mapper} runs once per element, in order, and the arrays whose elements are all
+     * unchanged are shared, not copied.
+     * <p>
+     * Returns this NonEmptyVector itself when nothing changes.
+     *
+     * @param mapper transforms an element, returning it itself to leave it unchanged
+     * @return this NonEmptyVector when every element is unchanged, otherwise a new one of the results
+     * @throws NullPointerException if {@code mapper} is null or returns null
+     */
+    public NonEmptyVector<A> mapConserve(Function<? super A, ? extends A> mapper) {
+        return rewrap(vector.mapConserve(mapper));
+    }
+
+    /**
      * Concatenates the non-empty vectors {@code mapper} returns for each element. For a function that returns any
      * {@code Iterable}, possibly empty, see {@link #flatMapAll(Function)}.
      *

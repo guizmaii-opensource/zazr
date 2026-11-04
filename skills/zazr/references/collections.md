@@ -60,6 +60,12 @@ elements as it groups them, and `groupMapReduce(key, value, reduce)` combines ea
 the values of its entries in a `Vector`, a `TreeSet` in a `HashSet`, and a non-empty collection returns a
 `NonEmptyMap`. The static `flatten` removes one level of nesting.
 
+`mapConserve(f)`, with `f` from an element to an element of the same type, returns the receiver itself when `f`
+returns every element itself (`==`, not `equals`); `map` builds a new collection. It is on `Vector`,
+`NonEmptyVector`, `List`, `Queue` and the sets, not on `LazyList`. A `List` shares the cells after the last change,
+and a sorted set keeps its own comparator. Use it for a pass that usually changes nothing, then test
+`result == input` ([When nothing changes](https://zazr.dev/collections/#when-nothing-changes)).
+
 ```java
 var words  = List.of("apple", "bob", "avocado");
 var byChar = words.groupMap(w -> w.charAt(0), String::length);              // Map<Character, List<Integer>>
