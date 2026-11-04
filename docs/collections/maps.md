@@ -140,6 +140,8 @@ changed.
   entry; `partition` returns the map as the side that gets everything. `retainAll` keeps the map's own keys and
   values, not the equal ones it is given.
 - `mapValues` and `replaceAll` whose function returns every value itself.
+- `replace(entry, newEntry)` whose new key and value are the objects already there for the key of `entry`. An equal
+  key or value that is another object replaces the one there.
 - `take` and `drop` of a `LinkedHashMap` or `TreeMap`, and the ranges of a `TreeMap`, that cut nothing.
 - `putAll` or `merge` on an empty map returns the argument when it is a map of the same kind.
 
