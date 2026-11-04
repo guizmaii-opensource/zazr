@@ -9,23 +9,6 @@ import org.jspecify.annotations.Nullable;
 
 public interface LazyListModule {
 
-    // whether elements is known to be empty without reading anything: an evaluated empty LazyList (or its asJava()
-    // view), or an empty collection whose emptiness is stored (Scala's knownSize == 0)
-    static boolean knownIsEmpty(Iterable<?> elements) {
-        if (elements instanceof LazyList<?> list) {
-            return LazyCell.knownIsEmpty(list);
-        } else if (JavaConverters.underlying(elements) instanceof LazyList<?> list) {
-            // the asJava() view of a LazyList: asking the view whether it is empty would evaluate the list
-            return LazyCell.knownIsEmpty(list);
-        } else if (elements instanceof java.util.Collection<?> collection) {
-            return collection.isEmpty();
-        } else {
-            return elements instanceof dev.zazr.collection.Traversable<?> traversable
-                    && !(elements instanceof java.util.Iterator)
-                    && traversable.isEmpty();
-        }
-    }
-
     // whether elements is known to be empty without reading anything, even through an opaque view: an evaluated
     // empty LazyList (or its asJava() view), an empty strict Zazr collection (or its asJava() view), or an empty
     // java.util collection whose elements it holds itself. Any other Collection may be a view over a LazyList

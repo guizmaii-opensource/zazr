@@ -177,7 +177,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     static <T extends @Nullable Object> LazyList<T> concat(Iterable<? extends Iterable<? extends T>> iterables) {
         Objects.requireNonNull(iterables, "iterables is null");
-        return LazyListModule.knownIsEmpty(iterables)
+        return LazyListModule.knownIsEmptyWithoutReading(iterables)
                 ? empty()
                 : lazily(() -> Iterator.concat(iterables).toLazyList());
     }
@@ -201,7 +201,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     static <T extends @Nullable Object> LazyList<T> flatten(Iterable<? extends Iterable<? extends T>> nested) {
         Objects.requireNonNull(nested, "nested is null");
-        return LazyListModule.knownIsEmpty(nested)
+        return LazyListModule.knownIsEmptyWithoutReading(nested)
                 ? empty()
                 : lazily(() ->
                         LazyListFactory.create(new FlatMapIterator<>(Iterator.ofAll(nested), Function.identity())));
@@ -469,6 +469,11 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Creates a LazyList of the given elements.
+     * <p>
+     * Complexity: lazy; nothing is read now. The iterator is asked for when the result is first read. A LazyList, or
+     * its {@code asJava()} view, is returned itself, and an iterable already known to be empty (an empty Zazr
+     * collection, a LazyList whose emptiness has been read, an empty {@code ArrayList}, {@code List.of()} and the
+     * like) gives the empty LazyList; any other view is not asked whether it is empty.
      *
      * @param <T>      Component type of the LazyList.
      * @param elements An Iterable of elements.
@@ -481,7 +486,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
             return (LazyList<T>) elements;
         } else if (JavaConverters.underlying(elements) instanceof LazyList<?> underlying) {
             return (LazyList<T>) underlying;
-        } else if (LazyListModule.knownIsEmpty(elements)) {
+        } else if (LazyListModule.knownIsEmptyWithoutReading(elements)) {
             return empty();
         } else {
             // the iterator is asked for when the list is first read, as Scala's LazyList.from does
@@ -2516,7 +2521,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      */
     default LazyList<T> removeAll(Iterable<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return LazyCell.knownIsEmpty(this) || LazyListModule.knownIsEmpty(elements)
+        return LazyCell.knownIsEmpty(this) || LazyListModule.knownIsEmptyWithoutReading(elements)
                 ? this
                 : lazily(() -> {
                     Set<T> removed = HashSet.ofAll(elements);
