@@ -820,23 +820,31 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return tree.comparator();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TreeSet<T> diff(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (isEmpty()) {
-            return this;
-        } else if (hasSameComparator(elements)) {
+        return isEmpty() ? this : without(elements);
+    }
+
+    // this set without the elements the comparator equates with one of `elements`: the red-black difference for a
+    // TreeSet of the same comparator, otherwise one deletion by the comparator per given element
+    @SuppressWarnings("unchecked")
+    private TreeSet<T> without(Iterable<? extends T> elements) {
+        if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
             return withTree(tree.difference(that.tree));
-        } else {
-            return removeAll(elements);
         }
+        @SuppressWarnings("Var")
+        RedBlackTree<T> removed = tree;
+        for (T element : elements) {
+            removed = removed.delete(element);
+        }
+        return withTree(removed);
     }
 
     // the RedBlackTree set operations require both trees to be ordered by the same comparator
-    private boolean hasSameComparator(Set<?> that) {
-        return that instanceof TreeSet && comparator().equals(((TreeSet<?>) that).comparator());
+    private boolean hasSameComparator(Iterable<?> that) {
+        return that instanceof TreeSet<?> set && comparator().equals(set.comparator());
     }
 
     /**
@@ -950,18 +958,34 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return Collections.groupMapReduceToMap(this, key, value, reduce, "TreeSet.groupMapReduce");
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TreeSet<T> intersect(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (isEmpty()) {
-            return this;
-        } else if (hasSameComparator(elements)) {
+        return isEmpty() ? this : keeping(elements);
+    }
+
+    // this set's elements the comparator equates with one of `elements`: the red-black intersection for a TreeSet of
+    // the same comparator, otherwise a lookup in this tree per given element, then a filter that keeps the objects
+    // found, so that the subtrees that lose nothing are shared
+    @SuppressWarnings("unchecked")
+    private TreeSet<T> keeping(Iterable<? extends T> elements) {
+        if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
             // the red-black intersection keeps the elements of its argument, here this tree's
             return withElementsOf(that.tree.intersection(tree));
+        }
+        // this set's objects, each once however many given elements the comparator equates with it
+        java.util.IdentityHashMap<T, Boolean> found = new java.util.IdentityHashMap<>();
+        for (T element : elements) {
+            T stored = RedBlackTreeModule.Node.findByKey(tree, element, tree.comparator(), false);
+            if (stored != null) {
+                found.put(stored, Boolean.TRUE);
+            }
+        }
+        if (found.size() == tree.size()) {
+            return this;
         } else {
-            return retainAll(elements);
+            return withTree(RedBlackTreeModule.Node.filter(tree, found::containsKey));
         }
     }
 
@@ -1156,7 +1180,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> removeAll(Iterable<? extends T> elements) {
-        return Collections.removeAll(this, elements, kept -> filter(kept));
+        Objects.requireNonNull(elements, "elements is null");
+        return isEmpty() ? this : without(elements);
     }
 
     @Override
@@ -1179,7 +1204,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> retainAll(Iterable<? extends T> elements) {
-        return Collections.retainAll(this, elements, kept -> filter(kept));
+        Objects.requireNonNull(elements, "elements is null");
+        return isEmpty() ? this : keeping(elements);
     }
 
     @SuppressWarnings("unchecked")
