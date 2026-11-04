@@ -1339,11 +1339,15 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (isEmpty()) {
             return Vector.empty();
         }
-        Vector.Builder<V> builder = Vector.newBuilder(size());
-        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
-            builder.add(entryAt(keys.next())._2());
+        // the keys in insertion order, each then replaced in place by its value
+        Object[] values = new Object[size()];
+        order.copyKeysTo(values);
+        for (int i = 0; i < values.length; i++) {
+            @SuppressWarnings("unchecked")
+            K key = (K) values[i];
+            values[i] = entryAt(key)._2();
         }
-        return builder.result();
+        return Vector.ofOwnedArray(values);
     }
 
     // -- Positional operations, in insertion order

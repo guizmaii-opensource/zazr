@@ -1219,7 +1219,12 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      */
     @Override
     public Vector<V> values() {
-        return Vector.ofAll(trie.valuesIterator());
+        if (isEmpty()) {
+            return Vector.empty();
+        }
+        Object[] values = new Object[size()];
+        trie.copyValuesTo(values, 0);
+        return Vector.ofOwnedArray(values);
     }
 
     /**

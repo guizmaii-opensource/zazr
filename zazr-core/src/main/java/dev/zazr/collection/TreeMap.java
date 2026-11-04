@@ -1789,11 +1789,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         if (isEmpty()) {
             return Vector.empty();
         }
-        Vector.Builder<V> builder = Vector.newBuilder(size());
-        for (Tuple2<K, V> entry : entries) {
-            builder.add(entry._2());
-        }
-        return builder.result();
+        Object[] values = new Object[size()];
+        RedBlackTreeModule.Node.copyValuesTo(entries, values, 0);
+        return Vector.ofOwnedArray(values);
     }
 
     /**

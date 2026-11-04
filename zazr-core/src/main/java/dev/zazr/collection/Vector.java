@@ -58,6 +58,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return (trie.length() == 0) ? empty() : new Vector<>(trie);
     }
 
+    /* the elements of an array of exactly Object[] that the caller fills and hands over (RadixVector.ofOwnedArray):
+     * the maps' values() */
+    static <T extends @Nullable Object> Vector<T> ofOwnedArray(@Nullable Object[] elements) {
+        return ofAll(RadixVector.<T>ofOwnedArray(elements));
+    }
+
     /* the elements of an iterable that can be traversed again, as a tree: a Vector's own, or a new one. Concatenating
      * two trees works by whole arrays, which an iterable of any other kind would not allow */
     private static <T extends @Nullable Object> RadixVector<T> sizedTree(Iterable<? extends T> iterable) {

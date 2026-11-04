@@ -90,6 +90,25 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
         }
     }
 
+    /**
+     * A vector of the elements of {@code elements}, which the caller hands over: an array of exactly {@code Object[]}
+     * that nothing else holds or writes afterwards. Up to 32 elements it becomes the vector's only leaf, with no copy;
+     * longer, it is copied leaf by leaf, as {@link #ofAll(Object[])} does.
+     */
+    public static <T extends @Nullable Object> RadixVector<T> ofOwnedArray(@Nullable Object[] elements) {
+        int n = elements.length;
+        if (n == 0) {
+            return empty();
+        } else if (n <= WIDTH) {
+            for (Object element : elements) {
+                Objects.requireNonNull(element, "Vector: element is null");
+            }
+            return new Vector1<>(elements);
+        } else {
+            return new VectorBuilder<T>().addArray(elements, 0, n).result();
+        }
+    }
+
     /** A vector of the elements of {@code elements}, in iteration order; a {@code RadixVector} is returned as is. */
     @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> RadixVector<T> ofAll(Iterable<? extends T> elements) {
