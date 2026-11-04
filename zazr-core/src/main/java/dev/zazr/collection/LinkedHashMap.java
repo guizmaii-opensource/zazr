@@ -4,6 +4,7 @@ import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
 import dev.zazr.collection.internal.AbstractIterator;
 import dev.zazr.collection.internal.Collections;
+import dev.zazr.collection.internal.InsertionOrder;
 import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.MapViews;
@@ -25,7 +26,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * An immutable {@code LinkedHashMap} implementation that has predictable (insertion-order) iteration.
  * <p>
- * The insertion order is a {@link Vector} of keys beside a {@link HashMap} from each key to its entry and position.
+ * The insertion order is a trie of the keys, indexed by the ordinal each key got when it was first put, beside a
+ * {@link HashMap} from each key to its entry and ordinal. A removed key leaves no gap: the trie holds only the keys
+ * present, and counts them, so the key at a given position is found by one walk from its root.
  * <p>
  * A key given more than once keeps the position of its first occurrence and takes the key object and the value of
  * its last, whichever way the map is built: {@link #put(Object, Object)} on a key already present, the
@@ -38,12 +41,9 @@ import org.jspecify.annotations.Nullable;
  * and take its last key object, with the combined value. On a map that is not empty, {@code merge(that)} keeps the
  * key object and the value of a key already present and adds only the keys it does not hold.
  * <p>
- * Complexity: lookups and insertions are effectively O(1). Removing an entry makes a gap in the insertion order,
- * and the whole map is rebuilt in O(n) once the gaps outnumber the entries: averaged over a chain of removals, each
- * on the result of the previous one, a removal is effectively O(1), but removing again from an older version can pay
- * the O(n) every time, and after removals, finding a position ({@code tail}, {@code take}, {@code drop}) walks past
- * the gaps in the way. The methods without a note of their own (map, filter, the folds, the conversions) walk the
- * entries once, O(n).
+ * Complexity: lookups, insertions and removals are effectively O(1), on any version of a map, older ones included;
+ * finding a position ({@code tail}, {@code take}, {@code drop}) is effectively O(1) too. The methods without a note of
+ * their own (map, filter, the folds, the conversions) walk the entries once, O(n).
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -51,30 +51,24 @@ import org.jspecify.annotations.Nullable;
  */
 public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable Object> implements Map<K, V> {
 
-    private static final Object TOMBSTONE = new Object();
+    private static final LinkedHashMap<?, ?> EMPTY = new LinkedHashMap<>(InsertionOrder.empty(), HashMap.empty());
 
-    private static final LinkedHashMap<?, ?> EMPTY = new LinkedHashMap<>(Vector.empty(), HashMap.empty(), 0, 0);
-
-    private final Vector<K> list;
+    private final InsertionOrder<K> order;
 
     private final HashMap<K, Slot<K, V>> map;
 
-    private final int offset;
-
-    private final int tombstones;
-
-    private LinkedHashMap(Vector<K> list, HashMap<K, Slot<K, V>> map, int offset, int tombstones) {
-        this.list = list;
+    private LinkedHashMap(InsertionOrder<K> order, HashMap<K, Slot<K, V>> map) {
+        this.order = order;
         this.map = map;
-        this.offset = offset;
-        this.tombstones = tombstones;
     }
 
+    /* the entry of a key and the ordinal of the key in the insertion order */
     private record Slot<K extends @Nullable Object, V extends @Nullable Object>(Tuple2<K, V> entry, int index) {}
 
-    @SuppressWarnings("unchecked")
-    private static <K extends @Nullable Object> K tombstone() {
-        return (K) TOMBSTONE;
+    /// The empty map whose first key gets the ordinal `ordinal` in the insertion order: the tests start near
+    /// [InsertionOrder#LIMIT] to reach the renumbering of the keys.
+    static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> emptyStartingAt(int ordinal) {
+        return new LinkedHashMap<>(InsertionOrder.startingAt(ordinal), HashMap.empty());
     }
 
     /**
@@ -862,35 +856,20 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1) to create; a whole walk is O(n). A step skips the gaps left by removed entries, so after
-     * removals a single step can take up to O(n).
+     * Complexity: effectively O(1) to create; a whole walk is O(n), one hash lookup per entry.
      */
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
-        java.util.Iterator<K> slots = list.iterator();
+        java.util.Iterator<K> keys = order.iterator();
         return new AbstractIterator<Tuple2<K, V>>() {
-            private @Nullable K nextKey;
-            private boolean nextKeyDefined;
-
             @Override
             public boolean hasNext() {
-                while (!nextKeyDefined && slots.hasNext()) {
-                    K key = slots.next();
-                    if (key != TOMBSTONE) {
-                        nextKey = key;
-                        nextKeyDefined = true;
-                    }
-                }
-                return nextKeyDefined;
+                return keys.hasNext();
             }
 
             @Override
-            // hasNext() sets nextKey whenever it sets nextKeyDefined, and AbstractIterator only
-            // calls getNext() after hasNext() returned true.
-            @SuppressWarnings("NullAway")
             protected Tuple2<K, V> getNext() {
-                nextKeyDefined = false;
-                return entryAt(nextKey);
+                return entryAt(keys.next());
             }
         };
     }
@@ -905,7 +884,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * map without copying.
      * <p>
      * Complexity: O(1): nothing is copied. {@code get} and {@code containsKey} on the view are effectively O(1); its
-     * iterators, in either order, walk the whole map in O(n), and after removals a single step can skip many gaps.
+     * iterators, in either order, walk the whole map in O(n).
      *
      * @return an unmodifiable {@code java.util.SequencedMap} view
      */
@@ -918,34 +897,21 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * The entries in reverse insertion order, which the reversed views of {@code asJavaMap()} and of
      * {@link LinkedHashSet#asJava()} walk.
      * <p>
-     * Complexity: O(1) to create; a whole walk is O(n). A step skips the gaps left by removed entries, so after
-     * removals a single step can take up to O(n).
+     * Complexity: effectively O(1) to create; a whole walk is O(n), one hash lookup per entry.
      *
      * @return a new iterator
      */
     java.util.Iterator<Tuple2<K, V>> reverseIterator() {
+        java.util.Iterator<K> keys = order.reverseIterator();
         return new AbstractIterator<Tuple2<K, V>>() {
-            private int index = list.size() - 1;
-            private @Nullable Tuple2<K, V> next;
-
             @Override
             public boolean hasNext() {
-                while (next == null && index >= 0) {
-                    K key = list.get(index--);
-                    if (key != TOMBSTONE) {
-                        next = entryAt(key);
-                    }
-                }
-                return next != null;
+                return keys.hasNext();
             }
 
             @Override
-            // AbstractIterator only calls getNext() after hasNext() returned true, which set next
-            @SuppressWarnings("NullAway")
             protected Tuple2<K, V> getNext() {
-                Tuple2<K, V> entry = next;
-                next = null;
-                return entry;
+                return entryAt(keys.next());
             }
         };
     }
@@ -1092,18 +1058,42 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (existing != null && existing.entry()._1() == key && existing.entry()._2() == value) {
             // the key and the value are the objects already there
             return this;
-        } else if (existing != null) {
-            // the insertion order holds the key object of the entry, which the positional operations read
-            Vector<K> newList = existing.entry()._1() == key ? list : list.update(existing.index() - offset, key);
-            return new LinkedHashMap<>(
-                    newList, map.put(key, new Slot<>(Tuple.of(key, value), existing.index())), offset, tombstones);
-        } else {
-            return new LinkedHashMap<>(
-                    list.append(key),
-                    map.put(key, new Slot<>(Tuple.of(key, value), offset + list.size())),
-                    offset,
-                    tombstones);
         }
+        return putEntry(Tuple.of(key, value), existing);
+    }
+
+    // put(entry._1(), entry._2()) storing `entry` itself, whose key and value are not null
+    private LinkedHashMap<K, V> putEntry(Tuple2<K, V> entry) {
+        Slot<K, V> existing = slotOrNull(entry._1());
+        if (existing != null
+                && existing.entry()._1() == entry._1()
+                && existing.entry()._2() == entry._2()) {
+            // the key and the value are the objects already there
+            return this;
+        }
+        return putEntry(entry, existing);
+    }
+
+    // putEntry(entry) once the slot of its key is known: `existing`, or null when the key is absent
+    private LinkedHashMap<K, V> putEntry(Tuple2<K, V> entry, @Nullable Slot<K, V> existing) {
+        K key = entry._1();
+        if (existing != null) {
+            // the insertion order holds the key object of the entry, which the positional operations read
+            int ordinal = existing.index();
+            InsertionOrder<K> newOrder = existing.entry()._1() == key ? order : order.update(ordinal, key);
+            return new LinkedHashMap<>(newOrder, map.put(key, new Slot<>(entry, ordinal)));
+        }
+        return appendEntry(entry);
+    }
+
+    // this map with `entry`, whose key is absent, last in the insertion order
+    private LinkedHashMap<K, V> appendEntry(Tuple2<K, V> entry) {
+        if (order.isFull()) {
+            // every ordinal has been given: the keys are numbered again from 0, in the same order
+            return reindex(order, map).appendEntry(entry);
+        }
+        K key = entry._1();
+        return new LinkedHashMap<>(order.append(key), map.put(key, new Slot<>(entry, order.nextOrdinal())));
     }
 
     /// This map with `key` mapped to `value` if `key` is absent, this map itself if it is present: the key and the
@@ -1116,11 +1106,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (map.containsKey(key)) {
             return this;
         }
-        return new LinkedHashMap<>(
-                list.append(key),
-                map.put(key, new Slot<>(Tuple.of(key, value), offset + list.size())),
-                offset,
-                tombstones);
+        return appendEntry(Tuple.of(key, value));
     }
 
     /**
@@ -1172,10 +1158,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: amortised O(1); a single call can cost O(n). The removed entry makes a gap in the insertion order,
-     * and the whole map is rebuilt in O(n) once the gaps outnumber the entries; removing the first or the last entry
-     * also walks past the gaps next to it. Over a chain of removals, each on the result of the previous one, this
-     * averages to effectively O(1); removing again from an older version can pay O(n) every time.
+     * Complexity: effectively O(1): one hash removal, and the key taken out of the insertion order on the path from its
+     * root, on any version of the map.
      */
     @Override
     public LinkedHashMap<K, V> remove(K key) {
@@ -1187,9 +1171,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (newMap.isEmpty()) {
             return empty();
         }
-        K tombstone = tombstone();
-        Vector<K> newList = list.update(existing.index() - offset, tombstone);
-        return normalized(newList, newMap, offset, tombstones + 1);
+        return new LinkedHashMap<>(order.remove(existing.index()), newMap);
     }
 
     /**
@@ -1197,8 +1179,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * <p>
      * A key already present keeps its position in the insertion order; a new key goes to the end.
      * <p>
-     * Complexity: effectively O(1): one hash lookup, then at most one {@link #put(Object, Object)}, or one
-     * {@link #remove(Object)}, which is amortised O(1).
+     * Complexity: effectively O(1): one hash lookup, then at most one {@link #put(Object, Object)} or one
+     * {@link #remove(Object)}.
      */
     @Override
     public LinkedHashMap<K, V> updateWith(K key, Function<? super Option<V>, ? extends Option<? extends V>> f) {
@@ -1216,15 +1198,14 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         Objects.requireNonNull(keys, "keys is null");
         HashSet<K> toRemove = HashSet.ofAll(keys);
         HashMap<K, Slot<K, V>> newMap = map.filter(t -> !toRemove.contains(t._1()));
-        return newMap.size() == map.size() ? this : reindex(list, newMap);
+        return newMap.size() == map.size() ? this : reindex(order, newMap);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: amortised O(1), as {@link #remove(Object)}: effectively O(1) when the key of {@code newElement} is
-     * not elsewhere in the map; otherwise that entry is removed, with the O(n) cases of {@code remove}. The new entry
-     * takes the position of the replaced one.
+     * Complexity: effectively O(1): the entry is replaced, and an entry of the key of {@code newElement} elsewhere in
+     * the map is removed, as {@link #remove(Object)}. The new entry takes the position of the replaced one.
      */
     @Override
     public LinkedHashMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
@@ -1247,9 +1228,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /// its elements.
     @SuppressWarnings("Var")
     LinkedHashMap<K, V> replaceKey(K currentKey, Tuple2<K, V> newElement) {
-        Vector<K> newList = list;
+        InsertionOrder<K> newOrder = order;
         HashMap<K, Slot<K, V>> newMap = map;
-        int newTombstones = tombstones;
 
         K newKey = newElement._1();
 
@@ -1257,23 +1237,21 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         // otherwise we need to remove an already present newKey from the order manually.
         if (!Objects.equals(currentKey, newKey) && newMap.containsKey(newKey)) {
             Slot<K, V> obsolete = newMap.get(newKey).get();
-            K tombstone = tombstone();
-            newList = newList.update(obsolete.index() - offset, tombstone);
+            newOrder = newOrder.remove(obsolete.index());
             newMap = newMap.remove(newKey);
-            newTombstones++;
         }
 
         Slot<K, V> currentSlot = newMap.get(currentKey).get();
-        newList = newList.update(currentSlot.index() - offset, newKey);
+        newOrder = newOrder.update(currentSlot.index(), newKey);
         newMap = newMap.remove(currentKey).put(newKey, new Slot<>(newElement, currentSlot.index()));
 
-        return normalized(newList, newMap, offset, newTombstones);
+        return new LinkedHashMap<>(newOrder, newMap);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: amortised O(1), as {@link #replace(Tuple2, Tuple2)}: a map holds an entry once. The new entry takes
+     * Complexity: effectively O(1), as {@link #replace(Tuple2, Tuple2)}: a map holds an entry once. The new entry takes
      * the position of the replaced one.
      */
     @Override
@@ -1345,10 +1323,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             return Vector.empty();
         }
         Vector.Builder<V> builder = Vector.newBuilder(size());
-        for (K key : list) {
-            if (key != TOMBSTONE) {
-                builder.add(entryAt(key)._2());
-            }
+        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
+            builder.add(entryAt(keys.next())._2());
         }
         return builder.result();
     }
@@ -1358,7 +1334,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The first entry in insertion order.
      * <p>
-     * Complexity: effectively O(1): the first key of the insertion order, then one hash lookup.
+     * Complexity: effectively O(1): the first key of the insertion order, found from its root, then one hash lookup.
      *
      * @return the entry inserted first among those present
      * @throws java.util.NoSuchElementException if this map is empty
@@ -1367,7 +1343,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (isEmpty()) {
             throw new java.util.NoSuchElementException("head of empty LinkedHashMap");
         }
-        return entryAt(list.head());
+        return entryAt(order.first());
     }
 
     /**
@@ -1384,7 +1360,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The last entry in insertion order.
      * <p>
-     * Complexity: effectively O(1): the last key of the insertion order, then one hash lookup.
+     * Complexity: effectively O(1): the last key of the insertion order, found from its root, then one hash lookup.
      *
      * @return the entry inserted last among those present
      * @throws java.util.NoSuchElementException if this map is empty
@@ -1393,7 +1369,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (isEmpty()) {
             throw new java.util.NoSuchElementException("last of empty LinkedHashMap");
         }
-        return entryAt(list.last());
+        return entryAt(order.last());
     }
 
     /**
@@ -1410,10 +1386,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * All entries but the last in insertion order.
      * <p>
-     * Complexity: amortised O(1); effectively O(1) when nothing has been removed. After removals, a single call
-     * can cost O(n): it walks past the gaps left by removed entries next to the cut, and rebuilds the map when the
-     * result holds more gaps than entries. Over a chain of calls, each on the result of the previous one, this
-     * averages out; calling it again on an older version can pay O(n) every time.
+     * Complexity: effectively O(1): the insertion order is cut along one path from its root, and one key is taken out
+     * of the hash map, on any version of the map.
      *
      * @return this map without its last entry
      * @throws UnsupportedOperationException if this map is empty
@@ -1428,7 +1402,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * All entries but the last in insertion order, if this map is not empty.
      * <p>
-     * Complexity: amortised O(1), as {@link #init()}.
+     * Complexity: effectively O(1), as {@link #init()}.
      *
      * @return {@code Some} of {@link #init()}, or {@code None} if this map is empty
      */
@@ -1439,10 +1413,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * All entries but the first in insertion order.
      * <p>
-     * Complexity: amortised O(1); effectively O(1) when nothing has been removed. After removals, a single call
-     * can cost O(n): it walks past the gaps left by removed entries next to the cut, and rebuilds the map when the
-     * result holds more gaps than entries. Over a chain of calls, each on the result of the previous one, this
-     * averages out; calling it again on an older version can pay O(n) every time.
+     * Complexity: effectively O(1): the insertion order is cut along one path from its root, and one key is taken out
+     * of the hash map, on any version of the map.
      *
      * @return this map without its first entry
      * @throws UnsupportedOperationException if this map is empty
@@ -1457,7 +1429,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * All entries but the first in insertion order, if this map is not empty.
      * <p>
-     * Complexity: amortised O(1), as {@link #tail()}.
+     * Complexity: effectively O(1), as {@link #tail()}.
      *
      * @return {@code Some} of {@link #tail()}, or {@code None} if this map is empty
      */
@@ -1468,9 +1440,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The first {@code n} entries in insertion order: empty if {@code n <= 0}, this map if {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k kept entries when nothing has been removed: the smaller side, kept or
-     * dropped, is added to or taken out of a hash map, and the rest is shared. After removals, finding the cut walks
-     * past the gaps left by removed entries, and the result is rebuilt when it holds more gaps than entries.
+     * Complexity: O(min(k, n - k)) for k kept entries: the smaller side, kept or dropped, is added to or taken out of a
+     * hash map, and the rest is shared; the insertion order is cut along the paths from its root to the cut.
      *
      * @param n the number of entries to keep
      * @return the {@code n} entries inserted first
@@ -1482,8 +1453,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The last {@code n} entries in insertion order: empty if {@code n <= 0}, this map if {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k kept entries when nothing has been removed, as {@link #take(int)}
-     * from the other end.
+     * Complexity: O(min(k, n - k)) for k kept entries, as {@link #take(int)} from the other end.
      *
      * @param n the number of entries to keep
      * @return the {@code n} entries inserted last
@@ -1495,8 +1465,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The longest prefix, in insertion order, of entries satisfying {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for a prefix of k entries when nothing has been removed: one walk, then one
-     * {@link #take(int)}.
+     * Complexity: O(k) for a prefix of k entries: one walk, then one {@link #take(int)}.
      *
      * @param predicate tested on the entries from the first inserted
      * @return the entries before the first one not satisfying {@code predicate}
@@ -1510,8 +1479,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The longest prefix, in insertion order, of entries not satisfying {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for a prefix of k entries when nothing has been removed: one walk, then one
-     * {@link #take(int)}.
+     * Complexity: O(k) for a prefix of k entries: one walk, then one {@link #take(int)}.
      *
      * @param predicate tested on the entries from the first inserted
      * @return the entries before the first one satisfying {@code predicate}
@@ -1526,8 +1494,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * All entries but the first {@code n} in insertion order: this map if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped entries on a map with no earlier removals, as
-     * {@link #take(int)}.
+     * Complexity: O(min(k, n - k)) for k dropped entries, as {@link #take(int)}.
      *
      * @param n the number of entries to drop
      * @return the entries after the {@code n} inserted first
@@ -1540,8 +1507,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * All entries but the last {@code n} in insertion order: this map if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped entries on a map with no earlier removals, as
-     * {@link #take(int)}.
+     * Complexity: O(min(k, n - k)) for k dropped entries, as {@link #take(int)}.
      *
      * @param n the number of entries to drop
      * @return the entries before the {@code n} inserted last
@@ -1553,8 +1519,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The entries from the first one, in insertion order, that does not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped entries on a map with no earlier removals: one walk, then
-     * one {@link #drop(int)}.
+     * Complexity: O(k) for k dropped entries: one walk, then one {@link #drop(int)}.
      *
      * @param predicate tested on the entries from the first inserted
      * @return the entries from the first one not satisfying {@code predicate}
@@ -1568,8 +1533,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * The entries from the first one, in insertion order, that satisfies {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped entries on a map with no earlier removals: one walk, then
-     * one {@link #drop(int)}.
+     * Complexity: O(k) for k dropped entries: one walk, then one {@link #drop(int)}.
      *
      * @param predicate tested on the entries from the first inserted
      * @return the entries from the first one satisfying {@code predicate}
@@ -1591,10 +1555,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         Vector.Builder<Tuple2<Tuple2<K, V>, Integer>> builder = Vector.newBuilder(size());
         @SuppressWarnings("Var")
         int index = 0;
-        for (K key : list) {
-            if (key != TOMBSTONE) {
-                builder.add(Tuple.of(entryAt(key), index++));
-            }
+        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
+            builder.add(Tuple.of(entryAt(keys.next()), index++));
         }
         return builder.result();
     }
@@ -1633,8 +1595,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * the end, a window whose entries all belong to the previous one is not produced, a map smaller than
      * {@code size} is one window and an empty map has none.
      * <p>
-     * Complexity: O(n + (n / step) * min(size, n - size)): the map is first rebuilt without gaps if entries were
-     * removed, O(n), then each window costs a {@link #take(int)} on a map with no removals, O(min(size, n - size)).
+     * Complexity: O(n + (n / step) * min(size, n - size)): each window costs a {@link #take(int)}, O(min(size, n -
+     * size)).
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -1649,8 +1611,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * The maximal runs of consecutive entries, in insertion order, with the same key, computed once per entry by
      * {@code classifier}; the runs together are this map.
      * <p>
-     * Complexity: O(n): the map is first rebuilt without gaps if entries were removed, then one walk, and each run is
-     * cut in time proportional to its length.
+     * Complexity: O(n): one walk, and each run is cut in time proportional to its length.
      *
      * @param classifier the key of an entry; two consecutive entries are in the same run when their keys are equal
      * @return the runs, in order; empty if this map is empty
@@ -1667,12 +1628,10 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (length == 0) {
             return Vector.empty();
         }
-        // without markers, every rank is its own index into the insertion order, so each window is found in O(1)
-        LinkedHashMap<K, V> compact = compacted();
         Vector.Builder<R> builder = Vector.newBuilder();
         // past the first, a window is produced only while it holds at least one entry the previous one did not
         for (long start = 0; start < length && (start == 0 || start - step + size < length); start += step) {
-            builder.add(wrap.apply(compact.slice((int) start, (int) Math.min(start + size, length))));
+            builder.add(wrap.apply(slice((int) start, (int) Math.min(start + size, length))));
         }
         return builder.result();
     }
@@ -1699,23 +1658,24 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             return Vector.empty();
         }
         Function<Object, ?> classify = (Function<Object, ?>) classifier;
-        LinkedHashMap<K, V> compact = compacted();
         Vector.Builder<R> builder = Vector.newBuilder();
-        Vector<K> keys = compact.list;
-        int length = keys.size();
+        java.util.Iterator<K> keys = order.iterator();
+        int length = size();
+        K firstKey = keys.next();
         @SuppressWarnings("Var")
-        Object key = classify.apply(byKey ? keys.get(0) : compact.entryAt(keys.get(0)));
+        Object key = classify.apply(byKey ? firstKey : entryAt(firstKey));
         @SuppressWarnings("Var")
         int start = 0;
         for (int index = 1; index < length; index++) {
-            Object next = classify.apply(byKey ? keys.get(index) : compact.entryAt(keys.get(index)));
+            K nextKey = keys.next();
+            Object next = classify.apply(byKey ? nextKey : entryAt(nextKey));
             if (!Objects.equals(key, next)) {
-                builder.add(wrap.apply(compact.slice(start, index)));
+                builder.add(wrap.apply(slice(start, index)));
                 start = index;
                 key = next;
             }
         }
-        builder.add(wrap.apply(compact.slice(start, length)));
+        builder.add(wrap.apply(slice(start, length)));
         return builder.result();
     }
 
@@ -1734,12 +1694,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     private int countLeading(Predicate<? super Tuple2<K, V>> predicate, boolean expected) {
         @SuppressWarnings("Var")
         int length = 0;
-        for (K key : list) {
-            if (key != TOMBSTONE) {
-                if (predicate.test(entryAt(key)) != expected) {
-                    break;
-                }
-                length++;
+        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); length++) {
+            if (predicate.test(entryAt(keys.next())) != expected) {
+                break;
             }
         }
         return length;
@@ -1750,12 +1707,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     int countLeadingKeys(Predicate<? super K> predicate, boolean expected) {
         @SuppressWarnings("Var")
         int length = 0;
-        for (K key : list) {
-            if (key != TOMBSTONE) {
-                if (predicate.test(key) != expected) {
-                    break;
-                }
-                length++;
+        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); length++) {
+            if (predicate.test(keys.next()) != expected) {
+                break;
             }
         }
         return length;
@@ -1766,51 +1720,19 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         Vector.Builder<Tuple2<K, Integer>> builder = Vector.newBuilder(size());
         @SuppressWarnings("Var")
         int index = 0;
-        for (K key : list) {
-            if (key != TOMBSTONE) {
-                builder.add(Tuple.of(key, index++));
-            }
+        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
+            builder.add(Tuple.of(keys.next(), index++));
         }
         return builder.result();
     }
 
-    // this map with no removed keys' markers in the insertion order: this map itself when it has none
-    private LinkedHashMap<K, V> compacted() {
-        return tombstones == 0 ? this : reindex(list, map);
-    }
-
-    // the index in `list` of the entry of the given rank (0 <= rank < size()), walked from the nearer end
-    private int indexOfRank(int rank) {
-        if (tombstones == 0) {
-            return rank;
-        }
-        int size = size();
-        if (rank < size - rank) {
-            @SuppressWarnings("Var")
-            int live = -1;
-            for (int i = 0; ; i++) {
-                if (list.get(i) != TOMBSTONE && ++live == rank) {
-                    return i;
-                }
-            }
-        } else {
-            @SuppressWarnings("Var")
-            int live = size;
-            for (int i = list.size() - 1; ; i--) {
-                if (list.get(i) != TOMBSTONE && --live == rank) {
-                    return i;
-                }
-            }
-        }
-    }
-
     /**
      * The entries of rank {@code from} (inclusive) to {@code until} (exclusive) in insertion order, clamped; this map
-     * when nothing is cut off, the empty map when nothing is kept. The insertion order is sliced and the slots keep
-     * their absolute index (the offset moves with the cut), so the hash map changes by the smaller of the kept and
-     * the removed keys: rebuilt from the kept ones, or the removed ones taken out of it.
+     * when nothing is cut off, the empty map when nothing is kept. The insertion order is cut at both ranks and the
+     * slots keep their ordinals, so the hash map changes by the smaller of the kept and the removed keys: rebuilt from
+     * the kept ones, or the removed ones taken out of it.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k kept entries when nothing has been removed, as {@link #take(int)}.
+     * Complexity: O(min(k, n - k)) for k kept entries, as {@link #take(int)}.
      */
     LinkedHashMap<K, V> slice(int from, int until) {
         int size = size();
@@ -1821,37 +1743,37 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         } else if (start == 0 && end == size) {
             return this;
         }
-        int lo = indexOfRank(start);
-        int hi = indexOfRank(end - 1) + 1;
         int kept = end - start;
-        Vector<K> newList = list.slice(lo, hi);
+        if (kept == size - 1) {
+            // one entry cut off an end (tail, init): taken out of the order by its ordinal, as remove does
+            K key = start == 1 ? order.first() : order.last();
+            return new LinkedHashMap<>(order.remove(slotAt(key).index()), map.remove(key));
+        }
         @SuppressWarnings("Var")
         HashMap<K, Slot<K, V>> newMap;
         if (kept <= size - kept) {
             newMap = HashMap.empty();
-            for (int i = lo; i < hi; i++) {
-                K key = list.get(i);
-                if (key != TOMBSTONE) {
-                    newMap = newMap.put(key, slotAt(key));
-                }
+            java.util.Iterator<K> keys = order.iterator(start);
+            for (int i = 0; i < kept; i++) {
+                K key = keys.next();
+                newMap = newMap.put(key, slotAt(key));
             }
         } else {
             newMap = map;
-            for (int i = 0; i < lo; i++) {
-                K key = list.get(i);
-                if (key != TOMBSTONE) {
-                    newMap = newMap.remove(key);
+            if (start > 0) {
+                java.util.Iterator<K> before = order.iterator();
+                for (int i = 0; i < start; i++) {
+                    newMap = newMap.remove(before.next());
                 }
             }
-            int listSize = list.size();
-            for (int i = hi; i < listSize; i++) {
-                K key = list.get(i);
-                if (key != TOMBSTONE) {
-                    newMap = newMap.remove(key);
+            if (end < size) {
+                java.util.Iterator<K> after = order.iterator(end);
+                for (int i = end; i < size; i++) {
+                    newMap = newMap.remove(after.next());
                 }
             }
         }
-        return normalized(newList, newMap, offset + lo, (hi - lo) - kept);
+        return new LinkedHashMap<>(order.slice(start, end), newMap);
     }
 
     /**
@@ -1880,38 +1802,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         return mkString("LinkedHashMap(", ", ", ")");
     }
 
-    @SuppressWarnings("Var")
-    private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> normalized(
-            Vector<K> list, HashMap<K, Slot<K, V>> map, int offset, int tombstones) {
-        // the markers at both ends are found by reading, then cut off with one slice: no Vector per marker
-        int size = list.size();
-        int lo = 0;
-        while (list.get(lo) == TOMBSTONE) {
-            lo++;
-        }
-        int hi = size;
-        while (list.get(hi - 1) == TOMBSTONE) {
-            hi--;
-        }
-        if (lo > 0 || hi < size) {
-            list = list.slice(lo, hi);
-            offset += lo;
-            tombstones -= lo + (size - hi);
-        }
-        if (tombstones > map.size()) {
-            return reindex(list, map);
-        }
-        return new LinkedHashMap<>(list, map, offset, tombstones);
-    }
-
+    // the keys of `order` that `survivors` holds, in order, numbered again from 0, each with its entry in `survivors`
     private static <K extends @Nullable Object, V extends @Nullable Object> LinkedHashMap<K, V> reindex(
-            Vector<K> list, HashMap<K, Slot<K, V>> survivors) {
+            InsertionOrder<K> order, HashMap<K, Slot<K, V>> survivors) {
         if (survivors.isEmpty()) {
             return empty();
         }
         ArrayList<K> liveKeys = new ArrayList<>(survivors.size());
-        for (K key : list) {
-            if (key != TOMBSTONE && survivors.containsKey(key)) {
+        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
+            K key = keys.next();
+            if (survivors.containsKey(key)) {
                 liveKeys.add(key);
             }
         }
@@ -1922,15 +1822,15 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         for (K key : liveKeys) {
             indexed = indexed.put(key, new Slot<>(survivors.get(key).get().entry(), index++));
         }
-        return new LinkedHashMap<>(Vector.ofAll(liveKeys), indexed, 0, 0);
+        return new LinkedHashMap<>(InsertionOrder.ofAll(liveKeys), indexed);
     }
 
     /**
      * A mutable, single-use accumulator that builds a {@link LinkedHashMap}. The intermediate maps are not built: the
      * keys go into an array list in insertion order, each key maps to its entry and position in a hash map, and the
-     * insertion order becomes a {@link Vector} once, in {@link #result()}. A {@link LinkedHashMap} passed to
-     * {@link #putAll(Iterable)} on an empty builder is adopted without copying anything, and copied only when a later
-     * put follows: that map never changes.
+     * insertion order is built from the list once, in {@link #result()}. A {@link LinkedHashMap} passed to
+     * {@link #putAll(Iterable)} on an empty builder is adopted without copying anything, and the puts that follow are
+     * those of the map, each making a new map: that map never changes.
      * <p>
      * The map returned by {@link #result()} is the one successive {@link LinkedHashMap#put(Object, Object)} calls of
      * the same entries would give: a key put more than once keeps the position of its first occurrence and takes the
@@ -1944,13 +1844,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
         /* the name in the message of a closed builder: LinkedHashSet.Builder is one of these too */
         private final String name;
-        /* the insertion order, including the markers of an adopted map that had removals; keys.get(i) is at position offset + i */
+        /* the keys in insertion order: keys.get(i) has the ordinal i */
         private ArrayList<K> keys;
-        /* each key to its entry and its position */
+        /* each key to its entry and its ordinal */
         private HashMap<K, Slot<K, V>> slots = HashMap.empty();
-        private int offset;
-        private int tombstones;
-        /* a map given to putAll on an empty builder, kept as it is until something else is put */
+        /* a map given to putAll on an empty builder: the content of the builder from then on, which puts replace */
         private @Nullable LinkedHashMap<K, V> adopted;
         private boolean done;
 
@@ -2050,7 +1948,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             } else if (slots.isEmpty()) {
                 result = empty();
             } else {
-                result = new LinkedHashMap<>(Vector.ofAll(keys), slots, offset, tombstones);
+                result = new LinkedHashMap<>(InsertionOrder.ofAll(keys), slots);
             }
             adopted = null;
             keys = new ArrayList<>(0);
@@ -2074,27 +1972,30 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         // LinkedHashMap.put: an absent key is appended, a present one keeps its position and takes the new key object
         @SuppressWarnings("NullAway")
         private void putEntry(Tuple2<K, V> entry) {
-            unadopt();
+            LinkedHashMap<K, V> map = adopted;
+            if (map != null) {
+                adopted = map.putEntry(entry);
+                return;
+            }
             K key = entry._1();
             @Nullable Slot<K, V> existing = slots.getOrElse(key, (Slot<K, V>) null);
             if (existing == null) {
-                slots = slots.put(key, new Slot<>(entry, offset + keys.size()));
+                slots = slots.put(key, new Slot<>(entry, keys.size()));
                 keys.add(key);
             } else {
                 slots = slots.put(key, new Slot<>(entry, existing.index()));
-                keys.set(existing.index() - offset, key);
+                keys.set(existing.index(), key);
             }
         }
 
         /// LinkedHashMap.putIfAbsent, for LinkedHashSet.Builder: a key already put keeps its key object and value.
         /// The caller has checked that the builder is open and that neither argument is null.
         void putIfAbsent(K key, V value) {
-            if (adopted != null && adopted.containsKey(key)) {
-                return;
-            }
-            unadopt();
-            if (!slots.containsKey(key)) {
-                slots = slots.put(key, new Slot<>(Tuple.of(key, value), offset + keys.size()));
+            LinkedHashMap<K, V> map = adopted;
+            if (map != null) {
+                adopted = map.putIfAbsent(key, value);
+            } else if (!slots.containsKey(key)) {
+                slots = slots.put(key, new Slot<>(Tuple.of(key, value), keys.size()));
                 keys.add(key);
             }
         }
@@ -2107,23 +2008,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
             }
             adopted = map;
             return true;
-        }
-
-        // the adopted map becomes the builder's content, which successive puts then extend exactly as they would extend
-        // the map: the same insertion order with its markers, the same positions, the same hash map
-        private void unadopt() {
-            LinkedHashMap<K, V> map = adopted;
-            if (map == null) {
-                return;
-            }
-            adopted = null;
-            keys = new ArrayList<>(map.list.size() + 16);
-            for (K key : map.list) {
-                keys.add(key);
-            }
-            slots = map.map;
-            offset = map.offset;
-            tombstones = map.tombstones;
         }
 
         void checkOpen() {

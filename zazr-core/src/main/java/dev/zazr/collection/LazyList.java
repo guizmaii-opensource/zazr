@@ -1558,11 +1558,14 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: lazy; nothing is computed now, and the result reads one element ahead of what it returns.
      *
      * @param count the number of cycles to be performed
-     * @return A new LazyList containing this elements cycled {@code count} times.
+     * @return A new LazyList containing this elements cycled {@code count} times, or this LazyList itself when
+     *         {@code count} is 1
      */
     default LazyList<T> cycle(int count) {
         if (count <= 0) {
             return empty();
+        } else if (count == 1) {
+            return this;
         } else {
             LazyList<T> self = this;
             return lazilyUnlessEmpty(() -> self.isEmpty()
@@ -2192,7 +2195,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param length  the target length
      * @param element the padding element
-     * @return a new LazyList, or this LazyList if it is already at least {@code length} long
+     * @return a LazyList of at least {@code length} elements, or this LazyList itself when {@code length} is 0 or
+     *         less
      */
     default LazyList<T> leftPadTo(int length, T element) {
         if (length <= 0) {
@@ -2207,6 +2211,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
     }
 
     default LazyList<T> orElse(Iterable<? extends T> other) {
+        if (LazyCell.knownNonEmpty(this)) {
+            return this;
+        }
         return LazyCell.knownIsEmpty(this) ? ofAll(other) : lazily(() -> isEmpty() ? ofAll(other) : this);
     }
 
@@ -2214,6 +2221,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         Objects.requireNonNull(supplier, "supplier is null");
         Supplier<LazyList<T>> other =
                 () -> ofAll(Objects.requireNonNull(supplier.get(), "LazyList.orElse: supplier returned null"));
+        if (LazyCell.knownNonEmpty(this)) {
+            return this;
+        }
         return LazyCell.knownIsEmpty(this) ? other.get() : lazily(() -> isEmpty() ? other.get() : this);
     }
 
@@ -2227,11 +2237,16 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param from     the first replaced position
      * @param that     the replacement elements
      * @param replaced how many elements are replaced
-     * @return a new LazyList
+     * @return a new LazyList, or this LazyList itself when {@code replaced} is 0 or less and {@code that} is already
+     *         known to be empty: an empty Zazr collection, a LazyList whose emptiness has been read, or an empty
+     *         {@code ArrayList}, {@code List.of()} and the like; any other view is not asked
      * @throws NullPointerException if {@code that} is null
      */
     default LazyList<T> patch(int from, Iterable<? extends T> that, int replaced) {
         Objects.requireNonNull(that, "that is null");
+        if (replaced <= 0 && LazyListModule.knownIsEmptyWithoutReading(that)) {
+            return this;
+        }
         return lazily(() -> patchFrom(this, Math.max(from, 0), LazyList.ofAll(that), Math.max(replaced, 0)));
     }
 
@@ -2575,10 +2590,10 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: O(n); the whole LazyList is computed now.
      *
-     * @return a new LazyList, or this LazyList if it is empty
+     * @return a new LazyList, or this LazyList if it has fewer than two elements
      */
     default LazyList<T> reverse() {
-        return isEmpty() ? this : foldLeft(LazyList.empty(), LazyList::prepend);
+        return (isEmpty() || tail().isEmpty()) ? this : foldLeft(LazyList.empty(), LazyList::prepend);
     }
 
     /**
@@ -2721,11 +2736,11 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * <p>
      * Complexity: O(n log n) comparisons; the whole LazyList is computed now.
      *
-     * @return a new sorted LazyList, or this LazyList if it is empty
+     * @return a new sorted LazyList, or this LazyList if it has fewer than two elements
      * @throws ClassCastException if {@code T} is not {@code Comparable}
      */
     default LazyList<T> sorted() {
-        return isEmpty() ? this : stream().sorted().collect(LazyList.collector());
+        return (isEmpty() || tail().isEmpty()) ? this : stream().sorted().collect(LazyList.collector());
     }
 
     /**
@@ -2734,12 +2749,14 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * Complexity: O(n log n) comparisons; the whole LazyList is computed now.
      *
      * @param comparator the order
-     * @return a new sorted LazyList, or this LazyList if it is empty
+     * @return a new sorted LazyList, or this LazyList if it has fewer than two elements
      * @throws NullPointerException if {@code comparator} is null
      */
     default LazyList<T> sorted(Comparator<? super T> comparator) {
         Objects.requireNonNull(comparator, "comparator is null");
-        return isEmpty() ? this : stream().sorted(comparator).collect(LazyList.collector());
+        return (isEmpty() || tail().isEmpty())
+                ? this
+                : stream().sorted(comparator).collect(LazyList.collector());
     }
 
     /**
@@ -2750,7 +2767,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      *
      * @param mapper computes the sort key
      * @param <U>    the key type
-     * @return a new sorted LazyList, or this LazyList if it is empty
+     * @return a new sorted LazyList, or this LazyList if it has fewer than two elements
      * @throws NullPointerException if {@code mapper} is null
      */
     default <U extends Comparable<? super U>> LazyList<T> sortBy(Function<? super T, ? extends U> mapper) {
@@ -2766,7 +2783,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param comparator the order of the keys
      * @param mapper     computes the sort key
      * @param <U>        the key type
-     * @return a new sorted LazyList, or this LazyList if it is empty
+     * @return a new sorted LazyList, or this LazyList if it has fewer than two elements
      * @throws NullPointerException if {@code comparator} or {@code mapper} is null
      */
     default <U extends @Nullable Object> LazyList<T> sortBy(
