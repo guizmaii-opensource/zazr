@@ -95,7 +95,7 @@ public abstract sealed class RadixVector<T extends @Nullable Object> implements 
      * that nothing else holds or writes afterwards. Up to 32 elements it becomes the vector's only leaf, with no copy;
      * longer, it is copied leaf by leaf, as {@link #ofAll(Object[])} does.
      */
-    public static <T extends @Nullable Object> RadixVector<T> ofOwnedArray(@Nullable Object[] elements) {
+    public static <T extends @Nullable Object> RadixVector<T> ofOwnedArray(Object[] elements) {
         int n = elements.length;
         if (n == 0) {
             return empty();

@@ -60,7 +60,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     /* the elements of an array of exactly Object[] that the caller fills and hands over (RadixVector.ofOwnedArray):
      * the maps' values() */
-    static <T extends @Nullable Object> Vector<T> ofOwnedArray(@Nullable Object[] elements) {
+    static <T extends @Nullable Object> Vector<T> ofOwnedArray(Object[] elements) {
         return ofAll(RadixVector.<T>ofOwnedArray(elements));
     }
 
