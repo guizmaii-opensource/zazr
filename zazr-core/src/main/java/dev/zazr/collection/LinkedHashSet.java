@@ -22,12 +22,10 @@ import org.jspecify.annotations.Nullable;
  * {@code fill}, {@code flatten}, {@code addAll}, {@code union}, {@code map}, {@code flatMap}) gives the set that adding
  * the elements one by one gives.
  * <p>
- * Complexity: it is a {@link LinkedHashMap} of its elements and has the same costs. Lookups and insertions are
- * effectively O(1). Removing an element makes a gap in the insertion order, and the whole set is rebuilt in O(n)
- * once the gaps outnumber the elements: averaged over a chain of removals, each on the result of the previous one, a
- * removal is effectively O(1), but removing again from an older version can pay the O(n) every time, and after
- * removals, finding a position ({@code tail}, {@code take}, {@code drop}) walks past the gaps in the way. The methods
- * without a note of their own (map, filter, the folds, the conversions) walk the elements once, O(n).
+ * Complexity: it is a {@link LinkedHashMap} of its elements and has the same costs. Lookups, insertions and removals
+ * are effectively O(1), on any version of a set, older ones included; finding a position ({@code tail}, {@code take},
+ * {@code drop}) is effectively O(1) too. The methods without a note of their own (map, filter, the folds, the
+ * conversions) walk the elements once, O(n).
  *
  * @param <T> Component type
  * @author Ruslan Sennov, Patryk Najda, Daniel Dietrich
@@ -708,7 +706,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * Complexity: O(n + m) for a set of m elements; O(n) when it is a HashSet. The m elements are put in a hash set
      * (unless they already are one), then every element of this set is checked against it and the kept ones are put
      * in a new set: the whole set is walked even to remove one element, which {@link #remove(Object)} does in
-     * amortised O(1).
+     * effectively O(1).
      */
     @Override
     public LinkedHashSet<T> diff(Set<? extends T> elements) {
@@ -809,8 +807,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(1) to create; a whole walk is O(n). A step skips the gaps left by removed elements, so after
-     * removals a single step can take up to O(n).
+     * Complexity: effectively O(1) to create; a whole walk is O(n).
      */
     @Override
     public java.util.Iterator<T> iterator() {
@@ -826,7 +823,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * set without copying.
      * <p>
      * Complexity: O(1): nothing is copied. {@code contains} on the view is effectively O(1); its iterators, in either
-     * order, walk the whole set in O(n), and after removals a single step can skip many gaps.
+     * order, walk the whole set in O(n).
      *
      * @return an unmodifiable {@code java.util.SequencedSet} view
      */
@@ -968,10 +965,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: amortised O(1); a single call can cost O(n). The removed element makes a gap in the insertion
-     * order, and the whole set is rebuilt in O(n) once the gaps outnumber the elements; removing the first or the
-     * last element also walks past the gaps next to it. Over a chain of removals, each on the result of the previous
-     * one, this averages to effectively O(1); removing again from an older version can pay O(n) every time.
+     * Complexity: effectively O(1): one hash removal, and the key taken out of the insertion order on the path from its
+     * root, on any version of the set.
      */
     @Override
     public LinkedHashSet<T> remove(T element) {
@@ -985,7 +980,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * Complexity: O(n + m) for m given elements; O(n) when they are a HashSet. The m elements are put in a hash set
      * (unless they already are one), then every element of this set is checked against it and the kept ones are put
      * in a new set: the whole set is walked even to remove one element, which {@link #remove(Object)} does in
-     * amortised O(1).
+     * effectively O(1).
      */
     @Override
     public LinkedHashSet<T> removeAll(Iterable<? extends T> elements) {
@@ -995,9 +990,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: amortised O(1), as {@link #remove(Object)}: effectively O(1) when {@code newElement} is not already
-     * in the set; otherwise it is removed from its old position, with the O(n) cases of {@code remove}. The new
-     * element takes the position of the replaced one.
+     * Complexity: effectively O(1): the element is replaced, and {@code newElement} is removed from its old position if
+     * it is already in the set, as {@link #remove(Object)}. The new element takes the position of the replaced one.
      */
     @Override
     public LinkedHashSet<T> replace(T currentElement, T newElement) {
@@ -1013,7 +1007,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: amortised O(1), as {@link #replace(Object, Object)}: a set holds an element once.
+     * Complexity: effectively O(1), as {@link #replace(Object, Object)}: a set holds an element once.
      */
     @Override
     public LinkedHashSet<T> replaceAll(T currentElement, T newElement) {
@@ -1126,10 +1120,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the last in insertion order.
      * <p>
-     * Complexity: amortised O(1); effectively O(1) when nothing has been removed. After removals, a single call
-     * can cost O(n): it walks past the gaps left by removed elements next to the cut, and rebuilds the set when the
-     * result holds more gaps than elements. Over a chain of calls, each on the result of the previous one, this
-     * averages out; calling it again on an older version can pay O(n) every time.
+     * Complexity: effectively O(1): the insertion order is cut along one path from its root, and one key is taken out
+     * of the hash map, on any version of the set.
      *
      * @return this set without its last element
      * @throws UnsupportedOperationException if this set is empty
@@ -1144,7 +1136,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the last in insertion order, if this set is not empty.
      * <p>
-     * Complexity: amortised O(1), as {@link #init()}.
+     * Complexity: effectively O(1), as {@link #init()}.
      *
      * @return {@code Some} of {@link #init()}, or {@code None} if this set is empty
      */
@@ -1155,10 +1147,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the first in insertion order.
      * <p>
-     * Complexity: amortised O(1); effectively O(1) when nothing has been removed. After removals, a single call
-     * can cost O(n): it walks past the gaps left by removed elements next to the cut, and rebuilds the set when the
-     * result holds more gaps than elements. Over a chain of calls, each on the result of the previous one, this
-     * averages out; calling it again on an older version can pay O(n) every time.
+     * Complexity: effectively O(1): the insertion order is cut along one path from its root, and one key is taken out
+     * of the hash map, on any version of the set.
      *
      * @return this set without its first element
      * @throws UnsupportedOperationException if this set is empty
@@ -1173,7 +1163,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * All elements but the first in insertion order, if this set is not empty.
      * <p>
-     * Complexity: amortised O(1), as {@link #tail()}.
+     * Complexity: effectively O(1), as {@link #tail()}.
      *
      * @return {@code Some} of {@link #tail()}, or {@code None} if this set is empty
      */
@@ -1184,9 +1174,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The first {@code n} elements in insertion order: empty if {@code n <= 0}, this set if {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k kept elements when nothing has been removed: the smaller side, kept or
-     * dropped, is added to or taken out of a hash map, and the rest is shared. After removals, finding the cut walks
-     * past the gaps left by removed elements, and the result is rebuilt when it holds more gaps than elements.
+     * Complexity: O(min(k, n - k)) for k kept elements: the smaller side, kept or dropped, is added to or taken out of
+     * a hash map, and the rest is shared; the insertion order is cut along the paths from its root to the cut.
      *
      * @param n the number of elements to keep
      * @return the {@code n} elements inserted first
@@ -1198,8 +1187,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The last {@code n} elements in insertion order: empty if {@code n <= 0}, this set if {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k kept elements when nothing has been removed, as {@link #take(int)}
-     * from the other end.
+     * Complexity: O(min(k, n - k)) for k kept elements, as {@link #take(int)} from the other end.
      *
      * @param n the number of elements to keep
      * @return the {@code n} elements inserted last
@@ -1211,8 +1199,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The longest prefix, in insertion order, of elements satisfying {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for a prefix of k elements when nothing has been removed: one walk, then one
-     * {@link #take(int)}.
+     * Complexity: O(k) for a prefix of k elements: one walk, then one {@link #take(int)}.
      *
      * @param predicate tested on the elements from the first inserted
      * @return the elements before the first one not satisfying {@code predicate}
@@ -1226,8 +1213,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The longest prefix, in insertion order, of elements not satisfying {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for a prefix of k elements when nothing has been removed: one walk, then one
-     * {@link #take(int)}.
+     * Complexity: O(k) for a prefix of k elements: one walk, then one {@link #take(int)}.
      *
      * @param predicate tested on the elements from the first inserted
      * @return the elements before the first one satisfying {@code predicate}
@@ -1242,8 +1228,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * All elements but the first {@code n} in insertion order: this set if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped elements on a set with no earlier removals, as
-     * {@link #take(int)}.
+     * Complexity: O(min(k, n - k)) for k dropped elements, as {@link #take(int)}.
      *
      * @param n the number of elements to drop
      * @return the elements after the {@code n} inserted first
@@ -1256,8 +1241,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * All elements but the last {@code n} in insertion order: this set if {@code n <= 0}, empty if
      * {@code n >= size()}.
      * <p>
-     * Complexity: O(n); O(min(k, n - k)) for k dropped elements on a set with no earlier removals, as
-     * {@link #take(int)}.
+     * Complexity: O(min(k, n - k)) for k dropped elements, as {@link #take(int)}.
      *
      * @param n the number of elements to drop
      * @return the elements before the {@code n} inserted last
@@ -1269,8 +1253,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The elements from the first one, in insertion order, that does not satisfy {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped elements on a set with no earlier removals: one walk, then
-     * one {@link #drop(int)}.
+     * Complexity: O(k) for k dropped elements: one walk, then one {@link #drop(int)}.
      *
      * @param predicate tested on the elements from the first inserted
      * @return the elements from the first one not satisfying {@code predicate}
@@ -1284,8 +1267,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * The elements from the first one, in insertion order, that satisfies {@code predicate}.
      * <p>
-     * Complexity: O(n); O(k) for k dropped elements on a set with no earlier removals: one walk, then
-     * one {@link #drop(int)}.
+     * Complexity: O(k) for k dropped elements: one walk, then one {@link #drop(int)}.
      *
      * @param predicate tested on the elements from the first inserted
      * @return the elements from the first one satisfying {@code predicate}
@@ -1341,8 +1323,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * the end, a window whose elements all belong to the previous one is not produced, a set smaller than
      * {@code size} is one window and an empty set has none.
      * <p>
-     * Complexity: O(n + (n / step) * min(size, n - size)): the set is first rebuilt without gaps if elements were
-     * removed, O(n), then each window costs a {@link #take(int)} on a set with no removals, O(min(size, n - size)).
+     * Complexity: O(n + (n / step) * min(size, n - size)): each window costs a {@link #take(int)}, O(min(size, n -
+     * size)).
      *
      * @param size the window size, positive
      * @param step the distance between two window starts, positive
@@ -1357,8 +1339,7 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * The maximal runs of consecutive elements, in insertion order, with the same key, computed once per element by
      * {@code classifier}; the runs together are this set.
      * <p>
-     * Complexity: O(n): the set is first rebuilt without gaps if elements were removed, then one walk, and each run is
-     * cut in time proportional to its length.
+     * Complexity: O(n): one walk, and each run is cut in time proportional to its length.
      *
      * @param classifier the key of an element; two consecutive elements are in the same run when their keys are equal
      * @return the runs, in order; empty if this set is empty

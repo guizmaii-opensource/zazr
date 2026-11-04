@@ -99,8 +99,8 @@ public class LinkedHashMapRemoveTest {
     }
 
     @Test
-    public void shouldCutRunsOfMarkersAtBothEndsInOneSlice() {
-        // a live key at each end, and runs of removed keys next to them: removing an end cuts the whole run
+    public void shouldRemoveTheEndsNextToRunsOfRemovedKeys() {
+        // a key at each end, and runs of removed keys next to them: the next key after an end is the first kept one
         LinkedHashMap<Integer, Integer> map = Vector.range(1, 30)
                 .foldLeft(ascending(100), (acc, i) -> acc.remove(i).remove(99 - i));
         LinkedHashMap<Integer, Integer> both = map.remove(0).remove(99);
