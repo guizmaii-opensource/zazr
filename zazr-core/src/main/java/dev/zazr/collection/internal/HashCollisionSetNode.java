@@ -184,6 +184,24 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
         return withContent(kept, length);
     }
 
+    @Override
+    @SuppressWarnings("Var")
+    void partition(Predicate<? super T> predicate, SetNode.Partition<T> into) {
+        Object[] kept = new Object[content.length];
+        Object[] rejected = new Object[content.length];
+        int keptLength = 0;
+        int rejectedLength = 0;
+        for (int i = 0; i < content.length; i++) {
+            if (predicate.test(getPayload(i))) {
+                kept[keptLength++] = content[i];
+            } else {
+                rejected[rejectedLength++] = content[i];
+            }
+        }
+        into.kept = withContent(kept, keptLength);
+        into.rejected = withContent(rejected, rejectedLength);
+    }
+
     // this node when all `length` elements of `kept` are kept, otherwise the node of them
     private SetNode<T> withContent(Object[] kept, int length) {
         if (length == content.length) {

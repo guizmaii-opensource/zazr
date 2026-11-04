@@ -1608,7 +1608,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@inheritDoc}
      * <p>
      * Returns this map when {@code entries} is empty, and a TreeMap with an equal comparator given as
-     * {@code entries} itself when this map is empty.
+     * {@code entries} itself when this map is empty. Such a TreeMap also comes back itself when its tree has the
+     * shape of this map's and this map adds nothing to it, as when it is this map with some values replaced: the
+     * union shares the subtrees of either map that the other leaves as they are.
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -1638,7 +1640,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         } else if (isEmpty()) {
             return that;
         } else {
-            return withEntries(entries.union(that.entries));
+            RedBlackTree<Tuple2<K, V>> result = entries.union(that.entries);
+            return (result == that.entries) ? that : withEntries(result);
         }
     }
 

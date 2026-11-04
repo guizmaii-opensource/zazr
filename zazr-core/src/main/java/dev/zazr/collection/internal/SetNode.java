@@ -50,6 +50,33 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
     /// predicate sees the elements in iteration order.
     abstract SetNode<T> filter(Predicate<? super T> predicate, boolean keep);
 
+    /// Sets `into.kept` to the node of the elements for which `predicate` holds and `into.rejected` to the node of
+    /// the others, in one walk that calls `predicate` once per element, in iteration order. Each side is this node
+    /// when it gets every element, and shares every child whose elements all go to it.
+    abstract void partition(Predicate<? super T> predicate, Partition<T> into);
+
+    /// The two results of [#partition], written in place of a pair per node.
+    public static final class Partition<T extends @Nullable Object> {
+
+        SetNode<T> kept;
+        SetNode<T> rejected;
+
+        Partition(SetNode<T> root) {
+            this.kept = root;
+            this.rejected = root;
+        }
+
+        /// The root of the elements for which the predicate holds, after a partition of a root.
+        public BitmapIndexedSetNode<T> kept() {
+            return (BitmapIndexedSetNode<T>) kept;
+        }
+
+        /// The root of the other elements, after a partition of a root.
+        public BitmapIndexedSetNode<T> rejected() {
+            return (BitmapIndexedSetNode<T>) rejected;
+        }
+    }
+
     /// The node of the elements of this node not in `that`, which sits at the same place in its trie; this node when
     /// none is.
     abstract SetNode<T> diff(SetNode<T> that, int shift);

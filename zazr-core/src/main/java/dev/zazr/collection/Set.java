@@ -183,6 +183,19 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     <U extends @Nullable Object> Set<U> map(Function<? super T, ? extends U> mapper);
 
     /**
+     * The elements transformed by {@code mapper}, as {@link #map(Function)}, keeping what does not change: an element
+     * for which {@code mapper} returns that same object ({@code ==}, not {@code equals}) is unchanged. Two elements
+     * mapped to equal values become one.
+     * <p>
+     * Returns this set itself when nothing changes.
+     *
+     * @param mapper transforms an element, returning it itself to leave it unchanged
+     * @return this set when every element is unchanged, otherwise a new set of the results
+     * @throws NullPointerException if {@code mapper} is null or returns null
+     */
+    Set<T> mapConserve(Function<? super T, ? extends T> mapper);
+
+    /**
      * Maps every element to an {@code Iterable} and collects all their elements into one set.
      *
      * @param mapper a function from an element to the elements that replace it

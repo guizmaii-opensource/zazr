@@ -92,8 +92,8 @@ var before = scores.maxBefore(20);           // Option<Integer>
 An operation that changes nothing returns the set itself, not a copy: no allocation, and `==` tells you nothing
 changed.
 
-- `add` of an element already there, `remove` of an absent one, and `addAll`, `union` or `removeAll` that add or
-  remove nothing.
+- `add` of an element already there, `remove` of an absent one, and `addAll`, `union`, `removeAll` or `diff` that
+  add or remove nothing.
 - `filter`, `reject`, `intersect` and `retainAll` that keep every element; `partition` returns the set as the side
   that gets everything.
 - `replace` of an absent element, or by the very object already there.
@@ -107,6 +107,10 @@ An equal element is not the same object: `replace(x, equalX)` stores `equalX`, s
 When the set and the argument hold equal elements that are different objects, `add`, `addAll`, `union`,
 `intersect` and `retainAll` keep the set's own. So a set united with, or intersected with, an equal set comes back
 unchanged.
+
+When something changes, the parts of the tree or trie that do not are shared with the set, not copied: `diff` of a
+`TreeSet` copies only the paths to the elements it removes, and `partition` of a `HashSet` gives each side the parts
+whose elements all go to it.
 
 ## Sharp edges
 

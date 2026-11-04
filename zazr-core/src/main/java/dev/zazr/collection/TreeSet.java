@@ -828,7 +828,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return this;
         } else if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
-            return that.isEmpty() ? this : new TreeSet<>(tree.difference(that.tree));
+            return withTree(tree.difference(that.tree));
         } else {
             return removeAll(elements);
         }
@@ -988,6 +988,40 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public java.util.Iterator<T> iterator() {
         return tree.iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The result is ordered by the comparator of this TreeSet.
+     * <p>
+     * Complexity: O(n log n) once an element changes, to build the new set; O(n) when nothing changes.
+     */
+    @Override
+    @SuppressWarnings({"Var", "ObjectEquality"})
+    public TreeSet<T> mapConserve(Function<? super T, ? extends T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        java.util.Iterator<T> elements = tree.iterator();
+        int unchanged = 0;
+        while (elements.hasNext()) {
+            T element = elements.next();
+            T result = mapper.apply(element);
+            if (result != element) {
+                // the elements before the first change are their own results; the rest are mapped into the builder
+                Builder<T> builder = newBuilder(tree.comparator());
+                java.util.Iterator<T> kept = tree.iterator();
+                for (int i = 0; i < unchanged; i++) {
+                    builder.add(kept.next());
+                }
+                builder.add(Objects.requireNonNull(result, "TreeSet: element is null"));
+                while (elements.hasNext()) {
+                    builder.add(Objects.requireNonNull(mapper.apply(elements.next()), "TreeSet: element is null"));
+                }
+                return builder.result();
+            }
+            unchanged++;
+        }
+        return this;
     }
 
     @Override

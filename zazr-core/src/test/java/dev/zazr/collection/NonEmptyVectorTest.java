@@ -1605,6 +1605,7 @@ public class NonEmptyVectorTest {
             calls.put("initNonEmpty()", v -> java.util.List.of(v.initNonEmpty()));
             // the size is kept or grows
             calls.put("map(Function)", v -> java.util.List.of(v.map(i -> i)));
+            calls.put("mapConserve(Function)", v -> java.util.List.of(v.mapConserve(i -> i), v.mapConserve(i -> 0)));
             calls.put("flatMap(Function)", v -> java.util.List.of(v.flatMap(NonEmptyVector::single)));
             calls.put("as(Object)", v -> java.util.List.of(v.as("x")));
             calls.put("append(Object)", v -> java.util.List.of(v.append(0)));

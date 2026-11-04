@@ -112,6 +112,12 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
+    boolean holdsEntry(K key, V value, int hash, int shift) {
+        int index = (this.hash == hash) ? indexOf(key) : -1;
+        return index >= 0 && getKey(index) == key && getValue(index) == value;
+    }
+
+    @Override
     @Nullable
     Tuple2<K, V> getEntry(K key, int hash, int shift) {
         if (this.hash == hash) {
@@ -186,7 +192,7 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
     @Override
     MapNode<K, V> concat(MapNode<K, V> that, int shift) {
         HashCollisionMapNode<K, V> right = (HashCollisionMapNode<K, V>) that;
-        if (right == this) {
+        if (right == this || holdsEntriesOf(right)) {
             return this;
         }
         @SuppressWarnings("Var")
@@ -206,6 +212,17 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
         return (result == null) ? right : new HashCollisionMapNode<>(hash, java.util.Arrays.copyOf(result, length));
     }
 
+    // `true` when every entry of `that` is here, the very key and value objects
+    private boolean holdsEntriesOf(HashCollisionMapNode<K, V> that) {
+        for (int i = 0; i < that.content.length; i += 2) {
+            int index = indexOf(that.content[i]);
+            if (index < 0 || content[2 * index] != that.content[i] || content[2 * index + 1] != that.content[i + 1]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     MapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
         Object[] kept = new Object[content.length];
@@ -218,6 +235,34 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
                 length += 2;
             }
         }
+        return withContent(kept, length);
+    }
+
+    @Override
+    @SuppressWarnings("Var")
+    void partition(BiPredicate<? super K, ? super V> predicate, MapNode.Partition<K, V> into) {
+        Object[] kept = new Object[content.length];
+        Object[] rejected = new Object[content.length];
+        int keptLength = 0;
+        int rejectedLength = 0;
+        for (int i = 0; i < content.length; i += 2) {
+            if (predicate.test(getKey(i >> 1), getValue(i >> 1))) {
+                kept[keptLength] = content[i];
+                kept[keptLength + 1] = content[i + 1];
+                keptLength += 2;
+            } else {
+                rejected[rejectedLength] = content[i];
+                rejected[rejectedLength + 1] = content[i + 1];
+                rejectedLength += 2;
+            }
+        }
+        into.kept = withContent(kept, keptLength);
+        into.rejected = withContent(rejected, rejectedLength);
+    }
+
+    // the node of the first `length` slots of `kept`, a whole number of entries of this node; this node when that is
+    // all of them
+    private MapNode<K, V> withContent(Object[] kept, int length) {
         if (length == content.length) {
             return this;
         } else if (length == 0) {

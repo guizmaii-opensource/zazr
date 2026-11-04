@@ -187,7 +187,8 @@ class ConservingSetMapTest {
                 row("replaceAll of an element by itself", s -> s.replaceAll(first(s), first(s))),
                 row("tap", s -> s.tap(e -> {})),
                 row("orElse(Iterable)", s -> s.orElse(HashSet.of(ABSENT))),
-                row("orElse(Supplier) of a supplier", s -> s.orElse(() -> HashSet.of(ABSENT))));
+                row("orElse(Supplier) of a supplier", s -> s.orElse(() -> HashSet.of(ABSENT))),
+                row("mapConserve to the same elements", s -> s.mapConserve(e -> e)));
     }
 
     private static <C> java.util.List<Row<C>> concat(java.util.List<Row<C>> rows, java.util.List<Row<C>> more) {
@@ -250,7 +251,10 @@ class ConservingSetMapTest {
                         row("union with itself as a TreeSet", s -> s.union(TreeSet.ofAll(s))),
                         row(
                                 "union with an empty TreeSet of the same comparator",
-                                s -> s.union(TreeSet.empty(s.comparator())))));
+                                s -> s.union(TreeSet.empty(s.comparator()))),
+                        row(
+                                "diff with a disjoint TreeSet of the same comparator",
+                                s -> s.diff(TreeSet.of(s.comparator(), ABSENT, s.last() + 1)))));
     }
 
     // -- maps
@@ -327,6 +331,7 @@ class ConservingSetMapTest {
                 mapRows(),
                 java.util.List.of(
                         row("putAll of an empty HashMap", m -> m.putAll(HashMap.empty())),
+                        row("putAll of itself without its first key", m -> m.putAll(m.remove(first(m)._1()))),
                         row("merge(Map) with an empty HashMap", m -> m.merge(HashMap.empty()))));
     }
 
@@ -392,6 +397,7 @@ class ConservingSetMapTest {
                 row("replace of an element by itself", s -> s.replace(first(s), first(s))),
                 row("replaceAll of an absent element", s -> s.replaceAll(ABSENT, -2)),
                 row("tap", s -> s.tap(e -> {})),
+                row("mapConserve to the same elements", s -> s.mapConserve(e -> e)),
                 row("filter keeping everything", s -> s.filter(e -> true), wrapped),
                 row("reject dropping nothing", s -> s.reject(e -> false), wrapped),
                 row("remove of an absent element", s -> s.remove(ABSENT), wrapped),
@@ -415,6 +421,7 @@ class ConservingSetMapTest {
                 row("replace of an element by itself", s -> s.replace(s.head(), s.head())),
                 row("replaceAll of an absent element", s -> s.replaceAll(ABSENT, -2)),
                 row("tap", s -> s.tap(e -> {})),
+                row("mapConserve to the same elements", s -> s.mapConserve(e -> e)),
                 row("filter keeping everything", s -> s.filter(e -> true), wrapped),
                 row("remove of an absent element", s -> s.remove(ABSENT), wrapped),
                 row("take of the size", s -> s.take(s.size()), wrapped),
@@ -653,7 +660,16 @@ class ConservingSetMapTest {
                         "partition, the last on the right",
                         s -> s.partition(e -> !e.equals(element(s.size() - 1)))._1(),
                         n -> ofAll.apply(without(n, n - 1, none))),
-                change("replace of the first", s -> s.replace(element(0), ABSENT), n -> ofAll.apply(replaced(n))));
+                change("replace of the first", s -> s.replace(element(0), ABSENT), n -> ofAll.apply(replaced(n))),
+                change(
+                        "mapConserve of the first",
+                        s -> s.mapConserve(e -> e.equals(element(0)) ? ABSENT : e),
+                        n -> ofAll.apply(replaced(n))),
+                // an equal element that is another object is a change: the set holds the new one
+                change(
+                        "mapConserve of the first to an equal object",
+                        s -> s.mapConserve(e -> e.equals(element(0)) ? element(0) : e),
+                        n -> ofAll.apply(elements(n))));
     }
 
     private static java.util.List<Tuple2<Integer, Integer>> entriesWith(int n, int key, Integer value) {

@@ -628,6 +628,7 @@ public class NonEmptySetTest {
                     "union(Set)",
                     s -> java.util.List.of(s.union(HashSet.empty()), s.union(TreeSet.empty()), s.union(s.toSet())));
             calls.put("map(Function)", s -> java.util.List.of(s.map(i -> 0), s.map(i -> i)));
+            calls.put("mapConserve(Function)", s -> java.util.List.of(s.mapConserve(i -> 0), s.mapConserve(i -> i)));
             calls.put("flatMap(Function)", s -> java.util.List.of(s.flatMap(i -> NonEmptySet.single(0))));
             calls.put("as(Object)", s -> java.util.List.of(s.as("x")));
             calls.put(

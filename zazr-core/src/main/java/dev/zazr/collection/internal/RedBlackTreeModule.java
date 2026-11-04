@@ -517,6 +517,127 @@ public interface RedBlackTreeModule {
             }
         }
 
+        /// The elements of `tree` not in `other`, which is ordered by the same comparator, with a black
+        /// root. The walk follows `tree`: each subtree of it is matched with the smallest subtree of
+        /// `other` that holds every element of `other` within its bounds, found by going down `other` from
+        /// the subtree matched with its parent, so nothing of `other` is rebuilt. A subtree with nothing of
+        /// `other` within its bounds is kept as it is, so is one whose children lose nothing and whose
+        /// element is not in `other`, and a subtree that is also the matched one of `other` is removed
+        /// whole, as in `_difference` of the Scala 3 standard library's `RedBlackTree` (the Scala 2.13
+        /// collection library, which Scala 3 ships unchanged). The kept parts are rejoined with [#join] or
+        /// [#join2], as in [#filter]. So `tree` itself comes back when nothing is removed. Each element of
+        /// `tree` that is visited is the first argument of the comparator. A node goes further than its
+        /// match when `other` holds an element within its bounds, which makes it a node on the search path
+        /// of that element: k such nodes, at most n and at most m times the height of `tree`, for n
+        /// elements of `tree` and m of `other`. Each costs a walk down `other`, at most its height, so
+        /// O(k log m) comparisons; the children of these nodes stop at their match.
+        static <T extends @Nullable Object> RedBlackTree<T> difference(RedBlackTree<T> tree, RedBlackTree<T> other) {
+            if (tree.isEmpty() || other.isEmpty()) {
+                return tree;
+            } else if (tree == other) {
+                return tree.emptyInstance();
+            } else {
+                Node<T> node = (Node<T>) tree;
+                return color(difference(node, other, null, null, node.empty.comparator), BLACK);
+            }
+        }
+
+        // `other` holds every element of the whole `other` tree that lies strictly between `low` and `high` (null:
+        // no bound), the elements of the ancestors of `node` that bound it; the depth of the recursion is the height
+        // of `tree`, at most 2 log2(n + 1)
+        private static <T extends @Nullable Object> RedBlackTree<T> difference(
+                Node<T> node,
+                RedBlackTree<T> other,
+                @Nullable Node<T> low,
+                @Nullable Node<T> high,
+                Comparator<T> comparator) {
+            RedBlackTree<T> within = within(other, low, high, comparator);
+            if (within.isEmpty()) {
+                return node;
+            } else if (within == node) {
+                // the same subtree on both sides: every element of it is in `other`
+                return node.empty;
+            }
+            RedBlackTree<T> left =
+                    node.left.isEmpty() ? node.left : difference((Node<T>) node.left, within, low, node, comparator);
+            boolean removed = within.contains(node.value);
+            RedBlackTree<T> right = node.right.isEmpty()
+                    ? node.right
+                    : difference((Node<T>) node.right, within, node, high, comparator);
+            if (removed) {
+                return join2(left, right);
+            } else if (left == node.left && right == node.right) {
+                return node;
+            } else {
+                return join(left, node.value, right);
+            }
+        }
+
+        // the subtree of `tree` whose root is the first node, going down, strictly between `low` and `high` (null:
+        // no bound), or an empty tree: it holds every element of `tree` between the two
+        @SuppressWarnings("Var")
+        private static <T extends @Nullable Object> RedBlackTree<T> within(
+                RedBlackTree<T> tree, @Nullable Node<T> low, @Nullable Node<T> high, Comparator<T> comparator) {
+            RedBlackTree<T> current = tree;
+            while (current instanceof Node<T> node) {
+                if (low != null && comparator.compare(low.value, node.value) >= 0) {
+                    current = node.right;
+                } else if (high != null && comparator.compare(high.value, node.value) <= 0) {
+                    current = node.left;
+                } else {
+                    return node;
+                }
+            }
+            return current;
+        }
+
+        /// The elements of `tree` and of `other`, which is ordered by the same comparator; of equal
+        /// elements, the one of `other`. The root can be red. `_union` of the Scala 3 standard library's
+        /// `RedBlackTree` (the Scala 2.13 collection library, which Scala 3 ships unchanged): `tree` is
+        /// split by the root element of `other`, the halves are united with the children of `other`, then
+        /// rejoined around that element. A subtree shared by both sides is its own union, as in Scala; past
+        /// Scala, when the roots are equal the children of `tree` are taken as they are, with no split, and
+        /// a subtree whose united children are the children of `other` (or of `tree`, holding the same
+        /// object as `other`) is that subtree itself, so `other` or `tree` comes back when the union holds
+        /// the same objects.
+        // the depth of the recursion is the height of `other`, at most 2 log2(n + 1)
+        static <T extends @Nullable Object> RedBlackTree<T> union(RedBlackTree<T> tree, RedBlackTree<T> other) {
+            if (other.isEmpty() || tree == other) {
+                return tree;
+            } else if (tree.isEmpty()) {
+                return other;
+            }
+            Node<T> node = (Node<T>) tree;
+            Node<T> that = (Node<T>) other;
+            int comparison = node.empty.comparator.compare(that.value, node.value);
+            if (comparison == 0) {
+                RedBlackTree<T> left = union(node.left, that.left);
+                RedBlackTree<T> right = union(node.right, that.right);
+                if (left == that.left && right == that.right) {
+                    return that;
+                } else if (left == node.left && right == node.right && node.value == that.value) {
+                    return node;
+                } else {
+                    return join(left, that.value, right);
+                }
+            }
+            // the split of `tree` by the root element of `other`, as `split` does past its first comparison
+            RedBlackTree<T> lower;
+            RedBlackTree<T> upper;
+            if (comparison < 0) {
+                Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = split(node.left, that.value);
+                lower = split._1();
+                upper = join(split._2(), node.value, color(node.right, BLACK));
+            } else {
+                Tuple2<RedBlackTree<T>, RedBlackTree<T>> split = split(node.right, that.value);
+                lower = join(color(node.left, BLACK), node.value, split._1());
+                upper = split._2();
+            }
+            RedBlackTree<T> left = union(lower, that.left);
+            RedBlackTree<T> right = union(upper, that.right);
+            return (left == that.left && right == that.right) ? that : join(left, that.value, right);
+        }
+
         private static <T extends @Nullable Object> Node<T> joinGT(Node<T> n1, T value, Node<T> n2, int h2) {
             if (n1.blackHeight == h2) {
                 return new Node<>(RED, h2 + 1, n1, value, n2, n1.empty);

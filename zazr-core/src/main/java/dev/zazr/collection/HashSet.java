@@ -896,6 +896,38 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), effectively: one walk, and the new set built once an element changes.
+     */
+    @Override
+    @SuppressWarnings({"Var", "ObjectEquality"})
+    public HashSet<T> mapConserve(Function<? super T, ? extends T> mapper) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        java.util.Iterator<T> elements = tree.iterator();
+        int unchanged = 0;
+        while (elements.hasNext()) {
+            T element = elements.next();
+            T result = mapper.apply(element);
+            if (result != element) {
+                // the elements before the first change are their own results; the rest are mapped into the builder
+                HashSetBuilder<T> builder = new HashSetBuilder<>("HashSet.Builder");
+                java.util.Iterator<T> kept = tree.iterator();
+                for (int i = 0; i < unchanged; i++) {
+                    builder.add(kept.next());
+                }
+                builder.add(Objects.requireNonNull(result, "HashSet: element is null"));
+                while (elements.hasNext()) {
+                    builder.add(Objects.requireNonNull(mapper.apply(elements.next()), "HashSet: element is null"));
+                }
+                return wrap(builder.result());
+            }
+            unchanged++;
+        }
+        return this;
+    }
+
     @Override
     public <U extends @Nullable Object> HashSet<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
@@ -933,9 +965,22 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
                 : this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per element, in iteration order; the trie is split node by node, and
+     * the parts whose elements all go to one side are shared, not copied.
+     */
     @Override
     public Tuple2<HashSet<T>, HashSet<T>> partition(Predicate<? super T> predicate) {
-        return Collections.partition(this, HashSet::ofAll, predicate);
+        Objects.requireNonNull(predicate, "predicate is null");
+        SetNode.Partition<T> sides = tree.partition(predicate);
+        return Tuple.of(side(sides.kept()), side(sides.rejected()));
+    }
+
+    // a side of the partition: this set when it gets every element
+    private HashSet<T> side(BitmapIndexedSetNode<T> result) {
+        return (result == tree && result.size() != 0) ? this : wrap(result);
     }
 
     /**

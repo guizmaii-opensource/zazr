@@ -1581,7 +1581,7 @@ and a caller can test identity. On `Vector`, `List`, `Queue`, `LazyList` and `No
   `ConservingOperationsTest` reads every public method that returns the sequence's own type, or a tuple of two, by
   reflection: each is a conserving row or a row saying why it is left out, so a new operation fails the test until it
   gets one. The control types already conserve (`Option.filter`, `Try.filter`, `Either.filterOrElse`, the `orElse`
-  family, the mapping of the other side). A conserving `map` is a separate decision.
+  family, the mapping of the other side). The conserving map is `mapConserve`, below.
 - **Measured** (JMH, 3 forks, `-prof gc`, `ConservingBenchmark` and `ConservingSmallBenchmark` in `zazr-benchmark`,
   `main` and the branch back to back; the table is in the pull request). The no-ops allocate nothing: `List.filter`
   keeping every element is 3.1x to 3.5x faster, `span` over everything 8x to 13x, `splitAt` at the end 1.9x to 4.2x,
@@ -1632,15 +1632,16 @@ check that every public method returning the type is a row or excluded with a re
 - **The non-empty wrappers** return themselves through `wrap` where they built a new wrapper: `put`, `put` with a
   merge and `mapValues` on both maps. Their operations that may empty them return the wrapped collection itself.
 - **Left as they are**, each with its reason:
-  - `TreeSet.diff` with another `TreeSet` of the same comparator rebuilds the tree as Scala's `_difference` does.
-    Sharing the receiver's subtrees there is a follow-up. (`TreeSet.union`/`intersect` with one kept the argument's
+  - `TreeSet.diff` with another `TreeSet` of the same comparator rebuilt the tree as Scala's `_difference` does; it
+    shares the receiver's subtrees since #323 (below). (`TreeSet.union`/`intersect` with one kept the argument's
     elements here; they keep the receiver's since the consistency fixes below, and return it for an equal argument.)
   - `putAll` of another `HashMap` or `TreeMap` holding some of the same entry objects merges the tries or trees, and
     builds what is not a shared subtree; entries given one by one, or the map itself, return the map.
   - `HashMap.replace(entry, entry)` of an entry by itself removes and puts it back. The check needs the stored key,
     which the CHAMP nodes gave only in a new `Tuple2`; `BitmapIndexedMapNode.findKey` (added for `retainAll`, below)
     now gives it without allocating, and making this a no-op is #335.
-  - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: a conserving `map` is decided separately.
+  - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: `map` is unchanged, and the sets have
+    `mapConserve` (below).
 - **Measured** (JMH, 3 forks, `-prof gc`, `main` then the branch back to back on the same benchmark classes,
   `ConservingSetMapBenchmark`, the table in the pull request). The no-op cases win everywhere: `partition` with
   everything on one side 4x to 14x faster, `LinkedHashMap.filter` keeping everything and `mapValues` to the same values
@@ -1651,6 +1652,93 @@ check that every public method returning the type is a row or excluded with a re
   10 000), except two small ones at 10 entries: `LinkedHashMap.mapValues` changing every value is 1.30x slower there
   but 0.79x with a fifth less allocation at 10 000, and `LinkedHashMap.filter` dropping half is 1.32x slower (0.35 to
   0.47 µs). `LinkedHashMap.filter` dropping the last entry is 2.5x faster at 10 and 6x at 10 000.
+
+**`mapConserve`, not a conserving `map` (decided 2026-11-03).** `map` is unchanged. A separate
+`mapConserve(Function<? super T, ? extends T>)`, Scala's name (`List.mapConserve` in the Scala 3 standard library,
+`library/src/scala/collection/immutable/List.scala`), returns the receiver itself when the mapper returns every
+element itself (`==`, not `equals`). It is on `Vector`, `NonEmptyVector`, `List`, `Queue`, `Set`,
+`SortedSet`, `HashSet`, `LinkedHashSet`, `TreeSet`, `NonEmptySet` and `NonEmptySortedSet`. Making `map` itself
+conserving was rejected for three reasons, whatever its cost:
+
+- `map` would sometimes return its receiver, which code that compares results with `==`, keys an `IdentityHashMap`
+  with them or locks on them can see. An opt-in method changes nothing for existing callers.
+- `TreeSet.map(Function)` orders its result by the natural comparator. Returning the receiver would keep the
+  receiver's comparator: `TreeSet.of(reverseOrder(), 1, 2, 3).map(x -> x)` iterates 1, 2, 3 today and would iterate
+  3, 2, 1. `mapConserve`, typed `T -> T`, keeps the receiver's comparator, as its documentation says.
+- `LazyList` cannot tell that nothing changed without evaluating every cell, so a conserving `map` would conserve on
+  the strict sequences only. `LazyList` has no `mapConserve`.
+
+What each type shares when something changes:
+
+- `List` (`ListModule.Conserve.map`): the cells after the last changed element, as `filter` does, through
+  `ListModule.Conserve.prependCells` and `prependReversed`. The mapper runs once per element, in order.
+- `Vector`: the arrays whose elements are all unchanged. The trie's `map` already returned an unchanged array itself
+  (`mapElems`, after Scala's `VectorStatics.mapElems`); each `VectorN` has a `mapConserve` beside its `map` that
+  returns the trie itself when every one of its arrays is unchanged. `map` keeps its own body: the same check in it
+  made `Vector.map` of 10 elements about 30 % slower when an element changes, in the first measurement, and the
+  re-run without it matched the base. The mapper runs once per element, in order. `NonEmptyVector` wraps it.
+- `Queue`: its front or its rear, whichever is unchanged. The mapper runs over the front, then over the rear in its
+  stored order, which is the reverse of the queue's order, as `Queue.map` does.
+- The sets: nothing is allocated until the first change; then the set is rebuilt, with the elements before the
+  change added as they are and the mapper not called again for them. The hashes of a changed element differ, so no
+  subtree of a `HashSet` can be kept. Of two equal results, the one kept is the one `map` keeps.
+
+`MapConserveBenchmark` compares `map`, `mapConserve` and a plain `List.Builder` map on `List` and `Vector` at sizes
+10, 1,000 and 100,000, with no element, every element or only the first one changed (JMH, 3 forks, `-prof gc`; the
+table is in the pull request). When nothing changes, `mapConserve` allocates nothing and is 2x to 3.6x faster than
+`map` on `List`, 1.0x to 1.4x on `Vector`. With only the first element changed, on `List` it allocates 48
+bytes and is 1.1x to 2.7x faster; on `Vector` it is level from 1,000 elements and slower on 10 (0.021 µs against
+0.013 µs). When every element changes it costs more than `map`: up to 14 % on a `List` of 1,000 (5 % on 100,000),
+and on a `Vector` of 10 elements 0.033 µs against 0.019 µs; from 1,000 elements on `Vector` it is level.
+That is the price of the check, paid only by the callers who ask for it.
+
+**More shared subtrees (#323, 2026-11-03).** Three operations that rebuilt what they could share now share it, each
+kept for its measured win (`ShareSubtreesBenchmark`, below).
+
+- **`TreeSet.diff` with a `TreeSet` of the same comparator** walks the receiver, not the argument: each subtree is
+  matched with the smallest subtree of the argument that holds every argument element within its bounds, found by
+  going down from its parent's match (no split, no allocation on the argument's side). A subtree with nothing of the
+  argument within its bounds is kept whole; one whose element stays and whose children come back unchanged is kept;
+  the rest is rejoined with `join`/`join2`, as the tree `filter` does. Scala 3's `_difference` (the Scala 2.13
+  collection library, which Scala 3 ships unchanged) splits the receiver by each root of the argument and rebuilds
+  everything; its one shortcut, a subtree shared by both sides being removed whole, is kept. The receiver comes back
+  when nothing is removed. Cost: a node of the receiver goes past its match only when the argument holds an element
+  within its bounds, and the bounds of a node hold an element exactly when the node is on that element's search path.
+  So k such nodes, k at most n and at most m times the receiver's height (2 log2(n + 1)), for n elements of the
+  receiver and m of the argument. Each runs the match and the `contains` of its element, walks down the argument of
+  at most its height, 2 log2(m + 1); its two children run one match each and stop. So O(k log m) comparisons: O(m
+  log n log m) for a small argument, O(n log m) for arguments of any size. Scala's `_difference` is
+  O(m log(n / m + 1)); the walk here gives up that bound for the sharing, and its comparator calls are counted by
+  `RedBlackTreeSharingTest`.
+- **`HashSet.partition` and `HashMap.partition`** split the trie node by node in one walk (Scala's own comment on its
+  `HashMap.partition` names this as a possible optimisation; there is no Scala code to port): each node computes the
+  inline elements that go left, gets both results of each child from one holder object (no pair per node), and builds
+  each side with the `rebuilt` step of `filter`, which keeps a node or child whole when it loses nothing. The
+  predicate is called once per element in iteration order. `HashMap.filter` keeps its own inline rebuild: moved onto
+  `rebuilt`, it measured 1.10x slower.
+- **`putAll` of a map of the same kind.** The CHAMP `concat` returned the argument's node when the receiver added
+  nothing to it; it now also returns the receiver's node when the argument brings no other entry and no other key or
+  value object. When either result is still possible, the children both sides hold are united first, before anything
+  is built, and kept for the build if neither holds. So `HashMap.putAll` of a map made from the receiver by removals,
+  or of its entries in another trie, returns the receiver. The red-black `union` behind `TreeMap.putAll` (and
+  `TreeSet.union`) takes the children of the receiver as they are when the two roots are equal, instead of splitting
+  (whose recolouring copied every red child, so no subtree below it was found shared), and returns a subtree of the
+  argument (or of the receiver, holding the same object) when its children come back as they are. So `putAll` of the
+  receiver with values replaced returns its argument.
+- Every new tree comes from `join`, `join2` or an existing node, so the `blackHeight` fields stay exact, as deletion
+  needs; `RedBlackTreeSharingTest` checks the invariants and deletes from every result.
+- **Measured** (JMH, 3 forks, `-prof gc`, `ShareSubtreesBenchmark` at 10 and 10 000 elements, against #313's head;
+  time, then allocated bytes per operation):
+  - `TreeSet.diff`: disjoint 0.20-0.26x (3.8 MB to 0 at 10 000), a few elements 0.54-0.60x, a derived argument
+    0.47-0.62x, every second element 0.75-0.89x, a small receiver 0.17-0.24x. With an equal tree built on its own,
+    1.23x at 10 000 (a lookup per node), with 72 KB down to 16 B: kept.
+  - `partition`: a random half 0.27-0.52x, by root slot 0.07-0.23x, everything on one side 0.59-0.86x, with 3 to 70
+    times less allocation.
+  - `HashMap.putAll`: derived by removals, a filter or one put 0.31-0.65x, with nothing allocated; disjoint and
+    copies within the error bars.
+  - `TreeMap.putAll`: one value replaced, one key added or removed, an equal copy 0.42-0.65x, mostly nothing
+    allocated; disjoint 1.09-1.14x, kept.
+  - `HashMap.filter` on the shared `rebuilt` measured 1.10x and was reverted; back at 0.96-0.98x of `main`.
 
 **Which of two equal objects a set or a map keeps (#320, #321, #322, decided 2026-11-03).** Three consistency fixes
 that apply #313's rule (an equal object that is another object still replaces the one there, and the receiver comes

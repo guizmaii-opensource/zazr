@@ -573,6 +573,40 @@ public final class BitmapIndexedSetNode<T extends @Nullable Object> extends SetN
         return rebuilt(keptDataMap, newChildren);
     }
 
+    /// The partition of this trie, as two roots: see [SetNode#partition].
+    public SetNode.Partition<T> partition(Predicate<? super T> predicate) {
+        SetNode.Partition<T> into = new SetNode.Partition<>(this);
+        partition(predicate, into);
+        return into;
+    }
+
+    // the walk of `filter`, with the children's two results read from `into` and both sides rebuilt from them
+    @Override
+    @SuppressWarnings("Var")
+    void partition(Predicate<? super T> predicate, SetNode.Partition<T> into) {
+        int payload = payloadArity();
+        int keptDataMap = 0;
+        int bits = dataMap;
+        for (int i = 0; i < payload; i++) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
+            if (predicate.test(getPayload(i))) {
+                keptDataMap |= bitpos;
+            }
+        }
+        int children = nodeArity();
+        SetNode<T>[] keptChildren = null;
+        SetNode<T>[] rejectedChildren = null;
+        for (int i = 0; i < children; i++) {
+            SetNode<T> child = getNode(i);
+            child.partition(predicate, into);
+            keptChildren = withChild(keptChildren, children, i, child, into.kept);
+            rejectedChildren = withChild(rejectedChildren, children, i, child, into.rejected);
+        }
+        into.kept = rebuilt(keptDataMap, keptChildren);
+        into.rejected = rebuilt(dataMap ^ keptDataMap, rejectedChildren);
+    }
+
     @Override
     @SuppressWarnings("Var")
     public BitmapIndexedSetNode<T> diff(SetNode<T> that, int shift) {
