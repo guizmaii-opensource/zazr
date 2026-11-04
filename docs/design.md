@@ -1693,6 +1693,54 @@ bytes and is 1.1x to 2.7x faster; on `Vector` it is level from 1,000 elements an
 and on a `Vector` of 10 elements 0.033 µs against 0.019 µs; from 1,000 elements on `Vector` it is level.
 That is the price of the check, paid only by the callers who ask for it.
 
+**More shared subtrees (#323, 2026-11-03).** Three operations that rebuilt what they could share now share it, each
+kept for its measured win (`ShareSubtreesBenchmark`, below).
+
+- **`TreeSet.diff` with a `TreeSet` of the same comparator** walks the receiver, not the argument: each subtree is
+  matched with the smallest subtree of the argument that holds every argument element within its bounds, found by
+  going down from its parent's match (no split, no allocation on the argument's side). A subtree with nothing of the
+  argument within its bounds is kept whole; one whose element stays and whose children come back unchanged is kept;
+  the rest is rejoined with `join`/`join2`, as the tree `filter` does. Scala 3's `_difference` (the Scala 2.13
+  collection library, which Scala 3 ships unchanged) splits the receiver by each root of the argument and rebuilds
+  everything; its one shortcut, a subtree shared by both sides being removed whole, is kept. The receiver comes back
+  when nothing is removed. Cost: a node of the receiver goes past its match only when the argument holds an element
+  within its bounds, and the bounds of a node hold an element exactly when the node is on that element's search path.
+  So k such nodes, k at most n and at most m times the receiver's height (2 log2(n + 1)), for n elements of the
+  receiver and m of the argument. Each runs the match and the `contains` of its element, walks down the argument of
+  at most its height, 2 log2(m + 1); its two children run one match each and stop. So O(k log m) comparisons: O(m
+  log n log m) for a small argument, O(n log m) for arguments of any size. Scala's `_difference` is
+  O(m log(n / m + 1)); the walk here gives up that bound for the sharing, and its comparator calls are counted by
+  `RedBlackTreeSharingTest`.
+- **`HashSet.partition` and `HashMap.partition`** split the trie node by node in one walk (Scala's own comment on its
+  `HashMap.partition` names this as a possible optimisation; there is no Scala code to port): each node computes the
+  inline elements that go left, gets both results of each child from one holder object (no pair per node), and builds
+  each side with the `rebuilt` step of `filter`, which keeps a node or child whole when it loses nothing. The
+  predicate is called once per element in iteration order. `HashMap.filter` keeps its own inline rebuild: moved onto
+  `rebuilt`, it measured 1.10x slower.
+- **`putAll` of a map of the same kind.** The CHAMP `concat` returned the argument's node when the receiver added
+  nothing to it; it now also returns the receiver's node when the argument brings no other entry and no other key or
+  value object. When either result is still possible, the children both sides hold are united first, before anything
+  is built, and kept for the build if neither holds. So `HashMap.putAll` of a map made from the receiver by removals,
+  or of its entries in another trie, returns the receiver. The red-black `union` behind `TreeMap.putAll` (and
+  `TreeSet.union`) takes the children of the receiver as they are when the two roots are equal, instead of splitting
+  (whose recolouring copied every red child, so no subtree below it was found shared), and returns a subtree of the
+  argument (or of the receiver, holding the same object) when its children come back as they are. So `putAll` of the
+  receiver with values replaced returns its argument.
+- Every new tree comes from `join`, `join2` or an existing node, so the `blackHeight` fields stay exact, as deletion
+  needs; `RedBlackTreeSharingTest` checks the invariants and deletes from every result.
+- **Measured** (JMH, 3 forks, `-prof gc`, `ShareSubtreesBenchmark` at 10 and 10 000 elements, against #313's head;
+  time, then allocated bytes per operation):
+  - `TreeSet.diff`: disjoint 0.20-0.26x (3.8 MB to 0 at 10 000), a few elements 0.54-0.60x, a derived argument
+    0.47-0.62x, every second element 0.75-0.89x, a small receiver 0.17-0.24x. With an equal tree built on its own,
+    1.23x at 10 000 (a lookup per node), with 72 KB down to 16 B: kept.
+  - `partition`: a random half 0.27-0.52x, by root slot 0.07-0.23x, everything on one side 0.59-0.86x, with 3 to 70
+    times less allocation.
+  - `HashMap.putAll`: derived by removals, a filter or one put 0.31-0.65x, with nothing allocated; disjoint and
+    copies within the error bars.
+  - `TreeMap.putAll`: one value replaced, one key added or removed, an equal copy 0.42-0.65x, mostly nothing
+    allocated; disjoint 1.09-1.14x, kept.
+  - `HashMap.filter` on the shared `rebuilt` measured 1.10x and was reverted; back at 0.96-0.98x of `main`.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
