@@ -297,6 +297,21 @@ class EqualObjectRuleTest {
                     assertThat(set.replace(hashing.key(n), equal))
                             .as("replace of an absent, " + at)
                             .isSameAs(set);
+                    if (n >= 2) {
+                        // by an object equal to another element: that element goes, the new object stays
+                        int other = (n / 2 == 0) ? 1 : 0;
+                        Key otherCopy = hashing.key(other);
+                        Set<Key> merged = set.replace(replacedKey, otherCopy);
+                        assertThat(merged.size())
+                                .as("replace by another's equal, " + at)
+                                .isEqualTo(n - 1);
+                        assertThat(merged.contains(replacedKey))
+                                .as("replace by another's equal, " + at)
+                                .isFalse();
+                        assertThat(stored(merged, otherCopy))
+                                .as("replace by another's equal, " + at)
+                                .isSameAs(otherCopy);
+                    }
                 }
             }
         }
