@@ -120,8 +120,8 @@ whose elements all go to it.
   comparator orders elements, not values. `groupBy` keeps the comparator, since its groups hold elements.
 - `max()` and `min()` use the natural order of the elements, which must be `Comparable`, and walk them all, even on a
   `TreeSet`. The least and greatest elements in a `TreeSet`'s own order are `head()` and `last()`, in O(log n).
-- `TreeSet` decides membership with its comparator, not `equals`, in every operation: `contains`, `add`, `remove`,
-  `union`, `intersect`, `diff`, `removeAll` and `retainAll`, whatever the kind of the argument. `intersect` and
+- `TreeSet` decides membership with its comparator, not `equals`, in `contains`, `add`, `remove`, `union`,
+  `intersect`, `diff`, `removeAll` and `retainAll`, whatever the kind of the argument. `intersect` and
   `retainAll` keep each element of the set that the comparator equates with a given one, as the set's own object.
 - `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator, and `union`, `diff`,
   `containsAll` and `equals` on two `HashSet`s: they work on whole parts of the trees. With different comparators,
