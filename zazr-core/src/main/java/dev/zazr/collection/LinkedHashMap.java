@@ -1054,17 +1054,30 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     public LinkedHashMap<K, V> put(K key, V value) {
         Objects.requireNonNull(key, "LinkedHashMap: key is null");
         Objects.requireNonNull(value, "LinkedHashMap: value is null");
-        return putEntry(Tuple.of(key, value));
-    }
-
-    // put(entry._1(), entry._2()) storing `entry` itself, whose key and value are not null
-    private LinkedHashMap<K, V> putEntry(Tuple2<K, V> entry) {
-        K key = entry._1();
         Slot<K, V> existing = slotOrNull(key);
         if (existing != null && existing.entry()._1() == key && existing.entry()._2() == value) {
             // the key and the value are the objects already there
             return this;
-        } else if (existing != null) {
+        }
+        return putEntry(Tuple.of(key, value), existing);
+    }
+
+    // put(entry._1(), entry._2()) storing `entry` itself, whose key and value are not null
+    private LinkedHashMap<K, V> putEntry(Tuple2<K, V> entry) {
+        Slot<K, V> existing = slotOrNull(entry._1());
+        if (existing != null
+                && existing.entry()._1() == entry._1()
+                && existing.entry()._2() == entry._2()) {
+            // the key and the value are the objects already there
+            return this;
+        }
+        return putEntry(entry, existing);
+    }
+
+    // putEntry(entry) once the slot of its key is known: `existing`, or null when the key is absent
+    private LinkedHashMap<K, V> putEntry(Tuple2<K, V> entry, @Nullable Slot<K, V> existing) {
+        K key = entry._1();
+        if (existing != null) {
             // the insertion order holds the key object of the entry, which the positional operations read
             int ordinal = existing.index();
             InsertionOrder<K> newOrder = existing.entry()._1() == key ? order : order.update(ordinal, key);
