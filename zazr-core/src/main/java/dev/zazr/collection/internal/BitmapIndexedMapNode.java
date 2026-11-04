@@ -439,8 +439,8 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
             return this;
         } else if (bm.size == 1) {
             BitmapIndexedMapNode<K, V> result = updated(bm.getKey(0), bm.getValue(0), bm.hashes[0], shift, true);
-            // this node held only the key of `bm`, whose entry wins: the result is `bm`
-            return result.size == 1 ? bm : result;
+            // this node when it holds the very entry of `bm`; `bm` when this node held only its key, whose entry wins
+            return (result == this) ? this : (result.size == 1) ? bm : result;
         }
         // set as soon as the result differs from `bm`, which is returned otherwise
         boolean anyChangesMadeSoFar = false;
@@ -514,17 +514,19 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 | rightNodeOnly
                 | dataToNodeMigrationTargets;
         if (newDataMap == (rightDataOnly | leftDataRightDataRightOverwrites) && newNodeMap == rightNodeOnly) {
-            // nothing of this node makes it into the result
-            return bm;
+            // nothing of this node makes it into the result: this node when `bm` holds its very entries and no other
+            return (!overwritesChangeThis && (rightDataOnly | rightNodeOnly) == 0) ? this : bm;
         }
         int nextShift = shift + BIT_PARTITION_SIZE;
 
         // When the result can still be one of the two nodes, the children both hold are united first, so that
         // nothing is built when it is: this node when `bm` brings no other entry, no other key or value object, and
         // every united child is the child of this node (an entry of `bm` facing a child of this node is then
-        // looked up in it); `bm` when this node brings no other entry and every united child is the child of `bm`.
-        // Once neither holds, the children united so far are kept for the build below, which reads them instead of
-        // uniting them again.
+        // looked up in it); else `bm` when this node brings no other entry and every united child counts as the
+        // child of `bm`. A union is this node's child whenever `bm`'s child brings nothing to it, so it counts as
+        // `bm`'s child when it is that child, or when it is this node's child of the same size: the two children
+        // then hold the same key and value objects. Once neither holds, the children united so far are kept for the
+        // build below, which reads them instead of uniting them again.
         boolean asThis = !overwritesChangeThis
                 && (rightDataOnly | rightNodeOnly | leftDataRightNode | leftDataRightDataMigrateToNode) == 0;
         boolean asThat =
@@ -541,7 +543,7 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 MapNode<K, V> newNode = leftNode.concat(rightNode, nextShift);
                 if (united == null) {
                     boolean keepsThis = asThis && newNode == leftNode;
-                    boolean keepsThat = asThat && newNode == rightNode;
+                    boolean keepsThat = asThat && keepsChildOf(newNode, leftNode, rightNode);
                     if (!keepsThis && !keepsThat) {
                         united = unitedSoFar(bm, leftNodeRightNode, k, asThis);
                     }
@@ -552,10 +554,10 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                     united[k] = newNode;
                 }
             }
-            if (asThat) {
-                return bm;
-            } else if (asThis && holdsEntriesOf(bm, leftNodeRightData, nextShift)) {
+            if (asThis && holdsEntriesOf(bm, leftNodeRightData, nextShift)) {
                 return this;
+            } else if (asThat) {
+                return bm;
             } else if (united == null) {
                 // every united child is the child of this node, but an entry of `bm` changes one of its children
                 united = unitedSoFar(bm, leftNodeRightNode, bitCount(leftNodeRightNode), true);
@@ -579,11 +581,10 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         bitpos = minimumBitPos;
         while (true) {
             if ((bitpos & leftNodeRightNode) != 0) {
+                MapNode<K, V> leftNode = getNode(leftNodeIdx);
                 MapNode<K, V> rightNode = bm.getNode(rightNodeIdx);
-                MapNode<K, V> newNode = (united != null)
-                        ? united[unitedIdx++]
-                        : getNode(leftNodeIdx).concat(rightNode, nextShift);
-                if (rightNode != newNode) {
+                MapNode<K, V> newNode = (united != null) ? united[unitedIdx++] : leftNode.concat(rightNode, nextShift);
+                if (!keepsChildOf(newNode, leftNode, rightNode)) {
                     anyChangesMadeSoFar = true;
                 }
                 newContent[newContentSize - compressedNodeIdx - 1] = newNode;
@@ -688,6 +689,13 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 ? new BitmapIndexedMapNode<>(
                         null, newDataMap, newNodeMap, newContent, newHashes, newSize, newKeyHashSum)
                 : bm;
+    }
+
+    // `true` when `newNode`, the union of `leftNode` and `rightNode`, holds the very entries of `rightNode` and no
+    // other: it is `rightNode`, or `leftNode` (to which `rightNode` then brings nothing) of the same size
+    private static <K extends @Nullable Object, V extends @Nullable Object> boolean keepsChildOf(
+            MapNode<K, V> newNode, MapNode<K, V> leftNode, MapNode<K, V> rightNode) {
+        return newNode == rightNode || (newNode == leftNode && leftNode.size() == rightNode.size());
     }
 
     // `true` when each entry of `bm` in a slot of `slots`, where this node has a child, is the very key and value
