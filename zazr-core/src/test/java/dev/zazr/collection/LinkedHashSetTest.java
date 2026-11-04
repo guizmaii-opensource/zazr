@@ -2192,7 +2192,7 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
             LinkedHashSet<Integer> five = mk(5, 3, 9, 1, 7);
             LinkedHashSet<Integer> everyThirdRemoved =
                     Vector.rangeBy(0, 70, 3).foldLeft(mk(Vector.range(0, 70)), LinkedHashSet::remove);
-            // 35 markers for 35 elements: the most the insertion order keeps before it is rebuilt
+            // 35 elements removed inside the order of 70
             LinkedHashSet<Integer> atThreshold =
                     Vector.range(10, 45).foldLeft(mk(Vector.range(0, 70)), LinkedHashSet::remove);
             java.util.List<Integer> shuffled =
@@ -2211,7 +2211,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
                     mk(Vector.range(0, 70)),
                     mk(shuffled),
                     everyThirdRemoved,
-                    atThreshold);
+                    atThreshold,
+                    // a root that is one leaf, an emptied last block, and a leaf removed from the middle
+                    mk(Vector.range(0, 40)),
+                    mk(Vector.range(0, 70)).take(64),
+                    Vector.range(32, 64).foldLeft(mk(Vector.range(0, 100)), LinkedHashSet::remove));
         }
 
         private int[] counts(int size) {
@@ -2549,31 +2553,11 @@ public class LinkedHashSetTest extends AbstractTraversableTest {
 
         @Test
         public void shouldCoverEveryRepresentationOfTheInsertionOrder() throws Exception {
-            // offset > 0, markers of removed elements in the middle, and as many markers as elements (one more
-            // rebuilds)
-            java.util.List<LinkedHashSet<Integer>> receivers = receivers();
             java.util.Set<String> shapes = new java.util.HashSet<>();
-            for (LinkedHashSet<Integer> receiver : receivers) {
-                int offset = representation(receiver, "offset");
-                int tombstones = representation(receiver, "tombstones");
-                if (offset > 0) {
-                    shapes.add(tombstones > 0 ? "offset and markers" : "offset");
-                }
-                if (tombstones > 0 && tombstones == receiver.size()) {
-                    shapes.add("markers at the rebuild threshold");
-                } else if (tombstones > 0) {
-                    shapes.add("markers");
-                }
+            for (LinkedHashSet<Integer> receiver : receivers()) {
+                shapes.addAll(InsertionOrderShapes.of(mapOf(receiver)));
             }
-            assertEquals(
-                    java.util.Set.of("offset", "offset and markers", "markers", "markers at the rebuild threshold"),
-                    shapes);
-        }
-
-        private int representation(LinkedHashSet<Integer> receiver, String field) throws Exception {
-            java.lang.reflect.Field declared = LinkedHashMap.class.getDeclaredField(field);
-            declared.setAccessible(true);
-            return (int) declared.get(mapOf(receiver));
+            assertEquals(InsertionOrderShapes.ALL, shapes);
         }
 
         private LinkedHashMap<?, ?> mapOf(LinkedHashSet<Integer> set) throws Exception {

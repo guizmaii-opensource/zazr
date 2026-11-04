@@ -1453,6 +1453,91 @@ head is the same object as the head of the cell before the loop. `Lazy` keeps `L
   first element of an enqueued Queue without reversing its rear. A Queue with nothing at the back iterates its front directly: the
   dedicated iterator measured twice as slow on a small Queue built by `ofAll`.
 
+**Queue's rebalancing on an older version, and LinkedHashMap's order without markers (#173, decided 2026-11-03).**
+The two follow-ups the cost review (#93, above) left documented. Each part stands alone and is measured on its own.
+
+- **`Queue`: the receiver keeps the result of its rebalancing.**
+  - The options compared:
+    - Okasaki's real-time queue (*Purely Functional Data Structures*, 7.2): a lazy front, a strict rear, and a
+      schedule that forces one cell of the rotation per operation. `tail` and `dequeue` are O(1) in the worst case
+      on every version, because every version made from one Queue shares the same memoised rotation.
+    - It is a queue, not a deque: it does nothing for `init`. The real-time deque (8.4) would, at the cost of two
+      lazy lists and two schedules.
+    - Either one makes the front a lazy list. Every operation that walks the front as a `List` (the iterator, the
+      size comparisons, `insert`, `take`, `drop`, `replace`, `zip` and about a hundred more) would be rewritten,
+      and every common operation would pay a memoised cell, which needs a safe publication across threads.
+    - Scala 3's `immutable.Queue` (`library/src/scala/collection/immutable/Queue.scala`) is Zazr's representation,
+      two strict lists, `in` and `out`. Its `tail` on an older version reverses `in` again on every call, as Zazr's
+      did, so it has nothing to copy.
+  - Decided: the Queue keeps the two lists, and a third field holds the result of the call that rebalances it.
+    - That call is `tail()` (with `dequeue()` and `tailOption()` through it) when the front holds one element and
+      the rear is not empty, and `init()` when the rear is empty. The two conditions never hold on the same Queue,
+      so one field serves both.
+    - The field is written without a lock, as `String.hash` is: two threads may both compute it, and each reads
+      either null or a whole Queue, whose fields, and those of the `List` cells, are final.
+    - With compressed references (the default), the field takes the padding of the object: a Queue is 24 bytes with
+      or without it. Without them it grows from 32 to 40 bytes.
+  - **The guarantee:** an older Queue pays its O(n) rebalancing at most once; calling `tail`, `dequeue` or `init`
+    again on it is O(1). A new version made from it (`q.enqueue(x)`, then `tail`) is about to be rebalanced too and
+    pays the O(n) step once itself. Only the lazy rotation of the real-time queue removes that case.
+  - The cost: an older Queue kept alive also keeps its rebalanced result, so it holds up to about twice its cells:
+    the back again in order after `tail()`, or the whole front rebuilt after `init()`. A kept result can keep its
+    own (a `tail()` result whose `init()` was called), each one smaller than the Queue it hangs from.
+- **`LinkedHashMap` and `LinkedHashSet`: the insertion order is a trie indexed by ordinal, with no markers.**
+  - The options compared:
+    - Scala 3's `VectorMap` (`library/src/scala/collection/immutable/VectorMap.scala`) keeps markers, as Zazr's old
+      order did. Each run of removed slots records its length at both ends (`Tombstone(distance)`), so iteration,
+      `head`, `last`, `tail` and `init` jump over a run in O(1). It never compacts them: `take(n)` and `drop(n)` still
+      count the entries one by one, and the markers stay in the vector.
+    - `TreeSeqMap` (`TreeSeqMap.scala`) gives every key an ordinal and orders the keys in a Patricia trie keyed by
+      it, so a removal leaves nothing behind. Its trie has no counts: `slice`, and so `take` and `drop`, splits it
+      by walking the entries.
+    - A red-black tree of ordinals with sizes (`RedBlackTreeModule` has them, with `take`, `drop` and `slice` by
+      rank) would cut by rank in O(log n). But a new key would copy about 17 tree nodes at 100,000 entries, where
+      `Vector.append` copies one leaf.
+  - Decided: the order is a trie indexed by ordinal (`InsertionOrder` in the collection internals).
+    - Every new key gets the next ordinal, an int that is never given twice within one map: the keys of a map have
+      distinct ordinals, in their order. (An emptied map, the renumbering and the builder start again at 0.) The
+      `HashMap` maps each key to its entry and its ordinal, as before.
+    - The trie is read 5 bits at a time from the root, as `Vector` is indexed. A leaf holds only the keys present,
+      in a compact array beside a 32-bit map of the ordinals they occupy, as `HashMap`'s nodes do.
+    - A node left empty is dropped, and each branch counts the keys below it. So `remove` takes the key out along one
+      path, and the key of a given rank is found by one walk from the root.
+    - The last block of 32 ordinals is kept out of the trie, as `Vector`'s last leaf is, so a new key copies one
+      leaf of at most 32 keys. A full block goes into the trie when the next key is put.
+  - **The costs.**
+    - `put`, `remove`, `head`, `last`, `tail` and `init` are effectively O(1), on any version, older ones included.
+      Each copies at most one path from the root, of at most 7 levels.
+    - `take`, `drop` and the other cuts are O(min(k, n - k)), the hash map side as before.
+    - Nothing is rebuilt and nothing is skipped: the amortisation and the older-version caveats are gone from the
+      notes, the javadoc and the pages.
+  - **Running out of ordinals.** When the next ordinal would be `Integer.MAX_VALUE`, the map numbers its keys again
+    from 0, in the same order, O(n) once per two billion new keys (`TreeSeqMap` does the same after 2^32 updates). A
+    package-private `emptyStartingAt` lets the tests reach it.
+  - **Unchanged:** the order, the key objects, `equals`, `hashCode` and every result.
+    - `LinkedHashOrderModelTest` compares random operations on random older versions with a model of the order.
+    - `InsertionOrderTest` does the same for the trie on its own, past three levels and up to the last ordinal.
+    - A probe run on `main` and on the branch gave byte-identical output.
+  - The `Builder` keeps an adopted map and puts into it, as Scala's `VectorMapBuilder` does with its `aliased` map,
+    instead of copying its order into its list.
+- **Measured** (JMH, 3 forks, `-prof gc`, `main` and the branch back to back; `QueueRebalanceBenchmark` and
+  `LinkedHashMapOrderBenchmark` in `zazr-benchmark`, with the neighbouring classes for the operations that must not
+  regress; the table is in the pull request). Both parts keep their change.
+  - `Queue`: `tail`, `dequeue` and `init` again on an older Queue go from O(n) to a field read, 12x faster at 10
+    elements and 180,000x to 545,000x at 100,000, allocating nothing. An `init` chain is 1.5x faster with 40 % less
+    allocation, since each step reads what the previous one kept. A new version of an older Queue
+    (`tail` after `enqueue`) is unchanged, as expected. The enqueue-then-drain and alternating chains allocate the
+    same bytes and measure 4 % to 10 % slower, inside or near the error at most sizes.
+  - `LinkedHashMap`: `tail`, `init`, `take`, `drop` and their mirrors past a run of removed keys are 15x to 50x
+    faster at 1,000 entries and 1,000x to 5,700x at 100,000; one more removal from a map with as many removed keys
+    as kept ones goes from a rebuild (22 ms, 71 MB at 100,000) to 0.2 µs. Removing every key is 1.3x to 1.8x faster
+    with up to a third less allocation, and `put`, iteration and the builders and collectors are unchanged.
+  - The losing rows: `head` takes 2 ns more (a walk from the root), `tail` on a map with no removal 1.2x to 1.3x
+    slower and a chain of them 1.25x to 1.33x slower (the first leaf is copied without its key, where `Vector`
+    shares its first array), one `remove` 1.2x slower at 100,000, the builder given a map then new keys 1.03x to
+    1.1x slower, and random `get` hits on a map of 100,000 1.6x slower though `get` does not touch the order (the
+    entries end up spread differently in memory; the same at 1,000).
+
 **The sets and maps return themselves when nothing changes (#313, decided 2026-11-03).** An operation of `HashSet`,
 `HashMap`, `LinkedHashSet`, `LinkedHashMap`, `TreeSet`, `TreeMap` or a non-empty wrapper that can tell cheaply that it
 changed nothing returns the receiver itself, as Scala's do (Scala's conserving operations, part 2 of #147; the
