@@ -1637,9 +1637,10 @@ check that every public method returning the type is a row or excluded with a re
     elements here; they keep the receiver's since the consistency fixes below, and return it for an equal argument.)
   - `putAll` of another `HashMap` or `TreeMap` holding some of the same entry objects merges the tries or trees, and
     builds what is not a shared subtree; entries given one by one, or the map itself, return the map.
-  - `HashMap.replace(entry, entry)` of an entry by itself removes and puts it back. The check needs the stored key,
-    which the CHAMP nodes gave only in a new `Tuple2`; `BitmapIndexedMapNode.findKey` (added for `retainAll`, below)
-    now gives it without allocating, and making this a no-op is #335.
+  - `HashMap.replace(entry, entry)` of an entry by itself removed and put it back: the check needed the stored key,
+    which the CHAMP nodes gave only in a new `Tuple2`. It returns the map since #335: `BitmapIndexedMapNode.holdsEntry`
+    tells, with one lookup and no allocation, whether the trie holds the key and value objects of `newEntry`, and the
+    key of `entry` must equal that key and its value that value. `NonEmptyMap.replace` returns itself through `wrap`.
   - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: `map` is unchanged, and the sets have
     `mapConserve` (below).
 - **Measured** (JMH, 3 forks, `-prof gc`, `main` then the branch back to back on the same benchmark classes,

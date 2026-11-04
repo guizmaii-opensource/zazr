@@ -1089,14 +1089,26 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
+     * Returns this map itself when the key and the value of {@code newElement} are the objects this map holds for
+     * the key of {@code currentElement}, whose value equals that of {@code currentElement}. An equal key or value that
+     * is another object replaces the one there.
+     * <p>
      * Complexity: effectively O(1): one lookup, one removal and one insertion.
      */
     @Override
     public HashMap<K, V> replace(Tuple2<K, V> currentElement, Tuple2<K, V> newElement) {
+        Objects.requireNonNull(currentElement, "currentElement is null");
         Objects.requireNonNull(newElement, "newElement is null");
         Objects.requireNonNull(newElement._1(), "HashMap: key is null");
         Objects.requireNonNull(newElement._2(), "HashMap: value is null");
-        return Maps.replace(this, currentElement, newElement);
+        // the entry of currentElement's key replaced by the key and value objects already there
+        if (trie.holdsEntry(newElement._1(), newElement._2())
+                && Objects.equals(currentElement._1(), newElement._1())
+                && Objects.equals(newElement._2(), currentElement._2())) {
+            return this;
+        } else {
+            return Maps.replace(this, currentElement, newElement);
+        }
     }
 
     /**

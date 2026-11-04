@@ -447,4 +447,64 @@ class EqualObjectRuleTest {
             }
         }
     }
+
+    /// A hash map kind: how to build one from its entries, and its `replace(Tuple2, Tuple2)`.
+    private record HashMapKind(
+            String name,
+            Function<java.util.List<Tuple2<Key, Key>>, Iterable<Tuple2<Key, Key>>> ofEntries,
+            BiFunction<
+                            Iterable<Tuple2<Key, Key>>,
+                            Tuple2<Tuple2<Key, Key>, Tuple2<Key, Key>>,
+                            Iterable<Tuple2<Key, Key>>>
+                    replace) {}
+
+    @SuppressWarnings("unchecked")
+    private static final java.util.List<HashMapKind> HASH_MAPS = java.util.List.of(
+            new HashMapKind(
+                    "HashMap", HashMap::ofEntries, (m, args) -> ((HashMap<Key, Key>) m).replace(args._1(), args._2())),
+            new HashMapKind(
+                    "NonEmptyMap",
+                    entries -> NonEmptyMap.fromIterable(entries.getFirst(), entries.subList(1, entries.size())),
+                    (m, args) -> ((NonEmptyMap<Key, Key>) m).replace(args._1(), args._2())));
+
+    @Test
+    void shouldReplaceAHashMapEntryByAnEqualOneOfOtherObjects() {
+        for (Hashing hashing : Hashing.values()) {
+            for (HashMapKind kind : HASH_MAPS) {
+                for (int n : hashing.sizes()) {
+                    java.util.List<Tuple2<Key, Key>> own = entries(hashing, n);
+                    java.util.List<Tuple2<Key, Key>> copies = entries(hashing, n);
+                    Iterable<Tuple2<Key, Key>> map = kind.ofEntries().apply(own);
+                    String at = kind.name() + " " + hashing + " of " + n;
+                    Tuple2<Key, Key> current = own.get(n / 2);
+                    Tuple2<Key, Key> copy = copies.get(n / 2);
+
+                    Iterable<Tuple2<Key, Key>> newKey =
+                            kind.replace().apply(map, Tuple.of(current, Tuple.of(copy._1(), current._2())));
+                    assertThat(newKey).as(at).isNotSameAs(map).containsExactlyInAnyOrderElementsOf(own);
+                    Tuple2<Key, Key> storedKey = storedEntry(HashMap.ofEntries(newKey), current._1());
+                    assertThat(storedKey._1()).as("the new key, " + at).isSameAs(copy._1());
+                    assertThat(storedKey._2()).as(at).isSameAs(current._2());
+
+                    Iterable<Tuple2<Key, Key>> newValue =
+                            kind.replace().apply(map, Tuple.of(current, Tuple.of(current._1(), copy._2())));
+                    assertThat(newValue).as(at).isNotSameAs(map).containsExactlyInAnyOrderElementsOf(own);
+                    Tuple2<Key, Key> storedValue = storedEntry(HashMap.ofEntries(newValue), current._1());
+                    assertThat(storedValue._1()).as(at).isSameAs(current._1());
+                    assertThat(storedValue._2()).as("the new value, " + at).isSameAs(copy._2());
+
+                    // a new tuple of the objects already there, asked for with an equal copy
+                    assertThat(kind.replace().apply(map, Tuple.of(copy, Tuple.of(current._1(), current._2()))))
+                            .as("replace by the objects there, " + at)
+                            .isSameAs(map);
+                    assertThat(kind.replace().apply(map, Tuple.of(Tuple.of(current._1(), new Key(-1, 0)), current)))
+                            .as("replace of another value, " + at)
+                            .isSameAs(map);
+                    assertThat(kind.replace().apply(map, Tuple.of(Tuple.of(hashing.key(n), current._2()), current)))
+                            .as("replace of an absent key, " + at)
+                            .isSameAs(map);
+                }
+            }
+        }
+    }
 }
