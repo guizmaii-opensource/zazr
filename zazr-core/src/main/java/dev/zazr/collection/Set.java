@@ -52,18 +52,23 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
     /**
      * Returns a set containing all elements of this set plus the given element,
      * if it was not already present.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code element} is already a member.
      *
      * @param element the element to add
-     * @return a set including the element; may be this instance if the element was already present
+     * @return a set including the element
      */
     Set<T> add(T element);
 
     /**
      * Returns a set containing all elements of this set plus the given elements,
      * excluding duplicates.
+     * <p>
+     * Returns this set itself when nothing changes: when every element is already a member; an empty set returns
+     * {@code elements} when it is a set of the same kind.
      *
      * @param elements the elements to add
-     * @return a set including the additional elements; may be this instance (or {@code elements} itself) if no change was necessary
+     * @return a set including the additional elements
      */
     Set<T> addAll(Iterable<? extends T> elements);
 
@@ -94,17 +99,21 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Returns a set with the given element removed, if it was present.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code element} is not a member.
      *
      * @param element the element to remove
-     * @return a set without the specified element; may be this instance if the element was not present
+     * @return a set without the specified element
      */
     Set<T> remove(T element);
 
     /**
      * Returns a set with all given elements removed, if present.
+     * <p>
+     * Returns this set itself when nothing changes: when none of {@code elements} is a member.
      *
      * @param elements the elements to remove
-     * @return a set without the specified elements; may be this instance if none of them was present
+     * @return a set without the specified elements
      */
     Set<T> removeAll(Iterable<? extends T> elements);
 
@@ -133,18 +142,22 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The elements that satisfy {@code predicate}.
+     * <p>
+     * Returns this set itself when nothing changes: when every element satisfies {@code predicate}.
      *
      * @param predicate the condition to keep an element
-     * @return a set of the matching elements; may be this instance if all of them match
+     * @return a set of the matching elements
      * @throws NullPointerException if {@code predicate} is null
      */
     Set<T> filter(Predicate<? super T> predicate);
 
     /**
      * The elements that do not satisfy {@code predicate}; the same as {@code filter(predicate.negate())}.
+     * <p>
+     * Returns this set itself when nothing changes: when no element satisfies {@code predicate}.
      *
      * @param predicate the condition to drop an element
-     * @return a set of the elements that do not match; may be this instance if none of them matches
+     * @return a set of the elements that do not match
      * @throws NullPointerException if {@code predicate} is null
      */
     Set<T> reject(Predicate<? super T> predicate);
@@ -216,6 +229,8 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Splits the elements into those that satisfy {@code predicate} and those that do not.
+     * <p>
+     * Returns this set itself when nothing changes: it is the side that gets every element.
      *
      * @param predicate the condition
      * @return the matching elements and the others, as two sets
@@ -303,6 +318,9 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Replaces {@code currentElement} with {@code newElement}, if it is a member.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code currentElement} is not a member, or
+     * {@code newElement} is the element already there.
      *
      * @param currentElement the element to replace
      * @param newElement     its replacement
@@ -312,6 +330,8 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * The same as {@link #replace(Object, Object)}: a set holds an element at most once.
+     * <p>
+     * Returns this set itself when nothing changes: as {@link #replace(Object, Object)}.
      *
      * @param currentElement the element to replace
      * @param newElement     its replacement
@@ -321,9 +341,11 @@ public interface Set<T extends @Nullable Object> extends Traversable<T> {
 
     /**
      * Keeps only the elements that are also in {@code elements}.
+     * <p>
+     * Returns this set itself when nothing changes: when every element is among {@code elements}.
      *
      * @param elements the elements to keep
-     * @return a set of the elements of this set that are in {@code elements}; may be this instance if all are
+     * @return a set of the elements of this set that are in {@code elements}
      * @throws NullPointerException if {@code elements} is null
      */
     Set<T> retainAll(Iterable<? extends T> elements);

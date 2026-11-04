@@ -1593,6 +1593,67 @@ and a caller can test identity. On `Vector`, `List`, `Queue`, `LazyList` and `No
   ticket asks for, because the gains of the shared cases are far larger than these losses. The `Queue` no-ops save
   the wrapper and the reversal (1.04x to 1.7x): `toList()` still copies the elements.
 
+**The sets and maps return themselves when nothing changes (#313, decided 2026-11-03).** An operation of `HashSet`,
+`HashMap`, `LinkedHashSet`, `LinkedHashMap`, `TreeSet`, `TreeMap` or a non-empty wrapper that can tell cheaply that it
+changed nothing returns the receiver itself, as Scala's do (Scala's conserving operations, part 2 of #147; the
+sequences are #312, a conserving `map` #314). `ConservingSetMapTest` holds the table: each row an operation given
+arguments that change nothing, checked with `isSameAs` on every type at 1, 2, 31, 32, 33 and 1025 elements, a table
+of one-element changes that must give a new collection equal to the expected one, in its order, and a reflective
+check that every public method returning the type is a row or excluded with a reason.
+
+- **Already conserving**, now tested: the lookups behind `Maps.ABSENT`, `add`/`remove` of a present/absent element,
+  the CHAMP `filter`/`reject`, `union`/`addAll`/`diff`/`removeAll`/`putAll`/`merge` of two hash collections, the
+  tree filter family, `take`/`drop`/the ranges and the conversions to the same type (`toSet`, `toLinkedSet`,
+  `toSortedSet` of the same comparator), `HashMap.mapValues`/`replaceAll`, `updateWith`, `tap`, `orElse`.
+- **`TreeMap.put` (and every operation that puts: `putAll`, `put` with a merge, `computeIfPresent`, `replaceValue`,
+  `replace(key, old, new)`)** inserts with `Node.insertEntry`, which compares the key in place and keeps the node
+  whose key and value are the objects given, so the tree comes back unchanged: Scala's `RedBlackTree.upd`, which
+  checks only the value because it keeps the old key. An equal key or value that is another object still replaces
+  the one there. `LinkedHashMap.put` returns the map at the public method, when its slot holds the same two objects,
+  so the check survives a new order representation.
+- **`TreeMap.mapValues`/`replaceAll`** are Scala's `RedBlackTree.transform`: a node whose value comes back the same
+  object, with unchanged subtrees, is kept, and the untouched subtrees are shared when some value changes.
+  `LinkedHashMap.mapValues`/`replaceAll` put only the values that change, on the map itself; the old path built a new
+  map by successive puts. The function is called once per entry in iteration order in both.
+- **`LinkedHashMap`'s filter family** calls the predicate once per entry in iteration order and builds nothing while
+  every entry passes. The first entries that fail, up to one per eight entries and at most eight, are only noted; if no
+  more fail, they are removed from the map. When more fail, the entries before that one are read again without
+  calling the predicate, skipping the noted ones, and the result is built. A first version that always read the
+  prefix again measured 1.48x slower at 10 entries and 1.19x at 10 000 when only the last entry was dropped.
+- **`partition` on `HashSet`, `HashMap`, `LinkedHashSet`, `LinkedHashMap`** returns the receiver as the side that
+  gets everything (the two tree types already did, from the tree walk).
+- **`RedBlackTree.union`/`intersection`** return a subtree shared by both sides as it is, as Scala's `_union` and
+  `_intersect` do; `TreeSet.union`/`intersect`/`TreeMap.putAll` of the receiver itself return it, and `TreeSet.union`
+  and `addAll` on an empty set return the argument, as `TreeMap.merge` on an empty map now does.
+- **`replace` of an element by the object already there** returns the set (`HashSet` and `TreeSet` look up the
+  stored element where they asked `contains`). `TreeMap.replace(entry, newEntry)` returns the map when `newEntry`'s
+  key and value are the objects the tree holds for the key of `entry`: `Node.findByKey` gives the stored entry with no
+  allocation.
+- **The non-empty wrappers** return themselves through `wrap` where they built a new wrapper: `put`, `put` with a
+  merge and `mapValues` on both maps. Their operations that may empty them return the wrapped collection itself.
+- **Left as they are**, each with its reason:
+  - `TreeSet.union`/`intersect` with another `TreeSet` of the same comparator keep the argument's elements, so an
+    equal argument is not a no-op; `TreeSet.diff` with one rebuilds the tree as Scala's `_difference` does. Sharing
+    the receiver's subtrees there is a follow-up.
+  - `putAll` of another `HashMap` or `TreeMap` holding some of the same entry objects merges the tries or trees, and
+    builds what is not a shared subtree; entries given one by one, or the map itself, return the map.
+  - `HashMap.retainAll`/`TreeMap.retainAll` keep the given entry objects (3.8.1), which are equal to the map's but not
+    the same.
+  - `HashMap.replace(entry, entry)` of an entry by itself removes and puts it back: the check needs the stored key,
+    which the CHAMP nodes give only in a new `Tuple2`.
+  - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: `map` is unchanged, and the sets have
+    `mapConserve` (below).
+- **Measured** (JMH, 3 forks, `-prof gc`, `main` then the branch back to back on the same benchmark classes,
+  `ConservingSetMapBenchmark`, the table in the pull request). The no-op cases win everywhere: `partition` with
+  everything on one side 4x to 14x faster, `LinkedHashMap.filter` keeping everything and `mapValues` to the same values
+  7x and down to about 100 B from 2 to 7 MB at 10 000 entries, `LinkedHashMap.put` and `TreeMap.put` of the same
+  objects 2x to 8x with no allocation, `TreeMap.mapValues` to the same values 1.5x to 1.7x, `TreeSet.union` and
+  `intersect` with itself and `HashSet.replace` by itself O(1). The changing controls are flat (`put` of a new value,
+  `TreeMap.mapValues` changing every value, `HashSet.partition` in halves, `LinkedHashMap.filter` dropping half at
+  10 000), except two small ones at 10 entries: `LinkedHashMap.mapValues` changing every value is 1.30x slower there
+  but 0.79x with a fifth less allocation at 10 000, and `LinkedHashMap.filter` dropping half is 1.32x slower (0.35 to
+  0.47 µs). `LinkedHashMap.filter` dropping the last entry is 2.5x faster at 10 and 6x at 10 000.
+
 **`mapConserve`, not a conserving `map` (decided 2026-11-03).** `map` is unchanged. A separate
 `mapConserve(Function<? super T, ? extends T>)`, Scala's name (`List.mapConserve` in the Scala 3 standard library,
 `library/src/scala/collection/immutable/List.scala`), returns the receiver itself when the mapper returns every

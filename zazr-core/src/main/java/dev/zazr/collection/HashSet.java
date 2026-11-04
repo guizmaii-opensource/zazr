@@ -1065,10 +1065,12 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      */
     @Override
     public HashSet<T> replace(T currentElement, T newElement) {
-        if (tree.contains(currentElement)) {
-            return remove(currentElement).add(newElement);
-        } else {
+        T current = tree.find(currentElement);
+        if (current == null || current == newElement) {
+            // absent, or replaced by the object already there
             return this;
+        } else {
+            return remove(currentElement).add(newElement);
         }
     }
 

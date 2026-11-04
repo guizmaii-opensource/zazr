@@ -27,6 +27,10 @@ public final class Maps {
      */
     public static final Object ABSENT = new Object();
 
+    private static final int[] NO_POSITIONS = {};
+
+    private static final Object[] NO_KEYS = {};
+
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> V getOrAbsent(Map<K, V> map, K key) {
         return map.getOrElse(key, (V) ABSENT);
@@ -108,10 +112,74 @@ public final class Maps {
         return filter(map, ofEntries, t -> predicate.test(t._1(), t._2()));
     }
 
+    /// The entries that pass `predicate`, called once per entry in iteration order; `map` itself
+    /// when every entry passes. The first few entries that fail are only noted: if no more fail,
+    /// they are removed from the map, so a filter that drops one or two entries costs one walk and
+    /// a removal or two. When more fail, the entries before that one are read again, without
+    /// calling `predicate` and skipping the noted ones, and the result is built from them and the
+    /// rest of the walk.
+    @SuppressWarnings({"Var", "unchecked"})
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filter(
             M map, OfEntries<K, V, M> ofEntries, Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
-        return ofEntries.apply(Iterator.ofAll(map).filter(predicate));
+        // removals are cheap against a rebuild only while they are few
+        int budget = Math.min(8, map.size() >> 3);
+        java.util.Iterator<Tuple2<K, V>> rest = map.iterator();
+        // the positions and keys of the failing entries, made at the first one
+        int[] positions = NO_POSITIONS;
+        Object[] keys = NO_KEYS;
+        int failed = 0;
+        int position = 0;
+        while (rest.hasNext()) {
+            Tuple2<K, V> entry = rest.next();
+            if (!predicate.test(entry)) {
+                if (failed == budget) {
+                    return ofEntries.apply(Iterator.concat(
+                            before(map, position, positions, failed),
+                            Iterator.ofAll(rest).filter(predicate)));
+                }
+                if (failed == 0) {
+                    positions = new int[budget];
+                    keys = new Object[budget];
+                }
+                positions[failed] = position;
+                keys[failed] = entry._1();
+                failed++;
+            }
+            position++;
+        }
+        M result = map;
+        for (int i = 0; i < failed; i++) {
+            result = (M) result.remove((K) keys[i]);
+        }
+        return result;
+    }
+
+    // the entries of `map` before `end`, except those at the first `count` of `skipped`, which are in order
+    private static <K extends @Nullable Object, V extends @Nullable Object> Iterator<Tuple2<K, V>> before(
+            Map<K, V> map, int end, int[] skipped, int count) {
+        java.util.Iterator<Tuple2<K, V>> entries = map.iterator();
+        return new AbstractIterator<>() {
+            private int position = 0;
+            private int next = 0;
+
+            @Override
+            public boolean hasNext() {
+                // past the skipped entries that come next
+                while (next < count && skipped[next] == position) {
+                    entries.next();
+                    position++;
+                    next++;
+                }
+                return position < end;
+            }
+
+            @Override
+            protected Tuple2<K, V> getNext() {
+                position++;
+                return entries.next();
+            }
+        };
     }
 
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M filterKeys(
@@ -216,7 +284,14 @@ public final class Maps {
         for (Tuple2<K, V> entry : map) {
             (predicate.test(entry) ? left : right).add(entry);
         }
-        return Tuple.of(ofEntries.apply(left), ofEntries.apply(right));
+        // the map itself is the side that gets every entry
+        if (right.isEmpty()) {
+            return Tuple.of(map, ofEntries.apply(right));
+        } else if (left.isEmpty()) {
+            return Tuple.of(ofEntries.apply(left), map);
+        } else {
+            return Tuple.of(ofEntries.apply(left), ofEntries.apply(right));
+        }
     }
 
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M tap(
@@ -293,13 +368,6 @@ public final class Maps {
         Objects.requireNonNull(newElement, "newElement is null");
         return (M)
                 (map.contains(currentElement) ? map.remove(currentElement._1()).put(newElement) : map);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> M replaceAll(
-            M map, BiFunction<? super K, ? super V, ? extends V> function) {
-        Objects.requireNonNull(function, "function is null");
-        return (M) map.map((k, v) -> Tuple.of(k, function.apply(k, v)));
     }
 
     @SuppressWarnings("unchecked")

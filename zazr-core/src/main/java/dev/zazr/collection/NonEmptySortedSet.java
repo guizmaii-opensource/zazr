@@ -278,6 +278,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
 
     /**
      * Complexity: O(log n), as {@link TreeSet#add(Object)}.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code element} is already a member.
      *
      * @param element An element
      * @return this set with {@code element}
@@ -292,6 +294,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
      * Accepts the possibly empty type and returns the non-empty one; a non-empty set is an {@code Iterable} too.
      * <p>
      * Complexity: O(m log(n + m)) for m elements, as {@link TreeSet#addAll(Iterable)}.
+     * <p>
+     * Returns this set itself when nothing changes: when every element is already a member.
      *
      * @param elements Elements to add, possibly none, read once
      * @return this set with {@code elements}
@@ -303,6 +307,9 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
 
     /**
      * Complexity: O(m log(n + m)) for a set of m elements, as {@link TreeSet#union(Set)}.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code elements} is empty or this set's own elements, or
+     * adds no element and is not another TreeSet of the same comparator, whose elements replace the equal ones.
      *
      * @param elements A set, possibly empty
      * @return the elements of both sets, with this set's comparator
@@ -399,6 +406,9 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
 
     /**
      * Complexity: O(log n), as {@link TreeSet#replace(Object, Object)}.
+     * <p>
+     * Returns this set itself when nothing changes: when {@code currentElement} is not a member, or
+     * {@code newElement} is the element already there.
      *
      * @param currentElement An element
      * @param newElement     Its replacement
