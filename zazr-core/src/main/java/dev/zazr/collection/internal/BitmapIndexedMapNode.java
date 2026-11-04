@@ -77,6 +77,11 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         return findKey(key, Objects.hashCode(key), 0);
     }
 
+    /// `true` when the trie holds `key` and `value` themselves, the very objects, as one entry. Nothing is allocated.
+    public boolean holdsEntry(K key, V value) {
+        return holdsEntry(key, value, Objects.hashCode(key), 0);
+    }
+
     /// The trie with `key` mapped to `value`, the key and value of an equal key replaced; this trie when both are the
     /// objects already there.
     public BitmapIndexedMapNode<K, V> updated(K key, V value) {

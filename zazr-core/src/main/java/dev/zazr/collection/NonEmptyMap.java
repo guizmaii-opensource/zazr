@@ -488,6 +488,8 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
 
     /**
      * Complexity: effectively O(1), as {@link HashMap#replace(Tuple2, Tuple2)}.
+     * <p>
+     * Returns this map itself when nothing changes: as {@link HashMap#replace(Tuple2, Tuple2)}.
      *
      * @param currentElement An entry
      * @param newElement     Its replacement

@@ -1628,7 +1628,10 @@ check that every public method returning the type is a row or excluded with a re
 - **`replace` of an element by the object already there** returns the set (`HashSet` and `TreeSet` look up the
   stored element where they asked `contains`). `TreeMap.replace(entry, newEntry)` returns the map when `newEntry`'s
   key and value are the objects the tree holds for the key of `entry`: `Node.findByKey` gives the stored entry with no
-  allocation.
+  allocation. `HashMap.replace(entry, newEntry)` was left removing and putting the entry back, since the CHAMP nodes
+  gave the stored key only in a new `Tuple2`; it returns the map since #335: `BitmapIndexedMapNode.holdsEntry` tells,
+  with one lookup and no allocation, whether the trie holds the key and value objects of `newEntry`, and the key and
+  value of `entry` must equal them. `NonEmptyMap.replace` returns itself through `wrap`.
 - **The non-empty wrappers** return themselves through `wrap` where they built a new wrapper: `put`, `put` with a
   merge and `mapValues` on both maps. Their operations that may empty them return the wrapped collection itself.
 - **Left as they are**, each with its reason:
@@ -1637,9 +1640,6 @@ check that every public method returning the type is a row or excluded with a re
     elements here; they keep the receiver's since the consistency fixes below, and return it for an equal argument.)
   - `putAll` of another `HashMap` or `TreeMap` holding some of the same entry objects merges the tries or trees, and
     builds what is not a shared subtree; entries given one by one, or the map itself, return the map.
-  - `HashMap.replace(entry, entry)` of an entry by itself removes and puts it back. The check needs the stored key,
-    which the CHAMP nodes gave only in a new `Tuple2`; `BitmapIndexedMapNode.findKey` (added for `retainAll`, below)
-    now gives it without allocating, and making this a no-op is #335.
   - `map`, `flatMap`, `collect`, `mapKeys` and the conversions that map: `map` is unchanged, and the sets have
     `mapConserve` (below).
 - **Measured** (JMH, 3 forks, `-prof gc`, `main` then the branch back to back on the same benchmark classes,

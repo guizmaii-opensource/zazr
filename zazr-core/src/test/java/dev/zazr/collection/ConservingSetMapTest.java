@@ -330,6 +330,13 @@ class ConservingSetMapTest {
         return concat(
                 mapRows(),
                 java.util.List.of(
+                        row("replace(Tuple2,Tuple2) of a present entry by itself", m -> m.replace(first(m), first(m))),
+                        row(
+                                "replaceAll(Tuple2,Tuple2) of a present entry by itself",
+                                m -> m.replaceAll(first(m), first(m))),
+                        row(
+                                "replace(Tuple2,Tuple2) of an equal entry, other objects, by the objects there",
+                                m -> m.replace(Tuple.of(element(0), element(0)), stored(m, 0))),
                         row("putAll of an empty HashMap", m -> m.putAll(HashMap.empty())),
                         row("putAll of itself without its first key", m -> m.putAll(m.remove(first(m)._1()))),
                         row("merge(Map) with an empty HashMap", m -> m.merge(HashMap.empty()))));
@@ -459,6 +466,8 @@ class ConservingSetMapTest {
                         m -> m.replace(first(m)._1(), first(m)._2(), first(m)._2())),
                 row("replaceValue of an absent key", m -> m.replaceValue(ABSENT, 1)),
                 row("replaceAll(BiFunction) with the same values", m -> m.replaceAll((k, v) -> v)),
+                row("replace(Tuple2,Tuple2) of a present entry by itself", m -> m.replace(first(m), first(m))),
+                row("replaceAll(Tuple2,Tuple2) of a present entry by itself", m -> m.replaceAll(first(m), first(m))),
                 row("retainAll of equal entries", m -> m.retainAll(entries(m.size())), wrapped),
                 row("mapValues to the same values", m -> m.mapValues(v -> v)),
                 row(
@@ -678,6 +687,11 @@ class ConservingSetMapTest {
         return result;
     }
 
+    // the entry of key element(i), with the key and value objects the map holds
+    private static Tuple2<Integer, Integer> stored(Map<Integer, Integer> map, int i) {
+        return map.find(e -> e._1().equals(element(i))).get();
+    }
+
     private static java.util.List<Tuple2<Integer, Integer>> entriesWithout(int n, int key) {
         java.util.List<Tuple2<Integer, Integer>> result = new ArrayList<>(entries(n));
         result.removeIf(e -> e._1().equals(element(key)));
@@ -700,6 +714,30 @@ class ConservingSetMapTest {
                         "put of an equal key, another object",
                         m -> m.put(element(0), m.get(element(0)).get()),
                         n -> ofEntries.apply(entries(n))),
+                change(
+                        "replace(Tuple2,Tuple2) of an entry by an equal key and value, other objects",
+                        m -> m.replace(Tuple.of(element(0), element(0)), Tuple.of(element(0), element(0))),
+                        n -> ofEntries.apply(entries(n))),
+                change(
+                        "replace(Tuple2,Tuple2) of an entry by its key and an equal value, another object",
+                        m -> m.replace(stored(m, 0), Tuple.of(stored(m, 0)._1(), element(0))),
+                        n -> ofEntries.apply(entries(n))),
+                change(
+                        "replace(Tuple2,Tuple2) of an entry by an equal key, another object, and its value",
+                        m -> m.replace(
+                                stored(m, 0), Tuple.of(element(0), stored(m, 0)._2())),
+                        n -> ofEntries.apply(entries(n))),
+                // the second entry holds the first one's value object: the first is removed, not kept
+                change(
+                        "replace(Tuple2,Tuple2) of an entry by the objects of another entry with the same value",
+                        m -> {
+                            Map<Integer, Integer> shared =
+                                    m.put(stored(m, 1)._1(), stored(m, 0)._2());
+                            return shared.replace(stored(shared, 0), stored(shared, 1));
+                        },
+                        n -> ofEntries.apply(entriesWith(n, 1, element(0)).stream()
+                                .filter(e -> !e._1().equals(element(0)))
+                                .toList())),
                 change(
                         "putAll of one new value",
                         m -> m.putAll(java.util.List.of(Tuple.of(element(0), value))),
