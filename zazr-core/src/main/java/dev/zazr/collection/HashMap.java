@@ -1101,10 +1101,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         Objects.requireNonNull(newElement, "newElement is null");
         Objects.requireNonNull(newElement._1(), "HashMap: key is null");
         Objects.requireNonNull(newElement._2(), "HashMap: value is null");
-        // the entry of currentElement's key replaced by the key and value objects already there
-        if (trie.holdsEntry(newElement._1(), newElement._2())
-                && Objects.equals(currentElement._1(), newElement._1())
-                && Objects.equals(newElement._2(), currentElement._2())) {
+        // the entry of currentElement's key replaced by the key and value objects already there (when the stored
+        // value is not equal to currentElement's, Maps.replace returns this map too)
+        if (trie.holdsEntry(newElement._1(), newElement._2()) && Objects.equals(currentElement._1(), newElement._1())) {
             return this;
         } else {
             return Maps.replace(this, currentElement, newElement);

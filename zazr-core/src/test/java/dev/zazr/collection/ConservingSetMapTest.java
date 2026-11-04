@@ -722,6 +722,11 @@ class ConservingSetMapTest {
                         "replace(Tuple2,Tuple2) of an entry by its key and an equal value, another object",
                         m -> m.replace(stored(m, 0), Tuple.of(stored(m, 0)._1(), element(0))),
                         n -> ofEntries.apply(entries(n))),
+                change(
+                        "replace(Tuple2,Tuple2) of an entry by an equal key, another object, and its value",
+                        m -> m.replace(
+                                stored(m, 0), Tuple.of(element(0), stored(m, 0)._2())),
+                        n -> ofEntries.apply(entries(n))),
                 // the second entry holds the first one's value object: the first is removed, not kept
                 change(
                         "replace(Tuple2,Tuple2) of an entry by the objects of another entry with the same value",
