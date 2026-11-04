@@ -94,6 +94,52 @@ public interface ListModule {
         return (T) source[index];
     }
 
+    /// The operations that return the List they are given when they change nothing, and otherwise share the cells
+    /// after the last change: the cells before it are copied once, most recent first, then prepended in turn to the
+    /// shared rest. This is how Scala 3's `List.filter` works (`filterCommon` in
+    /// `library/src/scala/collection/immutable/List.scala`, the Scala 2.13 collection library that Scala 3 ships
+    /// unchanged), without its in-place writes to the cells: a `Cons` is a record and never changes.
+    interface Conserve {
+
+        /// The elements of the cells of a List from `from` up to `until`, excluded, prepended in turn to
+        /// `reversed`: the copied elements, most recent first. `until` is `from` or one of its tails,
+        /// reached by walking from `from`; no element is tested.
+        @SuppressWarnings({"ObjectEquality", "Var"})
+        static <T extends @Nullable Object> List<T> prependCells(List<T> reversed, List<T> from, List<T> until) {
+            List<T> result = reversed;
+            for (List<T> cell = from; cell != until; cell = cell.tail()) {
+                result = result.prepend(cell.head());
+            }
+            return result;
+        }
+
+        /// The elements of `reversed`, most recent first, put back in order in front of `rest`.
+        @SuppressWarnings("Var")
+        static <T extends @Nullable Object> List<T> prependReversed(List<T> reversed, List<T> rest) {
+            List<T> result = rest;
+            for (List<T> cell = reversed; !cell.isEmpty(); cell = cell.tail()) {
+                result = result.prepend(cell.head());
+            }
+            return result;
+        }
+
+        /// The elements of `list` that satisfy `predicate`, which is called once per element, in order: `list`
+        /// itself when it keeps them all, and the cells after the last rejected element shared.
+        @SuppressWarnings({"ObjectEquality", "Var"})
+        static <T extends @Nullable Object> List<T> filter(List<T> list, Predicate<? super T> predicate) {
+            List<T> kept = Nil.instance();
+            // the first cell not yet copied: every element from it up to the current cell is kept
+            List<T> pending = list;
+            for (List<T> cell = list; !cell.isEmpty(); cell = cell.tail()) {
+                if (!predicate.test(cell.head())) {
+                    kept = prependCells(kept, pending, cell);
+                    pending = cell.tail();
+                }
+            }
+            return (pending == list) ? list : prependReversed(kept, pending);
+        }
+    }
+
     interface SplitAt {
 
         static <T extends @Nullable Object> Tuple2<List<T>, List<T>> splitByPredicateReversed(
