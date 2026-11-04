@@ -786,7 +786,8 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
             MapNode<K, V> child = getNode(i);
             MapNode<K, V> newChild = child.filter(predicate, keep);
             int childSize = newChild.size();
-            if (newChild != child && newChildren == null) {
+            // a dropped child is neither inline nor a child of the result, so it needs no array
+            if (newChild != child && childSize != 0 && newChildren == null) {
                 @SuppressWarnings("unchecked")
                 MapNode<K, V>[] array = (MapNode<K, V>[]) new MapNode<?, ?>[children];
                 newChildren = array;
@@ -827,17 +828,14 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 }
                 oldDataIdx++;
             } else {
-                // a child changes only when the filter drops one of its entries, so newChildren is set here
-                @SuppressWarnings("NullAway")
-                MapNode<K, V> newChild = (newChildren == null || newChildren[oldNodeIdx] == null)
-                        ? getNode(oldNodeIdx)
-                        : newChildren[oldNodeIdx];
+                // a dropped child is in neither map, so only children kept in full or in part are read here
                 if ((bitpos & migratedDataMap) != 0) {
+                    MapNode<K, V> newChild = newChild(newChildren, oldNodeIdx);
                     newContent[2 * dataIdx] = newChild.getKey(0);
                     newContent[2 * dataIdx + 1] = newChild.getValue(0);
                     newHashes[dataIdx++] = newChild.getHash(0);
                 } else if ((bitpos & newNodeMap) != 0) {
-                    newContent[newContent.length - 1 - nodeIdx++] = newChild;
+                    newContent[newContent.length - 1 - nodeIdx++] = newChild(newChildren, oldNodeIdx);
                 }
                 oldNodeIdx++;
             }
@@ -869,17 +867,32 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         int children = nodeArity();
         MapNode<K, V>[] keptChildren = null;
         MapNode<K, V>[] rejectedChildren = null;
+        // the children of which a side gets nothing: no array of new children until one is only partly on that side
+        int keptDroppedNodeMap = 0;
+        int rejectedDroppedNodeMap = 0;
+        bits = nodeMap;
         for (int i = 0; i < children; i++) {
+            int bitpos = Integer.lowestOneBit(bits);
+            bits ^= bitpos;
             MapNode<K, V> child = getNode(i);
             child.partition(predicate, into);
-            keptChildren = withChild(keptChildren, children, i, child, into.kept);
-            rejectedChildren = withChild(rejectedChildren, children, i, child, into.rejected);
+            if (into.kept.size() == 0) {
+                keptDroppedNodeMap |= bitpos;
+            } else {
+                keptChildren = withChild(keptChildren, children, i, child, into.kept);
+            }
+            if (into.rejected.size() == 0) {
+                rejectedDroppedNodeMap |= bitpos;
+            } else {
+                rejectedChildren = withChild(rejectedChildren, children, i, child, into.rejected);
+            }
         }
-        into.kept = rebuilt(keptDataMap, keptChildren);
-        into.rejected = rebuilt(dataMap ^ keptDataMap, rejectedChildren);
+        into.kept = rebuilt(keptDataMap, keptDroppedNodeMap, keptChildren);
+        into.rejected = rebuilt(dataMap ^ keptDataMap, rejectedDroppedNodeMap, rejectedChildren);
     }
 
-    // records the new child at `index` once one child has changed: null while every child is the old one
+    // records the new child at `index`, not empty, once one child has changed into a non-empty node: null while
+    // every child is the old one or dropped
     private static <K extends @Nullable Object, V extends @Nullable Object> MapNode<K, V> @Nullable [] withChild(
             MapNode<K, V> @Nullable [] newChildren,
             int children,
@@ -899,13 +912,16 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         return array;
     }
 
-    // the node of the inline entries of `keptDataMap` and of the new children (null entries, or a null array: the
-    // old child), where a child down to one entry comes back inline and an empty one goes; this node when nothing
-    // was dropped
+    // the node of the inline entries of `keptDataMap` and of the children: none of those of `droppedNodeMap`, the
+    // new ones of `newChildren` and the old ones elsewhere (null entries, or a null array), where a child down to one
+    // entry comes back inline; this node when nothing was dropped
     @SuppressWarnings("Var")
-    private BitmapIndexedMapNode<K, V> rebuilt(int keptDataMap, MapNode<K, V> @Nullable [] newChildren) {
-        if (keptDataMap == dataMap && newChildren == null) {
+    private BitmapIndexedMapNode<K, V> rebuilt(
+            int keptDataMap, int droppedNodeMap, MapNode<K, V> @Nullable [] newChildren) {
+        if (keptDataMap == dataMap && droppedNodeMap == 0 && newChildren == null) {
             return this;
+        } else if (keptDataMap == 0 && droppedNodeMap == nodeMap) {
+            return MapNode.empty();
         }
         int newNodeMap = 0;
         int migratedDataMap = 0;
@@ -926,11 +942,14 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
         for (int i = 0; i < children; i++) {
             int bitpos = Integer.lowestOneBit(bits);
             bits ^= bitpos;
+            if ((bitpos & droppedNodeMap) != 0) {
+                continue;
+            }
             MapNode<K, V> child = newChild(newChildren, i);
             int childSize = child.size();
             if (childSize >= 2) {
                 newNodeMap |= bitpos;
-            } else if (childSize == 1) {
+            } else {
                 migratedDataMap |= bitpos;
             }
             newSize += childSize;
@@ -961,13 +980,13 @@ public final class BitmapIndexedMapNode<K extends @Nullable Object, V extends @N
                 }
                 oldDataIdx++;
             } else {
-                MapNode<K, V> child = newChild(newChildren, oldNodeIdx);
                 if ((bitpos & migratedDataMap) != 0) {
+                    MapNode<K, V> child = newChild(newChildren, oldNodeIdx);
                     newContent[2 * dataIdx] = child.getKey(0);
                     newContent[2 * dataIdx + 1] = child.getValue(0);
                     newHashes[dataIdx++] = child.getHash(0);
                 } else if ((bitpos & newNodeMap) != 0) {
-                    newContent[newContent.length - 1 - nodeIdx++] = child;
+                    newContent[newContent.length - 1 - nodeIdx++] = newChild(newChildren, oldNodeIdx);
                 }
                 oldNodeIdx++;
             }

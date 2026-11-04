@@ -225,39 +225,62 @@ final class HashCollisionMapNode<K extends @Nullable Object, V extends @Nullable
 
     @Override
     MapNode<K, V> filter(BiPredicate<? super K, ? super V> predicate, boolean keep) {
-        Object[] kept = new Object[content.length];
+        // no copy while every entry so far is kept, or every one dropped
+        @SuppressWarnings("Var")
+        Object[] kept = null;
         @SuppressWarnings("Var")
         int length = 0;
         for (int i = 0; i < content.length; i += 2) {
-            if (predicate.test(getKey(i >> 1), getValue(i >> 1)) == keep) {
-                kept[length] = content[i];
-                kept[length + 1] = content[i + 1];
+            boolean takes = predicate.test(getKey(i >> 1), getValue(i >> 1)) == keep;
+            if (kept == null && (takes ? i - length : length) != 0) {
+                kept = content.clone();
+            }
+            if (takes) {
+                if (kept != null) {
+                    kept[length] = content[i];
+                    kept[length + 1] = content[i + 1];
+                }
                 length += 2;
             }
         }
-        return withContent(kept, length);
+        return (kept == null) ? ((length == 0) ? MapNode.empty() : this) : withContent(kept, length);
     }
 
     @Override
     @SuppressWarnings("Var")
     void partition(BiPredicate<? super K, ? super V> predicate, MapNode.Partition<K, V> into) {
-        Object[] kept = new Object[content.length];
-        Object[] rejected = new Object[content.length];
+        // no copy while every entry so far goes to the same side: both are made at the first that does not
+        Object[] kept = null;
+        Object[] rejected = null;
         int keptLength = 0;
         int rejectedLength = 0;
         for (int i = 0; i < content.length; i += 2) {
-            if (predicate.test(getKey(i >> 1), getValue(i >> 1))) {
-                kept[keptLength] = content[i];
-                kept[keptLength + 1] = content[i + 1];
+            boolean holds = predicate.test(getKey(i >> 1), getValue(i >> 1));
+            if (kept == null && (holds ? rejectedLength : keptLength) != 0) {
+                kept = content.clone();
+                rejected = content.clone();
+            }
+            if (holds) {
+                if (kept != null) {
+                    kept[keptLength] = content[i];
+                    kept[keptLength + 1] = content[i + 1];
+                }
                 keptLength += 2;
             } else {
-                rejected[rejectedLength] = content[i];
-                rejected[rejectedLength + 1] = content[i + 1];
+                if (rejected != null) {
+                    rejected[rejectedLength] = content[i];
+                    rejected[rejectedLength + 1] = content[i + 1];
+                }
                 rejectedLength += 2;
             }
         }
-        into.kept = withContent(kept, keptLength);
-        into.rejected = withContent(rejected, rejectedLength);
+        if (kept == null || rejected == null) {
+            into.kept = (keptLength == 0) ? MapNode.empty() : this;
+            into.rejected = (rejectedLength == 0) ? MapNode.empty() : this;
+        } else {
+            into.kept = withContent(kept, keptLength);
+            into.rejected = withContent(rejected, rejectedLength);
+        }
     }
 
     // the node of the first `length` slots of `kept`, a whole number of entries of this node; this node when that is

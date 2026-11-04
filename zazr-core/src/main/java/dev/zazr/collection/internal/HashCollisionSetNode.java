@@ -160,15 +160,24 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
 
     @Override
     SetNode<T> filter(Predicate<? super T> predicate, boolean keep) {
-        Object[] kept = new Object[content.length];
+        // no copy while every element so far is kept, or every one dropped
+        @SuppressWarnings("Var")
+        Object[] kept = null;
         @SuppressWarnings("Var")
         int length = 0;
         for (int i = 0; i < content.length; i++) {
-            if (predicate.test(getPayload(i)) == keep) {
-                kept[length++] = content[i];
+            boolean takes = predicate.test(getPayload(i)) == keep;
+            if (kept == null && (takes ? i - length : length) != 0) {
+                kept = content.clone();
+            }
+            if (takes) {
+                if (kept != null) {
+                    kept[length] = content[i];
+                }
+                length++;
             }
         }
-        return withContent(kept, length);
+        return (kept == null) ? ((length == 0) ? SetNode.empty() : this) : withContent(kept, length);
     }
 
     @Override
@@ -187,19 +196,36 @@ final class HashCollisionSetNode<T extends @Nullable Object> extends SetNode<T> 
     @Override
     @SuppressWarnings("Var")
     void partition(Predicate<? super T> predicate, SetNode.Partition<T> into) {
-        Object[] kept = new Object[content.length];
-        Object[] rejected = new Object[content.length];
+        // no copy while every element so far goes to the same side: both are made at the first that does not
+        Object[] kept = null;
+        Object[] rejected = null;
         int keptLength = 0;
         int rejectedLength = 0;
         for (int i = 0; i < content.length; i++) {
-            if (predicate.test(getPayload(i))) {
-                kept[keptLength++] = content[i];
+            boolean holds = predicate.test(getPayload(i));
+            if (kept == null && (holds ? rejectedLength : keptLength) != 0) {
+                kept = content.clone();
+                rejected = content.clone();
+            }
+            if (holds) {
+                if (kept != null) {
+                    kept[keptLength] = content[i];
+                }
+                keptLength++;
             } else {
-                rejected[rejectedLength++] = content[i];
+                if (rejected != null) {
+                    rejected[rejectedLength] = content[i];
+                }
+                rejectedLength++;
             }
         }
-        into.kept = withContent(kept, keptLength);
-        into.rejected = withContent(rejected, rejectedLength);
+        if (kept == null || rejected == null) {
+            into.kept = (keptLength == 0) ? SetNode.empty() : this;
+            into.rejected = (rejectedLength == 0) ? SetNode.empty() : this;
+        } else {
+            into.kept = withContent(kept, keptLength);
+            into.rejected = withContent(rejected, rejectedLength);
+        }
     }
 
     // this node when all `length` elements of `kept` are kept, otherwise the node of them
