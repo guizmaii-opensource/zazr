@@ -188,6 +188,23 @@ class HashMapPutAllIdentityTest {
     }
 
     @Test
+    void putAllOfFewerKeysOfHashZeroAndAnotherValueIsNeitherMap() {
+        // keys of hash 0 give the same hash sum to collision nodes of 2 and 3 keys: only the sizes tell that the
+        // receiver's node, which comes back, holds more than the argument's
+        Key k = new Key(1, 0);
+        Key z1 = new Key(0, 1);
+        Key z2 = new Key(0, 2);
+        Key z3 = new Key(0, 3);
+        Object w1 = new Object();
+        Object w2 = new Object();
+        HashMap<Key, Object> map = mapOf(k, new Object(), z3, new Object(), z1, w1, z2, w2);
+        HashMap<Key, Object> other = mapOf(k, new Object(), z1, w1, z2, w2);
+        HashMap<Key, Object> result = putAll(map, other);
+        assertThat(result.size()).isEqualTo(4);
+        assertThat(result).isNotSameAs(map).isNotSameAs(other);
+    }
+
+    @Test
     void putAllOfASupersetWithASubNodeWhereTheReceiverHasAnEntryIsTheArgument() {
         // the argument's sub-node faces an entry of the receiver, and its colliding keys the receiver's node of them
         Key x = new Key(3, 0);
