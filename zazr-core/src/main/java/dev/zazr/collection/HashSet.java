@@ -1157,9 +1157,13 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n) against a TreeSet, O(n) against a HashSet or a LinkedHashSet: each element of this set is
-     * looked up in the other one. O(1) when the sizes differ. Against another HashSet, the two are compared part by
-     * part, and a part of a different size or shape answers without looking at an element.
+     * The elements are compared with their own {@code equals}, against every kind of set, a TreeSet included: a
+     * TreeSet's comparator decides its {@code contains}, not its equality. So {@code a.equals(b) == b.equals(a)},
+     * and two equal sets have the same {@link #hashCode()}.
+     * <p>
+     * Complexity: O(1) when the sizes differ. Otherwise O(n) against a LinkedHashSet: each element of this set is
+     * looked up in it; O(n log n) against a TreeSet, as {@link TreeSet#equals(Object)}. Against another HashSet, the
+     * two are compared part by part, and a part of a different size or shape answers without looking at an element.
      */
     @Override
     public boolean equals(@Nullable Object o) {
@@ -1169,6 +1173,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             } catch (ClassCastException e) {
                 return false;
             }
+        } else if (o instanceof TreeSet<?> sorted) {
+            return TreeSet.sameElements(sorted, this);
         }
         return Collections.equals(this, o);
     }

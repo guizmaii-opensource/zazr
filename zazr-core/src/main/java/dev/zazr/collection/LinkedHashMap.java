@@ -1796,12 +1796,17 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n) against a TreeMap, O(n) against a HashMap or a LinkedHashMap: after a size check,
-     * each entry of this map is looked up in the other one. O(1) when the sizes differ.
+     * The keys and the values are compared with their own {@code equals}, against every kind of map, a TreeMap
+     * included: a TreeMap's key comparator decides its lookups, not its equality. So
+     * {@code a.equals(b) == b.equals(a)}, and two equal maps have the same {@link #hashCode()}. The insertion order
+     * does not count.
+     * <p>
+     * Complexity: O(1) when the sizes differ. Otherwise O(n) against a HashMap or a LinkedHashMap: each entry of
+     * this map is looked up in the other one; O(n log n) against a TreeMap, as {@link TreeMap#equals(Object)}.
      */
     @Override
     public boolean equals(@Nullable Object o) {
-        return Collections.equals(this, o);
+        return o instanceof TreeMap<?, ?> sorted ? TreeMap.sameEntries(sorted, this) : Collections.equals(this, o);
     }
 
     /**

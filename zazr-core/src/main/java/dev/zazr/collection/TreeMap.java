@@ -1988,17 +1988,85 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     /**
      * Whether {@code o} is a Map with the same entries, in any order: another TreeMap, a HashMap or a
-     * LinkedHashMap. Each entry of this map is looked up in {@code o} with {@code o}'s own {@code contains}.
+     * LinkedHashMap. The keys and the values are compared with their own {@code equals}, not with the key
+     * comparator: the comparator decides {@code get}, {@code containsKey} and the bulk operations, while
+     * {@code equals} is the same on every kind of map. So it is symmetric, {@code a.equals(b) == b.equals(a)}, and
+     * two equal maps have the same {@link #hashCode()}, the sum of the entries' hash codes. Under a key comparator
+     * that equates unequal objects, a TreeMap whose key is {@code "a"} is not equal to one whose key is {@code "A"},
+     * even with the same value.
      * <p>
-     * Complexity: O(n log n) against another TreeMap: one lookup in it per entry; O(n) against a HashMap or a
-     * LinkedHashMap, and O(1) when the sizes differ.
+     * Complexity: O(1) when the sizes differ. Otherwise O(n) against a TreeMap with an equal comparator: the two are
+     * walked in order, side by side; O(n log n) against a HashMap or a LinkedHashMap: the key of each of its entries
+     * is looked up in this tree by the comparator, and the entry found compared with {@code equals}; O(n) against a
+     * TreeMap with another comparator, with a temporary hash table of this map's entries. A comparator under which
+     * two keys equal by {@code equals} compare as different (so that the map can hold both) adds, when the first
+     * check cannot decide, one O(n) count of the entries in a temporary hash table.
      *
      * @param o any object
      * @return true if {@code o} is a Map of the same entries
      */
     @Override
     public boolean equals(@Nullable Object o) {
-        return Collections.equals(this, o);
+        return o instanceof Map<?, ?> map && sameEntries(this, map);
+    }
+
+    /// Whether `tree` and `other` hold the same entries, keys and values compared with `equals`. `HashMap` and
+    /// `LinkedHashMap` call it for a `TreeMap` argument, so that both directions take the same path. Each fast path
+    /// returns only an answer it proves for any comparator; the others go to [Collections#sameElementCounts].
+    @SuppressWarnings("unchecked")
+    static boolean sameEntries(TreeMap<?, ?> tree, Map<?, ?> other) {
+        if (tree == other) {
+            return true;
+        } else if (tree.size() != other.size()) {
+            return false;
+        } else if (other instanceof TreeMap<?, ?> that && tree.hasSameComparator(that)) {
+            // Under a comparator for which equal keys compare as 0, two maps of equal entries store them in the same
+            // order, so the first unequal pair decides; under any other, equal hash sums leave it open.
+            return inOrder(tree, that)
+                    || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
+                            && Collections.sameElementCounts(tree, that));
+        } else if (other instanceof HashMap || other instanceof LinkedHashMap) {
+            // `other` holds no two equal keys, so each entry found equal in the tree is a different entry of it:
+            // with the same size, that is every entry. When one is not found, the tree may still hold its key at
+            // another place under a comparator that tells equal keys apart: an entry of the tree missing from
+            // `other` decides; otherwise the entries are counted.
+            return findsEach(tree, other)
+                    || (((TreeMap<Object, Object>) tree).forAll(((Map<Object, Object>) other)::contains)
+                            && Collections.sameElementCounts(tree, other));
+        } else {
+            return Collections.sameElementCounts(tree, other);
+        }
+    }
+
+    // whether the two trees, of the same size, hold equal entries at each position
+    private static boolean inOrder(TreeMap<?, ?> tree, TreeMap<?, ?> that) {
+        java.util.Iterator<?> these = tree.iterator();
+        java.util.Iterator<?> those = that.iterator();
+        while (these.hasNext()) {
+            if (!Objects.equals(these.next(), those.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // whether each entry of `other` has an equal entry in the tree, its key found there by the comparator
+    @SuppressWarnings("unchecked")
+    private static boolean findsEach(TreeMap<?, ?> tree, Map<?, ?> other) {
+        TreeMap<Object, Object> map = (TreeMap<Object, Object>) tree;
+        try {
+            for (Tuple2<?, ?> entry : other) {
+                Tuple2<Object, Object> stored = map.entryOf(entry._1());
+                if (stored == null
+                        || !Objects.equals(stored._1(), entry._1())
+                        || !Objects.equals(stored._2(), entry._2())) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (ClassCastException e) {
+            return false;
+        }
     }
 
     @Override
