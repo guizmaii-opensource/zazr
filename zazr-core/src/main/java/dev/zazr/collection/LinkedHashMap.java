@@ -9,6 +9,7 @@ import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.MapViews;
 import dev.zazr.collection.internal.Maps;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Option;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -1339,15 +1340,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (isEmpty()) {
             return Vector.empty();
         }
-        // the keys in insertion order, each then replaced in place by its value
-        Object[] values = new Object[size()];
-        order.copyKeysTo(values);
-        for (int i = 0; i < values.length; i++) {
-            @SuppressWarnings("unchecked")
-            K key = (K) values[i];
-            values[i] = entryAt(key)._2();
+        VectorBuilder.LeafWriter<V> values = new VectorBuilder.LeafWriter<>(size());
+        for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
+            values.add(entryAt(keys.next())._2());
         }
-        return Vector.ofOwnedArray(values);
+        return Vector.ofAll(values.result());
     }
 
     // -- Positional operations, in insertion order

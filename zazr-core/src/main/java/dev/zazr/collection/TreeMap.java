@@ -10,6 +10,7 @@ import dev.zazr.collection.internal.RedBlackTree;
 import dev.zazr.collection.internal.RedBlackTreeBuilder;
 import dev.zazr.collection.internal.RedBlackTreeModule;
 import dev.zazr.collection.internal.TreeViews;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Option;
 import java.util.Comparator;
 import java.util.Objects;
@@ -1789,9 +1790,9 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         if (isEmpty()) {
             return Vector.empty();
         }
-        Object[] values = new Object[size()];
-        RedBlackTreeModule.Node.copyValuesTo(entries, values, 0);
-        return Vector.ofOwnedArray(values);
+        VectorBuilder.LeafWriter<V> values = new VectorBuilder.LeafWriter<>(size());
+        RedBlackTreeModule.Node.writeValuesTo(entries, values);
+        return Vector.ofAll(values.result());
     }
 
     /**

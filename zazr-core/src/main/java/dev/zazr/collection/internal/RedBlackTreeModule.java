@@ -728,17 +728,15 @@ public interface RedBlackTreeModule {
             return new Node<>(node.color, node.blackHeight, left, value, right, empty);
         }
 
-        /// Writes the values of a tree of entries into `dest` from index `at`, in ascending order of the keys, and
-        /// returns the index after the last one written.
+        /// Writes the values of a tree of entries to `writer`, in ascending order of the keys.
         // the depth of the recursion is the height of the tree, at most 2 log2(n + 1)
-        public static <K extends @Nullable Object, V extends @Nullable Object> int copyValuesTo(
-                RedBlackTree<Tuple2<K, V>> tree, @Nullable Object[] dest, int at) {
-            if (!(tree instanceof Node<Tuple2<K, V>> node)) {
-                return at;
+        public static <K extends @Nullable Object, V extends @Nullable Object> void writeValuesTo(
+                RedBlackTree<Tuple2<K, V>> tree, VectorBuilder.LeafWriter<?> writer) {
+            if (tree instanceof Node<Tuple2<K, V>> node) {
+                writeValuesTo(node.left, writer);
+                writer.add(node.value._2());
+                writeValuesTo(node.right, writer);
             }
-            int index = copyValuesTo(node.left, dest, at);
-            dest[index] = node.value._2();
-            return copyValuesTo(node.right, dest, index + 1);
         }
 
         /// A tree of entries with each value replaced by `f.apply(key, value)`, called once per entry

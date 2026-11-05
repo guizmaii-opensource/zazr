@@ -422,28 +422,6 @@ public final class InsertionOrder<K extends @Nullable Object> {
         return copy;
     }
 
-    /// Writes the keys in order into `dest`, from index 0: the size of this order is the number written. One copy per
-    /// leaf of the trie, then one for the tail.
-    public void copyKeysTo(@Nullable Object[] dest) {
-        int written = root == null ? 0 : copyKeysTo(root, dest, 0);
-        System.arraycopy(tail.keys, 0, dest, written, tail.keys.length);
-    }
-
-    // the depth of the recursion is the depth of the trie, at most 7 levels
-    private static int copyKeysTo(Object node, @Nullable Object[] dest, int at) {
-        if (node instanceof Branch branch) {
-            @SuppressWarnings("Var")
-            int next = at;
-            for (Object child : branch.children) {
-                next = copyKeysTo(child, dest, next);
-            }
-            return next;
-        }
-        Object[] keys = ((Leaf) node).keys;
-        System.arraycopy(keys, 0, dest, at, keys.length);
-        return at + keys.length;
-    }
-
     /// The keys in order.
     public java.util.Iterator<K> iterator() {
         return new Forward<>(this, 0);

@@ -871,4 +871,58 @@ public final class VectorBuilder<T extends @Nullable Object> {
         lenRest = 0;
         offset = 0;
     }
+
+    /// A vector of exactly `size` elements that the caller writes one by one, in order, straight into the
+    /// leaves of the vector: the values of a map, walked from its trie or tree. Up to 32 elements the one leaf
+    /// has exactly `size` slots and becomes the vector as it is. Longer, the leaves are a builder's own, each
+    /// full one taken into the tree by reference when the next one opens, so only the last leaf is copied, when
+    /// it is not full, as [#result()] does for any builder. No element is checked: the caller writes only
+    /// non-null ones (a map rejects a null value on every put), exactly `size` of them, then calls [#result()].
+    public static final class LeafWriter<T extends @Nullable Object> {
+
+        private final @Nullable VectorBuilder<T> builder;
+        private Object[] leaf;
+        private int fill;
+
+        /// `size` is at least 1.
+        public LeafWriter(int size) {
+            if (size <= WIDTH) {
+                this.builder = null;
+                this.leaf = new Object[size];
+            } else {
+                VectorBuilder<T> builder = new VectorBuilder<>();
+                this.builder = builder;
+                this.leaf = builder.a1;
+            }
+        }
+
+        /// Writes the next element, which is not null.
+        @SuppressWarnings("NullAway") // the elements are a map's values, never null
+        public void add(@Nullable Object element) {
+            if (fill == WIDTH) {
+                nextLeaf();
+            }
+            leaf[fill++] = element;
+        }
+
+        // the builder takes the full leaf into its tree and opens the next one
+        @SuppressWarnings("NullAway") // a leaf of 32 slots is full only when size > 32, where there is a builder
+        private void nextLeaf() {
+            VectorBuilder<T> b = builder;
+            b.len1 = WIDTH;
+            b.advance();
+            leaf = b.a1;
+            fill = 0;
+        }
+
+        /// The vector of the elements written.
+        public RadixVector<T> result() {
+            VectorBuilder<T> b = builder;
+            if (b == null) {
+                return new RadixVector.Vector1<>(leaf);
+            }
+            b.len1 = fill;
+            return b.result();
+        }
+    }
 }

@@ -10,6 +10,7 @@ import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.MapNode;
 import dev.zazr.collection.internal.MapViews;
 import dev.zazr.collection.internal.Maps;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Option;
 import java.util.Objects;
 import java.util.function.*;
@@ -1222,9 +1223,9 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         if (isEmpty()) {
             return Vector.empty();
         }
-        Object[] values = new Object[size()];
-        trie.copyValuesTo(values, 0);
-        return Vector.ofOwnedArray(values);
+        VectorBuilder.LeafWriter<V> values = new VectorBuilder.LeafWriter<>(size());
+        trie.writeValuesTo(values);
+        return Vector.ofAll(values.result());
     }
 
     /**

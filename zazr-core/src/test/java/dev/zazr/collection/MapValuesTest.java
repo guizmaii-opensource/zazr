@@ -7,14 +7,13 @@ import java.util.function.IntFunction;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /// `values()` of `HashMap`, `TreeMap` and `LinkedHashMap` (and of the non-empty maps that wrap them) against the
 /// Vector built the old way, one value at a time in the iteration order of the entries: the same values, as the same
 /// objects, in the same order, at the sizes around the leaf and branch boundaries of the Vector.
 public class MapValuesTest {
 
-    private static final int[] SIZES = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025, 32768, 40000};
+    private static final int[] SIZES = {0, 1, 2, 31, 32, 33, 1023, 1024, 1025, 32767, 32768, 32769, 40000};
 
     /// A value with an identity of its own: no two values are the same object unless the test shares one on purpose.
     private record Value(int id) {}
@@ -224,20 +223,5 @@ public class MapValuesTest {
             assertThat(treeMap.toNonEmptySortedMap().get().values().head())
                     .isSameAs(reference(treeMap).head());
         }
-    }
-
-    @Test
-    public void ownedArrayIsRejectedWhenItHoldsANull() {
-        Object[] small = {new Value(0), null};
-        Object[] large = new Object[33];
-        java.util.Arrays.fill(large, new Value(0));
-        large[32] = null;
-        assertThatThrownBy(() -> Vector.ofOwnedArray(small))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Vector: element is null");
-        assertThatThrownBy(() -> Vector.ofOwnedArray(large))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Vector: element is null");
-        assertThat(Vector.ofOwnedArray(new Object[0])).isSameAs(Vector.empty());
     }
 }
