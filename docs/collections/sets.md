@@ -125,6 +125,9 @@ a set of `"a"`, not a set of `"A"`.
 Two `TreeSet`s with the same comparator are compared in one walk, side by side. Against a `HashSet` or a
 `LinkedHashSet`, each of its elements is looked up in the tree.
 
+A comparator can also tell apart two objects that are equal by `equals`; a `TreeSet` ordered by it can then hold
+both. Such a set is compared by counting: two sets are equal when they hold equal elements, each as many times.
+
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashSet`: it depends on the hashes and may change between versions.

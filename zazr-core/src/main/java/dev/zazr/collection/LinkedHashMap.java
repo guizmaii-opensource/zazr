@@ -858,6 +858,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * <p>
      * Complexity: effectively O(1) to create; a whole walk is O(n), one hash lookup per entry.
      */
+    // the keys in insertion order: no entry is made
+    java.util.Iterator<K> keyIterator() {
+        return order.iterator();
+    }
+
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
         java.util.Iterator<K> keys = order.iterator();
@@ -1802,7 +1807,8 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * does not count.
      * <p>
      * Complexity: O(n log n) against a TreeMap, as {@link TreeMap#equals(Object)}; O(n) against a HashMap or a
-     * LinkedHashMap: each entry of this map is looked up in the other one. O(1) when the sizes differ.
+     * LinkedHashMap: each entry of this map is looked up in the other one; O(n) against a Map of another
+     * implementation, with a temporary hash table of this map's entries. O(1) when the sizes differ.
      */
     @Override
     public boolean equals(@Nullable Object o) {

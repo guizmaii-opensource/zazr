@@ -66,6 +66,36 @@ class SetEqualityTest {
         }
     }
 
+    /// An item equal to another of the same key, whatever the tags, whose hash code is the last digit of the key:
+    /// `1a` and `11a` are unequal with the same hash code.
+    private static final class Mod {
+        private final int key;
+        private final String tag;
+
+        Mod(int key, String tag) {
+            this.key = key;
+            this.tag = tag;
+        }
+
+        @Override
+        public boolean equals(Object that) {
+            return that instanceof Mod mod && mod.key == key;
+        }
+
+        @Override
+        public int hashCode() {
+            return key % 10;
+        }
+
+        @Override
+        public String toString() {
+            return key + tag;
+        }
+    }
+
+    private static final Comparator<Mod> BY_TAG_THEN_KEY_MOD =
+            Comparator.<Mod, String>comparing(mod -> mod.tag).thenComparingInt(mod -> mod.key);
+
     private static final Comparator<Item> BY_KEY = Comparator.comparingInt(item -> item.key);
 
     // equates the same items as BY_KEY, in the reverse order: not equal to BY_KEY
@@ -312,6 +342,21 @@ class SetEqualityTest {
         for (Kind<Loose> kind : LOOSE_KINDS) {
             assertEquality(first, kind.make(java.util.List.of(new Loose(2, "x"), new Loose(1, "y"))), true);
         }
+    }
+
+    @Test
+    void twoEqualElementsAreNotTakenForTwoDifferentOnesOfTheSameHashSum() {
+        // 1a and 1b are equal; 1a and 11a are not, and have the same hash code: both sides sum to the same hash
+        TreeSet<Mod> twins = TreeSet.of(BY_TAG_THEN_KEY_MOD, new Mod(1, "a"), new Mod(1, "b"));
+        java.util.List<Mod> different = java.util.List.of(new Mod(1, "a"), new Mod(11, "a"));
+        assertThat(twins.size()).isEqualTo(2);
+        assertThat(twins.hashCode()).isEqualTo(HashSet.ofAll(different).hashCode());
+        assertEquality(twins, HashSet.ofAll(different), false);
+        assertEquality(twins, LinkedHashSet.ofAll(different), false);
+        assertEquality(twins, TreeSet.ofAll(BY_TAG_THEN_KEY_MOD, different), false);
+        assertEquality(twins, TreeSet.ofAll(BY_TAG_THEN_KEY_MOD.reversed(), different), false);
+        assertEquality(
+                twins, TreeSet.ofAll(BY_TAG_THEN_KEY_MOD, java.util.List.of(new Mod(1, "c"), new Mod(1, "d"))), true);
     }
 
     // -- random sets

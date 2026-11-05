@@ -1369,7 +1369,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * and two equal sets have the same {@link #hashCode()}. The insertion order does not count.
      * <p>
      * Complexity: O(n log n) against a TreeSet, as {@link TreeSet#equals(Object)}; O(n) against a HashSet or a
-     * LinkedHashSet: each element of this set is looked up in the other one. O(1) when the sizes differ.
+     * LinkedHashSet: each element of this set is looked up in the other one; O(n) against a Set of another
+     * implementation, with a temporary hash table of this set's elements. O(1) when the sizes differ.
      */
     @Override
     public boolean equals(@Nullable Object o) {

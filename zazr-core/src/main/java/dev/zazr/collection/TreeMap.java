@@ -2050,16 +2050,22 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return true;
     }
 
-    // whether each entry of `other` has an equal entry in the tree, its key found there by the comparator
+    // whether each entry of the hash map `other` has an equal entry in the tree, its key found there by the
+    // comparator; the keys of `other` are read in place and its values looked up by hash, so no entry is made
     @SuppressWarnings("unchecked")
     private static boolean findsEach(TreeMap<?, ?> tree, Map<?, ?> other) {
         TreeMap<Object, Object> map = (TreeMap<Object, Object>) tree;
+        Map<Object, Object> hashed = (Map<Object, Object>) other;
+        java.util.Iterator<Object> keys = hashed instanceof HashMap<Object, Object> hash
+                ? hash.keyIterator()
+                : ((LinkedHashMap<Object, Object>) hashed).keyIterator();
         try {
-            for (Tuple2<?, ?> entry : other) {
-                @Nullable Tuple2<Object, Object> stored = map.entryOf(entry._1());
+            while (keys.hasNext()) {
+                Object key = keys.next();
+                @Nullable Tuple2<Object, Object> stored = map.entryOf(key);
                 if (stored == null
-                        || !Objects.equals(stored._1(), entry._1())
-                        || !Objects.equals(stored._2(), entry._2())) {
+                        || !Objects.equals(stored._1(), key)
+                        || !Objects.equals(stored._2(), Maps.getOrAbsent(hashed, key))) {
                     return false;
                 }
             }

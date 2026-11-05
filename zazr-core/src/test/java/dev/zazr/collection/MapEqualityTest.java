@@ -70,6 +70,36 @@ class MapEqualityTest {
         }
     }
 
+    /// A key equal to another of the same id, whatever the tags, whose hash code is the last digit of the id:
+    /// `1a` and `11a` are unequal with the same hash code.
+    private static final class Mod {
+        private final int id;
+        private final String tag;
+
+        Mod(int id, String tag) {
+            this.id = id;
+            this.tag = tag;
+        }
+
+        @Override
+        public boolean equals(Object that) {
+            return that instanceof Mod mod && mod.id == id;
+        }
+
+        @Override
+        public int hashCode() {
+            return id % 10;
+        }
+
+        @Override
+        public String toString() {
+            return id + tag;
+        }
+    }
+
+    private static final Comparator<Mod> BY_TAG_THEN_ID_MOD =
+            Comparator.<Mod, String>comparing(mod -> mod.tag).thenComparingInt(mod -> mod.id);
+
     private static final Comparator<Key> BY_ID = Comparator.comparingInt(key -> key.id);
 
     private static final Comparator<Key> BY_TAG_THEN_ID =
@@ -335,6 +365,26 @@ class MapEqualityTest {
                         BY_TAG_THEN_ID_LOOSE,
                         java.util.List.of(entry(new Loose(1, "c"), 1), entry(new Loose(2, "a"), 3))),
                 false);
+    }
+
+    @Test
+    void twoEqualKeysAreNotTakenForTwoDifferentOnesOfTheSameHashSum() {
+        // 1a and 1b are equal; 1a and 11a are not, and have the same hash code: both sides sum to the same hash
+        TreeMap<Mod, Integer> twins = TreeMap.ofEntries(
+                BY_TAG_THEN_ID_MOD, java.util.List.of(entry(new Mod(1, "a"), 1), entry(new Mod(1, "b"), 1)));
+        java.util.List<Tuple2<Mod, Integer>> different =
+                java.util.List.of(entry(new Mod(1, "a"), 1), entry(new Mod(11, "a"), 1));
+        assertThat(twins.size()).isEqualTo(2);
+        assertThat(twins.hashCode()).isEqualTo(HashMap.ofEntries(different).hashCode());
+        assertEquality(twins, HashMap.ofEntries(different), false);
+        assertEquality(twins, LinkedHashMap.ofEntries(different), false);
+        assertEquality(twins, TreeMap.ofEntries(BY_TAG_THEN_ID_MOD, different), false);
+        assertEquality(twins, TreeMap.ofEntries(BY_TAG_THEN_ID_MOD.reversed(), different), false);
+        assertEquality(
+                twins,
+                TreeMap.ofEntries(
+                        BY_TAG_THEN_ID_MOD, java.util.List.of(entry(new Mod(1, "c"), 1), entry(new Mod(1, "d"), 1))),
+                true);
     }
 
     // -- random maps
