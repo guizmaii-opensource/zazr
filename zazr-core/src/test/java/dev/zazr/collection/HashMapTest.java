@@ -1888,7 +1888,18 @@ public class HashMapTest extends AbstractTraversableTest {
 
     @Test
     public void shouldThrowWhenPartitionNilAndPredicateIsNull() {
-        assertThrows(NullPointerException.class, () -> emptyMap().partition(null));
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap()
+                        .partition((java.util.function.Predicate<Tuple2<Integer, Integer>>) null));
+    }
+
+    @Test
+    public void shouldThrowWhenPartitionNilAndBiPredicateIsNull() {
+        assertThrows(
+                NullPointerException.class,
+                () -> this.<Integer, Integer>emptyMap()
+                        .partition((java.util.function.BiPredicate<Integer, Integer>) null));
     }
 
     @Test

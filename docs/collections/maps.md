@@ -82,9 +82,17 @@ var kept    = prices.merge(updates);   // HashMap<String, Integer>
 
 On a `LinkedHashMap`, a key already present keeps its position and a new key goes to the end, as with `put`.
 
-`map`, `filter` and `forEach` take a function of the key and the value. `mapValues`, `filterKeys` and similar
-methods work on one side. `keySet()` returns the keys as a set, and `values()` the values as a `Vector`, in iteration
-order.
+`map`, `filter`, `partition` and `forEach` take a function of the key and the value. `mapValues`, `filterKeys` and
+similar methods work on one side. `keySet()` returns the keys as a set, and `values()` the values as a `Vector`, in
+iteration order.
+
+`partition` splits a map in one pass into two maps of its own kind: the entries that pass the test, and the others.
+
+```java
+var stock = HashMap.of("apple", 3, "pear", 0, "fig", 7);
+var split = stock.partition((fruit, count) -> count > 0);
+// split._1() has apple and fig, split._2() has pear
+```
 
 ## Ranges
 

@@ -946,6 +946,19 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return Tuple.of(side(sides.kept()), side(sides.rejected()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one call of the predicate per entry, in iteration order, with no {@code Tuple2} made for each;
+     * the trie is split node by node, and the parts whose entries all go to one side are shared, not copied.
+     */
+    @Override
+    public Tuple2<HashMap<K, V>, HashMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        MapNode.Partition<K, V> sides = trie.partition(predicate);
+        return Tuple.of(side(sides.kept()), side(sides.rejected()));
+    }
+
     // a side of the partition: this map when it gets every entry
     private HashMap<K, V> side(BitmapIndexedMapNode<K, V> result) {
         return (result == trie && result.size() != 0) ? this : wrap(result);

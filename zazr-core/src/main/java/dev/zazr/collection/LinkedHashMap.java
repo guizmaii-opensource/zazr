@@ -1023,6 +1023,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     }
 
     @Override
+    public Tuple2<LinkedHashMap<K, V>, LinkedHashMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
+        return Maps.partition(this, this::createFromEntries, predicate);
+    }
+
+    @Override
     public LinkedHashMap<K, V> tap(Consumer<? super Tuple2<K, V>> action) {
         return Maps.tap(this, action);
     }

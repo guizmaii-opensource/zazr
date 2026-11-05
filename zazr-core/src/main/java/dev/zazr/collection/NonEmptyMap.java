@@ -857,6 +857,15 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
         return map.partition(predicate);
     }
 
+    /**
+     * @param predicate A test of a key and its value
+     * @return the entries that pass {@code predicate} and those that fail it; either may be empty
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<HashMap<K, V>, HashMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
+        return map.partition(predicate);
+    }
+
     // -- total: what is partial on a HashMap
 
     /**

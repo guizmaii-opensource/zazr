@@ -98,9 +98,9 @@ var big     = Vector.of(Integer.MAX_VALUE, 1).sumLong(n -> n);  // long
 // 12, Some(4.0), 2147483648
 ```
 
-A map is a collection of `Tuple2<K, V>` entries. `get` returns an `Option`; `map`, `filter` and `forEach` on a
-map take a function of the key and the value; `mapValues` and `filterKeys` work on one side; `keySet()` gives a set
-and `values()` a `Vector`.
+A map is a collection of `Tuple2<K, V>` entries. `get` returns an `Option`; `map`, `filter`, `partition` and `forEach`
+on a map take a function of the key and the value (`filter` and `partition` also take a one-argument function of the
+`Tuple2` entry); `mapValues` and `filterKeys` work on one side; `keySet()` gives a set and `values()` a `Vector`.
 `putAll(entries)` puts many entries as successive `put`s would, the argument's value winning on a shared key (Scala's
 `++`); `merge(that)` keeps this map's value and adds only the keys it lacks.
 `updateWith(key, f)` (Scala's `updatedWith`) reads and writes one key: `f` gets the value as an `Option` (`None` if

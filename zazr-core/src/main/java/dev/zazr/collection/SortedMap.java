@@ -672,10 +672,20 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): both results get their entries in order, and their trees are built from them in one pass.
+     * Complexity: O(n), one walk with no comparator call; each side shares with this map every subtree whose entries
+     * all go to it.
      */
     @Override
     Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one walk with no comparator call; each side shares with this map every subtree whose entries
+     * all go to it.
+     */
+    @Override
+    Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate);
 
     @Override
     SortedMap<K, V> tap(Consumer<? super Tuple2<K, V>> action);

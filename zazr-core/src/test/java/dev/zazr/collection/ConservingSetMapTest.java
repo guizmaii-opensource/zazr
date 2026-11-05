@@ -292,11 +292,17 @@ class ConservingSetMapTest {
                 row("rejectKeys dropping nothing", m -> m.rejectKeys(k -> false)),
                 row("rejectValues dropping nothing", m -> m.rejectValues(v -> false)),
                 row(
-                        "partition, everything on the left",
+                        "partition(Predicate), everything on the left",
                         m -> m.partition(e -> true)._1()),
                 row(
-                        "partition, everything on the right",
+                        "partition(Predicate), everything on the right",
                         m -> m.partition(e -> false)._2()),
+                row(
+                        "partition(BiPredicate), everything on the left",
+                        m -> m.partition((k, v) -> true)._1()),
+                row(
+                        "partition(BiPredicate), everything on the right",
+                        m -> m.partition((k, v) -> false)._2()),
                 row("replace(Tuple2,Tuple2) of an absent entry", m -> m.replace(Tuple.of(ABSENT, 1), Tuple.of(-2, 2))),
                 row(
                         "replaceAll(Tuple2,Tuple2) of an absent entry",
@@ -482,6 +488,14 @@ class ConservingSetMapTest {
                 row(
                         "partition, everything on the left",
                         m -> m.partition(e -> true)._1(),
+                        wrapped),
+                row(
+                        "partition(BiPredicate), everything on the left",
+                        m -> m.partition((k, v) -> true)._1(),
+                        wrapped),
+                row(
+                        "partition(BiPredicate), everything on the right",
+                        m -> m.partition((k, v) -> false)._2(),
                         wrapped));
     }
 
@@ -529,6 +543,14 @@ class ConservingSetMapTest {
                 row(
                         "partition, everything on the left",
                         m -> m.partition(e -> true)._1(),
+                        wrapped),
+                row(
+                        "partition(BiPredicate), everything on the left",
+                        m -> m.partition((k, v) -> true)._1(),
+                        wrapped),
+                row(
+                        "partition(BiPredicate), everything on the right",
+                        m -> m.partition((k, v) -> false)._2(),
                         wrapped));
     }
 
