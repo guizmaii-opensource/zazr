@@ -189,10 +189,16 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return empty();
         }
         VectorBuilder<T> elements = VectorBuilder.forExactly(n);
+        writeTabulated(elements, n, f);
+        return ofAll(elements.result());
+    }
+
+    /* writes f(0) .. f(n - 1) to elements */
+    private static <T extends @Nullable Object> void writeTabulated(
+            VectorBuilder<T> elements, int n, Function<? super Integer, ? extends T> f) {
         for (int i = 0; i < n; i++) {
             elements.addUnchecked(Objects.requireNonNull(f.apply(i), "Vector: element is null"));
         }
-        return ofAll(elements.result());
     }
 
     /**
@@ -3026,13 +3032,21 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return empty();
         }
         VectorBuilder<U> elements = VectorBuilder.forExactly(size());
+        writeZippedWithIndex(elements, trie, mapper);
+        return ofAll(elements.result());
+    }
+
+    /* writes mapper(element, index) to elements for each element of source, in order */
+    private static <T extends @Nullable Object, U extends @Nullable Object> void writeZippedWithIndex(
+            VectorBuilder<U> elements,
+            RadixVector<T> source,
+            BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         @SuppressWarnings("Var")
         int index = 0;
-        for (T element : trie) {
+        for (T element : source) {
             elements.addUnchecked(
                     Objects.requireNonNull(mapper.apply(element, index++), "Vector.Builder.add: element is null"));
         }
-        return ofAll(elements.result());
     }
 
     /**
