@@ -1794,6 +1794,43 @@ They change behaviour, so they are not measured.
   collision on the other side; `ConservingSetMapTest` lists `retainAll` of every entry, and `union`/`intersect` of an
   equal set, as rows on every type.
 
+**`TreeSet` decides membership with its comparator for every argument (#340, decided 2026-11-05).** Under a
+comparator that equates unequal objects, `intersect` and `diff` used the comparator for a `TreeSet` argument with the
+same comparator and `equals` for any other argument, and `removeAll` and `retainAll` used `equals` always (they put
+the argument in a `HashSet`). The rule now: the receiver's comparator decides membership for every argument kind, as
+`contains`, `add` and `remove` do. An element stays (`intersect`, `retainAll`) or goes
+(`diff`, `removeAll`) when the argument holds an element the comparator equates with it. Zazr departs from Scala
+here: Scala's `TreeSet` deletes by its ordering in `removedAll`, but its `intersect` and `diff` of another kind of
+set go through `filter(that)` and `that contains elem`, so the argument decides (`TreeSet.scala`, and `SetOps` in
+`collection/Set.scala` and `immutable/Set.scala` of the Scala 2.13 library, which Scala 3 ships unchanged). Zazr
+keeps one rule for all four, the same as `contains`.
+
+- **`intersect` and `retainAll`** with a `TreeSet` of the same comparator take the red-black intersection, as before
+  (`retainAll` took the hash-set path for it until now). Any other argument is walked once, each element looked up
+  in the receiver's tree with `Node.findByKey` (no probe, no `Option`), and the receiver's objects found go into an
+  `IdentityHashMap`; then `Node.filter` keeps them, so every subtree that loses nothing is shared. O(n + m log n).
+  The identity map counts each receiver object once, however many given elements the comparator equates with it, so
+  a result as large as the receiver is the receiver. The equal-object rule above holds: the receiver's objects are
+  kept.
+- **`diff` and `removeAll`** with a `TreeSet` of the same comparator take the red-black difference, as before. Any
+  other argument is walked once: the first two elements found by the comparator are deleted one by one, then the
+  others are looked up in the tree left and, when some are found, removed in one `Node.filter` that shares every
+  subtree losing nothing. O(n + m log n), O(m log n) when at most two are removed; the receiver itself when nothing
+  is. Measured once (allocated bytes per call, one thread, n = 4096 and 32 768): a deletion rebuilds a path and
+  allocates less than the filter walk only for the first two or three removed elements, whatever n, and 14 times
+  more than the walk when every element goes (`main` filtered the tree against a `HashSet` of the argument). The
+  switch happens in the one pass, so an argument of unknown size, a one-shot `Iterable` included, is read once.
+- **A null given element** now goes to the comparator, as in `contains`: the natural comparator throws
+  `NullPointerException`, a comparator that orders nulls finds none. It threw from `HashSet.ofAll` before.
+- **`NonEmptySortedSet`** delegates and needs nothing more. **The sorted maps already followed the rule**:
+  `TreeMap.removeAll` deletes each key by the comparator, and `TreeMap.retainAll` looks each given key up by the
+  comparator (then compares the values with `equals`).
+- **Tests**: `TreeSetComparatorMembershipTest`, with a comparator on a key field, for each argument kind (a `TreeSet`
+  of the same and of another comparator, `HashSet`, `LinkedHashSet`, a `java.util` list and set, a one-shot
+  `Iterable`, an empty one), an equated element and one that is not, the object kept (`isSameAs`) and the identity
+  of the result; `diff` and `removeAll` of one, two, three and many found elements, on both sides of the switch;
+  an empty receiver given an argument that fails when read.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
@@ -2238,6 +2275,36 @@ deleted. Attribution in `NOTICE`.
     reversed comparators and every shape of the insertion order; `VectorBuilderForExactlyTest` checks that the
     vector `forExactly` builds has, slice for slice, the arrays `add` builds, at the leaf and branch boundaries up to
     1048577 elements. `MapValuesBenchmark` is the measurement.
+  - The other builds that know the exact size of their `Vector` before reading anything write it the same way, with
+    `forExactly` and `addUnchecked` (decided 2026-11-05, #349). They went through `Vector.newBuilder(size())`, whose
+    size hint changes nothing, or through `Vector.ofAll` of an iterator, which builds element by element:
+    - `zipWithIndex` of `LinkedHashMap`, `LinkedHashSet` (the keys of its map), `TreeMap` and `TreeSet`. The tree
+      walk, `RedBlackTreeModule.Node.zipWithIndex`, is internal and returns the `RadixVector`, which the map and the
+      set wrap.
+    - `unzip` and `unzip3` of `Vector` and `NonEmptyVector`: one builder per side, each of the receiver's size.
+    - `NonEmptyVector.of(head, tail...)`: `tail.length + 1` elements.
+    - `Vector.tabulate(n, f)` and `Vector.fill(n, Supplier)`: `n` elements, so `Vector.Builder.addTabulated` goes.
+    - `Vector.duplicatesBy`: one element per duplicated key, and every duplicated key has one first element.
+    - `Vector.reverse`, `Vector.zipWithIndex(BiFunction)` (and `zipWithIndex()`), and `Vector.intersperse`
+      (`2n - 1` elements).
+  - `addUnchecked` checks nothing, so an element that a caller's function returns is checked before it is written,
+    with the message the old path gave: `Vector: element is null` for `tabulate` and `fill`,
+    `Vector.Builder.add: element is null` for each component of `Vector.unzip` and `unzip3`,
+    `Iterator: element is null` for `zipWithIndex(BiFunction)` (as for `List`, `LazyList` and `Queue`), and
+    `Iterator.intersperse: element is null` for `intersperse`. `NonEmptyVector` keeps its own messages. A test
+    checks every component of every `unzip` and `unzip3`: that check is all that keeps a null out of a leaf. An empty
+    receiver still gives `Vector.empty()` itself, without a builder: `forExactly` takes at least one element.
+  - `tabulate` and `zipWithIndex(BiFunction)` keep their loop in a void method of its own, with `result()` in the
+    caller, as `addTabulated` and `VectorBuilder.addAll` had it. With the loop inline, the allocation probe found the
+    boxed indexes still allocated after 500 warm-up calls at 1,000 elements (up to 1,700 B a call more than before);
+    with the loop apart, they are not.
+  - Not converted: `Vector.fill(n, element)` copies one filled leaf at a time, which writing element by element would
+    replace with a per-element loop; `zipWith` and `zipAll` do not know the size of their argument; the `range`
+    factories would need the count of a range with a step, computed without overflow, a change of its own.
+  - `ExactSizeVectorBuildsTest` checks each of them against the `Vector` built the old way, element by element, at 0,
+    1, 31, 32, 33, 1024, 1025 and 40000 elements: the same objects in the same order, then `append`, `update` and
+    `slice`; the null checks and their messages; the empty receivers; and a `NonEmptyVector.of` whose varargs array
+    is written afterwards.
   - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
     `flatMap`.
   - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with

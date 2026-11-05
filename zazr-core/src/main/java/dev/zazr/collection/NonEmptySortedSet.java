@@ -704,7 +704,9 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(n + m) for m given elements, as {@link TreeSet#removeAll(Iterable)}.
+     * This set's comparator decides membership, as {@link TreeSet#removeAll(Iterable)} tells.
+     * <p>
+     * Complexity: O(n + m log n) for m given elements, as {@link TreeSet#removeAll(Iterable)}.
      *
      * @param elements Elements
      * @return this set without {@code elements}
@@ -715,7 +717,10 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(n + m) for m given elements, as {@link TreeSet#retainAll(Iterable)}.
+     * This set's comparator decides membership, and this set's objects are kept, as
+     * {@link TreeSet#retainAll(Iterable)} tells.
+     * <p>
+     * Complexity: O(n + m log n) for m given elements, as {@link TreeSet#retainAll(Iterable)}.
      *
      * @param elements Elements
      * @return the elements of this set that are among {@code elements}
@@ -726,7 +731,10 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(n + m) for a set of m elements, as {@link TreeSet#intersect(Set)}.
+     * This set's comparator decides membership, and this set's objects are kept, as {@link TreeSet#intersect(Set)}
+     * tells.
+     * <p>
+     * Complexity: O(n + m log n) for a set of m elements, as {@link TreeSet#intersect(Set)}.
      *
      * @param elements A set
      * @return the elements in both sets
@@ -737,7 +745,9 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     }
 
     /**
-     * Complexity: O(n + m) for a set of m elements, as {@link TreeSet#diff(Set)}.
+     * This set's comparator decides membership, as {@link TreeSet#diff(Set)} tells.
+     * <p>
+     * Complexity: O(n + m log n) for a set of m elements, as {@link TreeSet#diff(Set)}.
      *
      * @param elements A set
      * @return the elements of this set that are not in {@code elements}

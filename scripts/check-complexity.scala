@@ -103,6 +103,7 @@ val vocabulary: Map[String, Cost] = Map(
   "O((n / step) log n)" -> Cost.Linearithmic,
   "O((n / size) log n)" -> Cost.Linearithmic,
   "O(n + k log n)" -> Cost.Linearithmic,
+  "O(n + m log n)" -> Cost.Linearithmic,
   "O(m log m)" -> Cost.Linearithmic,
   "O(n + k log k)" -> Cost.Linearithmic,
   "O(n * m)" -> Cost.Polynomial,
