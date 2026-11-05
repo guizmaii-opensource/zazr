@@ -2220,8 +2220,11 @@ deleted. Attribution in `NOTICE`.
   - `values()` of `HashMap`, `TreeMap` and `LinkedHashMap` write each value straight into its final leaf of the
     `Vector` (decided 2026-11-05, #309; the change lands only once JMH, `main` against the branch with `-prof gc`,
     shows a win). `VectorBuilder.forExactly(size)` is a builder for exactly `size` elements, written with
-    `addUnchecked`, which skips the null and size checks of `add` (a map rejects a null value on every put); each
-    full leaf goes into the tree by reference, and only a last leaf that is not full is trimmed, as for any builder.
+    `addUnchecked`, which skips the null check of `add` (a map rejects a null value on every put) and takes the
+    builder's element type, so a walk cannot write a key as a value; `result()` throws `IllegalStateException`
+    unless exactly `size` elements were added (a one-leaf builder of up to 31 elements throws at the extra one). The
+    count costs no space: the builder's `depth` is a byte, so the object stays 56 bytes. Each full leaf goes into
+    the tree by reference, and only a last leaf that is not full is trimmed, as for any builder.
     Up to 32 values the one leaf has exactly `size` slots and becomes the `Vector` with no copy. The values are
     written with no iterator: `MapNode.writeValuesTo` walks the trie in iteration order (a node's entries, then its
     children) and `Node.writeValuesTo` the tree in key order; `LinkedHashMap` still walks its insertion order with
