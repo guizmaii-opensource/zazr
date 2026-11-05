@@ -88,10 +88,10 @@ public class ExactSizeVectorBuildsTest {
     public void linkedHashMapZipWithIndexPairsTheEntriesWithTheirRank() {
         for (int size : SIZES) {
             Element[] values = elements(size);
-            LinkedHashMap<Integer, Element> map = LinkedHashMap.empty();
-            for (int i = size - 1; i >= 0; i--) {
-                map = map.put(i * 7 % (size + 1), values[i]);
-            }
+            // persistent puts in reverse, with keys that are not in order
+            LinkedHashMap<Integer, Element> map = Vector.range(0, size)
+                    .reverse()
+                    .foldLeft(LinkedHashMap.empty(), (m, i) -> m.put(i * 7 % (size + 1), values[i]));
             Vector<Tuple2<Integer, Element>> entries = reference(map);
             Vector<Tuple2<Tuple2<Integer, Element>, Integer>> zipped = map.zipWithIndex();
             assertThat(zipped.size()).isEqualTo(size);
@@ -128,13 +128,11 @@ public class ExactSizeVectorBuildsTest {
     public void treeZipWithIndexPairsTheElementsWithTheirRank() {
         for (int size : SIZES) {
             Element[] values = elements(size);
-            TreeMap<Integer, Element> map = TreeMap.empty();
-            TreeSet<Integer> set = TreeSet.empty();
-            for (int i = 0; i < size; i++) {
-                int key = (int) ((i * 40503L) % 65537);
-                map = map.put(key, values[i]);
-                set = set.add(key);
-            }
+            // persistent puts of keys in a scrambled order
+            Function<Integer, Integer> key = i -> (int) ((i * 40503L) % 65537);
+            TreeMap<Integer, Element> map =
+                    Vector.range(0, size).foldLeft(TreeMap.empty(), (m, i) -> m.put(key.apply(i), values[i]));
+            TreeSet<Integer> set = Vector.range(0, size).foldLeft(TreeSet.empty(), (t, i) -> t.add(key.apply(i)));
             assertZippedWithIndex(map.zipWithIndex(), reference(map), "TreeMap, size " + size);
             assertZippedWithIndex(set.zipWithIndex(), reference(set), "TreeSet, size " + size);
         }
