@@ -731,7 +731,7 @@ public interface RedBlackTreeModule {
         /// Writes the values of a tree of entries to `builder`, in ascending order of the keys.
         // the depth of the recursion is the height of the tree, at most 2 log2(n + 1)
         public static <K extends @Nullable Object, V extends @Nullable Object> void writeValuesTo(
-                RedBlackTree<Tuple2<K, V>> tree, VectorBuilder<?> builder) {
+                RedBlackTree<Tuple2<K, V>> tree, VectorBuilder<? super V> builder) {
             if (tree instanceof Node<Tuple2<K, V>> node) {
                 writeValuesTo(node.left, builder);
                 builder.addUnchecked(node.value._2());

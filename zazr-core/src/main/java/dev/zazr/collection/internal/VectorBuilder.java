@@ -38,23 +38,30 @@ public final class VectorBuilder<T extends @Nullable Object> {
     private int lenRest;
     private int offset;
     private boolean prefixIsRightAligned;
-    private int depth = 1;
+    // 1 to 6: a byte, so that exactSize fits in the object without making it larger (56 bytes with compressed
+    // class pointers)
+    private byte depth = 1;
     private boolean done;
+    // the number of elements a builder of forExactly holds, checked by result(); -1 for any other builder
+    private final int exactSize;
 
     VectorBuilder() {
         this.a1 = new Object[WIDTH];
+        this.exactSize = -1;
     }
 
     // the first leaf has size slots, at most WIDTH: see forExactly
     private VectorBuilder(int size) {
         this.a1 = new Object[Math.min(size, WIDTH)];
+        this.exactSize = size;
     }
 
     /// A builder of a vector of exactly `size` elements, at least 1, that the caller writes with
     /// [#addUnchecked(Object)] only, in order, then [#result()]: the values of a map, walked from its
     /// trie or tree. Each value goes straight into its final leaf, and each full leaf goes into the tree
     /// by reference. Up to 32 elements the one leaf has exactly `size` slots and becomes the vector as
-    /// it is; longer, only the last leaf is copied, when it is not full, as for any builder.
+    /// it is; longer, only the last leaf is copied, when it is not full, as for any builder. [#result()]
+    /// throws [IllegalStateException] unless exactly `size` elements were added.
     public static <T extends @Nullable Object> VectorBuilder<T> forExactly(int size) {
         return new VectorBuilder<>(size);
     }
@@ -98,11 +105,18 @@ public final class VectorBuilder<T extends @Nullable Object> {
         return this;
     }
 
-    /// Appends an element that is not null, with no check: a map's value (a map rejects a null value on
-    /// every put), written to a builder of [#forExactly(int)], which holds no more than its size.
+    /// Appends an element that is not null, with no null check: a map's value (a map rejects a null value
+    /// on every put), written to a builder of [#forExactly(int)].
+    ///
+    /// @throws IllegalStateException if [#result()] has been called, or if a builder of up to 31 elements
+    /// is full; a longer builder given too many elements throws at [#result()]
     @SuppressWarnings("NullAway") // the elements are a map's values, never null
-    public void addUnchecked(@Nullable Object element) {
-        if (len1 == WIDTH) {
+    public void addUnchecked(T element) {
+        if (len1 >= a1.length) {
+            if (len1 != WIDTH) {
+                throw new IllegalStateException(
+                        "Vector builder for exactly " + exactSize + " elements: more elements added");
+            }
             // once closed, len1 == WIDTH: advance() checks that the builder is open before anything is written
             advance();
         }
@@ -774,10 +788,15 @@ public final class VectorBuilder<T extends @Nullable Object> {
     /**
      * Builds the vector. The builder cannot be used afterwards.
      *
-     * @throws IllegalStateException if {@link #result()} has already been called
+     * @throws IllegalStateException if {@link #result()} has already been called, or if this builder comes from
+     * {@link #forExactly(int)} and was given another number of elements than its size
      */
     public RadixVector<T> result() {
         checkOpen();
+        if (exactSize >= 0 && len1 + lenRest != exactSize) {
+            throw new IllegalStateException(
+                    "Vector builder for exactly " + exactSize + " elements: " + (len1 + lenRest) + " added");
+        }
         RadixVector<T> result = build();
         close();
         return result;

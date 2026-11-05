@@ -160,7 +160,7 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
 
     /// Writes the values of this subtree to `builder`, in iteration order: the entries of a node before those of its
     /// children. The depth of the recursion is the depth of the trie, at most 7 levels.
-    public final void writeValuesTo(VectorBuilder<?> builder) {
+    public final void writeValuesTo(VectorBuilder<? super V> builder) {
         int payload = payloadArity();
         for (int i = 0; i < payload; i++) {
             builder.addUnchecked(getValue(i));

@@ -87,4 +87,44 @@ public class VectorBuilderForExactlyTest {
             assertThatThrownBy(() -> builder.addUnchecked(new Element(-1))).isInstanceOf(IllegalStateException.class);
         }
     }
+
+    @Test
+    public void tooFewElementsAreRejectedByResult() {
+        for (int size : new int[] {1, 2, 31, 32, 33, 1025, 32769}) {
+            VectorBuilder<Element> builder = VectorBuilder.forExactly(size);
+            for (int i = 0; i < size - 1; i++) {
+                builder.addUnchecked(new Element(i));
+            }
+            assertThatThrownBy(builder::result)
+                    .as("size " + size)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Vector builder for exactly " + size + " elements: " + (size - 1) + " added");
+        }
+    }
+
+    @Test
+    public void tooManyElementsAreRejected() {
+        // up to 31 the one leaf is full, and the extra element is rejected at once
+        for (int size : new int[] {1, 2, 31}) {
+            VectorBuilder<Element> builder = VectorBuilder.forExactly(size);
+            for (int i = 0; i < size; i++) {
+                builder.addUnchecked(new Element(i));
+            }
+            assertThatThrownBy(() -> builder.addUnchecked(new Element(-1)))
+                    .as("size " + size)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Vector builder for exactly " + size + " elements: more elements added");
+        }
+        // from 32 the extra element opens a new leaf, and result() rejects the count
+        for (int size : new int[] {32, 33, 1024, 1025, 32768}) {
+            VectorBuilder<Element> builder = VectorBuilder.forExactly(size);
+            for (int i = 0; i <= size; i++) {
+                builder.addUnchecked(new Element(i));
+            }
+            assertThatThrownBy(builder::result)
+                    .as("size " + size)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Vector builder for exactly " + size + " elements: " + (size + 1) + " added");
+        }
+    }
 }
