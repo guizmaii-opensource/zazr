@@ -6,8 +6,8 @@
 | `add` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeSet.add.">O(log n)</abbr> | O(log n), as TreeSet.add. |
 | `remove` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeSet.remove.">O(log n)</abbr> | O(log n), as TreeSet.remove. |
 | `union` | <abbr class="cx cx-linearithmic" title="O(m log(n + m)) for a set of m elements, as TreeSet.union.">O(m log(n + m))</abbr> | O(m log(n + m)) for a set of m elements, as TreeSet.union. |
-| `intersect` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements, as TreeSet.intersect.">O(n + m)</abbr> | O(n + m) for a set of m elements, as TreeSet.intersect. |
-| `diff` | <abbr class="cx cx-linear" title="O(n + m) for a set of m elements, as TreeSet.diff.">O(n + m)</abbr> | O(n + m) for a set of m elements, as TreeSet.diff. |
+| `intersect` | <abbr class="cx cx-linearithmic" title="O(n + m log n) for a set of m elements, as TreeSet.intersect.">O(n + m log n)</abbr> | O(n + m log n) for a set of m elements, as TreeSet.intersect. |
+| `diff` | <abbr class="cx cx-linearithmic" title="O(n + m log n) for a set of m elements, as TreeSet.diff.">O(n + m log n)</abbr> | O(n + m log n) for a set of m elements, as TreeSet.diff. |
 | `min` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `max` | <abbr class="cx cx-linear" title="O(n), every element compared once.">O(n)</abbr> | O(n), every element compared once. |
 | `head` | <abbr class="cx cx-logarithmic" title="O(log n), as TreeSet.head.">O(log n)</abbr> | O(log n), as TreeSet.head. |

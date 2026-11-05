@@ -1794,6 +1794,43 @@ They change behaviour, so they are not measured.
   collision on the other side; `ConservingSetMapTest` lists `retainAll` of every entry, and `union`/`intersect` of an
   equal set, as rows on every type.
 
+**`TreeSet` decides membership with its comparator for every argument (#340, decided 2026-11-05).** Under a
+comparator that equates unequal objects, `intersect` and `diff` used the comparator for a `TreeSet` argument with the
+same comparator and `equals` for any other argument, and `removeAll` and `retainAll` used `equals` always (they put
+the argument in a `HashSet`). The rule now: the receiver's comparator decides membership for every argument kind, as
+`contains`, `add` and `remove` do. An element stays (`intersect`, `retainAll`) or goes
+(`diff`, `removeAll`) when the argument holds an element the comparator equates with it. Zazr departs from Scala
+here: Scala's `TreeSet` deletes by its ordering in `removedAll`, but its `intersect` and `diff` of another kind of
+set go through `filter(that)` and `that contains elem`, so the argument decides (`TreeSet.scala`, and `SetOps` in
+`collection/Set.scala` and `immutable/Set.scala` of the Scala 2.13 library, which Scala 3 ships unchanged). Zazr
+keeps one rule for all four, the same as `contains`.
+
+- **`intersect` and `retainAll`** with a `TreeSet` of the same comparator take the red-black intersection, as before
+  (`retainAll` took the hash-set path for it until now). Any other argument is walked once, each element looked up
+  in the receiver's tree with `Node.findByKey` (no probe, no `Option`), and the receiver's objects found go into an
+  `IdentityHashMap`; then `Node.filter` keeps them, so every subtree that loses nothing is shared. O(n + m log n).
+  The identity map counts each receiver object once, however many given elements the comparator equates with it, so
+  a result as large as the receiver is the receiver. The equal-object rule above holds: the receiver's objects are
+  kept.
+- **`diff` and `removeAll`** with a `TreeSet` of the same comparator take the red-black difference, as before. Any
+  other argument is walked once: the first two elements found by the comparator are deleted one by one, then the
+  others are looked up in the tree left and, when some are found, removed in one `Node.filter` that shares every
+  subtree losing nothing. O(n + m log n), O(m log n) when at most two are removed; the receiver itself when nothing
+  is. Measured once (allocated bytes per call, one thread, n = 4096 and 32 768): a deletion rebuilds a path and
+  allocates less than the filter walk only for the first two or three removed elements, whatever n, and 14 times
+  more than the walk when every element goes (`main` filtered the tree against a `HashSet` of the argument). The
+  switch happens in the one pass, so an argument of unknown size, a one-shot `Iterable` included, is read once.
+- **A null given element** now goes to the comparator, as in `contains`: the natural comparator throws
+  `NullPointerException`, a comparator that orders nulls finds none. It threw from `HashSet.ofAll` before.
+- **`NonEmptySortedSet`** delegates and needs nothing more. **The sorted maps already followed the rule**:
+  `TreeMap.removeAll` deletes each key by the comparator, and `TreeMap.retainAll` looks each given key up by the
+  comparator (then compares the values with `equals`).
+- **Tests**: `TreeSetComparatorMembershipTest`, with a comparator on a key field, for each argument kind (a `TreeSet`
+  of the same and of another comparator, `HashSet`, `LinkedHashSet`, a `java.util` list and set, a one-shot
+  `Iterable`, an empty one), an equated element and one that is not, the object kept (`isSameAs`) and the identity
+  of the result; `diff` and `removeAll` of one, two, three and many found elements, on both sides of the switch;
+  an empty receiver given an argument that fails when read.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
