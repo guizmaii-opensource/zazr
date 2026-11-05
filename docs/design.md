@@ -2067,8 +2067,11 @@ else holds it (`RadixVector.ofOwnedArray`), so the elements are copied once.
 - `VectorOfAllSizedSourceTest` checks each source against the `Vector` built element by element at 0, 1, 31, 32, 33,
   1024, 1025 and 40000 elements, then `append`, `update` and `slice`, then a change of the source. It includes a
   collection whose `toArray()` returns its own array and writes it later, and one that returns an array narrower than
-  `Object[]`. `OwnedArrayTest` checks that the leaf is the array itself up to 32 elements, and which collections are
-  matched.
+  `Object[]`, and a `Traversable` whose own `toArray()` returns an array it keeps, which `toArrayOfSized` never calls.
+  `OwnedArrayTest` checks that the leaf is the array itself up to 32 elements, and which collections are matched. It
+  also pins the names of the JDK implementation classes (`ImmutableCollections$ListN` and the others), which are
+  taken from the running JDK: on a JDK that gives another class, it fails and says to read that class's `toArray()`
+  before trusting it.
 
 #### 3.8.1 Builders for the other collections
 
