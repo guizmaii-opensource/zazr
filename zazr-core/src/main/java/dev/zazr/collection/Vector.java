@@ -185,9 +185,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static <T extends @Nullable Object> Vector<T> tabulate(int n, Function<? super Integer, ? extends T> f) {
         Objects.requireNonNull(f, "f is null");
-        Builder<T> builder = newBuilder(Math.max(n, 0));
-        builder.addTabulated(n, f);
-        return builder.result();
+        if (n <= 0) {
+            return empty();
+        }
+        VectorBuilder<T> elements = VectorBuilder.forExactly(n);
+        for (int i = 0; i < n; i++) {
+            elements.addUnchecked(Objects.requireNonNull(f.apply(i), "Vector: element is null"));
+        }
+        return ofAll(elements.result());
     }
 
     /**
@@ -201,9 +206,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      */
     public static <T extends @Nullable Object> Vector<T> fill(int n, Supplier<? extends T> s) {
         Objects.requireNonNull(s, "s is null");
-        Builder<T> builder = newBuilder(Math.max(n, 0));
-        builder.addTabulated(n, i -> s.get());
-        return builder.result();
+        if (n <= 0) {
+            return empty();
+        }
+        VectorBuilder<T> elements = VectorBuilder.forExactly(n);
+        for (int i = 0; i < n; i++) {
+            elements.addUnchecked(Objects.requireNonNull(s.get(), "Vector: element is null"));
+        }
+        return ofAll(elements.result());
     }
 
     /**
@@ -970,13 +980,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (duplicated.isEmpty()) {
             return empty();
         }
-        Builder<T> builder = newBuilder(duplicated.size());
+        // every duplicated key has one entry in first: exactly duplicated.size() elements
+        VectorBuilder<T> elements = VectorBuilder.forExactly(duplicated.size());
         for (java.util.Map.Entry<U, T> entry : first.entrySet()) {
             if (duplicated.contains(entry.getKey())) {
-                builder.add(entry.getValue());
+                elements.addUnchecked(entry.getValue());
             }
         }
-        return builder.result();
+        return ofAll(elements.result());
     }
 
     /**
@@ -1565,7 +1576,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (size() <= 1) {
             return this;
         }
-        return ofAll(Iterator.ofAll(this).intersperse(element));
+        Objects.requireNonNull(element, "Iterator.intersperse: element is null");
+        VectorBuilder<T> elements = VectorBuilder.forExactly(2 * size() - 1);
+        java.util.Iterator<T> it = trie.iterator();
+        elements.addUnchecked(it.next());
+        while (it.hasNext()) {
+            elements.addUnchecked(element);
+            elements.addUnchecked(it.next());
+        }
+        return ofAll(elements.result());
     }
 
     /**
@@ -2230,7 +2249,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a new Vector, or this Vector if it has fewer than two elements
      */
     public Vector<T> reverse() {
-        return (size() <= 1) ? this : ofAll(reverseIterator());
+        if (size() <= 1) {
+            return this;
+        }
+        VectorBuilder<T> elements = VectorBuilder.forExactly(size());
+        for (java.util.Iterator<T> it = reverseIterator(); it.hasNext(); ) {
+            elements.addUnchecked(it.next());
+        }
+        return ofAll(elements.result());
     }
 
     /**
@@ -2823,15 +2849,18 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Vector<T1>, Vector<T2>> unzip(
             Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        Builder<T1> xs = newBuilder(size());
-        Builder<T2> ys = newBuilder(size());
-        for (T element : this) {
+        if (isEmpty()) {
+            return Tuple.of(empty(), empty());
+        }
+        VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
+        VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
+        for (T element : trie) {
             Tuple2<? extends T1, ? extends T2> t =
                     Objects.requireNonNull(unzipper.apply(element), "Vector.unzip: unzipper returned null");
-            xs.add(t._1());
-            ys.add(t._2());
+            xs.addUnchecked(Objects.requireNonNull(t._1(), "Vector.Builder.add: element is null"));
+            ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
         }
-        return Tuple.of(xs.result(), ys.result());
+        return Tuple.of(ofAll(xs.result()), ofAll(ys.result()));
     }
 
     /**
@@ -2850,17 +2879,20 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             Tuple3<Vector<T1>, Vector<T2>, Vector<T3>> unzip3(
                     Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        Builder<T1> xs = newBuilder(size());
-        Builder<T2> ys = newBuilder(size());
-        Builder<T3> zs = newBuilder(size());
-        for (T element : this) {
+        if (isEmpty()) {
+            return Tuple.of(empty(), empty(), empty());
+        }
+        VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
+        VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
+        VectorBuilder<T3> zs = VectorBuilder.forExactly(size());
+        for (T element : trie) {
             Tuple3<? extends T1, ? extends T2, ? extends T3> t =
                     Objects.requireNonNull(unzipper.apply(element), "Vector.unzip3: unzipper returned null");
-            xs.add(t._1());
-            ys.add(t._2());
-            zs.add(t._3());
+            xs.addUnchecked(Objects.requireNonNull(t._1(), "Vector.Builder.add: element is null"));
+            ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
+            zs.addUnchecked(Objects.requireNonNull(t._3(), "Vector.Builder.add: element is null"));
         }
-        return Tuple.of(xs.result(), ys.result(), zs.result());
+        return Tuple.of(ofAll(xs.result()), ofAll(ys.result()), ofAll(zs.result()));
     }
 
     /**
@@ -2990,7 +3022,17 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <U extends @Nullable Object> Vector<U> zipWithIndex(
             BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(Iterator.ofAll(this).zipWithIndex(mapper));
+        if (isEmpty()) {
+            return empty();
+        }
+        VectorBuilder<U> elements = VectorBuilder.forExactly(size());
+        @SuppressWarnings("Var")
+        int index = 0;
+        for (T element : trie) {
+            elements.addUnchecked(
+                    Objects.requireNonNull(mapper.apply(element, index++), "Vector.Builder.add: element is null"));
+        }
+        return ofAll(elements.result());
     }
 
     /**
@@ -3100,14 +3142,6 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
          */
         public Vector<T> result() {
             return ofAll(builder.result());
-        }
-
-        /* appends n elements f(0) .. f(n - 1) */
-        void addTabulated(int n, Function<? super Integer, ? extends T> f) {
-            builder.checkOpen();
-            for (int i = 0; i < n; i++) {
-                builder.add(Objects.requireNonNull(f.apply(i), "Vector: element is null"));
-            }
         }
 
         /* appends the same element n times, one whole-leaf copy of a filled leaf at a time */

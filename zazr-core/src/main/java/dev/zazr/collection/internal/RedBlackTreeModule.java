@@ -1134,16 +1134,19 @@ public interface RedBlackTreeModule {
         }
 
         /**
-         * The elements paired with their rank, in order. O(n).
+         * The elements paired with their rank, in order, written straight into the leaves of the vector. O(n).
          */
-        public static <T extends @Nullable Object> Vector<Tuple2<T, Integer>> zipWithIndex(RedBlackTree<T> tree) {
-            Vector.Builder<Tuple2<T, Integer>> builder = Vector.newBuilder(tree.size());
+        public static <T extends @Nullable Object> RadixVector<Tuple2<T, Integer>> zipWithIndex(RedBlackTree<T> tree) {
+            if (tree.isEmpty()) {
+                return RadixVector.empty();
+            }
+            VectorBuilder<Tuple2<T, Integer>> pairs = VectorBuilder.forExactly(tree.size());
             @SuppressWarnings("Var")
             int index = 0;
             for (T value : tree) {
-                builder.add(Tuple.of(value, index++));
+                pairs.addUnchecked(Tuple.of(value, index++));
             }
-            return builder.result();
+            return pairs.result();
         }
 
         private static <T extends @Nullable Object> Node<T> unbalancedLeft(

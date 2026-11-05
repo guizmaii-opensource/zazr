@@ -57,8 +57,9 @@ public final class VectorBuilder<T extends @Nullable Object> {
     }
 
     /// A builder of a vector of exactly `size` elements, at least 1, that the caller writes with
-    /// [#addUnchecked(Object)] only, in order, then [#result()]: the values of a map, walked from its
-    /// trie or tree. Each value goes straight into its final leaf, and each full leaf goes into the tree
+    /// [#addUnchecked(Object)] only, in order, then [#result()]: a source whose size is known before it is
+    /// read, such as the values of a map walked from its trie or tree, the pairs of `zipWithIndex`, or the
+    /// sides of `unzip`. Each element goes straight into its final leaf, and each full leaf goes into the tree
     /// by reference. Up to 32 elements the one leaf has exactly `size` slots and becomes the vector as
     /// it is; longer, only the last leaf is copied, when it is not full, as for any builder. [#result()]
     /// throws [IllegalStateException] unless exactly `size` elements were added.
@@ -105,12 +106,13 @@ public final class VectorBuilder<T extends @Nullable Object> {
         return this;
     }
 
-    /// Appends an element that is not null, with no null check: a map's value (a map rejects a null value
-    /// on every put), written to a builder of [#forExactly(int)].
+    /// Appends an element that is not null, with no null check, to a builder of [#forExactly(int)]: an
+    /// element of a collection, which rejects null (a map's value, a set's element), a tuple made by the
+    /// caller, or an element the caller has checked.
     ///
     /// @throws IllegalStateException if [#result()] has been called, or if a builder of up to 31 elements
     /// is full; a longer builder given too many elements throws at [#result()]
-    @SuppressWarnings("NullAway") // the elements are a map's values, never null
+    @SuppressWarnings("NullAway") // the callers write elements that are never null
     public void addUnchecked(T element) {
         if (len1 >= a1.length) {
             if (len1 != WIDTH) {

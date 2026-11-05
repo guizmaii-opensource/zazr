@@ -447,29 +447,19 @@ public class VectorBuilderTest {
         assertThatThrownBy(() -> builder.addAll(null)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.add(null)).isInstanceOf(IllegalStateException.class);
         // the bulk loops too, even for zero elements, where no leaf boundary would be crossed
-        assertThatThrownBy(() -> builder.addTabulated(0, i -> i)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> builder.addRepeated(0, 1)).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> builder.addTabulated(5, i -> i)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> builder.addRepeated(5, 1)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     public void shouldRunTheBulkLoopsAcrossLeafBoundaries() {
-        // tabulate and fill start from an empty builder; here the bulk loops also run after other elements
+        // fill starts from an empty builder; here the bulk loop also runs after other elements
         for (int n : new int[] {6, 31, 32, 33, 64, 65, 1025}) {
-            Vector.Builder<Integer> tabulated = Vector.newBuilder(5);
-            tabulated.addTabulated(n, i -> i);
-            assertSameShape(tabulated.result(), Vector.range(0, n), n);
-
             Vector.Builder<Integer> repeated = Vector.newBuilder(5);
             repeated.addRepeated(n, 7);
             assertSameShape(repeated.result(), Vector.fill(n, 7), n);
 
             // and after a partial prefix, so a leaf is split between prefix and bulk elements
-            Vector.Builder<Integer> prefixed = Vector.newBuilder(5);
-            prefixed.add(-1).add(-2);
-            prefixed.addTabulated(n, i -> i);
-            assertSameShape(prefixed.result(), Vector.of(-1, -2).appendAll(Vector.range(0, n)), n + 2);
-
             Vector.Builder<Integer> prefixedRepeat = Vector.newBuilder();
             prefixedRepeat.add(-1).add(-2);
             prefixedRepeat.addRepeated(n, 7);
