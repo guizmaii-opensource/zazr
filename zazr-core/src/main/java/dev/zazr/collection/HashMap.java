@@ -832,6 +832,11 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         return trie.iterator(Tuple::of);
     }
 
+    // the keys, read from the trie in place: no entry is made
+    java.util.Iterator<K> keyIterator() {
+        return trie.iterator((key, value) -> key);
+    }
+
     /**
      * {@inheritDoc}
      * <p>
@@ -1250,8 +1255,13 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n) against a TreeMap, O(n) against a HashMap or a LinkedHashMap: each entry of this map is
-     * looked up in the other one. O(1) when the sizes differ. Against another HashMap, the two are compared part by
+     * The keys and the values are compared with their own {@code equals}, against every kind of map, a TreeMap
+     * included: a TreeMap's key comparator decides its lookups, not its equality. So
+     * {@code a.equals(b) == b.equals(a)}, and two equal maps have the same {@link #hashCode()}.
+     * <p>
+     * Complexity: O(n log n) against a TreeMap, as {@link TreeMap#equals(Object)}; O(n) against a LinkedHashMap:
+     * each entry of this map is looked up in it; O(n) against a Map of another implementation, with a temporary hash
+     * table of this map's entries. O(1) when the sizes differ. Against another HashMap, the two are compared part by
      * part, and a part of a different size or shape answers without looking at a key.
      */
     @Override
@@ -1262,6 +1272,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
             } catch (ClassCastException e) {
                 return false;
             }
+        } else if (o instanceof TreeMap<?, ?> sorted) {
+            return TreeMap.sameEntries(sorted, this);
         }
         return Collections.equals(this, o);
     }

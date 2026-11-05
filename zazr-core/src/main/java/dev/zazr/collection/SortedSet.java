@@ -19,6 +19,12 @@ import org.jspecify.annotations.Nullable;
  * <li>{@link #flatMap(Comparator, Function)}</li>
  * <li>{@link #map(Comparator, Function)}</li>
  * </ul>
+ * <p>
+ * The {@link #comparator()} decides membership: {@code contains}, {@code add}, {@code remove} and the bulk
+ * operations treat two elements it compares as 0 as the same element. {@code equals} is the exception: it compares
+ * the elements with their own {@code equals}, as on every {@link Set}, so it is symmetric and equal sets have equal
+ * hash codes. A sorted set ordered case-insensitively that holds {@code "a"} contains {@code "A"}, but is not equal
+ * to a set that holds {@code "A"}.
  *
  * @param <T> Component type
  * @author Daniel Dietrich

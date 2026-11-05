@@ -8,6 +8,11 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable {@code SortedMap} interface.
+ * <p>
+ * The {@link #comparator()} of the keys decides the lookups: {@code get}, {@code containsKey}, {@code put},
+ * {@code remove} and the bulk operations treat two keys it compares as 0 as the same key. {@code equals} is the
+ * exception: it compares the keys and the values with their own {@code equals}, as on every {@link Map}, so it is
+ * symmetric and equal maps have equal hash codes.
  *
  * @param <K> Key type
  * @param <V> Value type

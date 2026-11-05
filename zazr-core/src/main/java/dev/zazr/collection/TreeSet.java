@@ -1520,17 +1520,83 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     /**
      * Whether {@code o} is a Set with the same elements, in any order: another TreeSet, a HashSet or a
-     * LinkedHashSet. Each element of this set is looked up in {@code o} with {@code o}'s own {@code contains}.
+     * LinkedHashSet. The elements are compared with their own {@code equals}, not with the comparator: the
+     * comparator decides {@code contains} and the bulk operations, while {@code equals} is the same on every kind of
+     * set. So it is symmetric, {@code a.equals(b) == b.equals(a)}, and two equal sets have the same
+     * {@link #hashCode()}, the sum of the elements' hash codes. Under a comparator that equates unequal objects, a
+     * TreeSet that holds {@code "a"} is not equal to one that holds {@code "A"}, even though each {@code contains}
+     * the other's element.
      * <p>
-     * Complexity: O(n log n) against another TreeSet: one lookup in it per element; O(n) against a HashSet or a
-     * LinkedHashSet, and O(1) when the sizes differ.
+     * Complexity: O(n log n) against a HashSet or a LinkedHashSet: each of its elements is looked up in this tree by
+     * the comparator, and the element found compared with {@code equals}. O(n) against a TreeSet with an equal
+     * comparator: the two are walked in order, side by side; O(n) against a TreeSet with another comparator, with a
+     * temporary hash table of this set's elements. O(1) when the sizes differ. A comparator under which two objects
+     * equal by {@code equals} compare as different (so that the set can hold both) adds, when the first check
+     * cannot decide, one O(n) count of the elements in a temporary hash table.
      *
      * @param o any object
      * @return true if {@code o} is a Set of the same elements
      */
     @Override
     public boolean equals(@Nullable Object o) {
-        return Collections.equals(this, o);
+        return o instanceof Set<?> set && sameElements(this, set);
+    }
+
+    /// Whether `tree` and `other` hold the same elements, compared with `equals`. `HashSet` and `LinkedHashSet`
+    /// call it for a `TreeSet` argument, so that both directions take the same path. Each fast path returns only an
+    /// answer it proves for any comparator; the others go to [Collections#sameElementCounts].
+    @SuppressWarnings("unchecked")
+    static boolean sameElements(TreeSet<?> tree, Set<?> other) {
+        if (tree == other) {
+            return true;
+        } else if (tree.size() != other.size()) {
+            return false;
+        } else if (other instanceof TreeSet<?> that && tree.hasSameComparator(that)) {
+            // Under a comparator for which equal objects compare as 0, two sets of equal elements store them in the
+            // same order, so the first unequal pair decides; under any other, equal hash sums leave it open.
+            return inOrder(tree, that)
+                    || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
+                            && Collections.sameElementCounts(tree, that));
+        } else if (other instanceof HashSet || other instanceof LinkedHashSet) {
+            // `other` holds no two equal elements, so each one found equal in the tree is a different element of it:
+            // with the same size, that is every element. When one is not found, the tree may still hold it at
+            // another place under a comparator that tells equal objects apart: an element of the tree missing from
+            // `other` decides; otherwise the elements are counted.
+            return findsEach(tree, other)
+                    || (tree.forAll(((Set<Object>) other)::contains) && Collections.sameElementCounts(tree, other));
+        } else {
+            return Collections.sameElementCounts(tree, other);
+        }
+    }
+
+    // whether the two trees, of the same size, hold equal elements at each position
+    private static boolean inOrder(TreeSet<?> tree, TreeSet<?> that) {
+        java.util.Iterator<?> these = tree.iterator();
+        java.util.Iterator<?> those = that.iterator();
+        while (these.hasNext()) {
+            if (!Objects.equals(these.next(), those.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // whether each element of `other` has an equal element in the tree, found there by the comparator
+    @SuppressWarnings("unchecked")
+    private static boolean findsEach(TreeSet<?> tree, Set<?> other) {
+        RedBlackTree<Object> elements = (RedBlackTree<Object>) tree.tree;
+        Comparator<Object> comparator = (Comparator<Object>) elements.comparator();
+        try {
+            for (Object element : other) {
+                @Nullable Object stored = RedBlackTreeModule.Node.findByKey(elements, element, comparator, false);
+                if (stored == null || !stored.equals(element)) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (ClassCastException e) {
+            return false;
+        }
     }
 
     @Override

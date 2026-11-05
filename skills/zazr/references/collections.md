@@ -216,7 +216,8 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
   iteration order; `fold` over them needs an operation where order does not matter.
 - `max()` and `min()` on a set walk every element in natural order, even on a `TreeSet`; its own least and greatest
   are `head()` and `last()`.
-- `TreeSet` and `TreeMap` decide membership with the comparator, not `equals`.
+- `TreeSet` and `TreeMap` decide membership with the comparator, not `equals`. Their `equals` is the exception: it
+  compares elements, keys and values with their own `equals`, as on every set and map.
 - `LazyList`: nothing is computed before it is read, not even the first element (`LazyList.defer(() -> ...)` for a
   lazy first element too); `size`, `last`, `reverse`, `sorted`, `foldLeft`, `mkString` and `toVector` never return
   on an infinite one; it keeps every element it computed, and every exception.

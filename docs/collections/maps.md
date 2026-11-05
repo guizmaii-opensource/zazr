@@ -157,6 +157,16 @@ When something changes, the parts of the tree or trie that do not are shared, no
 same kind shares the parts either map leaves as they are, and `partition` of a `HashMap` gives each side the parts
 whose entries all go to it.
 
+## Equality
+
+Two maps are equal when they hold the same entries, keys and values compared with their own `equals`. The kind does
+not matter: a `HashMap`, a `LinkedHashMap` and a `TreeMap` of the same entries are all equal, whatever the key
+comparator of the `TreeMap`. `a.equals(b)` and `b.equals(a)` always agree, and equal maps have the same `hashCode`.
+
+A `TreeMap`'s comparator decides the lookups: `get`, `containsKey`, `put`, `remove` and the bulk operations.
+Equality is the one place where it does not. With a case-insensitive comparator, `get("A")` finds the value of the
+key `"a"`, and the map equals a map whose key is `"a"`, not one whose key is `"A"`.
+
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashMap`: it depends on the hashes and may change between versions.
