@@ -849,38 +849,25 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         }
         Comparator<T> comparator = tree.comparator();
         int limit = deletionLimit(tree.size());
-        // the distinct objects found, while there are at most `limit` of them; past `limit`, every object found goes
-        // to `filtered` instead
+        java.util.Iterator<? extends T> iterator = elements.iterator();
+        // the distinct objects found, while there are at most `limit` of them
         Object[] found = null;
         int count = 0;
-        java.util.IdentityHashMap<T, Boolean> filtered = null;
-        for (T element : elements) {
-            T stored = RedBlackTreeModule.Node.findByKey(tree, element, comparator, false);
+        while (iterator.hasNext()) {
+            T stored = RedBlackTreeModule.Node.findByKey(tree, iterator.next(), comparator, false);
             if (stored == null) {
                 continue;
-            } else if (filtered != null) {
-                filtered.put(stored, Boolean.TRUE);
-            } else {
-                if (found == null) {
-                    found = new Object[limit];
-                }
-                if (holds(found, count, stored)) {
-                    continue;
-                } else if (count < limit) {
-                    found[count++] = stored;
-                } else {
-                    filtered = new java.util.IdentityHashMap<>();
-                    for (int i = 0; i < count; i++) {
-                        filtered.put((T) found[i], Boolean.TRUE);
-                    }
-                    filtered.put(stored, Boolean.TRUE);
-                }
+            } else if (found == null) {
+                found = new Object[limit];
+            } else if (holds(found, count, stored)) {
+                continue;
             }
+            if (count == limit) {
+                return withoutInOneWalk(found, stored, iterator);
+            }
+            found[count++] = stored;
         }
-        if (filtered != null) {
-            java.util.IdentityHashMap<T, Boolean> removed = filtered;
-            return withTree(RedBlackTreeModule.Node.filter(tree, element -> !removed.containsKey(element)));
-        } else if (found == null) {
+        if (found == null) {
             return this;
         }
         RedBlackTree<T> result = tree;
@@ -888,6 +875,25 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             result = result.delete((T) found[i]);
         }
         return withTree(result);
+    }
+
+    // `without` past its limit: the objects of `found`, `stored`, and those the comparator equates with an element
+    // `iterator` has left, each once, removed in one filter of the tree
+    @SuppressWarnings("unchecked")
+    private TreeSet<T> withoutInOneWalk(Object[] found, T stored, java.util.Iterator<? extends T> iterator) {
+        java.util.IdentityHashMap<T, Boolean> removed = new java.util.IdentityHashMap<>();
+        for (Object object : found) {
+            removed.put((T) object, Boolean.TRUE);
+        }
+        removed.put(stored, Boolean.TRUE);
+        Comparator<T> comparator = tree.comparator();
+        while (iterator.hasNext()) {
+            T next = RedBlackTreeModule.Node.findByKey(tree, iterator.next(), comparator, false);
+            if (next != null) {
+                removed.put(next, Boolean.TRUE);
+            }
+        }
+        return withTree(RedBlackTreeModule.Node.filter(tree, element -> !removed.containsKey(element)));
     }
 
     // whether the first `count` slots of `found` hold `object` itself
