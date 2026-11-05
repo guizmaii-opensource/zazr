@@ -461,9 +461,10 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * This set's comparator decides membership, as in {@link #contains(Object)}: an element is removed when
      * {@code elements} holds one the comparator equates with it, whatever the kind of {@code elements}.
      * <p>
-     * Complexity: O(n + m log n) for a set of m elements: each is looked up in this tree by the comparator; the first
-     * two found are deleted, then one walk of this tree removes the others found and keeps whole every part that
-     * loses no element. O(m log n) when at most two are found: the tree off the deleted paths is shared.
+     * Complexity: O(n + m log n) for a set of m elements: each is looked up in this tree by the comparator. Up to
+     * eight elements found (fewer in a tree of fewer than 640 elements, and at least two) are deleted one by one,
+     * O(m log n): the tree off the deleted paths is shared. More are removed in one walk of this tree that keeps
+     * whole every part that loses no element.
      * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), this tree is
      * walked and each element it visits is looked up in the part of the other tree within its bounds, found by
      * going down that tree: O(k log m) for the k nodes visited, at most n and at most about 2m log2 n. A part of
@@ -598,10 +599,11 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * {@code elements} holds one the comparator equates with it, whatever the kind of {@code elements}. A null among
      * {@code elements} goes to the comparator too: the natural comparator throws {@code NullPointerException} for it.
      * <p>
-     * Complexity: O(n + m log n) for m elements: each is looked up in this tree by the comparator; the first two
-     * found are deleted, then one walk of this tree removes the others found and keeps whole every part that loses no
-     * element. O(m log n) when at most two are found: the tree off the deleted paths is shared. A TreeSet with an
-     * equal comparator costs what {@link #diff(Set)} of it costs.
+     * Complexity: O(n + m log n) for m elements: each is looked up in this tree by the comparator. Up to eight
+     * elements found (fewer in a tree of fewer than 640 elements, and at least two) are deleted one by one,
+     * O(m log n): the tree off the deleted paths is shared. More are removed in one walk of this tree that keeps
+     * whole every part that loses no element. A TreeSet with an equal comparator costs what {@link #diff(Set)} of it
+     * costs.
      */
     @Override
     SortedSet<T> removeAll(Iterable<? extends T> elements);

@@ -1,5 +1,7 @@
 package dev.zazr.collection;
 
+import dev.zazr.collection.internal.RedBlackTree;
+import dev.zazr.collection.internal.RedBlackTreeValidity;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
@@ -239,7 +241,8 @@ class TreeSetComparatorMembershipTest {
         }
     }
 
-    // -- diff and removeAll delete the first elements found one by one, then remove the others in one walk
+    // -- diff and removeAll delete the elements found one by one while they are few, otherwise remove them in one
+    // walk
 
     // the items of keys 0 to 7, and the receiver of them
     private static java.util.List<Item> eight() {
@@ -295,13 +298,148 @@ class TreeSetComparatorMembershipTest {
         java.util.List<Item> absent = java.util.List.of(other(8), other(9), other(10), other(11), other(-1));
         assertThat(set.removeAll(absent)).isSameAs(set);
         assertThat(set.removeAll(oneShot(absent))).isSameAs(set);
-        // two found, deleted one by one, then only elements already deleted or absent
+        // two found, deleted one by one; the others are equated with them or absent
         java.util.List<Item> twice = java.util.List.of(other(3), other(4), new Item(3, "again"), other(9), other(4));
         TreeSet<Item> result = set.removeAll(twice);
         assertThat(result).containsExactly(own.get(0), own.get(1), own.get(2), own.get(5), own.get(6), own.get(7));
-        // every element removed, through both phases
+        // every element removed, in one walk
         assertThat(set.removeAll(oneShot(own))).isEmpty();
         assertThat(set.diff(HashSet.ofAll(own))).isEmpty();
+    }
+
+    // -- the limit between the two: below it the elements found are deleted, past it one walk removes them
+
+    /// A comparator by key that counts its calls. A lookup and a deletion call it, the walk does not.
+    private static final class Counting implements Comparator<Item> {
+        private int calls;
+
+        @Override
+        public int compare(Item left, Item right) {
+            calls++;
+            return Integer.compare(left.key, right.key);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static RedBlackTree<Item> tree(TreeSet<Item> set) {
+        try {
+            java.lang.reflect.Field field = TreeSet.class.getDeclaredField("tree");
+            field.setAccessible(true);
+            return (RedBlackTree<Item>) field.get(set);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
+    void theDeletionLimitGrowsWithTheSizeUpToEight() {
+        assertThat(TreeSet.deletionLimit(1)).isEqualTo(2);
+        assertThat(TreeSet.deletionLimit(40)).isEqualTo(2);
+        assertThat(TreeSet.deletionLimit(256)).isEqualTo(3);
+        assertThat(TreeSet.deletionLimit(512)).isEqualTo(6);
+        assertThat(TreeSet.deletionLimit(1023)).isEqualTo(8);
+        assertThat(TreeSet.deletionLimit(4096)).isEqualTo(8);
+        assertThat(TreeSet.deletionLimit(100_000)).isEqualTo(8);
+        assertThat(TreeSet.deletionLimit(Integer.MAX_VALUE)).isEqualTo(8);
+    }
+
+    // removeAll, and diff for a set, of `given` from a receiver of the items 0 to n - 1 under a counting comparator,
+    // for every kind of argument (a TreeSet of BY_KEY is one of another comparator here): the result holds the
+    // receiver's objects but those of `removedKeys`, is a valid tree, and calls the comparator past the lookups of the
+    // argument's elements exactly when `deleted`
+    private static void assertRemoves(
+            int n, java.util.List<Item> given, java.util.Set<Integer> removedKeys, boolean deleted) {
+        Counting counting = new Counting();
+        java.util.List<Item> own = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            own.add(new Item(i, "own"));
+        }
+        TreeSet<Item> set = TreeSet.ofAll(counting, own);
+        java.util.List<Item> expected = new ArrayList<>();
+        for (Item item : own) {
+            if (!removedKeys.contains(item.key)) {
+                expected.add(item);
+            }
+        }
+        for (Kind kind : allKinds()) {
+            String at = "n = " + n + ", " + given.size() + " given, " + kind.name();
+            // the lookups alone, of the elements the argument holds
+            counting.calls = 0;
+            for (Item item : kind.of().apply(given)) {
+                assertThat(set.contains(item)).as(at).isEqualTo(removedKeys.contains(item.key));
+            }
+            int lookups = counting.calls;
+            java.util.List<TreeSet<Item>> results = new ArrayList<>();
+            Iterable<Item> argument = kind.of().apply(given);
+            counting.calls = 0;
+            results.add(set.removeAll(argument));
+            int calls = counting.calls;
+            if (SETS.contains(kind)) {
+                Set<Item> other = set(kind, given);
+                counting.calls = 0;
+                results.add(set.diff(other));
+                assertThat(counting.calls).as("diff, " + at).isEqualTo(calls);
+            }
+            if (deleted) {
+                assertThat(calls).as("deleted one by one, " + at).isGreaterThan(lookups);
+            } else {
+                assertThat(calls).as("removed in one walk, " + at).isEqualTo(lookups);
+            }
+            for (TreeSet<Item> result : results) {
+                assertThat(result).as(at).containsExactlyElementsOf(expected);
+                for (Item item : expected) {
+                    assertThat(storedUnder(result, item)).as(at).isSameAs(item);
+                }
+                RedBlackTreeValidity.assertValid(tree(result));
+            }
+        }
+        // persistence
+        assertThat(set).containsExactlyElementsOf(own);
+    }
+
+    @Test
+    void removeAllAndDiffDeleteUpToTheLimitAndWalkPastIt() {
+        // the limit is 2 at 40 and 3 at 256 (the size decides), 6 at 512 and 8 at 4096 (the cap)
+        for (int n : new int[] {40, 256, 512, 4096}) {
+            int limit = TreeSet.deletionLimit(n);
+            for (int k : new int[] {1, limit, limit + 1, 2 * limit + 3}) {
+                java.util.List<Item> given = new ArrayList<>();
+                java.util.Set<Integer> removedKeys = new java.util.HashSet<>();
+                given.add(other(n + 5));
+                for (int i = 0; i < k; i++) {
+                    int key = (i * (n / k) + n / (2 * k)) % n;
+                    given.add(new Item(key, "given" + i));
+                    removedKeys.add(key);
+                    given.add(other(-1 - i));
+                }
+                // the first one found again: counted once
+                given.add(new Item(given.get(1).key, "again"));
+                assertRemoves(n, given, removedKeys, k <= limit);
+            }
+        }
+    }
+
+    @Test
+    void removeAllAndDiffCountTheDistinctObjectsFoundNotTheHits() {
+        for (int n : new int[] {256, 4096}) {
+            int limit = TreeSet.deletionLimit(n);
+            // `limit` distinct elements, each given three times: more hits than the limit, still deleted
+            java.util.List<Item> given = new ArrayList<>();
+            java.util.Set<Integer> removedKeys = new java.util.HashSet<>();
+            for (int round = 0; round < 3; round++) {
+                for (int i = 0; i < limit; i++) {
+                    given.add(new Item(7 * i + 1, "given" + round));
+                    removedKeys.add(7 * i + 1);
+                }
+            }
+            assertRemoves(n, given, removedKeys, true);
+            // one element given many times
+            java.util.List<Item> repeated = new ArrayList<>();
+            for (int i = 0; i < 4 * limit; i++) {
+                repeated.add(new Item(n / 2, "given" + i));
+            }
+            assertRemoves(n, repeated, java.util.Set.of(n / 2), true);
+        }
     }
 
     // -- an empty receiver comes back without reading its argument
