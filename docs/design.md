@@ -2255,6 +2255,10 @@ deleted. Attribution in `NOTICE`.
     `Vector.Builder.add: element is null` for `Vector.unzip`, `unzip3` and `zipWithIndex(BiFunction)`, and
     `Iterator.intersperse: element is null` for `intersperse`. `NonEmptyVector` keeps its own messages. An empty
     receiver still gives `Vector.empty()` itself, without a builder: `forExactly` takes at least one element.
+  - `tabulate` and `zipWithIndex(BiFunction)` keep their loop in a void method of its own, with `result()` in the
+    caller, as `addTabulated` and `VectorBuilder.addAll` had it. With the loop inline, the allocation probe found the
+    boxed indexes still allocated after 500 warm-up calls at 1,000 elements (up to 1,700 B a call more than before);
+    with the loop apart, they are not.
   - Not converted: `Vector.fill(n, element)` copies one filled leaf at a time, which writing element by element would
     replace with a per-element loop; `zipWith` and `zipAll` do not know the size of their argument; the `range`
     factories would need the count of a range with a step, computed without overflow, a change of its own.
