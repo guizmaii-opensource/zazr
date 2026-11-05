@@ -826,20 +826,46 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return isEmpty() ? this : without(elements);
     }
 
+    // how many elements `without` deletes one by one before it removes the rest in one walk of the tree: a deletion
+    // rebuilds a path, which allocates less than the walk only for the first two or three removed elements
+    private static final int DELETIONS = 2;
+
     // this set without the elements the comparator equates with one of `elements`: the red-black difference for a
-    // TreeSet of the same comparator, otherwise one deletion by the comparator per given element
-    @SuppressWarnings("unchecked")
+    // TreeSet of the same comparator; otherwise one pass over `elements`, which deletes the first DELETIONS elements
+    // found by the comparator, then looks the rest up and, when it finds some, removes them in one filter of the tree
+    // that keeps whole every part that loses nothing
+    @SuppressWarnings({"unchecked", "Var"})
     private TreeSet<T> without(Iterable<? extends T> elements) {
         if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
             return withTree(tree.difference(that.tree));
         }
-        @SuppressWarnings("Var")
+        java.util.Iterator<? extends T> iterator = elements.iterator();
         RedBlackTree<T> removed = tree;
-        for (T element : elements) {
-            removed = removed.delete(element);
+        int deleted = 0;
+        while (deleted < DELETIONS && iterator.hasNext()) {
+            RedBlackTree<T> next = removed.delete(iterator.next());
+            if (next != removed) {
+                deleted++;
+                removed = next;
+            }
         }
-        return withTree(removed);
+        if (!iterator.hasNext()) {
+            return withTree(removed);
+        }
+        // the objects of `removed` to remove, each once however many given elements the comparator equates with it
+        java.util.IdentityHashMap<T, Boolean> found = new java.util.IdentityHashMap<>();
+        while (iterator.hasNext()) {
+            T stored = RedBlackTreeModule.Node.findByKey(removed, iterator.next(), tree.comparator(), false);
+            if (stored != null) {
+                found.put(stored, Boolean.TRUE);
+            }
+        }
+        if (found.isEmpty()) {
+            return withTree(removed);
+        } else {
+            return withTree(RedBlackTreeModule.Node.filter(removed, element -> !found.containsKey(element)));
+        }
     }
 
     // the RedBlackTree set operations require both trees to be ordered by the same comparator

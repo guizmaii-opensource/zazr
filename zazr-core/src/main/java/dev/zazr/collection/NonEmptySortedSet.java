@@ -706,7 +706,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     /**
      * This set's comparator decides membership, as {@link TreeSet#removeAll(Iterable)} tells.
      * <p>
-     * Complexity: O(m log n) for m given elements, as {@link TreeSet#removeAll(Iterable)}.
+     * Complexity: O(n + m log n) for m given elements, as {@link TreeSet#removeAll(Iterable)}.
      *
      * @param elements Elements
      * @return this set without {@code elements}
@@ -747,7 +747,7 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     /**
      * This set's comparator decides membership, as {@link TreeSet#diff(Set)} tells.
      * <p>
-     * Complexity: O(m log n) for a set of m elements, as {@link TreeSet#diff(Set)}.
+     * Complexity: O(n + m log n) for a set of m elements, as {@link TreeSet#diff(Set)}.
      *
      * @param elements A set
      * @return the elements of this set that are not in {@code elements}

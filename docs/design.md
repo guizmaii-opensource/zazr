@@ -1813,9 +1813,13 @@ keeps one rule for all four, the same as `contains`.
   a result as large as the receiver is the receiver. The equal-object rule above holds: the receiver's objects are
   kept.
 - **`diff` and `removeAll`** with a `TreeSet` of the same comparator take the red-black difference, as before. Any
-  other argument is walked once and each element deleted from the receiver's tree by the comparator, as
-  `TreeMap.removeAll` does: O(m log n), the tree off the deleted paths shared, and the receiver itself when nothing
-  is deleted.
+  other argument is walked once: the first two elements found by the comparator are deleted one by one, then the
+  others are looked up in the tree left and, when some are found, removed in one `Node.filter` that shares every
+  subtree losing nothing. O(n + m log n), O(m log n) when at most two are removed; the receiver itself when nothing
+  is. Measured once (allocated bytes per call, one thread, n = 4096 and 32 768): a deletion rebuilds a path and
+  allocates less than the filter walk only for the first two or three removed elements, whatever n, and 14 times
+  more than the walk when every element goes (`main` filtered the tree against a `HashSet` of the argument). The
+  switch happens in the one pass, so an argument of unknown size, a one-shot `Iterable` included, is read once.
 - **A null given element** now goes to the comparator, as in `contains`: the natural comparator throws
   `NullPointerException`, a comparator that orders nulls finds none. It threw from `HashSet.ofAll` before.
 - **`NonEmptySortedSet`** delegates and needs nothing more. **The sorted maps already followed the rule**:
@@ -1824,7 +1828,8 @@ keeps one rule for all four, the same as `contains`.
 - **Tests**: `TreeSetComparatorMembershipTest`, with a comparator on a key field, for each argument kind (a `TreeSet`
   of the same and of another comparator, `HashSet`, `LinkedHashSet`, a `java.util` list and set, a one-shot
   `Iterable`, an empty one), an equated element and one that is not, the object kept (`isSameAs`) and the identity
-  of the result.
+  of the result; `diff` and `removeAll` of one, two, three and many found elements, on both sides of the switch;
+  an empty receiver given an argument that fails when read.
 
 ### 3.8 `Vector` builder
 

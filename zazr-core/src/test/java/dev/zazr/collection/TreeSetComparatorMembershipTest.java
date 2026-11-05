@@ -239,6 +239,71 @@ class TreeSetComparatorMembershipTest {
         }
     }
 
+    // -- diff and removeAll delete the first elements found one by one, then remove the others in one walk
+
+    // the items of keys 0 to 7, and the receiver of them
+    private static java.util.List<Item> eight() {
+        java.util.List<Item> own = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            own.add(new Item(i, "own"));
+        }
+        return own;
+    }
+
+    @Test
+    void removeAllAndDiffOfOneTwoThreeAndManyFoundElements() {
+        java.util.List<Item> own = eight();
+        TreeSet<Item> set = TreeSet.ofAll(BY_KEY, own);
+        // the keys to remove, with absent ones and repeats among them: one, two, three and seven found
+        int[][] cases = {{9, 5}, {9, 5, 2}, {5, 9, 2, 7}, {1, 9, 3, 1, 5, 7, 6, 0, 2, 10, 3}};
+        for (int[] keys : cases) {
+            java.util.List<Item> given = new ArrayList<>();
+            java.util.Set<Integer> removedKeys = new java.util.HashSet<>();
+            for (int key : keys) {
+                given.add(new Item(key, "given" + given.size()));
+                removedKeys.add(key);
+            }
+            String at = java.util.Arrays.toString(keys);
+            for (Kind kind : allKinds()) {
+                java.util.List<TreeSet<Item>> results = new ArrayList<>();
+                results.add(set.removeAll(kind.of().apply(given)));
+                if (SETS.contains(kind)) {
+                    results.add(set.diff(set(kind, given)));
+                }
+                for (TreeSet<Item> result : results) {
+                    java.util.List<Item> expected = new ArrayList<>();
+                    for (Item item : own) {
+                        if (!removedKeys.contains(item.key)) {
+                            expected.add(item);
+                        }
+                    }
+                    assertThat(result).as(at + ", " + kind.name()).containsExactlyElementsOf(expected);
+                    for (Item item : expected) {
+                        assertThat(storedUnder(result, item))
+                                .as(at + ", " + kind.name())
+                                .isSameAs(item);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void removeAllOfManyElementsOfWhichFewAreFoundIsTheReceiverOrHoldsItsObjects() {
+        java.util.List<Item> own = eight();
+        TreeSet<Item> set = TreeSet.ofAll(BY_KEY, own);
+        java.util.List<Item> absent = java.util.List.of(other(8), other(9), other(10), other(11), other(-1));
+        assertThat(set.removeAll(absent)).isSameAs(set);
+        assertThat(set.removeAll(oneShot(absent))).isSameAs(set);
+        // two found, deleted one by one, then only elements already deleted or absent
+        java.util.List<Item> twice = java.util.List.of(other(3), other(4), new Item(3, "again"), other(9), other(4));
+        TreeSet<Item> result = set.removeAll(twice);
+        assertThat(result).containsExactly(own.get(0), own.get(1), own.get(2), own.get(5), own.get(6), own.get(7));
+        // every element removed, through both phases
+        assertThat(set.removeAll(oneShot(own))).isEmpty();
+        assertThat(set.diff(HashSet.ofAll(own))).isEmpty();
+    }
+
     // -- an empty receiver comes back without reading its argument
 
     @Test
