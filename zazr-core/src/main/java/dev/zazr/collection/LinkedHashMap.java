@@ -858,11 +858,6 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * <p>
      * Complexity: effectively O(1) to create; a whole walk is O(n), one hash lookup per entry.
      */
-    // the keys in insertion order: no entry is made
-    java.util.Iterator<K> keyIterator() {
-        return order.iterator();
-    }
-
     @Override
     public java.util.Iterator<Tuple2<K, V>> iterator() {
         java.util.Iterator<K> keys = order.iterator();
@@ -877,6 +872,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
                 return entryAt(keys.next());
             }
         };
+    }
+
+    // the keys in insertion order: no entry is made
+    java.util.Iterator<K> keyIterator() {
+        return order.iterator();
     }
 
     /**
