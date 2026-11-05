@@ -115,6 +115,47 @@ public class OwnedArrayTest {
         }
     }
 
+    // the implementation classes whose toArray() was read in the JDK 25 sources
+    private static void assertReadClass(Class<?> type, String name) {
+        assertThat(type.getName())
+                .as(
+                        "this JDK gives %s where the JDK 25 gave %s: read the toArray() of %s, and trust it in"
+                                + " Collections.copiesOnToArray only if it returns an Object[] allocated for the call",
+                        type.getName(), name, type.getName())
+                .isEqualTo(name);
+    }
+
+    @Test
+    public void theTrustedImplementationClassesAreTheOnesWhoseSourcesWereRead() {
+        assertReadClass(Collections.ARRAY_LIST_SUB_LIST, "java.util.ArrayList$SubList");
+        assertReadClass(Collections.ARRAYS_AS_LIST, "java.util.Arrays$ArrayList");
+        assertReadClass(Collections.LIST_12, "java.util.ImmutableCollections$List12");
+        assertReadClass(Collections.LIST_N, "java.util.ImmutableCollections$ListN");
+        assertReadClass(Collections.IMMUTABLE_SUB_LIST, "java.util.ImmutableCollections$SubList");
+        assertReadClass(Collections.SET_12, "java.util.ImmutableCollections$Set12");
+        assertReadClass(Collections.SET_N, "java.util.ImmutableCollections$SetN");
+        // the factories that callers use give those classes, at every size the matching relies on
+        java.util.List<Class<?>> trusted = java.util.List.of(
+                Collections.ARRAY_LIST_SUB_LIST,
+                Collections.ARRAYS_AS_LIST,
+                Collections.LIST_12,
+                Collections.LIST_N,
+                Collections.IMMUTABLE_SUB_LIST,
+                Collections.SET_12,
+                Collections.SET_N);
+        for (java.util.Collection<?> collection : java.util.List.<java.util.Collection<?>>of(
+                java.util.List.of(),
+                java.util.List.of(0, 1),
+                java.util.List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+                java.util.List.copyOf(new ArrayList<>(java.util.List.of(0, 1, 2))),
+                java.util.List.of(0, 1, 2, 3).subList(1, 3),
+                java.util.Set.of(),
+                java.util.Set.of(0, 1),
+                java.util.Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))) {
+            assertThat(trusted).as(collection.getClass().getName()).contains(collection.getClass());
+        }
+    }
+
     @Test
     public void anyOtherCollectionIsNot() {
         java.util.List<Integer> three = java.util.List.of(0, 1, 2);

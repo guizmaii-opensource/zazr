@@ -209,6 +209,40 @@ public class VectorOfAllSizedSourceTest {
         }
     }
 
+    /// A `Traversable` written elsewhere whose `toArray()` returns an array it keeps, and may write later: every
+    /// method goes to a Zazr `List` but `toArray()`.
+    @SuppressWarnings("unchecked")
+    private static Traversable<Object> keepingItsArray(List<Object> elements, Object[] kept) {
+        return (Traversable<Object>) java.lang.reflect.Proxy.newProxyInstance(
+                Traversable.class.getClassLoader(), new Class<?>[] {Traversable.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("toArray") && method.getParameterCount() == 0) {
+                        return kept;
+                    }
+                    try {
+                        return method.invoke(elements, args);
+                    } catch (java.lang.reflect.InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
+    }
+
+    @Test
+    public void aTraversableIsReadIntoAnArrayOfItsOwnNotThroughItsToArray() {
+        for (int size : SIZES) {
+            // an Object[], which a vector could keep as its leaf
+            Object[] kept = Arrays.copyOf(elements(size), size, Object[].class);
+            List<Object> elements = List.of(kept.clone());
+            Traversable<Object> source = keepingItsArray(elements, kept);
+            assertThat(source.toArray()).isSameAs(kept);
+            Vector<Object> expected = reference(elements);
+            Vector<Object> vector = Vector.ofAll(source);
+            String where = "size " + size;
+            assertBehavesAs(vector, expected, where);
+            Arrays.fill(kept, new Element(-2));
+            assertSameElements(vector, expected, where + " after the kept array was written");
+        }
+    }
+
     @Test
     public void ofAllOfAnEmptySourceIsTheEmptyVector() {
         assertThat(Vector.ofAll(new ArrayList<>())).isSameAs(Vector.empty());

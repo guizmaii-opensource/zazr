@@ -816,15 +816,17 @@ public final class Collections {
     // ArrayList and its sub-list, LinkedList, ArrayDeque, HashSet, LinkedHashSet, TreeSet (AbstractCollection's),
     // Arrays.asList, and List.of, Set.of and the sub-lists of List.of. Matched by exact class, since a subclass may
     // override toArray(). The array of ListN may be of another class than Object[]: ofOwnedArray copies it.
-    private static final Class<?> ARRAY_LIST_SUB_LIST =
+    // The classes are taken from the running JDK; OwnedArrayTest pins their names, so that another JDK's classes are
+    // read before they are trusted.
+    static final Class<?> ARRAY_LIST_SUB_LIST =
             new ArrayList<>(java.util.List.of(0)).subList(0, 1).getClass();
-    private static final Class<?> ARRAYS_AS_LIST = Arrays.asList(0).getClass();
-    private static final Class<?> LIST_12 = java.util.List.of(0).getClass();
-    private static final Class<?> LIST_N = java.util.List.of(0, 1, 2).getClass();
-    private static final Class<?> IMMUTABLE_SUB_LIST =
+    static final Class<?> ARRAYS_AS_LIST = Arrays.asList(0).getClass();
+    static final Class<?> LIST_12 = java.util.List.of(0).getClass();
+    static final Class<?> LIST_N = java.util.List.of(0, 1, 2).getClass();
+    static final Class<?> IMMUTABLE_SUB_LIST =
             java.util.List.of(0, 1, 2).subList(0, 1).getClass();
-    private static final Class<?> SET_12 = java.util.Set.of(0).getClass();
-    private static final Class<?> SET_N = java.util.Set.of(0, 1, 2).getClass();
+    static final Class<?> SET_12 = java.util.Set.of(0).getClass();
+    static final Class<?> SET_N = java.util.Set.of(0, 1, 2).getClass();
 
     static boolean copiesOnToArray(Class<?> type) {
         return type == ArrayList.class
