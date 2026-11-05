@@ -2217,22 +2217,24 @@ deleted. Attribution in `NOTICE`.
     the public set against `HashSet.ofAll` of the keys at every boundary, under later additions, removals and bulk
     operations of the set, and under later updates of the map. `TreeMap.keySet` already copied its tree the same way
     (`Node.mapOrdered`). A `Vector` shares no layout with the trie, so `HashMap.values` has no copy to skip.
-  - `values()` of `HashMap`, `TreeMap` and `LinkedHashMap` fill an array of exactly `size()` slots and build the
-    `Vector` from it (decided 2026-11-05, #309; the change lands only once JMH, `main` against the branch with
-    `-prof gc`, shows a win). The array is filled with no iterator: `MapNode.copyValuesTo` walks the trie in iteration
-    order (a node's entries, then its children), `Node.copyValuesTo` walks the tree in key order, and `LinkedHashMap`
-    copies the keys leaf by leaf (`InsertionOrder.copyKeysTo`), then replaces each key in place by its value, one
-    lookup per key as before. The array is handed over to `RadixVector.ofOwnedArray`: up to 32 values it becomes the
-    `Vector`'s only leaf with no copy, longer it is copied leaf by leaf, as `RadixVector.ofAll(Object[])` does. Before,
-    the values went one by one into a `Vector` builder (`HashMap` through `Vector.ofAll` of the values iterator,
-    unsized; the other two through `Vector.newBuilder(size())`, whose hint changes nothing), which writes each value
-    once, into its final leaf. So past 32 values the new path allocates the flat array on top of the same leaves (4n +
-    16 bytes more with compressed references) and writes each value twice, against no iterator and whole-leaf copies;
-    up to 32 it allocates only the leaf. The empty map still gives `Vector.empty()`. `NonEmptyMap` and
-    `NonEmptySortedMap` wrap the `Vector` of their map. `MapValuesTest` checks the three maps and the non-empty ones
-    against the `Vector` built the old way at 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, 32768 and 40000 entries (the same
-    value objects, in order), with colliding keys, removals, replaced values, reversed comparators and every shape of
-    the insertion order; `MapValuesBenchmark` is the measurement.
+  - `values()` of `HashMap`, `TreeMap` and `LinkedHashMap` write each value straight into its final leaf of the
+    `Vector` (decided 2026-11-05, #309; the change lands only once JMH, `main` against the branch with `-prof gc`,
+    shows a win). `VectorBuilder.forExactly(size)` is a builder for exactly `size` elements, written with
+    `addUnchecked`, which skips the null and size checks of `add` (a map rejects a null value on every put); each
+    full leaf goes into the tree by reference, and only a last leaf that is not full is trimmed, as for any builder.
+    Up to 32 values the one leaf has exactly `size` slots and becomes the `Vector` with no copy. The values are
+    written with no iterator: `MapNode.writeValuesTo` walks the trie in iteration order (a node's entries, then its
+    children) and `Node.writeValuesTo` the tree in key order; `LinkedHashMap` still walks its insertion order with
+    the keys' iterator, one lookup per key. Before, the values went through `Vector.Builder.add`, with `HashMap`
+    reading them from the trie's iterator. A first version filled a flat array of `size` slots and copied it into
+    leaves (`RadixVector.ofAll(Object[])`): past 32 values it allocated the array on top of the same leaves, 4n + 16
+    more bytes, against the allocation rule, so it was dropped. The empty map still gives `Vector.empty()`.
+    `NonEmptyMap` and `NonEmptySortedMap` wrap the `Vector` of their map. `MapValuesTest` checks the three maps and
+    the non-empty ones against the `Vector` built the old way at 0, 1, 2, 31, 32, 33, 1023, 1024, 1025, 32767, 32768,
+    32769 and 40000 entries (the same value objects, in order), with colliding keys, removals, replaced values,
+    reversed comparators and every shape of the insertion order; `VectorBuilderForExactlyTest` checks that the
+    vector `forExactly` builds has, slice for slice, the arrays `add` builds, at the leaf and branch boundaries up to
+    1048577 elements. `MapValuesBenchmark` is the measurement.
   - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
     `flatMap`.
   - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with
