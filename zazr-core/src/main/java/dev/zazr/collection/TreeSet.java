@@ -820,23 +820,57 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return tree.comparator();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TreeSet<T> diff(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (isEmpty()) {
-            return this;
-        } else if (hasSameComparator(elements)) {
+        return isEmpty() ? this : without(elements);
+    }
+
+    // how many elements `without` deletes one by one before it removes the rest in one walk of the tree: a deletion
+    // rebuilds a path, which allocates less than the walk only for the first two or three removed elements
+    private static final int DELETIONS = 2;
+
+    // this set without the elements the comparator equates with one of `elements`: the red-black difference for a
+    // TreeSet of the same comparator; otherwise one pass over `elements`, which deletes the first DELETIONS elements
+    // found by the comparator, then looks the rest up and, when it finds some, removes them in one filter of the tree
+    // that keeps whole every part that loses nothing
+    @SuppressWarnings({"unchecked", "Var"})
+    private TreeSet<T> without(Iterable<? extends T> elements) {
+        if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
             return withTree(tree.difference(that.tree));
+        }
+        java.util.Iterator<? extends T> iterator = elements.iterator();
+        RedBlackTree<T> removed = tree;
+        int deleted = 0;
+        while (deleted < DELETIONS && iterator.hasNext()) {
+            RedBlackTree<T> next = removed.delete(iterator.next());
+            if (next != removed) {
+                deleted++;
+                removed = next;
+            }
+        }
+        if (!iterator.hasNext()) {
+            return withTree(removed);
+        }
+        // the objects of `removed` to remove, each once however many given elements the comparator equates with it
+        java.util.IdentityHashMap<T, Boolean> found = new java.util.IdentityHashMap<>();
+        while (iterator.hasNext()) {
+            T stored = RedBlackTreeModule.Node.findByKey(removed, iterator.next(), tree.comparator(), false);
+            if (stored != null) {
+                found.put(stored, Boolean.TRUE);
+            }
+        }
+        if (found.isEmpty()) {
+            return withTree(removed);
         } else {
-            return removeAll(elements);
+            return withTree(RedBlackTreeModule.Node.filter(removed, element -> !found.containsKey(element)));
         }
     }
 
     // the RedBlackTree set operations require both trees to be ordered by the same comparator
-    private boolean hasSameComparator(Set<?> that) {
-        return that instanceof TreeSet && comparator().equals(((TreeSet<?>) that).comparator());
+    private boolean hasSameComparator(Iterable<?> that) {
+        return that instanceof TreeSet<?> set && comparator().equals(set.comparator());
     }
 
     /**
@@ -950,18 +984,34 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return Collections.groupMapReduceToMap(this, key, value, reduce, "TreeSet.groupMapReduce");
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public TreeSet<T> intersect(Set<? extends T> elements) {
         Objects.requireNonNull(elements, "elements is null");
-        if (isEmpty()) {
-            return this;
-        } else if (hasSameComparator(elements)) {
+        return isEmpty() ? this : keeping(elements);
+    }
+
+    // this set's elements the comparator equates with one of `elements`: the red-black intersection for a TreeSet of
+    // the same comparator, otherwise a lookup in this tree per given element, then a filter that keeps the objects
+    // found, so that the subtrees that lose nothing are shared
+    @SuppressWarnings("unchecked")
+    private TreeSet<T> keeping(Iterable<? extends T> elements) {
+        if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
             // the red-black intersection keeps the elements of its argument, here this tree's
             return withElementsOf(that.tree.intersection(tree));
+        }
+        // this set's objects, each once however many given elements the comparator equates with it
+        java.util.IdentityHashMap<T, Boolean> found = new java.util.IdentityHashMap<>();
+        for (T element : elements) {
+            T stored = RedBlackTreeModule.Node.findByKey(tree, element, tree.comparator(), false);
+            if (stored != null) {
+                found.put(stored, Boolean.TRUE);
+            }
+        }
+        if (found.size() == tree.size()) {
+            return this;
         } else {
-            return retainAll(elements);
+            return withTree(RedBlackTreeModule.Node.filter(tree, found::containsKey));
         }
     }
 
@@ -1156,7 +1206,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> removeAll(Iterable<? extends T> elements) {
-        return Collections.removeAll(this, elements, kept -> filter(kept));
+        Objects.requireNonNull(elements, "elements is null");
+        return isEmpty() ? this : without(elements);
     }
 
     @Override
@@ -1179,7 +1230,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public TreeSet<T> retainAll(Iterable<? extends T> elements) {
-        return Collections.retainAll(this, elements, kept -> filter(kept));
+        Objects.requireNonNull(elements, "elements is null");
+        return isEmpty() ? this : keeping(elements);
     }
 
     @SuppressWarnings("unchecked")
