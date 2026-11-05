@@ -1,14 +1,17 @@
 package dev.zazr.collection.internal;
 
 import dev.zazr.collection.Vector;
+import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 public interface VectorModule {
     final class Combinations {
 
-        /// The combinations of `k >= 0` elements, by position, in lexicographic order of the positions.
-        public static <T extends @Nullable Object> Vector<Vector<T>> apply(Vector<T> elements, int k) {
+        /// The combinations of `k >= 0` elements, by position, in lexicographic order of the positions. `ofOwned`
+        /// makes the `Vector` of an array that nothing else holds.
+        public static <T extends @Nullable Object> Vector<Vector<T>> apply(
+                Vector<T> elements, int k, Function<Object[], Vector<T>> ofOwned) {
             if (k == 0) {
                 return Vector.of(Vector.empty());
             }
@@ -24,7 +27,7 @@ public interface VectorModule {
                 for (int j = 0; j < k; j++) {
                     combination[j] = source[cursor.index(j)];
                 }
-                result.add(ofArray(combination));
+                result.add(ofOwned.apply(combination));
             }
             return result.result();
         }
@@ -33,7 +36,9 @@ public interface VectorModule {
     final class Permutations {
 
         /// The distinct permutations of at least two elements, in the order of [Arrangements.Permutations].
-        public static <T extends @Nullable Object> Vector<Vector<T>> apply(Vector<T> elements) {
+        /// `ofOwned` makes the `Vector` of an array that nothing else holds.
+        public static <T extends @Nullable Object> Vector<Vector<T>> apply(
+                Vector<T> elements, Function<Object[], Vector<T>> ofOwned) {
             Object[] source = elements.toArray();
             int n = source.length;
             Arrangements.Permutations cursor = new Arrangements.Permutations(source);
@@ -43,16 +48,10 @@ public interface VectorModule {
                 for (int level = 0; level < n; level++) {
                     permutation[level] = source[cursor.position(level)];
                 }
-                result.add(ofArray(permutation));
+                result.add(ofOwned.apply(permutation));
             }
             return result.result();
         }
-    }
-
-    // the Vector of the elements of `array`, which are of type T
-    @SuppressWarnings("unchecked")
-    private static <T extends @Nullable Object> Vector<T> ofArray(Object[] array) {
-        return Vector.of((T[]) array);
     }
 
     /* contiguous-slice search by index; the slice is materialised once, first thing (O(1) when it already is a

@@ -788,6 +788,45 @@ public final class Collections {
         return rowFactory.apply(Iterator.of(results).map(columnFactory));
     }
 
+    /// Whether the array that `withSize(iterable).toArray()` returns is held by nothing else, so that the caller
+    /// may keep it, for a sized `iterable` (a `Collection` or a `Traversable`). It is for a `Traversable` that is
+    /// not a `Collection`, whose array `toArray()` allocates and fills itself, and for a JDK collection of one of
+    /// the classes below. The contract of `Collection.toArray()` asks every collection for a new array, but a
+    /// collection written elsewhere may return one it keeps and writes later, so any other collection is copied.
+    public static boolean toArrayIsOwned(Iterable<?> iterable) {
+        return !(iterable instanceof Collection) || copiesOnToArray(iterable.getClass());
+    }
+
+    // the java.util collections whose toArray() returns an array allocated for the call, read in the JDK 25 sources:
+    // ArrayList and its sub-list, LinkedList, ArrayDeque, HashSet, LinkedHashSet, TreeSet (AbstractCollection's),
+    // Arrays.asList, and List.of, Set.of and the sub-lists of List.of. Matched by exact class, since a subclass may
+    // override toArray(). The array of ListN may be of another class than Object[]: ofOwnedArray copies it.
+    private static final Class<?> ARRAY_LIST_SUB_LIST =
+            new ArrayList<>(java.util.List.of(0)).subList(0, 1).getClass();
+    private static final Class<?> ARRAYS_AS_LIST = Arrays.asList(0).getClass();
+    private static final Class<?> LIST_12 = java.util.List.of(0).getClass();
+    private static final Class<?> LIST_N = java.util.List.of(0, 1, 2).getClass();
+    private static final Class<?> IMMUTABLE_SUB_LIST =
+            java.util.List.of(0, 1, 2).subList(0, 1).getClass();
+    private static final Class<?> SET_12 = java.util.Set.of(0).getClass();
+    private static final Class<?> SET_N = java.util.Set.of(0, 1, 2).getClass();
+
+    static boolean copiesOnToArray(Class<?> type) {
+        return type == ArrayList.class
+                || type == ARRAY_LIST_SUB_LIST
+                || type == LinkedList.class
+                || type == ArrayDeque.class
+                || type == java.util.HashSet.class
+                || type == java.util.LinkedHashSet.class
+                || type == java.util.TreeSet.class
+                || type == ARRAYS_AS_LIST
+                || type == LIST_12
+                || type == LIST_N
+                || type == IMMUTABLE_SUB_LIST
+                || type == SET_12
+                || type == SET_N;
+    }
+
     public static <T extends @Nullable Object> IterableWithSize<T> withSize(Iterable<? extends T> iterable) {
         return isTraversableAgain(iterable) ? withSizeTraversable(iterable) : withSizeTraversable(List.ofAll(iterable));
     }
