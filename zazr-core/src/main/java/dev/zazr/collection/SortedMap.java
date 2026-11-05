@@ -677,6 +677,14 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     @Override
     Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n): both results get their entries in order, and their trees are built from them in one pass.
+     */
+    @Override
+    Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate);
+
     @Override
     SortedMap<K, V> tap(Consumer<? super Tuple2<K, V>> action);
 

@@ -1582,6 +1582,23 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         return Tuple.of(withEntries(trees._1()), withEntries(trees._2()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * One walk: {@code predicate} is called once per entry, in key order, with the key and the value of the entry
+     * the map holds. Each side shares with this map every subtree whose entries all go to it, and is this map itself
+     * when it gets every entry.
+     * <p>
+     * Complexity: O(n), with no comparator call.
+     */
+    @Override
+    public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        Tuple2<RedBlackTree<Tuple2<K, V>>, RedBlackTree<Tuple2<K, V>>> trees =
+                RedBlackTreeModule.Node.partition(entries, entry -> predicate.test(entry._1(), entry._2()));
+        return Tuple.of(withEntries(trees._1()), withEntries(trees._2()));
+    }
+
     @Override
     public TreeMap<K, V> tap(Consumer<? super Tuple2<K, V>> action) {
         return Maps.tap(this, action);

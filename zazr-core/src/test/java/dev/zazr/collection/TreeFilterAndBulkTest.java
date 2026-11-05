@@ -344,7 +344,8 @@ public class TreeFilterAndBulkTest {
                         m -> m.rejectKeys(null),
                         m -> m.filterValues(null),
                         m -> m.rejectValues(null),
-                        m -> m.partition(null))) {
+                        m -> m.partition((Predicate<Tuple2<Integer, String>>) null),
+                        m -> m.partition((java.util.function.BiPredicate<Integer, String>) null))) {
             assertThatThrownBy(() -> operation.apply(map))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("predicate is null");

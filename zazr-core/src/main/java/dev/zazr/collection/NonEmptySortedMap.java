@@ -1034,6 +1034,15 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
+     * @param predicate A test of a key and its value
+     * @return the entries that pass {@code predicate} and those that fail it; either may be empty
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
+        return map.partition(predicate);
+    }
+
+    /**
      * Complexity: O(log n), as {@link TreeMap#tail()}.
      *
      * @return all entries but the first; empty when {@code size()} is 1. See {@link #tailNonEmpty()}.

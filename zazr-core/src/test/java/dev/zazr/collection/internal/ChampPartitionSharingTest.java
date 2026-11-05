@@ -113,8 +113,11 @@ class ChampPartitionSharingTest {
                 IntPredicate side = bySlot(5 * level);
                 Tuple2<HashMap<Key, Integer>, HashMap<Key, Integer>> sides =
                         map.partition(entry -> side.test(entry._1().hashCode()));
+                Tuple2<HashMap<Key, Integer>, HashMap<Key, Integer>> byKeyAndValue =
+                        map.partition((key, value) -> side.test(key.hashCode()));
                 int allowed = level == 0 ? 1 : 1 + root.nodeArity();
-                for (HashMap<Key, Integer> half : List.of(sides._1(), sides._2())) {
+                for (HashMap<Key, Integer> half :
+                        List.of(sides._1(), sides._2(), byKeyAndValue._1(), byKeyAndValue._2())) {
                     BitmapIndexedMapNode<Key, Integer> trie = field(half, HashMap.class, "trie");
                     assertThat(fresh(trie, original))
                             .as("nodes of their own, level " + level + ", " + size + " entries")

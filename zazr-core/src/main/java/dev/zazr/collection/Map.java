@@ -644,6 +644,17 @@ public interface Map<K extends @Nullable Object, V extends @Nullable Object> ext
     Tuple2<? extends Map<K, V>, ? extends Map<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
 
     /**
+     * Splits the entries into those whose key and value satisfy {@code predicate} and those that do not.
+     * <p>
+     * Returns this map itself when nothing changes: it is the side that gets every entry.
+     *
+     * @param predicate the condition, given the key and the value of each entry
+     * @return the matching entries and the others, as two maps
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    Tuple2<? extends Map<K, V>, ? extends Map<K, V>> partition(BiPredicate<? super K, ? super V> predicate);
+
+    /**
      * Runs {@code action} on every entry and returns this map, to observe the entries in the middle of a chain of
      * calls. Whatever the action throws propagates to the caller.
      *
