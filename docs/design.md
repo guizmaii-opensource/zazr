@@ -1813,13 +1813,18 @@ keeps one rule for all four, the same as `contains`.
   a result as large as the receiver is the receiver. The equal-object rule above holds: the receiver's objects are
   kept.
 - **`diff` and `removeAll`** with a `TreeSet` of the same comparator take the red-black difference, as before. Any
-  other argument is walked once: the first two elements found by the comparator are deleted one by one, then the
-  others are looked up in the tree left and, when some are found, removed in one `Node.filter` that shares every
-  subtree losing nothing. O(n + m log n), O(m log n) when at most two are removed; the receiver itself when nothing
-  is. Measured once (allocated bytes per call, one thread, n = 4096 and 32 768): a deletion rebuilds a path and
-  allocates less than the filter walk only for the first two or three removed elements, whatever n, and 14 times
-  more than the walk when every element goes (`main` filtered the tree against a `HashSet` of the argument). The
-  switch happens in the one pass, so an argument of unknown size, a one-shot `Iterable` included, is read once.
+  other argument is walked once, each element looked up in the receiver's tree with `Node.findByKey`, and the
+  distinct receiver objects found are collected (compared by identity, so a repeat counts once). Up to a limit,
+  `max(2, min(8, n / (8 b)))` for n elements of bit length b, the k objects found are deleted one by one, O(m log n);
+  past it, they go into an `IdentityHashMap` and one `Node.filter` removes them, sharing every subtree that loses
+  nothing, O(n + m log n). The receiver itself comes back when nothing is found. The argument is read once, a
+  one-shot `Iterable` included, and the choice is made on the objects found. Measured (allocated bytes and time per
+  call, one thread, n from 4096 to 100 000): a deletion walks one path, so deletions are faster than the walk while
+  k log2 n is well below n (at n = 100 000, 3 found take about 1 µs deleted and 350 µs walked), but each rebuilds
+  its path, so from about nine found they allocate more than the walk at every n measured (+470 to +1 070 B for 9
+  to 12 found, +9 KB for 64 at n = 100 000, which they delete 90 times faster). The cap of eight keeps every case
+  within about 350 B of the walk; the size term decides only in trees of fewer than 640 elements, where the walk is
+  cheap.
 - **A null given element** now goes to the comparator, as in `contains`: the natural comparator throws
   `NullPointerException`, a comparator that orders nulls finds none. It threw from `HashSet.ofAll` before.
 - **`NonEmptySortedSet`** delegates and needs nothing more. **The sorted maps already followed the rule**:
