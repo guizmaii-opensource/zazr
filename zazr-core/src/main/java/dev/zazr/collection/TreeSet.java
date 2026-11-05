@@ -826,46 +826,78 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         return isEmpty() ? this : without(elements);
     }
 
-    // how many elements `without` deletes one by one before it removes the rest in one walk of the tree: a deletion
-    // rebuilds a path, which allocates less than the walk only for the first two or three removed elements
-    private static final int DELETIONS = 2;
+    // the most elements `without` deletes one by one from a tree of n elements; past it, one filter walks the tree. A
+    // deletion walks down one path and rebuilds it; the filter walks all n and rebuilds the paths to the removed
+    // elements. Deletions are faster while k log2 n is well below n (here 8 k b <= n, b the bit length of n), and
+    // allocate less only up to about eight elements, at every size measured, from 4096 to 100,000
+    private static final int MAX_DELETIONS = 8;
+
+    // package-private for the tests on both sides of the limit
+    static int deletionLimit(int n) {
+        return Math.max(2, Math.min(MAX_DELETIONS, n / (8 * (32 - Integer.numberOfLeadingZeros(n)))));
+    }
 
     // this set without the elements the comparator equates with one of `elements`: the red-black difference for a
-    // TreeSet of the same comparator; otherwise one pass over `elements`, which deletes the first DELETIONS elements
-    // found by the comparator, then looks the rest up and, when it finds some, removes them in one filter of the tree
-    // that keeps whole every part that loses nothing
+    // TreeSet of the same comparator; otherwise one pass over `elements` looks each one up by the comparator and
+    // collects this set's objects found, then deletes them one by one when they are few, or else removes them in one
+    // filter of the tree that keeps whole every part that loses nothing
     @SuppressWarnings({"unchecked", "Var"})
     private TreeSet<T> without(Iterable<? extends T> elements) {
         if (hasSameComparator(elements)) {
             TreeSet<T> that = (TreeSet<T>) elements;
             return withTree(tree.difference(that.tree));
         }
-        java.util.Iterator<? extends T> iterator = elements.iterator();
-        RedBlackTree<T> removed = tree;
-        int deleted = 0;
-        while (deleted < DELETIONS && iterator.hasNext()) {
-            RedBlackTree<T> next = removed.delete(iterator.next());
-            if (next != removed) {
-                deleted++;
-                removed = next;
+        Comparator<T> comparator = tree.comparator();
+        int limit = deletionLimit(tree.size());
+        // the distinct objects found, while there are at most `limit` of them; past `limit`, every object found goes
+        // to `filtered` instead
+        Object[] found = null;
+        int count = 0;
+        java.util.IdentityHashMap<T, Boolean> filtered = null;
+        for (T element : elements) {
+            T stored = RedBlackTreeModule.Node.findByKey(tree, element, comparator, false);
+            if (stored == null) {
+                continue;
+            } else if (filtered != null) {
+                filtered.put(stored, Boolean.TRUE);
+            } else {
+                if (found == null) {
+                    found = new Object[limit];
+                }
+                if (holds(found, count, stored)) {
+                    continue;
+                } else if (count < limit) {
+                    found[count++] = stored;
+                } else {
+                    filtered = new java.util.IdentityHashMap<>();
+                    for (int i = 0; i < count; i++) {
+                        filtered.put((T) found[i], Boolean.TRUE);
+                    }
+                    filtered.put(stored, Boolean.TRUE);
+                }
             }
         }
-        if (!iterator.hasNext()) {
-            return withTree(removed);
+        if (filtered != null) {
+            java.util.IdentityHashMap<T, Boolean> removed = filtered;
+            return withTree(RedBlackTreeModule.Node.filter(tree, element -> !removed.containsKey(element)));
+        } else if (found == null) {
+            return this;
         }
-        // the objects of `removed` to remove, each once however many given elements the comparator equates with it
-        java.util.IdentityHashMap<T, Boolean> found = new java.util.IdentityHashMap<>();
-        while (iterator.hasNext()) {
-            T stored = RedBlackTreeModule.Node.findByKey(removed, iterator.next(), tree.comparator(), false);
-            if (stored != null) {
-                found.put(stored, Boolean.TRUE);
+        RedBlackTree<T> result = tree;
+        for (int i = 0; i < count; i++) {
+            result = result.delete((T) found[i]);
+        }
+        return withTree(result);
+    }
+
+    // whether the first `count` slots of `found` hold `object` itself
+    private static boolean holds(Object[] found, int count, Object object) {
+        for (int i = 0; i < count; i++) {
+            if (found[i] == object) {
+                return true;
             }
         }
-        if (found.isEmpty()) {
-            return withTree(removed);
-        } else {
-            return withTree(RedBlackTreeModule.Node.filter(removed, element -> !found.containsKey(element)));
-        }
+        return false;
     }
 
     // the RedBlackTree set operations require both trees to be ordered by the same comparator
