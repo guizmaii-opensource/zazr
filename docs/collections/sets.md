@@ -112,6 +112,19 @@ When something changes, the parts of the tree or trie that do not are shared wit
 `TreeSet` copies only the paths to the elements it removes, and `partition` of a `HashSet` gives each side the parts
 whose elements all go to it.
 
+## Equality
+
+Two sets are equal when they hold the same elements, compared with each element's `equals`. The kind does not
+matter: a `HashSet`, a `LinkedHashSet` and a `TreeSet` of the same elements are all equal, whatever the comparator
+of the `TreeSet`. `a.equals(b)` and `b.equals(a)` always agree, and equal sets have the same `hashCode`.
+
+A `TreeSet`'s comparator decides membership: `contains`, `add`, `remove` and the bulk operations. Equality is the
+one place where it does not. With a case-insensitive comparator, a `TreeSet` of `"a"` contains `"A"`, and it equals
+a set of `"a"`, not a set of `"A"`.
+
+Two `TreeSet`s with the same comparator are compared in one walk, side by side. Against a `HashSet` or a
+`LinkedHashSet`, each of its elements is looked up in the tree.
+
 ## Sharp edges
 
 - Do not rely on the iteration order of a `HashSet`: it depends on the hashes and may change between versions.
@@ -123,6 +136,7 @@ whose elements all go to it.
 - `TreeSet` decides membership with its comparator, not `equals`, in `contains`, `add`, `remove`, `union`,
   `intersect`, `diff`, `removeAll` and `retainAll`, whatever the kind of the argument. `intersect` and
   `retainAll` keep each element of the set that the comparator equates with a given one, as the set's own object.
+  `equals` compares the elements with their own `equals` ([Equality](#equality)).
 - `union`, `intersect` and `diff` are fast on two `TreeSet`s with the same comparator, and `union`, `diff`,
   `containsAll` and `equals` on two `HashSet`s: they work on whole parts of the trees. With different comparators,
   or another kind of set, they process the elements one by one.

@@ -1995,12 +1995,12 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * that equates unequal objects, a TreeMap whose key is {@code "a"} is not equal to one whose key is {@code "A"},
      * even with the same value.
      * <p>
-     * Complexity: O(1) when the sizes differ. Otherwise O(n) against a TreeMap with an equal comparator: the two are
-     * walked in order, side by side; O(n log n) against a HashMap or a LinkedHashMap: the key of each of its entries
-     * is looked up in this tree by the comparator, and the entry found compared with {@code equals}; O(n) against a
-     * TreeMap with another comparator, with a temporary hash table of this map's entries. A comparator under which
-     * two keys equal by {@code equals} compare as different (so that the map can hold both) adds, when the first
-     * check cannot decide, one O(n) count of the entries in a temporary hash table.
+     * Complexity: O(n log n) against a HashMap or a LinkedHashMap: the key of each of its entries is looked up in
+     * this tree by the comparator, and the entry found compared with {@code equals}. O(n) against a TreeMap with an
+     * equal comparator: the two are walked in order, side by side; O(n) against a TreeMap with another comparator,
+     * with a temporary hash table of this map's entries. O(1) when the sizes differ. A comparator under which two
+     * keys equal by {@code equals} compare as different (so that the map can hold both) adds, when the first check
+     * cannot decide, one O(n) count of the entries in a temporary hash table.
      *
      * @param o any object
      * @return true if {@code o} is a Map of the same entries

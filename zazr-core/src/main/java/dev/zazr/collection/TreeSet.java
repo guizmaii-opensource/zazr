@@ -1527,12 +1527,12 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * TreeSet that holds {@code "a"} is not equal to one that holds {@code "A"}, even though each {@code contains}
      * the other's element.
      * <p>
-     * Complexity: O(1) when the sizes differ. Otherwise O(n) against a TreeSet with an equal comparator: the two are
-     * walked in order, side by side; O(n log n) against a HashSet or a LinkedHashSet: each of its elements is looked
-     * up in this tree by the comparator, and the element found compared with {@code equals}; O(n) against a TreeSet
-     * with another comparator, with a temporary hash table of this set's elements. A comparator under which two
-     * objects equal by {@code equals} compare as different (so that the set can hold both) adds, when the first
-     * check cannot decide, one O(n) count of the elements in a temporary hash table.
+     * Complexity: O(n log n) against a HashSet or a LinkedHashSet: each of its elements is looked up in this tree by
+     * the comparator, and the element found compared with {@code equals}. O(n) against a TreeSet with an equal
+     * comparator: the two are walked in order, side by side; O(n) against a TreeSet with another comparator, with a
+     * temporary hash table of this set's elements. O(1) when the sizes differ. A comparator under which two objects
+     * equal by {@code equals} compare as different (so that the set can hold both) adds, when the first check
+     * cannot decide, one O(n) count of the elements in a temporary hash table.
      *
      * @param o any object
      * @return true if {@code o} is a Set of the same elements

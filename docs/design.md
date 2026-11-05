@@ -724,9 +724,8 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   `NonEmptyVector.appendAll`, re-checking an `Iterable` here would mean a second pass or a slower per-element insert.
 - **Equality** follows the plain types: sets equal sets and maps equal maps, whatever the representation, so a
   `NonEmptySet` equals a `NonEmptySortedSet` with the same elements (and a `NonEmptyMap` a `NonEmptySortedMap`), with
-  the wrapped collection's `hashCode`, which is unordered. That holds, symmetric and hash-consistent, when the sorted
-  side's comparator is consistent with `equals`, as for the plain `HashSet`/`TreeSet`: with a case-insensitive order,
-  say, `equals` holds one way only (`Collections.equals` asks the argument's `contains`) and the hash codes differ.
+  the wrapped collection's `hashCode`, which is unordered. The elements and keys are compared with `equals`, whatever
+  the comparator, as for the plain `HashSet`/`TreeSet` (#347), so the equality is symmetric and hash-consistent.
   Never equal to a plain `Set` or `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
 - **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
   `TreeSet`).
@@ -1830,6 +1829,53 @@ keeps one rule for all four, the same as `contains`.
   `Iterable`, an empty one), an equated element and one that is not, the object kept (`isSameAs`) and the identity
   of the result; `diff` and `removeAll` of one, two, three and many found elements, on both sides of the switch;
   an empty receiver given an argument that fails when read.
+
+**Set and map equality compares with `equals`, sorted sets and maps included (#347, decided 2026-11-05).** Under a
+comparator that equates unequal objects, `treeSet.equals(other)` looked each element up with the argument's
+`contains`, while `hashSet.equals(treeSet)` used the tree's comparator `contains`, so `a.equals(b)` could differ from
+`b.equals(a)`, and two sets could be equal with different hash codes. The rule now: `equals` of every set compares the
+elements with their own `equals`, on both sides and for every kind of set; it is symmetric and consistent with
+`hashCode`, the sum of the elements' hash codes. The comparator decides `contains` and the bulk operations (#340), not
+`equals`; that exception is documented on `SortedSet`, `TreeSet`, `NonEmptySortedSet` and on the sites. The sorted
+maps had the same asymmetry on their keys (`hashMap.equals(treeMap)` found a key by the comparator and compared only
+the value) and follow the same rule: keys and values by `equals`.
+
+- **Definition.** Two sets are equal when they have the same size and the same elements, each held as many times,
+  compared with `equals`. Under a comparator for which equal objects compare as 0 (the key-only and case-insensitive
+  comparators are of this kind), that is plain set equality. Under one that tells two equal objects apart, a `TreeSet`
+  can hold both; counting them keeps `equals` symmetric, transitive and consistent with the summed hash code (mutual
+  inclusion would not: {x1, x2, y} and {x, y1, y2} include each other, with different sums).
+- **The paths** depend on the unordered pair of kinds, never on which side is the receiver: `HashSet` and
+  `LinkedHashSet` hand a `TreeSet` argument to `TreeSet`, so both directions run the same code. Each fast path returns
+  only the answers it proves for any comparator; the others fall back to a count of the elements in a temporary
+  `java.util.HashMap` (O(n) time and memory), which uses `equals` and `hashCode` only.
+  - Two hash-based sets: each element of one looked up by hash in the other, O(n), or part by part between two
+    `HashSet`s, as before.
+  - Two `TreeSet`s with equal comparators: walked in order, side by side, O(n). Under a comparator for which equal
+    objects compare as 0, two sets of equal elements store them in the same order: the comparator equates each
+    element with its equal on the other side, so the bijection between them keeps the order. A full match therefore
+    proves equality under any comparator, and a mismatch proves inequality under such a comparator. Under one that
+    tells equal objects apart, a mismatch proves nothing, so the hash sums are compared (different sums prove
+    inequality, with no allocation), and equal sums go to the count.
+  - A `TreeSet` and a hash-based set: each element of the hash set is looked up in the tree by the comparator
+    (`Node.findByKey`), and the element found compared with `equals`, O(n log n). The hash set holds no two equal
+    elements, so with the same size a match for each is a bijection: equal under any comparator. When one is not
+    found, each element of the tree is looked up in the hash set: one missing proves inequality; when none is, the
+    comparator tells equal objects apart and the elements are counted.
+  - Any other pair (`TreeSet`s with different comparators, a `Set` of another implementation): the count.
+- **Maps** take the same paths over their entries: the key of each hash-map entry is found in the tree by the
+  comparator, and the entry found must have an equal key and an equal value. `TreeMap.contains(entry)` is not used
+  there, since it compares only the value of the key it finds.
+- **The non-empty wrappers** delegate to the wrapped set or map and need nothing more; their notes that equality held
+  one way only under such a comparator are gone.
+- **Unchanged:** which objects can be equal (sets equal sets, maps equal maps, never a `java.util` collection), and
+  `hashCode`. The `java.util` views (`asJava`) keep `java.util.Set` and `java.util.Map` equality.
+- **Tests:** `SetEqualityTest` and `MapEqualityTest`, with a comparator on a key field of an item whose `equals` also
+  compares a tag: every pair of kinds in both directions, with `hashCode` checked for equal pairs; sets that differ by
+  an element the comparator equates, by every element, by size; empty sets; sizes 31 to 1025; another
+  implementation of `Set` or `Map`; the non-empty wrappers; an item whose `equals` ignores a field its comparator
+  uses (a tree holding two equal elements, equal elements stored in another order); and random sets and maps of
+  every pair of kinds checked against a count of their elements.
 
 ### 3.8 `Vector` builder
 
