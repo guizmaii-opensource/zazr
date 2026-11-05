@@ -1799,7 +1799,11 @@ comparator that equates unequal objects, `intersect` and `diff` used the compara
 same comparator and `equals` for any other argument, and `removeAll` and `retainAll` used `equals` always (they put
 the argument in a `HashSet`). The rule now: the receiver's comparator decides membership for every argument kind, as
 `contains`, `add` and `remove` do. An element stays (`intersect`, `retainAll`) or goes
-(`diff`, `removeAll`) when the argument holds an element the comparator equates with it.
+(`diff`, `removeAll`) when the argument holds an element the comparator equates with it. Zazr departs from Scala
+here: Scala's `TreeSet` deletes by its ordering in `removedAll`, but its `intersect` and `diff` of another kind of
+set go through `filter(that)` and `that contains elem`, so the argument decides (`TreeSet.scala`, and `SetOps` in
+`collection/Set.scala` and `immutable/Set.scala` of the Scala 2.13 library, which Scala 3 ships unchanged). Zazr
+keeps one rule for all four, the same as `contains`.
 
 - **`intersect` and `retainAll`** with a `TreeSet` of the same comparator take the red-black intersection, as before
   (`retainAll` took the hash-set path for it until now). Any other argument is walked once, each element looked up
