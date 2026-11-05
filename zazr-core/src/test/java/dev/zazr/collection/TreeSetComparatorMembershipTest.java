@@ -239,6 +239,22 @@ class TreeSetComparatorMembershipTest {
         }
     }
 
+    // -- an empty receiver comes back without reading its argument
+
+    @Test
+    void anEmptyReceiverDoesNotReadItsArgument() {
+        TreeSet<Item> empty = TreeSet.empty(BY_KEY);
+        @SuppressWarnings("unchecked")
+        Set<Item> unreadable = (Set<Item>) java.lang.reflect.Proxy.newProxyInstance(
+                Set.class.getClassLoader(), new Class<?>[] {Set.class}, (proxy, method, arguments) -> {
+                    throw new AssertionError("the argument is read: " + method.getName());
+                });
+        assertThat(empty.intersect(unreadable)).isSameAs(empty);
+        assertThat(empty.retainAll(unreadable)).isSameAs(empty);
+        assertThat(empty.diff(unreadable)).isSameAs(empty);
+        assertThat(empty.removeAll(unreadable)).isSameAs(empty);
+    }
+
     // -- larger receivers: every element of the set looked up, and the result a valid set of the receiver's objects
 
     @Test
