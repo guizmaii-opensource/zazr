@@ -476,7 +476,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the new tree is built from the kept elements, which come in order, in one pass.
+     * Complexity: O(n), with no comparator call: one walk of the tree keeps whole every part whose elements are all
+     * kept, and joins the kept parts.
      */
     @Override
     SortedSet<T> filter(Predicate<? super T> predicate);
@@ -484,7 +485,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the new tree is built from the kept elements, which come in order, in one pass.
+     * Complexity: O(n), with no comparator call: one walk of the tree keeps whole every part whose elements are all
+     * kept, and joins the kept parts.
      */
     @Override
     SortedSet<T> reject(Predicate<? super T> predicate);
@@ -576,7 +578,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): both results get their elements in order, and their trees are built from them in one pass.
+     * Complexity: O(n), with no comparator call: one walk of the tree gives each result whole every part whose
+     * elements all go to it, and joins its parts.
      */
     @Override
     Tuple2<? extends SortedSet<T>, ? extends SortedSet<T>> partition(Predicate<? super T> predicate);
@@ -642,11 +645,10 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log(n + m)) for a set of m elements: one lookup each, then one insertion for each new one.
-     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), this tree is
-     * walked and each element it visits is looked up in the part of the other tree within its bounds, found by
-     * going down that tree: O(k log m) for the k nodes visited, at most n and at most about 2m log2 n. A part of
-     * this tree that loses no element is kept whole, and nothing of the other tree is copied.
+     * Complexity: O(m log(n + m)) for a set of m elements. When it holds fewer than n elements, each is looked up,
+     * then inserted when new; otherwise they are sorted into a tree, which is cut and joined with this one.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
+     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
      */
     @Override
     SortedSet<T> union(Set<? extends T> elements);

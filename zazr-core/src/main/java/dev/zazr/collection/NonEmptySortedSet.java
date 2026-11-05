@@ -307,8 +307,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     /**
      * Complexity: O(m log(n + m)) for a set of m elements, as {@link TreeSet#union(Set)}.
      * <p>
-     * Returns this set itself when nothing changes: when {@code elements} is empty or this set's own elements, or
-     * adds no element and is not another TreeSet of the same comparator, whose elements replace the equal ones.
+     * Returns this set itself when nothing changes: when {@code elements} adds no element, whatever its kind. Of
+     * equal elements, this set's stay, as {@link TreeSet#union(Set)} tells.
      *
      * @param elements A set, possibly empty
      * @return the elements of both sets, with this set's comparator
