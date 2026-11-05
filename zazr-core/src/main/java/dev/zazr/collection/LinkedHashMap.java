@@ -1344,7 +1344,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
             values.addUnchecked(entryAt(keys.next())._2());
         }
-        return Vector.ofAll(values.result());
+        return Vector.ofTree(values.result());
     }
 
     // -- Positional operations, in insertion order

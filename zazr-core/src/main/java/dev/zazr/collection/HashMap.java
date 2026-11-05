@@ -1225,7 +1225,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         }
         VectorBuilder<V> values = VectorBuilder.forExactly(size());
         trie.writeValuesTo(values);
-        return Vector.ofAll(values.result());
+        return Vector.ofTree(values.result());
     }
 
     /**
