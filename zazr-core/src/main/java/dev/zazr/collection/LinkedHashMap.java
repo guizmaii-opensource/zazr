@@ -1579,7 +1579,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
             pairs.addUnchecked(Tuple.of(entryAt(keys.next()), index++));
         }
-        return Vector.ofAll(pairs.result());
+        return Vector.ofTree(pairs.result());
     }
 
     /**
@@ -1747,7 +1747,7 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
             pairs.addUnchecked(Tuple.of(keys.next(), index++));
         }
-        return Vector.ofAll(pairs.result());
+        return Vector.ofTree(pairs.result());
     }
 
     /**

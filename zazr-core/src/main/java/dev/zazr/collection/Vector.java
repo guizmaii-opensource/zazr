@@ -191,7 +191,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
         VectorBuilder<T> elements = VectorBuilder.forExactly(n);
         writeTabulated(elements, n, f);
-        return ofAll(elements.result());
+        return ofTree(elements.result());
     }
 
     /* writes f(0) .. f(n - 1) to elements */
@@ -220,7 +220,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         for (int i = 0; i < n; i++) {
             elements.addUnchecked(Objects.requireNonNull(s.get(), "Vector: element is null"));
         }
-        return ofAll(elements.result());
+        return ofTree(elements.result());
     }
 
     /**
@@ -994,7 +994,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
                 elements.addUnchecked(entry.getValue());
             }
         }
-        return ofAll(elements.result());
+        return ofTree(elements.result());
     }
 
     /**
@@ -1591,7 +1591,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             elements.addUnchecked(element);
             elements.addUnchecked(it.next());
         }
-        return ofAll(elements.result());
+        return ofTree(elements.result());
     }
 
     /**
@@ -2263,7 +2263,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         for (java.util.Iterator<T> it = reverseIterator(); it.hasNext(); ) {
             elements.addUnchecked(it.next());
         }
-        return ofAll(elements.result());
+        return ofTree(elements.result());
     }
 
     /**
@@ -2867,7 +2867,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             xs.addUnchecked(Objects.requireNonNull(t._1(), "Vector.Builder.add: element is null"));
             ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
         }
-        return Tuple.of(ofAll(xs.result()), ofAll(ys.result()));
+        return Tuple.of(ofTree(xs.result()), ofTree(ys.result()));
     }
 
     /**
@@ -2899,7 +2899,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
             zs.addUnchecked(Objects.requireNonNull(t._3(), "Vector.Builder.add: element is null"));
         }
-        return Tuple.of(ofAll(xs.result()), ofAll(ys.result()), ofAll(zs.result()));
+        return Tuple.of(ofTree(xs.result()), ofTree(ys.result()), ofTree(zs.result()));
     }
 
     /**
@@ -3034,7 +3034,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
         VectorBuilder<U> elements = VectorBuilder.forExactly(size());
         writeZippedWithIndex(elements, trie, mapper);
-        return ofAll(elements.result());
+        return ofTree(elements.result());
     }
 
     /* writes mapper(element, index) to elements for each element of source, in order */

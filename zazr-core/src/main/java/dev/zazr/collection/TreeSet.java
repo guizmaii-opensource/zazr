@@ -1399,7 +1399,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     @Override
     public Vector<Tuple2<T, Integer>> zipWithIndex() {
-        return Vector.ofAll(RedBlackTreeModule.Node.zipWithIndex(tree));
+        return Vector.ofTree(RedBlackTreeModule.Node.zipWithIndex(tree));
     }
 
     @Override

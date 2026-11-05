@@ -101,7 +101,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
         for (A element : tail) {
             elements.addUnchecked(Objects.requireNonNull(element, "NonEmptyVector: element is null"));
         }
-        return new NonEmptyVector<>(Vector.ofAll(elements.result()));
+        return new NonEmptyVector<>(Vector.ofTree(elements.result()));
     }
 
     /**
@@ -1005,7 +1005,7 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             ys.addUnchecked(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip: unzipper returned a null component"));
         }
         return Tuple.of(
-                new NonEmptyVector<>(Vector.ofAll(xs.result())), new NonEmptyVector<>(Vector.ofAll(ys.result())));
+                new NonEmptyVector<>(Vector.ofTree(xs.result())), new NonEmptyVector<>(Vector.ofTree(ys.result())));
     }
 
     /**
@@ -1039,9 +1039,9 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
                     Objects.requireNonNull(t._3(), "NonEmptyVector.unzip3: unzipper returned a null component"));
         }
         return Tuple.of(
-                new NonEmptyVector<>(Vector.ofAll(xs.result())),
-                new NonEmptyVector<>(Vector.ofAll(ys.result())),
-                new NonEmptyVector<>(Vector.ofAll(zs.result())));
+                new NonEmptyVector<>(Vector.ofTree(xs.result())),
+                new NonEmptyVector<>(Vector.ofTree(ys.result())),
+                new NonEmptyVector<>(Vector.ofTree(zs.result())));
     }
 
     /**
