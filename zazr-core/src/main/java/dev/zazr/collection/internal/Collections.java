@@ -151,7 +151,7 @@ public final class Collections {
     public static boolean sameElementCounts(Traversable<?> a, Traversable<?> b) {
         java.util.HashMap<@Nullable Object, int[]> counts = java.util.HashMap.newHashMap(a.size());
         for (Object element : a) {
-            int[] count = counts.get(element);
+            int @Nullable [] count = counts.get(element);
             if (count == null) {
                 counts.put(element, new int[] {1});
             } else {
@@ -159,7 +159,7 @@ public final class Collections {
             }
         }
         for (Object element : b) {
-            int[] count = counts.get(element);
+            int @Nullable [] count = counts.get(element);
             if (count == null || count[0] == 0) {
                 return false;
             }

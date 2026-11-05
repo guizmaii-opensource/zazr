@@ -1588,7 +1588,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
         Comparator<Object> comparator = (Comparator<Object>) elements.comparator();
         try {
             for (Object element : other) {
-                Object stored = RedBlackTreeModule.Node.findByKey(elements, element, comparator, false);
+                @Nullable Object stored = RedBlackTreeModule.Node.findByKey(elements, element, comparator, false);
                 if (stored == null || !stored.equals(element)) {
                     return false;
                 }

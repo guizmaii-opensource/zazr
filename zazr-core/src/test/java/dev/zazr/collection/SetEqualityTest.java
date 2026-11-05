@@ -328,27 +328,30 @@ class SetEqualityTest {
     private static <T> void checkRandomPairs(
             java.util.List<Kind<T>> kinds, Function<Random, java.util.List<T>> elements, long seed) {
         Random random = new Random(seed);
-        int equalPairs = 0;
-        for (int round = 0; round < 400; round++) {
-            java.util.List<T> left = elements.apply(random);
-            java.util.List<T> right = elements.apply(random);
-            for (Kind<T> a : kinds) {
-                for (Kind<T> b : kinds) {
-                    Set<T> x = a.make(left);
-                    Set<T> y = b.make(right);
-                    boolean expected = x.size() == y.size() && counts(x).equals(counts(y));
-                    equalPairs += expected ? 1 : 0;
-                    String what = a + " " + x + " and " + b + " " + y;
-                    assertThat(x.equals(y)).as(what).isEqualTo(expected);
-                    assertThat(y.equals(x)).as(what + ", the other way").isEqualTo(expected);
-                    if (expected) {
-                        assertThat(x.hashCode()).as(what).isEqualTo(y.hashCode());
-                    }
-                }
-            }
-        }
+        long equalPairs = java.util.stream.IntStream.range(0, 400)
+                .mapToLong(round -> {
+                    java.util.List<T> left = elements.apply(random);
+                    java.util.List<T> right = elements.apply(random);
+                    return kinds.stream()
+                            .flatMap(a -> kinds.stream().map(b -> checkPair(a.make(left), b.make(right))))
+                            .filter(equal -> equal)
+                            .count();
+                })
+                .sum();
         // the generator makes equal pairs often enough for the check to mean something
         assertThat(equalPairs).isGreaterThan(400);
+    }
+
+    // checks `x.equals(y)` both ways against a count of the elements, and returns whether they are equal
+    private static <T> boolean checkPair(Set<T> x, Set<T> y) {
+        boolean expected = x.size() == y.size() && counts(x).equals(counts(y));
+        String what = x + " and " + y;
+        assertThat(x.equals(y)).as(what).isEqualTo(expected);
+        assertThat(y.equals(x)).as(what + ", the other way").isEqualTo(expected);
+        if (expected) {
+            assertThat(x.hashCode()).as(what).isEqualTo(y.hashCode());
+        }
+        return expected;
     }
 
     private static <T> java.util.List<T> randomElements(

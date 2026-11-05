@@ -2056,7 +2056,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         TreeMap<Object, Object> map = (TreeMap<Object, Object>) tree;
         try {
             for (Tuple2<?, ?> entry : other) {
-                Tuple2<Object, Object> stored = map.entryOf(entry._1());
+                @Nullable Tuple2<Object, Object> stored = map.entryOf(entry._1());
                 if (stored == null
                         || !Objects.equals(stored._1(), entry._1())
                         || !Objects.equals(stored._2(), entry._2())) {

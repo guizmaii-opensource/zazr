@@ -351,26 +351,29 @@ class MapEqualityTest {
     private static <K> void checkRandomPairs(
             java.util.List<Kind<K>> kinds, BiFunction<Integer, String, K> key, long seed) {
         Random random = new Random(seed);
-        int equalPairs = 0;
-        for (int round = 0; round < 400; round++) {
-            java.util.List<Tuple2<K, Integer>> left = randomEntries(random, key);
-            java.util.List<Tuple2<K, Integer>> right = randomEntries(random, key);
-            for (Kind<K> a : kinds) {
-                for (Kind<K> b : kinds) {
-                    Map<K, Integer> x = a.make(left);
-                    Map<K, Integer> y = b.make(right);
-                    boolean expected = x.size() == y.size() && counts(x).equals(counts(y));
-                    equalPairs += expected ? 1 : 0;
-                    String what = a + " " + x + " and " + b + " " + y;
-                    assertThat(x.equals(y)).as(what).isEqualTo(expected);
-                    assertThat(y.equals(x)).as(what + ", the other way").isEqualTo(expected);
-                    if (expected) {
-                        assertThat(x.hashCode()).as(what).isEqualTo(y.hashCode());
-                    }
-                }
-            }
-        }
+        long equalPairs = java.util.stream.IntStream.range(0, 400)
+                .mapToLong(round -> {
+                    java.util.List<Tuple2<K, Integer>> left = randomEntries(random, key);
+                    java.util.List<Tuple2<K, Integer>> right = randomEntries(random, key);
+                    return kinds.stream()
+                            .flatMap(a -> kinds.stream().map(b -> checkPair(a.make(left), b.make(right))))
+                            .filter(equal -> equal)
+                            .count();
+                })
+                .sum();
         assertThat(equalPairs).isGreaterThan(400);
+    }
+
+    // checks `x.equals(y)` both ways against a count of the entries, and returns whether they are equal
+    private static <K> boolean checkPair(Map<K, Integer> x, Map<K, Integer> y) {
+        boolean expected = x.size() == y.size() && counts(x).equals(counts(y));
+        String what = x + " and " + y;
+        assertThat(x.equals(y)).as(what).isEqualTo(expected);
+        assertThat(y.equals(x)).as(what + ", the other way").isEqualTo(expected);
+        if (expected) {
+            assertThat(x.hashCode()).as(what).isEqualTo(y.hashCode());
+        }
+        return expected;
     }
 
     private static <K> java.util.List<Tuple2<K, Integer>> randomEntries(
