@@ -1340,9 +1340,9 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         if (isEmpty()) {
             return Vector.empty();
         }
-        VectorBuilder.LeafWriter<V> values = new VectorBuilder.LeafWriter<>(size());
+        VectorBuilder<V> values = VectorBuilder.forExactly(size());
         for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
-            values.add(entryAt(keys.next())._2());
+            values.addUnchecked(entryAt(keys.next())._2());
         }
         return Vector.ofAll(values.result());
     }

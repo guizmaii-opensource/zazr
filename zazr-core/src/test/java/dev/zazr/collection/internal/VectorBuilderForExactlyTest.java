@@ -3,11 +3,13 @@ package dev.zazr.collection.internal;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/// `VectorBuilder.LeafWriter` against the vector `VectorBuilder.add` builds from the same elements: the same type of
+/// `VectorBuilder.forExactly` with `addUnchecked` against the vector `VectorBuilder.add` builds from the same elements:
+/// the same type of
 /// vector, slice for slice the same arrays (same lengths, the same element objects at every position), at the leaf and
 /// branch boundaries.
-public class VectorLeafWriterTest {
+public class VectorBuilderForExactlyTest {
 
     private static final int[] SIZES = {
         1, 2, 31, 32, 33, 63, 64, 65, 1023, 1024, 1025, 32767, 32768, 32769, 40000, 1048575, 1048576, 1048577
@@ -34,10 +36,10 @@ public class VectorLeafWriterTest {
             for (int i = 0; i < size; i++) {
                 elements[i] = new Element(i);
             }
-            VectorBuilder.LeafWriter<Element> writer = new VectorBuilder.LeafWriter<>(size);
+            VectorBuilder<Element> writer = VectorBuilder.forExactly(size);
             VectorBuilder<Element> builder = RadixVector.newBuilder();
             for (Element element : elements) {
-                writer.add(element);
+                writer.addUnchecked(element);
                 builder.add(element);
             }
             RadixVector<Element> written = writer.result();
@@ -64,13 +66,25 @@ public class VectorLeafWriterTest {
     @Test
     public void aVectorOfUpTo32ElementsIsItsOneLeafOfExactSize() {
         for (int size : new int[] {1, 31, 32}) {
-            VectorBuilder.LeafWriter<Element> writer = new VectorBuilder.LeafWriter<>(size);
+            VectorBuilder<Element> writer = VectorBuilder.forExactly(size);
             for (int i = 0; i < size; i++) {
-                writer.add(new Element(i));
+                writer.addUnchecked(new Element(i));
             }
             RadixVector<Element> written = writer.result();
             assertThat(written).isInstanceOf(RadixVector.Vector1.class);
             assertThat(written.vectorSlice(0).length).isEqualTo(size);
+        }
+    }
+
+    @Test
+    public void aClosedBuilderRejectsAnotherElement() {
+        for (int size : new int[] {1, 32, 33, 1025}) {
+            VectorBuilder<Element> builder = VectorBuilder.forExactly(size);
+            for (int i = 0; i < size; i++) {
+                builder.addUnchecked(new Element(i));
+            }
+            builder.result();
+            assertThatThrownBy(() -> builder.addUnchecked(new Element(-1))).isInstanceOf(IllegalStateException.class);
         }
     }
 }

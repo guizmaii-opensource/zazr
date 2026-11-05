@@ -1223,7 +1223,7 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
         if (isEmpty()) {
             return Vector.empty();
         }
-        VectorBuilder.LeafWriter<V> values = new VectorBuilder.LeafWriter<>(size());
+        VectorBuilder<V> values = VectorBuilder.forExactly(size());
         trie.writeValuesTo(values);
         return Vector.ofAll(values.result());
     }

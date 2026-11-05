@@ -1790,7 +1790,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
         if (isEmpty()) {
             return Vector.empty();
         }
-        VectorBuilder.LeafWriter<V> values = new VectorBuilder.LeafWriter<>(size());
+        VectorBuilder<V> values = VectorBuilder.forExactly(size());
         RedBlackTreeModule.Node.writeValuesTo(entries, values);
         return Vector.ofAll(values.result());
     }

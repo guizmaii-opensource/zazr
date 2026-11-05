@@ -55,7 +55,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     }
 
     /* the Vector of a tree; the empty one for an empty tree. The maps' values() build their tree with
-     * VectorBuilder.LeafWriter */
+     * VectorBuilder.forExactly */
     static <T extends @Nullable Object> Vector<T> ofAll(RadixVector<T> trie) {
         return (trie.length() == 0) ? empty() : new Vector<>(trie);
     }

@@ -33,7 +33,7 @@ public final class VectorBuilder<T extends @Nullable Object> {
     private Object[] a4 = EMPTY;
     private Object[] a3 = EMPTY;
     private Object[] a2 = EMPTY;
-    private Object[] a1 = new Object[WIDTH];
+    private Object[] a1;
     private int len1;
     private int lenRest;
     private int offset;
@@ -41,7 +41,23 @@ public final class VectorBuilder<T extends @Nullable Object> {
     private int depth = 1;
     private boolean done;
 
-    VectorBuilder() {}
+    VectorBuilder() {
+        this.a1 = new Object[WIDTH];
+    }
+
+    // the first leaf has size slots, at most WIDTH: see forExactly
+    private VectorBuilder(int size) {
+        this.a1 = new Object[Math.min(size, WIDTH)];
+    }
+
+    /// A builder of a vector of exactly `size` elements, at least 1, that the caller writes with
+    /// [#addUnchecked(Object)] only, in order, then [#result()]: the values of a map, walked from its
+    /// trie or tree. Each value goes straight into its final leaf, and each full leaf goes into the tree
+    /// by reference. Up to 32 elements the one leaf has exactly `size` slots and becomes the vector as
+    /// it is; longer, only the last leaf is copied, when it is not full, as for any builder.
+    public static <T extends @Nullable Object> VectorBuilder<T> forExactly(int size) {
+        return new VectorBuilder<>(size);
+    }
 
     private void setLen(int i) {
         len1 = i & MASK;
@@ -80,6 +96,17 @@ public final class VectorBuilder<T extends @Nullable Object> {
         a1[len1] = element;
         len1 += 1;
         return this;
+    }
+
+    /// Appends an element that is not null, with no check: a map's value (a map rejects a null value on
+    /// every put), written to a builder of [#forExactly(int)], which holds no more than its size.
+    @SuppressWarnings("NullAway") // the elements are a map's values, never null
+    public void addUnchecked(@Nullable Object element) {
+        if (len1 == WIDTH) {
+            // once closed, len1 == WIDTH: advance() checks that the builder is open before anything is written
+            advance();
+        }
+        a1[len1++] = element;
     }
 
     /**
@@ -870,59 +897,5 @@ public final class VectorBuilder<T extends @Nullable Object> {
         len1 = WIDTH;
         lenRest = 0;
         offset = 0;
-    }
-
-    /// A vector of exactly `size` elements that the caller writes one by one, in order, straight into the
-    /// leaves of the vector: the values of a map, walked from its trie or tree. Up to 32 elements the one leaf
-    /// has exactly `size` slots and becomes the vector as it is. Longer, the leaves are a builder's own, each
-    /// full one taken into the tree by reference when the next one opens, so only the last leaf is copied, when
-    /// it is not full, as [#result()] does for any builder. No element is checked: the caller writes only
-    /// non-null ones (a map rejects a null value on every put), exactly `size` of them, then calls [#result()].
-    public static final class LeafWriter<T extends @Nullable Object> {
-
-        private final @Nullable VectorBuilder<T> builder;
-        private Object[] leaf;
-        private int fill;
-
-        /// `size` is at least 1.
-        public LeafWriter(int size) {
-            if (size <= WIDTH) {
-                this.builder = null;
-                this.leaf = new Object[size];
-            } else {
-                VectorBuilder<T> builder = new VectorBuilder<>();
-                this.builder = builder;
-                this.leaf = builder.a1;
-            }
-        }
-
-        /// Writes the next element, which is not null.
-        @SuppressWarnings("NullAway") // the elements are a map's values, never null
-        public void add(@Nullable Object element) {
-            if (fill == WIDTH) {
-                nextLeaf();
-            }
-            leaf[fill++] = element;
-        }
-
-        // the builder takes the full leaf into its tree and opens the next one
-        @SuppressWarnings("NullAway") // a leaf of 32 slots is full only when size > 32, where there is a builder
-        private void nextLeaf() {
-            VectorBuilder<T> b = builder;
-            b.len1 = WIDTH;
-            b.advance();
-            leaf = b.a1;
-            fill = 0;
-        }
-
-        /// The vector of the elements written.
-        public RadixVector<T> result() {
-            VectorBuilder<T> b = builder;
-            if (b == null) {
-                return new RadixVector.Vector1<>(leaf);
-            }
-            b.len1 = fill;
-            return b.result();
-        }
     }
 }
