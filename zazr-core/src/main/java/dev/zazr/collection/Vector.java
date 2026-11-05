@@ -3044,8 +3044,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         @SuppressWarnings("Var")
         int index = 0;
         for (T element : source) {
-            elements.addUnchecked(
-                    Objects.requireNonNull(mapper.apply(element, index++), "Vector.Builder.add: element is null"));
+            elements.addUnchecked(Objects.requireNonNull(mapper.apply(element, index++), "Iterator: element is null"));
         }
     }
 

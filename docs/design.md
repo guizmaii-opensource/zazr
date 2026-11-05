@@ -2289,8 +2289,10 @@ deleted. Attribution in `NOTICE`.
       (`2n - 1` elements).
   - `addUnchecked` checks nothing, so an element that a caller's function returns is checked before it is written,
     with the message the old path gave: `Vector: element is null` for `tabulate` and `fill`,
-    `Vector.Builder.add: element is null` for `Vector.unzip`, `unzip3` and `zipWithIndex(BiFunction)`, and
-    `Iterator.intersperse: element is null` for `intersperse`. `NonEmptyVector` keeps its own messages. An empty
+    `Vector.Builder.add: element is null` for each component of `Vector.unzip` and `unzip3`,
+    `Iterator: element is null` for `zipWithIndex(BiFunction)` (as for `List`, `LazyList` and `Queue`), and
+    `Iterator.intersperse: element is null` for `intersperse`. `NonEmptyVector` keeps its own messages. A test
+    checks every component of every `unzip` and `unzip3`: that check is all that keeps a null out of a leaf. An empty
     receiver still gives `Vector.empty()` itself, without a builder: `forExactly` takes at least one element.
   - `tabulate` and `zipWithIndex(BiFunction)` keep their loop in a void method of its own, with `result()` in the
     caller, as `addTabulated` and `VectorBuilder.addAll` had it. With the loop inline, the allocation probe found the
