@@ -390,6 +390,7 @@ duplication is cheaper than a god interface).
 | `Map.computeIfAbsent(key, f)` → `Tuple2<V, Map>`, `Map.computeIfPresent(key, f)` → `Tuple2<Option<V>, Map>`, on `Map`, `SortedMap`, the three maps and the two non-empty maps | keep (decided by the maintainer 2026-10-04: #278 removed them, and was reverted before 0.4.0 was released) | **They answer "get or add" in one lookup**: `computeIfAbsent` gives the value and the new map together, which `updateWith` then `get` needs two lookups for, and its replacements read worse at the call site. `updateWith` is added beside them (#198) for the general case. The `asJava()` views keep `java.util.Map`'s own `computeIfAbsent` and `computeIfPresent`, which throw `UnsupportedOperationException` as every mutator of the views |
 | `removeAll(Predicate)` on the sequences; `removeAll(BiPredicate)`, `removeKeys(Predicate)`, `removeValues(Predicate)` on the maps | `reject(Predicate)`; `reject(BiPredicate)`, `rejectKeys(Predicate)`, `rejectValues(Predicate)` (decided by the maintainer 2026-10-05, #293: the deprecated forms are deleted in 0.4.0, on `List`, `LazyList`, `Queue`, `Vector`, `NonEmptyVector`, `Map`, `SortedMap`, `HashMap`, `LinkedHashMap` and `TreeMap`) | **One meaning per name**: `removeAll(Iterable)` stays and removes the given elements or keys; `reject*` drops what a predicate matches (Scala's `filterNot`, ZIO's `reject`). A lambda or a method reference passed to `removeAll` no longer compiles: neither fits `Iterable`, whose `iterator()` takes no argument, nor an element type that is not a functional interface; a `BiPredicate` on a map does not compile either. **The silent case, accepted**: when the element type is `Object`, or the sequence is raw, any expression of type `Predicate` (a variable, a cast lambda, `p.negate()`, `Predicate.not(...)`) is an element, so `removeAll(predicate)` resolves to `removeAll(T)` and removes that one object, usually nothing. Guarding it would take an overload of the deleted name; the release notes say to use `reject` |
 | (none: the ranges only through the read-only `asJava()`/`asJavaMap()` views, `subSet`, `headMap`, `ceiling`...) | `rangeFrom(from)`, `rangeUntil(until)`, `rangeTo(to)`, `rangeFromUntil(from, until)`, `minAfter`, `maxBefore`, `iteratorFrom(start)` on `SortedSet` and `SortedMap`, implemented by `TreeSet` and `TreeMap` and delegated by `NonEmptySortedSet` and `NonEmptySortedMap` (Scala 2.13 `SortedOps`, `SortedSet`, `SortedMap` and `immutable.RedBlackTree`, which Scala 3 uses unchanged; added 2026-10-04, #196) | **The two-bound form is `rangeFromUntil`**, not Scala's `range(from, until)`: `TreeSet` has static `range(int, int)`, `range(char, char)` and `range(long, long)` factories, so `set.range(1, 5)` on a `TreeSet<Integer>` would resolve to a factory. `rangeFromUntil` names its bounds as the one-bound forms do (`from` inclusive, `until` exclusive) and is declared nowhere else, as a static or an instance method, on any collection; `rangeBetween` was rejected because it does not say which bound is included. **Semantics are Scala's**: `rangeFromUntil` is empty when `from` is not less than `until` (`java.util.TreeSet.subSet` throws when `from` is greater); `minAfter(x)` is the least element at or after `x` (inclusive, `ceiling` in Java terms) and `maxBefore(x)` the greatest strictly before `x` (`lower`); `rangeTo` is the inclusive upper bound, ported from `RedBlackTree.to`/`doTo` (Scala's `TreeSet` and `TreeMap` reach the same result through the `SortedSet`/`SortedMap` default, the iterator of a `rangeFrom` and a `rangeUntil`). **Implementation**: ports of `doFrom`, `doUntil`, `doTo`, `doRange`, `minAfter`, `maxBefore` and the iterator's `startFrom` in `RedBlackTreeModule`: one walk along the path of each bound, a `join` per level, O(log n); every subtree wholly inside the range is kept as it is, and the receiver itself is returned when nothing is cut. A map's bound is compared with the key of each entry in place, with no probe `Tuple2`. **Results**: the range methods return the receiver's type with its comparator (`TreeSet`, `TreeMap`; the plain type on the non-empty wrappers, the result may be empty); `minAfter`/`maxBefore` an `Option` of the element, or of the stored entry `Tuple2` on a map (Scala's pair); `iteratorFrom` a `java.util.Iterator`, as every public `iterator()` since the Zazr `Iterator` left the public API (3.7). **Not added**: Scala's `TreeMap.keysIteratorFrom` and `valuesIteratorFrom`, since Zazr maps dropped `keysIterator` and `valuesIterator` (3.7): `rangeFrom(k).keySet()` and `rangeFrom(k).values()` replace them. **Nulls**: a null bound is `<parameter> is null` (`from is null`, `key is null`) at once, even on an empty collection, since no element or key is null |
+| `partition(Predicate<? super Tuple2<K, V>>)` only, on the maps | `partition(BiPredicate<? super K, ? super V>)` next to it, on `Map`, `SortedMap`, `HashMap`, `LinkedHashMap`, `TreeMap`, `NonEmptyMap` and `NonEmptySortedMap` (added 2026-11-05, #344) | **The pair `filter` and `reject` already have**: the same two overloads, the same result types (`NonEmptyMap` returns two `HashMap`s and `NonEmptySortedMap` two `TreeMap`s, either may be empty, as its `Tuple2` form), the same `predicate is null` message and the same identity guarantees: the side that gets every entry is the map itself, and a `HashMap` or a `TreeMap` shares with each side the subtrees whose entries all go to it. The predicate is called once per entry, in iteration order, with the key and value objects the map holds. **Resolution**: the arity of a lambda picks the overload, `e -> ...` the `Tuple2` one and `(k, v) -> ...` the new one; an expression typed `Predicate` or `BiPredicate`, and an exact method reference (one method of that name, neither generic nor varargs), pick theirs. **Source change, accepted**: three kinds of argument that compiled before are now ambiguous between the two overloads. The first is an inexact method reference, which overload resolution matches by its number of parameters alone: a varargs method (`static boolean va(Object...)`), a generic one, or a name that also has a method of the other arity, whatever its return type (`log::add` on a `java.util.List`, whose `add(int, E)` returns `void`; `jmap::remove` on a `java.util.Map`). The second is a generic call returning `T` (`static <T> T anything()`, the shape of a mock matcher such as `any()`), and the third a bare `null`. `filter` and `reject` already behave the same way; a cast or an explicit lambda picks the overload. **Internals**: `HashMap` hands the predicate to the trie's partition, with no `Tuple2` made per entry; `TreeMap` and `LinkedHashMap`, which store `Tuple2` entries, read each stored entry through one adapter made per call, as their `filter(BiPredicate)` does |
 
 Things ZIO does that **do not** port and should not be imitated:
 - `Par` suffix: there is no parallelism in pure data. Do **not** name `Validation`'s accumulating zip
@@ -724,9 +725,8 @@ contract: `final` wrappers, not subtypes, each implementing `Iterable` (of the e
   `NonEmptyVector.appendAll`, re-checking an `Iterable` here would mean a second pass or a slower per-element insert.
 - **Equality** follows the plain types: sets equal sets and maps equal maps, whatever the representation, so a
   `NonEmptySet` equals a `NonEmptySortedSet` with the same elements (and a `NonEmptyMap` a `NonEmptySortedMap`), with
-  the wrapped collection's `hashCode`, which is unordered. That holds, symmetric and hash-consistent, when the sorted
-  side's comparator is consistent with `equals`, as for the plain `HashSet`/`TreeSet`: with a case-insensitive order,
-  say, `equals` holds one way only (`Collections.equals` asks the argument's `contains`) and the hash codes differ.
+  the wrapped collection's `hashCode`, which is unordered. The elements and keys are compared with `equals`, whatever
+  the comparator, as for the plain `HashSet`/`TreeSet` (#347), so the equality is symmetric and hash-consistent.
   Never equal to a plain `Set` or `Map`. `toString` is `NonEmptySet(a, b)`, `NonEmptyMap((k, v))`.
 - **`spliterator()`** is the wrapped collection's, so it reports what that one reports (`DISTINCT`, `SORTED` on a
   `TreeSet`).
@@ -988,7 +988,8 @@ Every positional method on `List` gets a one-line complexity note in its javadoc
   the `Predicate` and the `BiPredicate` form, `filterKeys`/`rejectKeys`/`filterValues`/`rejectValues` (the deprecated
   `removeAll(BiPredicate)`, `removeKeys` and `removeValues` are deleted, 2026-10-05, #293), `map(BiFunction)`,
   `mapBoth`, `mapKeys` ×2, `mapValues`, `flatMap(BiFunction)`, `collect(BiFunction)`, `merge` ×2, `replace(K, V, V)`,
-  `replaceValue`, `replaceAll(BiFunction)`, the entry-typed `replace`/`replaceAll`, `retainAll`, `partition`, `groupBy`,
+  `replaceValue`, `replaceAll(BiFunction)`, the entry-typed `replace`/`replaceAll`, `retainAll`, `partition` in
+  both forms (the `BiPredicate` one added 2026-11-05, #344), `groupBy`,
   `groupMap` (groups in `Vector`s), `groupMapReduce` (added 2026-10-03, 3.3), `orElse` ×2, `tap`, `forEach(BiConsumer)`,
   `computeIfAbsent`/`computeIfPresent`, `toJavaMap()`), plus `existsUnique`, `max`/`maxBy` ×2/`min`/`minBy` ×2 over the
   entries, `fold`/`reduce`/`reduceOption`, `single`/`singleOption`, `arrangeBy`, `collect(Collector)` ×2 and the
@@ -1813,13 +1814,18 @@ keeps one rule for all four, the same as `contains`.
   a result as large as the receiver is the receiver. The equal-object rule above holds: the receiver's objects are
   kept.
 - **`diff` and `removeAll`** with a `TreeSet` of the same comparator take the red-black difference, as before. Any
-  other argument is walked once: the first two elements found by the comparator are deleted one by one, then the
-  others are looked up in the tree left and, when some are found, removed in one `Node.filter` that shares every
-  subtree losing nothing. O(n + m log n), O(m log n) when at most two are removed; the receiver itself when nothing
-  is. Measured once (allocated bytes per call, one thread, n = 4096 and 32 768): a deletion rebuilds a path and
-  allocates less than the filter walk only for the first two or three removed elements, whatever n, and 14 times
-  more than the walk when every element goes (`main` filtered the tree against a `HashSet` of the argument). The
-  switch happens in the one pass, so an argument of unknown size, a one-shot `Iterable` included, is read once.
+  other argument is walked once, each element looked up in the receiver's tree with `Node.findByKey`, and the
+  distinct receiver objects found are collected (compared by identity, so a repeat counts once). Up to a limit,
+  `max(2, min(8, n / (8 b)))` for n elements of bit length b, the k objects found are deleted one by one, O(m log n);
+  past it, they go into an `IdentityHashMap` and one `Node.filter` removes them, sharing every subtree that loses
+  nothing, O(n + m log n). The receiver itself comes back when nothing is found. The argument is read once, a
+  one-shot `Iterable` included, and the choice is made on the objects found. Measured (allocated bytes and time per
+  call, one thread, n from 4096 to 100 000): a deletion walks one path, so deletions are faster than the walk while
+  k log2 n is well below n (at n = 100 000, 3 found take about 1 µs deleted and 350 µs walked), but each rebuilds
+  its path, so from about nine found they allocate more than the walk at every n measured (+470 to +1 070 B for 9
+  to 12 found, +9 KB for 64 at n = 100 000, which they delete 90 times faster). The cap of eight keeps every case
+  within about 350 B of the walk; the size term decides only in trees of fewer than 640 elements, where the walk is
+  cheap.
 - **A null given element** now goes to the comparator, as in `contains`: the natural comparator throws
   `NullPointerException`, a comparator that orders nulls finds none. It threw from `HashSet.ofAll` before.
 - **`NonEmptySortedSet`** delegates and needs nothing more. **The sorted maps already followed the rule**:
@@ -1830,6 +1836,53 @@ keeps one rule for all four, the same as `contains`.
   `Iterable`, an empty one), an equated element and one that is not, the object kept (`isSameAs`) and the identity
   of the result; `diff` and `removeAll` of one, two, three and many found elements, on both sides of the switch;
   an empty receiver given an argument that fails when read.
+
+**Set and map equality compares with `equals`, sorted sets and maps included (#347, decided 2026-11-05).** Under a
+comparator that equates unequal objects, `treeSet.equals(other)` looked each element up with the argument's
+`contains`, while `hashSet.equals(treeSet)` used the tree's comparator `contains`, so `a.equals(b)` could differ from
+`b.equals(a)`, and two sets could be equal with different hash codes. The rule now: `equals` of every set compares the
+elements with their own `equals`, on both sides and for every kind of set; it is symmetric and consistent with
+`hashCode`, the sum of the elements' hash codes. The comparator decides `contains` and the bulk operations (#340), not
+`equals`; that exception is documented on `SortedSet`, `TreeSet`, `NonEmptySortedSet` and on the sites. The sorted
+maps had the same asymmetry on their keys (`hashMap.equals(treeMap)` found a key by the comparator and compared only
+the value) and follow the same rule: keys and values by `equals`.
+
+- **Definition.** Two sets are equal when they have the same size and the same elements, each held as many times,
+  compared with `equals`. Under a comparator for which equal objects compare as 0 (the key-only and case-insensitive
+  comparators are of this kind), that is plain set equality. Under one that tells two equal objects apart, a `TreeSet`
+  can hold both; counting them keeps `equals` symmetric, transitive and consistent with the summed hash code (mutual
+  inclusion would not: {x1, x2, y} and {x, y1, y2} include each other, with different sums).
+- **The paths** depend on the unordered pair of kinds, never on which side is the receiver: `HashSet` and
+  `LinkedHashSet` hand a `TreeSet` argument to `TreeSet`, so both directions run the same code. Each fast path returns
+  only the answers it proves for any comparator; the others fall back to a count of the elements in a temporary
+  `java.util.HashMap` (O(n) time and memory), which uses `equals` and `hashCode` only.
+  - Two hash-based sets: each element of one looked up by hash in the other, O(n), or part by part between two
+    `HashSet`s, as before.
+  - Two `TreeSet`s with equal comparators: walked in order, side by side, O(n). Under a comparator for which equal
+    objects compare as 0, two sets of equal elements store them in the same order: the comparator equates each
+    element with its equal on the other side, so the bijection between them keeps the order. A full match therefore
+    proves equality under any comparator, and a mismatch proves inequality under such a comparator. Under one that
+    tells equal objects apart, a mismatch proves nothing, so the hash sums are compared (different sums prove
+    inequality, with no allocation), and equal sums go to the count.
+  - A `TreeSet` and a hash-based set: each element of the hash set is looked up in the tree by the comparator
+    (`Node.findByKey`), and the element found compared with `equals`, O(n log n). The hash set holds no two equal
+    elements, so with the same size a match for each is a bijection: equal under any comparator. When one is not
+    found, each element of the tree is looked up in the hash set: one missing proves inequality; when none is, the
+    comparator tells equal objects apart and the elements are counted.
+  - Any other pair (`TreeSet`s with different comparators, a `Set` of another implementation): the count.
+- **Maps** take the same paths over their entries: the key of each hash-map entry is found in the tree by the
+  comparator, and the entry found must have an equal key and an equal value. `TreeMap.contains(entry)` is not used
+  there, since it compares only the value of the key it finds.
+- **The non-empty wrappers** delegate to the wrapped set or map and need nothing more; their notes that equality held
+  one way only under such a comparator are gone.
+- **Unchanged:** which objects can be equal (sets equal sets, maps equal maps, never a `java.util` collection), and
+  `hashCode`. The `java.util` views (`asJava`) keep `java.util.Set` and `java.util.Map` equality.
+- **Tests:** `SetEqualityTest` and `MapEqualityTest`, with a comparator on a key field of an item whose `equals` also
+  compares a tag: every pair of kinds in both directions, with `hashCode` checked for equal pairs; sets that differ by
+  an element the comparator equates, by every element, by size; empty sets; sizes 31 to 1025; another
+  implementation of `Set` or `Map`; the non-empty wrappers; an item whose `equals` ignores a field its comparator
+  uses (a tree holding two equal elements, equal elements stored in another order); and random sets and maps of
+  every pair of kinds checked against a count of their elements.
 
 ### 3.8 `Vector` builder
 

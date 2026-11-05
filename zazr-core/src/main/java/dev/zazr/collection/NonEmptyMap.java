@@ -50,9 +50,8 @@ import org.jspecify.annotations.Nullable;
  * with the same entries, as maps are equal to maps, never to a plain {@link Map}; use {@link #toMap()} to compare
  * across the two.
  * <p>
- * The equality across the two representations holds, symmetric and with equal hash codes, when the sorted map's key
- * comparator is consistent with {@code equals}, as for a plain {@code HashMap} and {@code TreeMap}. With one that is
- * not (a case-insensitive order, say), {@code equals} can hold one way only and the hash codes differ.
+ * The keys and the values are compared with their own {@code equals}, whatever the key comparator of a sorted map,
+ * so the equality is symmetric and equal maps have equal hash codes.
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -857,6 +856,15 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
         return map.partition(predicate);
     }
 
+    /**
+     * @param predicate A test of a key and its value
+     * @return the entries that pass {@code predicate} and those that fail it; either may be empty
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<HashMap<K, V>, HashMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
+        return map.partition(predicate);
+    }
+
     // -- total: what is partial on a HashMap
 
     /**
@@ -1422,8 +1430,8 @@ public final class NonEmptyMap<K extends @Nullable Object, V extends @Nullable O
 
     /**
      * Maps are equal to maps: a {@code NonEmptyMap} is equal to a {@code NonEmptyMap} or a {@code NonEmptySortedMap}
-     * with the same entries, and never to a plain {@link Map}; symmetric only when the sorted map's key comparator is
-     * consistent with {@code equals}.
+     * with the same entries, and never to a plain {@link Map}. The keys and the values are compared with their own
+     * {@code equals}, whatever the key comparator of a sorted map.
      */
     @Override
     public boolean equals(@Nullable Object o) {

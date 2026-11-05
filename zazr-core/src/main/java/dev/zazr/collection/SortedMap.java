@@ -8,6 +8,11 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An immutable {@code SortedMap} interface.
+ * <p>
+ * The {@link #comparator()} of the keys decides the lookups: {@code get}, {@code containsKey}, {@code put},
+ * {@code remove} and the bulk operations treat two keys it compares as 0 as the same key. {@code equals} is the
+ * exception: it compares the keys and the values with their own {@code equals}, as on every {@link Map}, so it is
+ * symmetric and equal maps have equal hash codes.
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -634,7 +639,8 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the keys do not change, so the new tree is built from the entries, in order, in one pass.
+     * Complexity: O(n), with no comparator call: the keys do not change, so the tree keeps its shape, and every subtree
+     * whose values all stay the same objects is shared with this map.
      */
     @Override
     <V2 extends @Nullable Object> SortedMap<K, V2> mapValues(Function<? super V, ? extends V2> valueMapper);
@@ -681,11 +687,20 @@ public interface SortedMap<K extends @Nullable Object, V extends @Nullable Objec
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n), with no comparator call: one walk of the tree gives each result whole every part whose
-     * entries all go to it, and joins its parts.
+     * Complexity: O(n), one walk with no comparator call; each side shares with this map every subtree whose entries
+     * all go to it.
      */
     @Override
     Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Complexity: O(n), one walk with no comparator call; each side shares with this map every subtree whose entries
+     * all go to it.
+     */
+    @Override
+    Tuple2<? extends SortedMap<K, V>, ? extends SortedMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate);
 
     @Override
     SortedMap<K, V> tap(Consumer<? super Tuple2<K, V>> action);

@@ -29,7 +29,9 @@ import org.jspecify.annotations.Nullable;
  * ({@link Map}). Two collections are equal if and only if they are of the same kind and contain the same elements,
  * in the same order for sequences and regardless of order otherwise; so {@code Vector.of(1, 2)} equals
  * {@code List.of(1, 2)} and {@code HashSet.of(1, 2)} equals {@code TreeSet.of(2, 1)}, while no sequence equals a
- * set. Two map entries are equal when both their keys and their values are. {@code hashCode} agrees with
+ * set. Elements are compared with their own {@code equals}, on a {@link TreeSet} and a {@link TreeMap} too, whose
+ * comparator decides membership but not equality. Two map entries are equal when both their keys and their values
+ * are. {@code hashCode} agrees with
  * {@code equals}: a sequence hashes its elements in order ({@code hash = hash * 31 + Objects.hashCode(t)}), a set
  * or a map sums them ({@code hash += Objects.hashCode(t)}); an empty collection hashes to {@code 1}. Hash codes
  * are not cached: computing one is O(n). {@code toString} is the type name followed by the elements in
