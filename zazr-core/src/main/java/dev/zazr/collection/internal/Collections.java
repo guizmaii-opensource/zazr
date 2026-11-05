@@ -788,10 +788,25 @@ public final class Collections {
         return rowFactory.apply(Iterator.of(results).map(columnFactory));
     }
 
-    /// Whether the array that `withSize(iterable).toArray()` returns is held by nothing else, so that the caller
+    /// The elements of a sized `iterable` (a `Collection` or a `Traversable`) in an array, in iteration order:
+    /// what `toArray()` of a `Collection` returns, or a new array of `size()` slots filled from the iterator of a
+    /// `Traversable`.
+    public static Object[] toArrayOfSized(Iterable<?> iterable) {
+        if (iterable instanceof Collection<?> collection) {
+            return collection.toArray();
+        }
+        Object[] array = new Object[((Traversable<?>) iterable).size()];
+        java.util.Iterator<?> it = iterable.iterator();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = it.next();
+        }
+        return array;
+    }
+
+    /// Whether the array that `toArrayOfSized(iterable)` returns is held by nothing else, so that the caller
     /// may keep it, for a sized `iterable` (a `Collection` or a `Traversable`). It is for a `Traversable` that is
-    /// not a `Collection`, whose array `toArray()` allocates and fills itself, and for a JDK collection of one of
-    /// the classes below. The contract of `Collection.toArray()` asks every collection for a new array, but a
+    /// not a `Collection`, whose array `toArrayOfSized` allocates and fills itself, and for a JDK collection of one
+    /// of the classes below. The contract of `Collection.toArray()` asks every collection for a new array, but a
     /// collection written elsewhere may return one it keeps and writes later, so any other collection is copied.
     public static boolean toArrayIsOwned(Iterable<?> iterable) {
         return !(iterable instanceof Collection) || copiesOnToArray(iterable.getClass());

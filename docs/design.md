@@ -2006,6 +2006,33 @@ the tests of `Vector` reach. So it becomes `RadixVectorTest`, and its oracle bec
 of the reviews still fails it: U5 (4 tests), BI6 (4), L4 (2), the null check moved after `advance()` (1) and the
 `Integer.MAX_VALUE` guard of `Vector6.appended0` removed (1).
 
+**One copy for a small sized source (decided 2026-11-05, #348).** `Vector.ofAll` of a sized source copies its elements
+into a flat array, then the array into leaves. Up to 32 elements, the array becomes the vector's one leaf when nothing
+else holds it (`RadixVector.ofOwnedArray`), so the elements are copied once.
+- Which arrays are kept (`Collections.toArrayIsOwned`):
+  - the array that `Collections.toArrayOfSized` fills itself from a `Traversable` that is not a `Collection`, whoever
+    wrote the `Traversable`;
+  - the `toArray()` of a JDK collection of one of these exact classes, whose sources (JDK 25) allocate the array for
+    the call: `ArrayList` and its sub-list, `LinkedList`, `ArrayDeque`, `HashSet`, `LinkedHashSet`, `TreeSet`,
+    `Arrays.asList`, `List.of` and its sub-lists, `Set.of`.
+- Every other collection is copied as before. The contract of `Collection.toArray()` asks for a new array, but a
+  collection written elsewhere may break it, and a `Vector` that kept its array would change when the collection
+  writes it. A subclass may override `toArray()`, hence the exact class. The wrappers of `java.util.Collections`
+  (`unmodifiableList`, `synchronizedList`, `checkedList`) forward to a collection of any class, and are copied too, as
+  are the `asJava()` views of the Zazr collections.
+- `ofOwnedArray` keeps only an `Object[]`: a `String[]` leaf could not take an element of another type. It checks
+  every element for null, with the message of `ofAll(Object[])`. A longer array is copied into leaves, as before.
+- `Collections.toArrayOfSized` replaces `withSize(iterable).toArray()` in `Vector.ofAll`, so the `IterableWithSize`
+  wrapper is no longer allocated there.
+- `sorted`, `sorted(Comparator)`, `combinations`, `permutations` and `transpose` keep the arrays they fill
+  themselves the same way.
+- `Vector.of(T...)` still copies: the varargs array belongs to the caller, who may write it afterwards.
+- `VectorOfAllSizedSourceTest` checks each source against the `Vector` built element by element at 0, 1, 31, 32, 33,
+  1024, 1025 and 40000 elements, then `append`, `update` and `slice`, then a change of the source. It includes a
+  collection whose `toArray()` returns its own array and writes it later, and one that returns an array narrower than
+  `Object[]`. `OwnedArrayTest` checks that the leaf is the array itself up to 32 elements, and which collections are
+  matched.
+
 #### 3.8.1 Builders for the other collections
 
 **Decision.** Every persistent collection gets a nested `static final class Builder` with the same

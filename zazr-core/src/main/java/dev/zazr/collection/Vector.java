@@ -17,8 +17,6 @@ import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-import static dev.zazr.collection.internal.Collections.withSize;
-
 /**
  * The default sequence: an immutable, indexed sequence with effectively constant time access to any element.
  * Many other operations ({@code update}, {@code append}, {@code prepend}, {@code tail}, {@code drop}, {@code take},
@@ -253,7 +251,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             // a sized source (a JDK Collection, a Zazr Traversable): one bulk copy into a flat array, then whole-leaf
             // copies into the tree, is cheaper than element-wise adds; the builder pays off for one-shot and unsized
             // sources only. Up to 32 elements, an array that nothing else holds is the tree's one leaf as it is.
-            Object[] elements = withSize(iterable).toArray();
+            Object[] elements = Collections.toArrayOfSized(iterable);
             return ofAll(
                     Collections.toArrayIsOwned(iterable)
                             ? RadixVector.<T>ofOwnedArray(elements)

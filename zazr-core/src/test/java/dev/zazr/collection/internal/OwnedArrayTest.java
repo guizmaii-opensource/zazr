@@ -148,6 +148,19 @@ public class OwnedArrayTest {
     }
 
     @Test
+    public void aSizedSourceIsReadIntoANewArrayOfItsElements() {
+        List<Integer> list = List.of(0, 1, 2);
+        Object[] first = Collections.toArrayOfSized(list);
+        Object[] second = Collections.toArrayOfSized(list);
+        assertThat(first).isNotSameAs(second).containsExactly(0, 1, 2);
+        assertThat(first.getClass()).isEqualTo(Object[].class);
+        assertThat(Collections.toArrayOfSized(HashSet.of(5))).containsExactly(5);
+        assertThat(Collections.toArrayOfSized(List.empty())).isEmpty();
+        assertThat(Collections.toArrayOfSized(new ArrayList<>(java.util.List.of(3, 4))))
+                .containsExactly(3, 4);
+    }
+
+    @Test
     public void aZazrCollectionIsReadIntoAnArrayOfItsOwn() {
         assertThat(Collections.toArrayIsOwned(List.of(0, 1, 2))).isTrue();
         assertThat(Collections.toArrayIsOwned(HashSet.of(0, 1, 2))).isTrue();
