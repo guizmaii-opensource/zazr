@@ -158,6 +158,19 @@ public abstract sealed class MapNode<K extends @Nullable Object, V extends @Null
         }
     }
 
+    /// Writes the values of this subtree to `builder`, in iteration order: the entries of a node before those of its
+    /// children. The depth of the recursion is the depth of the trie, at most 7 levels.
+    public final void writeValuesTo(VectorBuilder<? super V> builder) {
+        int payload = payloadArity();
+        for (int i = 0; i < payload; i++) {
+            builder.addUnchecked(getValue(i));
+        }
+        int children = nodeArity();
+        for (int i = 0; i < children; i++) {
+            getNode(i).writeValuesTo(builder);
+        }
+    }
+
     /// An iterator of `f(key, value)` over the entries of this subtree.
     public final <T extends @Nullable Object> Iterator<T> iterator(BiFunction<? super K, ? super V, ? extends T> f) {
         return size() == 0 ? Iterator.empty() : new EntryIterator<>(this, f);
