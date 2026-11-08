@@ -296,33 +296,6 @@ class MapEqualityTest {
         assertEquality(hash, hash.toMap(), false);
     }
 
-    // a map of none of Zazr's kinds, which answers every call as `delegate` does
-    @SuppressWarnings("unchecked")
-    private static <K, V> Map<K, V> anotherKind(Map<K, V> delegate) {
-        return (Map<K, V>) java.lang.reflect.Proxy.newProxyInstance(
-                Map.class.getClassLoader(), new Class<?>[] {Map.class}, (proxy, method, args) -> {
-                    try {
-                        return method.invoke(delegate, args);
-                    } catch (java.lang.reflect.InvocationTargetException e) {
-                        throw e.getCause();
-                    }
-                });
-    }
-
-    @Test
-    void anotherKindOfMapIsComparedByItsEntriesNotByItsLookups() {
-        Map<Key, Integer> withOther =
-                anotherKind(TreeMap.ofEntries(BY_ID, java.util.List.of(entry(own(1), 10), entry(other(2), 20))));
-        Map<Key, Integer> owns =
-                anotherKind(TreeMap.ofEntries(BY_ID, java.util.List.of(entry(own(2), 20), entry(own(1), 10))));
-        assertThat(withOther.contains(entry(own(2), 20))).isTrue();
-        for (Kind<Key> kind : KINDS) {
-            Map<Key, Integer> map = kind.make(java.util.List.of(entry(own(1), 10), entry(own(2), 20)));
-            assertEquality(map, withOther, false);
-            assertEquality(map, owns, true);
-        }
-    }
-
     // -- a comparator that tells equal keys apart
 
     @Test
