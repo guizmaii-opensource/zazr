@@ -1973,7 +1973,7 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     @Override
     public Vector<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
-        return RedBlackTreeModule.Node.zipWithIndex(entries);
+        return Vector.ofTree(RedBlackTreeModule.Node.zipWithIndex(entries));
     }
 
     @Override

@@ -1580,13 +1580,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
      * @return the pairs (entry, position), in order
      */
     public Vector<Tuple2<Tuple2<K, V>, Integer>> zipWithIndex() {
-        Vector.Builder<Tuple2<Tuple2<K, V>, Integer>> builder = Vector.newBuilder(size());
+        if (isEmpty()) {
+            return Vector.empty();
+        }
+        VectorBuilder<Tuple2<Tuple2<K, V>, Integer>> pairs = VectorBuilder.forExactly(size());
         @SuppressWarnings("Var")
         int index = 0;
         for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
-            builder.add(Tuple.of(entryAt(keys.next()), index++));
+            pairs.addUnchecked(Tuple.of(entryAt(keys.next()), index++));
         }
-        return builder.result();
+        return Vector.ofTree(pairs.result());
     }
 
     /**
@@ -1745,13 +1748,16 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     // the keys paired with their position in insertion order: LinkedHashSet's zipWithIndex, with no entry looked up
     Vector<Tuple2<K, Integer>> zipKeysWithIndex() {
-        Vector.Builder<Tuple2<K, Integer>> builder = Vector.newBuilder(size());
+        if (isEmpty()) {
+            return Vector.empty();
+        }
+        VectorBuilder<Tuple2<K, Integer>> pairs = VectorBuilder.forExactly(size());
         @SuppressWarnings("Var")
         int index = 0;
         for (java.util.Iterator<K> keys = order.iterator(); keys.hasNext(); ) {
-            builder.add(Tuple.of(keys.next(), index++));
+            pairs.addUnchecked(Tuple.of(keys.next(), index++));
         }
-        return builder.result();
+        return Vector.ofTree(pairs.result());
     }
 
     /**

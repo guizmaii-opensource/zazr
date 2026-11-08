@@ -5,6 +5,7 @@ import dev.zazr.Tuple2;
 import dev.zazr.Tuple3;
 import dev.zazr.collection.internal.Comparators;
 import dev.zazr.collection.internal.NonEmptyModule;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import java.util.Comparator;
@@ -95,12 +96,12 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
     public static <A extends @Nullable Object> NonEmptyVector<A> of(A head, A... tail) {
         Objects.requireNonNull(head, "NonEmptyVector: head is null");
         Objects.requireNonNull(tail, "NonEmptyVector: tail is null");
-        Vector.Builder<A> builder = Vector.newBuilder(tail.length + 1);
-        builder.add(head);
+        VectorBuilder<A> elements = VectorBuilder.forExactly(tail.length + 1);
+        elements.addUnchecked(head);
         for (A element : tail) {
-            builder.add(Objects.requireNonNull(element, "NonEmptyVector: element is null"));
+            elements.addUnchecked(Objects.requireNonNull(element, "NonEmptyVector: element is null"));
         }
-        return new NonEmptyVector<>(builder.result());
+        return new NonEmptyVector<>(Vector.ofTree(elements.result()));
     }
 
     /**
@@ -995,15 +996,16 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             Tuple2<NonEmptyVector<T1>, NonEmptyVector<T2>> unzip(
                     Function<? super A, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        Vector.Builder<T1> xs = Vector.newBuilder(size());
-        Vector.Builder<T2> ys = Vector.newBuilder(size());
+        VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
+        VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
         for (A element : vector) {
             Tuple2<? extends T1, ? extends T2> t =
                     Objects.requireNonNull(unzipper.apply(element), "NonEmptyVector.unzip: unzipper returned null");
-            xs.add(Objects.requireNonNull(t._1(), "NonEmptyVector.unzip: unzipper returned a null component"));
-            ys.add(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip: unzipper returned a null component"));
+            xs.addUnchecked(Objects.requireNonNull(t._1(), "NonEmptyVector.unzip: unzipper returned a null component"));
+            ys.addUnchecked(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip: unzipper returned a null component"));
         }
-        return Tuple.of(new NonEmptyVector<>(xs.result()), new NonEmptyVector<>(ys.result()));
+        return Tuple.of(
+                new NonEmptyVector<>(Vector.ofTree(xs.result())), new NonEmptyVector<>(Vector.ofTree(ys.result())));
     }
 
     /**
@@ -1023,20 +1025,23 @@ public final class NonEmptyVector<A extends @Nullable Object> implements Iterabl
             Tuple3<NonEmptyVector<T1>, NonEmptyVector<T2>, NonEmptyVector<T3>> unzip3(
                     Function<? super A, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        Vector.Builder<T1> xs = Vector.newBuilder(size());
-        Vector.Builder<T2> ys = Vector.newBuilder(size());
-        Vector.Builder<T3> zs = Vector.newBuilder(size());
+        VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
+        VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
+        VectorBuilder<T3> zs = VectorBuilder.forExactly(size());
         for (A element : vector) {
             Tuple3<? extends T1, ? extends T2, ? extends T3> t =
                     Objects.requireNonNull(unzipper.apply(element), "NonEmptyVector.unzip3: unzipper returned null");
-            xs.add(Objects.requireNonNull(t._1(), "NonEmptyVector.unzip3: unzipper returned a null component"));
-            ys.add(Objects.requireNonNull(t._2(), "NonEmptyVector.unzip3: unzipper returned a null component"));
-            zs.add(Objects.requireNonNull(t._3(), "NonEmptyVector.unzip3: unzipper returned a null component"));
+            xs.addUnchecked(
+                    Objects.requireNonNull(t._1(), "NonEmptyVector.unzip3: unzipper returned a null component"));
+            ys.addUnchecked(
+                    Objects.requireNonNull(t._2(), "NonEmptyVector.unzip3: unzipper returned a null component"));
+            zs.addUnchecked(
+                    Objects.requireNonNull(t._3(), "NonEmptyVector.unzip3: unzipper returned a null component"));
         }
         return Tuple.of(
-                new NonEmptyVector<>(xs.result()),
-                new NonEmptyVector<>(ys.result()),
-                new NonEmptyVector<>(zs.result()));
+                new NonEmptyVector<>(Vector.ofTree(xs.result())),
+                new NonEmptyVector<>(Vector.ofTree(ys.result())),
+                new NonEmptyVector<>(Vector.ofTree(zs.result())));
     }
 
     /**

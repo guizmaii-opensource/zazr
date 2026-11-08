@@ -2358,6 +2358,36 @@ deleted. Attribution in `NOTICE`.
     reversed comparators and every shape of the insertion order; `VectorBuilderForExactlyTest` checks that the
     vector `forExactly` builds has, slice for slice, the arrays `add` builds, at the leaf and branch boundaries up to
     1048577 elements. `MapValuesBenchmark` is the measurement.
+  - The other builds that know the exact size of their `Vector` before reading anything write it the same way, with
+    `forExactly` and `addUnchecked` (decided 2026-11-05, #349). They went through `Vector.newBuilder(size())`, whose
+    size hint changes nothing, or through `Vector.ofAll` of an iterator, which builds element by element:
+    - `zipWithIndex` of `LinkedHashMap`, `LinkedHashSet` (the keys of its map), `TreeMap` and `TreeSet`. The tree
+      walk, `RedBlackTreeModule.Node.zipWithIndex`, is internal and returns the `RadixVector`, which the map and the
+      set wrap.
+    - `unzip` and `unzip3` of `Vector` and `NonEmptyVector`: one builder per side, each of the receiver's size.
+    - `NonEmptyVector.of(head, tail...)`: `tail.length + 1` elements.
+    - `Vector.tabulate(n, f)` and `Vector.fill(n, Supplier)`: `n` elements, so `Vector.Builder.addTabulated` goes.
+    - `Vector.duplicatesBy`: one element per duplicated key, and every duplicated key has one first element.
+    - `Vector.reverse`, `Vector.zipWithIndex(BiFunction)` (and `zipWithIndex()`), and `Vector.intersperse`
+      (`2n - 1` elements).
+  - `addUnchecked` checks nothing, so an element that a caller's function returns is checked before it is written,
+    with the message the old path gave: `Vector: element is null` for `tabulate` and `fill`,
+    `Vector.Builder.add: element is null` for each component of `Vector.unzip` and `unzip3`,
+    `Iterator: element is null` for `zipWithIndex(BiFunction)` (as for `List`, `LazyList` and `Queue`), and
+    `Iterator.intersperse: element is null` for `intersperse`. `NonEmptyVector` keeps its own messages. A test
+    checks every component of every `unzip` and `unzip3`: that check is all that keeps a null out of a leaf. An empty
+    receiver still gives `Vector.empty()` itself, without a builder: `forExactly` takes at least one element.
+  - `tabulate` and `zipWithIndex(BiFunction)` keep their loop in a void method of its own, with `result()` in the
+    caller, as `addTabulated` and `VectorBuilder.addAll` had it. With the loop inline, the allocation probe found the
+    boxed indexes still allocated after 500 warm-up calls at 1,000 elements (up to 1,700 B a call more than before);
+    with the loop apart, they are not.
+  - Not converted: `Vector.fill(n, element)` copies one filled leaf at a time, which writing element by element would
+    replace with a per-element loop; `zipWith` and `zipAll` do not know the size of their argument; the `range`
+    factories would need the count of a range with a step, computed without overflow, a change of its own.
+  - `ExactSizeVectorBuildsTest` checks each of them against the `Vector` built the old way, element by element, at 0,
+    1, 31, 32, 33, 1024, 1025 and 40000 elements: the same objects in the same order, then `append`, `update` and
+    `slice`; the null checks and their messages; the empty receivers; and a `NonEmptyVector.of` whose varargs array
+    is written afterwards.
   - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
     `flatMap`.
   - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with
