@@ -2126,6 +2126,21 @@ else holds it (`RadixVector.ofOwnedArray`), so the elements are copied once.
   taken from the running JDK: on a JDK that gives another class, it fails and says to read that class's `toArray()`
   before trusting it.
 
+**More JDK collections keep their array (decided 2026-11-09, #363).** The JDK 25 sources of these classes allocate the
+array of `toArray()` for the call, and they join the list: `PriorityQueue` (`Arrays.copyOf` of its heap array),
+`CopyOnWriteArrayList` and its sub-list (a copy of the snapshot array), the key and value views of `HashMap`,
+`LinkedHashMap` (both orders) and `TreeMap` (also the descending and sub-map key sets, which are the same class), and
+the key, value and entry views of `ConcurrentHashMap`.
+- An array of another length than `size()` (what `AbstractCollection.toArray()` and the `ConcurrentHashMap` views
+  return when the collection changes during the call) is kept as it is: `ofOwnedArray` reads the array's length.
+- The entry sets of `HashMap`, `LinkedHashMap` and `TreeMap` are copied: their elements are the map's own entries,
+  which a later `put` changes, whichever way the array is built. The entries of a `ConcurrentHashMap` view are new
+  objects with their own value, which the map's later changes leave as they are.
+- Copied as before, with the reasons: the reversed view of `CopyOnWriteArrayList`, which reverses the array of its
+  base list, of any subclass; the `java.util.Collections` wrappers, which return the array of the collection they
+  wrap, of any class; the `values()` of a `TreeMap` sub-map or descending map and the sequenced views of `TreeMap`,
+  which are anonymous or local classes of `AbstractMap` and `SequencedMap`.
+
 #### 3.8.1 Builders for the other collections
 
 **Decision.** Every persistent collection gets a nested `static final class Builder` with the same

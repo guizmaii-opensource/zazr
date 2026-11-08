@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import org.junit.jupiter.api.Test;
@@ -97,6 +100,63 @@ public class VectorOfAllSizedSourceTest {
         });
     }
 
+    /// A view of `map`, and a change of `map`: every value replaced, and one more key.
+    private static Source mapView(java.util.Collection<Object> view, java.util.Map<Object, Object> map) {
+        return new Source(view, () -> {
+            map.replaceAll((key, value) -> new Element(-2));
+            map.put(new Element(-3), new Element(-3));
+        });
+    }
+
+    /// `map` holding each element as its own key and value.
+    private static <M extends java.util.Map<Object, Object>> M mapOf(M map, Element[] elements) {
+        for (Element element : elements) {
+            map.put(element, element);
+        }
+        return map;
+    }
+
+    /// The views of the JDK maps whose key and value views are matched by exact class.
+    private static void addMapViews(java.util.List<java.util.Map.Entry<String, Source>> sources, Element[] elements) {
+        java.util.HashMap<Object, Object> hashMap = mapOf(new java.util.HashMap<>(), elements);
+        sources.add(java.util.Map.entry("HashMap.keySet", mapView(hashMap.keySet(), hashMap)));
+        java.util.HashMap<Object, Object> hashMapOfValues = mapOf(new java.util.HashMap<>(), elements);
+        sources.add(java.util.Map.entry("HashMap.values", mapView(hashMapOfValues.values(), hashMapOfValues)));
+        java.util.LinkedHashMap<Object, Object> linked = mapOf(new java.util.LinkedHashMap<>(), elements);
+        sources.add(java.util.Map.entry("LinkedHashMap.keySet", mapView(linked.keySet(), linked)));
+        java.util.LinkedHashMap<Object, Object> linkedOfValues = mapOf(new java.util.LinkedHashMap<>(), elements);
+        sources.add(java.util.Map.entry("LinkedHashMap.values", mapView(linkedOfValues.values(), linkedOfValues)));
+        java.util.LinkedHashMap<Object, Object> reversed = mapOf(new java.util.LinkedHashMap<>(), elements);
+        sources.add(java.util.Map.entry(
+                "LinkedHashMap.reversed().keySet", mapView(reversed.reversed().keySet(), reversed)));
+        java.util.LinkedHashMap<Object, Object> reversedOfValues = mapOf(new java.util.LinkedHashMap<>(), elements);
+        sources.add(java.util.Map.entry(
+                "LinkedHashMap.reversed().values",
+                mapView(reversedOfValues.reversed().values(), reversedOfValues)));
+        java.util.TreeMap<Object, Object> tree = mapOf(new java.util.TreeMap<>(), elements);
+        sources.add(java.util.Map.entry("TreeMap.keySet", mapView(tree.keySet(), tree)));
+        java.util.TreeMap<Object, Object> descending = mapOf(new java.util.TreeMap<>(), elements);
+        sources.add(
+                java.util.Map.entry("TreeMap.descendingKeySet", mapView(descending.descendingKeySet(), descending)));
+        java.util.TreeMap<Object, Object> head = mapOf(new java.util.TreeMap<>(), elements);
+        head.put(new Element(elements.length), new Element(elements.length));
+        sources.add(java.util.Map.entry(
+                "TreeMap.headMap().keySet",
+                mapView(head.headMap(new Element(elements.length)).keySet(), head)));
+        java.util.TreeMap<Object, Object> treeOfValues = mapOf(new java.util.TreeMap<>(), elements);
+        sources.add(java.util.Map.entry("TreeMap.values", mapView(treeOfValues.values(), treeOfValues)));
+        ConcurrentHashMap<Object, Object> concurrent = mapOf(new ConcurrentHashMap<>(), elements);
+        sources.add(java.util.Map.entry("ConcurrentHashMap.keySet", mapView(concurrent.keySet(), concurrent)));
+        ConcurrentHashMap<Object, Object> concurrentOfValues = mapOf(new ConcurrentHashMap<>(), elements);
+        sources.add(java.util.Map.entry(
+                "ConcurrentHashMap.values", mapView(concurrentOfValues.values(), concurrentOfValues)));
+        java.util.Set<Object> keySet = ConcurrentHashMap.newKeySet();
+        keySet.addAll(Arrays.asList((Object[]) elements));
+        sources.add(java.util.Map.entry("ConcurrentHashMap.newKeySet", javaCollection(keySet)));
+        java.util.HashMap<Object, Object> subclass = mapOf(new java.util.HashMap<>() {}, elements);
+        sources.add(java.util.Map.entry("HashMap.keySet of a subclass", mapView(subclass.keySet(), subclass)));
+    }
+
     /// The sized sources of `elements`: every JDK collection matched by exact class, a sub-list of each list that
     /// has one, Zazr collections, and collections that are not matched.
     private static java.util.List<java.util.Map.Entry<String, Source>> sources(Element[] elements) {
@@ -122,6 +182,20 @@ public class VectorOfAllSizedSourceTest {
         sources.add(java.util.Map.entry(
                 "List.of(..).subList",
                 new Source(java.util.List.copyOf(immutableParent).subList(0, elements.length), () -> {})));
+        sources.add(java.util.Map.entry("PriorityQueue", javaCollection(new PriorityQueue<>(asList))));
+        sources.add(java.util.Map.entry("CopyOnWriteArrayList", javaList(new CopyOnWriteArrayList<>(asList))));
+        CopyOnWriteArrayList<Object> copyOnWriteParent = new CopyOnWriteArrayList<>(asList);
+        copyOnWriteParent.add(new Element(-4));
+        sources.add(java.util.Map.entry(
+                "CopyOnWriteArrayList.subList", javaList(copyOnWriteParent.subList(0, elements.length))));
+        addMapViews(sources, elements);
+        CopyOnWriteArrayList<Object> reversedBase = new CopyOnWriteArrayList<>(asList.reversed());
+        sources.add(java.util.Map.entry("CopyOnWriteArrayList.reversed", new Source(reversedBase.reversed(), () -> {
+            if (!reversedBase.isEmpty()) {
+                reversedBase.set(0, new Element(-2));
+            }
+            reversedBase.add(new Element(-3));
+        })));
         ArrayList<Object> wrapped = new ArrayList<>(asList);
         sources.add(java.util.Map.entry(
                 "unmodifiableList",
@@ -206,6 +280,27 @@ public class VectorOfAllSizedSourceTest {
                 source.getValue().change().run();
                 assertSameElements(vector, expected, where + " after the source changed");
             }
+        }
+    }
+
+    @Test
+    public void ofAllOfTheEntriesOfAConcurrentHashMapKeepsTheirValues() {
+        for (int size : SIZES) {
+            ConcurrentHashMap<Object, Object> map = mapOf(new ConcurrentHashMap<>(), elements(size));
+            // the view gives new entries at each iteration: they are compared by key and value
+            java.util.List<java.util.Map.Entry<Object, Object>> expected = new ArrayList<>();
+            for (java.util.Map.Entry<Object, Object> entry : map.entrySet()) {
+                expected.add(java.util.Map.entry(entry.getKey(), entry.getValue()));
+            }
+            Vector<java.util.Map.Entry<Object, Object>> vector = Vector.ofAll(map.entrySet());
+            String where = "size " + size;
+            assertThat(vector).as(where).containsExactlyElementsOf(expected);
+            assertThat(vector.append(java.util.Map.entry(1, 2)).last()).isEqualTo(java.util.Map.entry(1, 2));
+            map.replaceAll((key, value) -> new Element(-2));
+            map.put(new Element(-3), new Element(-3));
+            assertThat(vector).as(where + " after the map changed").containsExactlyElementsOf(expected);
+            map.clear();
+            assertThat(vector).as(where + " after the map was cleared").containsExactlyElementsOf(expected);
         }
     }
 
