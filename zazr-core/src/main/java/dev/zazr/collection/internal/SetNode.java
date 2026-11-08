@@ -126,6 +126,19 @@ public abstract sealed class SetNode<T extends @Nullable Object> extends ChampNo
 
     abstract T getPayload(int index);
 
+    /// Writes the elements of this subtree to `builder`, in iteration order: the elements of a node before those of
+    /// its children. The depth of the recursion is the depth of the trie, at most 7 levels.
+    public final void writeTo(VectorBuilder<? super T> builder) {
+        int payload = payloadArity();
+        for (int i = 0; i < payload; i++) {
+            builder.addUnchecked(getPayload(i));
+        }
+        int children = nodeArity();
+        for (int i = 0; i < children; i++) {
+            getNode(i).writeTo(builder);
+        }
+    }
+
     /// An iterator of the elements of this subtree.
     public final Iterator<T> iterator() {
         return size() == 0 ? Iterator.empty() : new ElementIterator<>(this);

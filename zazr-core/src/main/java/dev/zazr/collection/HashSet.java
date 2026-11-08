@@ -8,6 +8,7 @@ import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.SetNode;
 import dev.zazr.collection.internal.SetViews;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import java.io.*;
@@ -866,6 +867,11 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
         return tree.iterator();
     }
 
+    // writes the elements to builder, in iteration order, straight from the trie
+    void writeTo(VectorBuilder<? super T> builder) {
+        tree.writeTo(builder);
+    }
+
     /**
      * An unmodifiable {@link java.util.Set} view of this HashSet: nothing is copied, reads go through to this set,
      * which never changes, and every mutator of the view (including those of its iterator) throws
@@ -1075,6 +1081,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: effectively O(1): one lookup, one removal and one insertion.
+     *
+     * @throws NullPointerException if {@code currentElement} is a member and {@code newElement} is null
      */
     @Override
     public HashSet<T> replace(T currentElement, T newElement) {
@@ -1083,6 +1091,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             // absent, or replaced by the object already there
             return this;
         } else {
+            Objects.requireNonNull(newElement, "HashSet: element is null");
             // `newElement` replaces an equal element elsewhere in the set too, as on the other sets
             return wrap(tree.removed(currentElement).updated(newElement, true));
         }

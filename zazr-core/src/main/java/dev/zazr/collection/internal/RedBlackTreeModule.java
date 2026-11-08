@@ -739,6 +739,17 @@ public interface RedBlackTreeModule {
             }
         }
 
+        /// Writes the elements of a tree to `builder`, in ascending order.
+        // the depth of the recursion is the height of the tree, at most 2 log2(n + 1)
+        public static <T extends @Nullable Object> void writeTo(
+                RedBlackTree<T> tree, VectorBuilder<? super T> builder) {
+            if (tree instanceof Node<T> node) {
+                writeTo(node.left, builder);
+                builder.addUnchecked(node.value);
+                writeTo(node.right, builder);
+            }
+        }
+
         /// A tree of entries with each value replaced by `f.apply(key, value)`, called once per entry
         /// in ascending order. The keys do not change, so neither do the shape and the colours. A node
         /// whose new value is the object it holds and whose subtrees come back unchanged is kept as it

@@ -34,6 +34,12 @@ public class VectorBuilderBenchmark {
     private Vector<Integer> vector;
     private Vector<Integer> range;
     private Vector<Integer> large;
+    private List<Integer> zazrList;
+    private Queue<Integer> queue;
+    private HashSet<Integer> hashSet;
+    private LinkedHashSet<Integer> linkedHashSet;
+    private TreeSet<Integer> treeSet;
+    private NonEmptySet<Integer> nonEmptySet;
 
     @Setup(Level.Trial)
     public void setup() {
@@ -44,11 +50,49 @@ public class VectorBuilderBenchmark {
         vector = Vector.ofAll(list);
         range = Vector.range(0, size);
         large = Vector.range(0, 1_000_000);
+        zazrList = List.ofAll(list);
+        // half of the elements in the rear list
+        queue = Queue.ofAll(list.subList(0, size / 2)).enqueueAll(list.subList(size / 2, size));
+        hashSet = HashSet.ofAll(list);
+        linkedHashSet = LinkedHashSet.ofAll(list);
+        treeSet = TreeSet.ofAll(list);
+        nonEmptySet = NonEmptySet.fromIterable(0, list);
     }
 
     @Benchmark
     public Vector<Integer> ofAll_arrayList() {
         return Vector.ofAll(list);
+    }
+
+    /* the Zazr collections, whose elements ofAll writes straight into the leaves */
+    @Benchmark
+    public Vector<Integer> ofAll_list() {
+        return Vector.ofAll(zazrList);
+    }
+
+    @Benchmark
+    public Vector<Integer> ofAll_queue() {
+        return Vector.ofAll(queue);
+    }
+
+    @Benchmark
+    public Vector<Integer> ofAll_hashSet() {
+        return Vector.ofAll(hashSet);
+    }
+
+    @Benchmark
+    public Vector<Integer> ofAll_linkedHashSet() {
+        return Vector.ofAll(linkedHashSet);
+    }
+
+    @Benchmark
+    public Vector<Integer> ofAll_treeSet() {
+        return Vector.ofAll(treeSet);
+    }
+
+    @Benchmark
+    public Vector<Integer> ofAll_nonEmptySet() {
+        return Vector.ofAll(nonEmptySet);
     }
 
     @Benchmark

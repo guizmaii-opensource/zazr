@@ -5,6 +5,7 @@ import dev.zazr.collection.internal.Collections;
 import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.SetViews;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import java.io.*;
@@ -812,6 +813,13 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public java.util.Iterator<T> iterator() {
         return Iterator.ofAll(map).map(t -> t._1());
+    }
+
+    // writes the elements to builder, in insertion order, read from the order of the keys: no entry is looked up
+    void writeTo(VectorBuilder<? super T> builder) {
+        for (java.util.Iterator<T> keys = map.keyIterator(); keys.hasNext(); ) {
+            builder.addUnchecked(keys.next());
+        }
     }
 
     /**

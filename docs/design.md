@@ -2388,6 +2388,31 @@ deleted. Attribution in `NOTICE`.
     1, 31, 32, 33, 1024, 1025 and 40000 elements: the same objects in the same order, then `append`, `update` and
     `slice`; the null checks and their messages; the empty receivers; and a `NonEmptyVector.of` whose varargs array
     is written afterwards.
+  - `Vector.ofAll` of a Zazr `List`, `Queue`, `HashSet`, `LinkedHashSet` or `TreeSet` of more than 32 elements writes
+    them the same way (decided 2026-11-09, #364; the change lands only once JMH, `main` against the branch, shows no
+    slowdown at 1,000 and 100,000 elements). It filled a flat array of `size()` slots, then copied it into leaves.
+    - The walks: `SetNode.writeTo` (a node's elements, then its children, the iterator's order),
+      `RedBlackTreeModule.Node.writeTo` (in order), the keys' iterator of the map of a `LinkedHashSet` (no lookup per
+      element), and the iterator of `List` and `Queue`. `List` and `Queue` count their elements first, but the flat
+      array needed the same count, so the walk to count is no new cost; the change for them is the same as for the
+      sets.
+    - The classes are matched exactly; they are final or sealed and immutable, so their `size()` is the number of
+      elements their walk yields, and they hold no null, so `addUnchecked` writes no null (`forExactly`'s `result()`
+      checks the count again). A `Traversable` written elsewhere, a map, a `LazyList`, a JDK collection and a source
+      of up to 32 elements keep the flat array: the first may report a wrong size, the second makes its entries
+      during the walk, the third may be infinite, the fourth is copied fastest by its own `toArray()`, and the last
+      already gives its array to the vector as its one leaf.
+    - `NonEmptyVector`, `NonEmptySet`, `NonEmptySortedSet`, `NonEmptyMap` and `NonEmptySortedMap` implement
+      `Iterable` only, so `ofAll` read them element by element through the builder; it reads the collection each one
+      wraps instead (`ofAll` of a `NonEmptyVector` is then its `Vector`, with no copy).
+    - `VectorOfAllIntoLeavesTest` checks each source against the `Vector` built element by element at 0, 1, 2, 31,
+      32, 33, 63, 64, 65, 1023, 1024, 1025, 32767, 32768, 32769 and a larger size, with colliding hashes, then
+      `append`, `prepend`, `drop`, `dropRight`, `update`, `slice` and `appendAll`; and a `Traversable` whose `size()`
+      is wrong, read as before. `VectorBuilderBenchmark` is the measurement.
+    - `HashSet.replace` and `replaceAll` stored a null `newElement`, against the null rule above, and the leaves would
+      then have taken it. They now throw `HashSet: element is null` when `currentElement` is a member and differs
+      from `newElement`, as `LinkedHashSet.replace` does (decided 2026-11-09, #380); an absent `currentElement` still
+      gives the set itself.
   - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
     `flatMap`.
   - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with
