@@ -6,6 +6,7 @@ import dev.zazr.collection.internal.Collections;
 import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.RadixVector;
+import dev.zazr.collection.internal.Ranges;
 import dev.zazr.collection.internal.TraversableModule;
 import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.collection.internal.VectorModule;
@@ -436,7 +437,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of char values as specified or the empty range if {@code from >= toExclusive}
      */
     public static Vector<Character> range(char from, char toExclusive) {
-        return ofAll(Iterator.range(from, toExclusive));
+        return rangeBy(from, toExclusive, 1);
     }
 
     /**
@@ -462,7 +463,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Character> rangeBy(char from, char toExclusive, int step) {
-        return ofAll(Iterator.rangeBy(from, toExclusive, step));
+        return rangeOfChars(from, toExclusive - (step > 0 ? 1 : -1), step);
     }
 
     /**
@@ -506,9 +507,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toExclusive the last number + 1
      * @return a range of int values as specified or the empty range if {@code from >= toExclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> range(int from, int toExclusive) {
-        return ofAll(Iterator.range(from, toExclusive));
+        return rangeBy(from, toExclusive, 1);
     }
 
     /**
@@ -531,10 +533,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of int values as specified or the empty range if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> rangeBy(int from, int toExclusive, int step) {
-        return ofAll(Iterator.rangeBy(from, toExclusive, step));
+        if ((step > 0 && toExclusive == Integer.MIN_VALUE) || (step < 0 && toExclusive == Integer.MAX_VALUE)) {
+            // no int lies strictly before the type boundary in the step direction
+            return empty();
+        }
+        return rangeClosedBy(from, toExclusive - (step > 0 ? 1 : -1), step);
     }
 
     /**
@@ -552,9 +559,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toExclusive the last number + 1
      * @return a range of long values as specified or the empty range if {@code from >= toExclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> range(long from, long toExclusive) {
-        return ofAll(Iterator.range(from, toExclusive));
+        return rangeBy(from, toExclusive, 1L);
     }
 
     /**
@@ -577,10 +585,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of long values as specified or the empty range if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> rangeBy(long from, long toExclusive, long step) {
-        return ofAll(Iterator.rangeBy(from, toExclusive, step));
+        if ((step > 0 && toExclusive == Long.MIN_VALUE) || (step < 0 && toExclusive == Long.MAX_VALUE)) {
+            // no long lies strictly before the type boundary in the step direction
+            return empty();
+        }
+        return rangeClosedBy(from, toExclusive - (step > 0 ? 1 : -1), step);
     }
 
     /**
@@ -600,7 +613,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of char values as specified or the empty range if {@code from > toInclusive}
      */
     public static Vector<Character> rangeClosed(char from, char toInclusive) {
-        return ofAll(Iterator.rangeClosed(from, toInclusive));
+        return rangeOfChars(from, toInclusive, 1);
     }
 
     /**
@@ -626,7 +639,21 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Character> rangeClosedBy(char from, char toInclusive, int step) {
-        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+        return rangeOfChars(from, toInclusive, step);
+    }
+
+    /* the chars from, from + step, ... up to toInclusive, which is a char, or -1 or 65536 for an exclusive bound at
+     * the ends of the char values; the count is at most 65536 */
+    private static Vector<Character> rangeOfChars(char from, int toInclusive, int step) {
+        int size = Ranges.sizeOf(from, toInclusive, step);
+        if (size == 0) {
+            return empty();
+        }
+        VectorBuilder<Character> elements = VectorBuilder.forExactly(size);
+        for (int k = 0; k < size; k++) {
+            elements.addUnchecked((char) (from + k * step));
+        }
+        return ofTree(elements.result());
     }
 
     /**
@@ -670,9 +697,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toInclusive the last number
      * @return a range of int values as specified or the empty range if {@code from > toInclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> rangeClosed(int from, int toInclusive) {
-        return ofAll(Iterator.rangeClosed(from, toInclusive));
+        return rangeClosedBy(from, toInclusive, 1);
     }
 
     /**
@@ -695,10 +723,20 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of int values as specified or the empty range if<br>
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> rangeClosedBy(int from, int toInclusive, int step) {
-        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+        int size = Ranges.sizeOf(from, toInclusive, step);
+        if (size == 0) {
+            return empty();
+        }
+        VectorBuilder<Integer> elements = VectorBuilder.forExactly(size);
+        for (int k = 0; k < size; k++) {
+            // k * step may wrap, but the sum is the k-th element, which is an int
+            elements.addUnchecked(from + k * step);
+        }
+        return ofTree(elements.result());
     }
 
     /**
@@ -716,9 +754,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toInclusive the last number
      * @return a range of long values as specified or the empty range if {@code from > toInclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> rangeClosed(long from, long toInclusive) {
-        return ofAll(Iterator.rangeClosed(from, toInclusive));
+        return rangeClosedBy(from, toInclusive, 1L);
     }
 
     /**
@@ -741,10 +780,20 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of long values as specified or the empty range if<br>
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> rangeClosedBy(long from, long toInclusive, long step) {
-        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+        int size = Ranges.sizeOf(from, toInclusive, step);
+        if (size == 0) {
+            return empty();
+        }
+        VectorBuilder<Long> elements = VectorBuilder.forExactly(size);
+        for (int k = 0; k < size; k++) {
+            // k * step may wrap, but the sum is the k-th element, which is a long
+            elements.addUnchecked(from + k * step);
+        }
+        return ofTree(elements.result());
     }
 
     /**
@@ -1591,7 +1640,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (size() <= 1) {
             return this;
         }
-        Objects.requireNonNull(element, "Iterator.intersperse: element is null");
+        Objects.requireNonNull(element, "Vector.intersperse: element is null");
         VectorBuilder<T> elements = VectorBuilder.forExactly(2 * size() - 1);
         java.util.Iterator<T> it = trie.iterator();
         elements.addUnchecked(it.next());
@@ -2868,11 +2917,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
         VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
         VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
-        for (T element : trie) {
+        java.util.Iterator<T> it = trie.iterator();
+        for (int i = 0; it.hasNext(); i++) {
             Tuple2<? extends T1, ? extends T2> t =
-                    Objects.requireNonNull(unzipper.apply(element), "Vector.unzip: unzipper returned null");
-            xs.addUnchecked(Objects.requireNonNull(t._1(), "Vector.Builder.add: element is null"));
-            ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
+                    Objects.requireNonNull(unzipper.apply(it.next()), "Vector.unzip: unzipper returned null");
+            xs.addUnchecked(Collections.nonNullComponent(t._1(), "Vector.unzip", "first", i));
+            ys.addUnchecked(Collections.nonNullComponent(t._2(), "Vector.unzip", "second", i));
         }
         return Tuple.of(ofTree(xs.result()), ofTree(ys.result()));
     }
@@ -2899,12 +2949,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
         VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
         VectorBuilder<T3> zs = VectorBuilder.forExactly(size());
-        for (T element : trie) {
+        java.util.Iterator<T> it = trie.iterator();
+        for (int i = 0; it.hasNext(); i++) {
             Tuple3<? extends T1, ? extends T2, ? extends T3> t =
-                    Objects.requireNonNull(unzipper.apply(element), "Vector.unzip3: unzipper returned null");
-            xs.addUnchecked(Objects.requireNonNull(t._1(), "Vector.Builder.add: element is null"));
-            ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
-            zs.addUnchecked(Objects.requireNonNull(t._3(), "Vector.Builder.add: element is null"));
+                    Objects.requireNonNull(unzipper.apply(it.next()), "Vector.unzip3: unzipper returned null");
+            xs.addUnchecked(Collections.nonNullComponent(t._1(), "Vector.unzip3", "first", i));
+            ys.addUnchecked(Collections.nonNullComponent(t._2(), "Vector.unzip3", "second", i));
+            zs.addUnchecked(Collections.nonNullComponent(t._3(), "Vector.unzip3", "third", i));
         }
         return Tuple.of(ofTree(xs.result()), ofTree(ys.result()), ofTree(zs.result()));
     }
@@ -2978,13 +3029,19 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param that   an {@code Iterable} providing the second parameter of the mapper
      * @param mapper a function that combines elements from this and {@code that} into a new element
      * @return a new {@code Vector} containing mapped elements
-     * @throws NullPointerException if {@code that} or {@code mapper} is null
+     * @throws NullPointerException if {@code that} or {@code mapper} is null, or {@code mapper} returns null
      */
     public <U extends @Nullable Object, R extends @Nullable Object> Vector<R> zipWith(
             Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+        return zipWith(that, mapper, "Vector.zipWith: mapper returned null");
+    }
+
+    /* zipWith(that, mapper), a null from mapper reported with nullMessage */
+    <U extends @Nullable Object, R extends @Nullable Object> Vector<R> zipWith(
+            Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper, String nullMessage) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(Iterator.ofAll(this).zipWith(that, mapper));
+        return ofAll(Iterator.ofAll(this).zipWith(that, mapper, nullMessage));
     }
 
     /**
@@ -3004,11 +3061,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param thisElem the element used to fill missing values if this {@code Vector} is shorter than {@code that}
      * @param thatElem the element used to fill missing values if {@code that} is shorter than this {@code Vector}
      * @return a new {@code Vector} containing pairs of elements, including fillers as needed
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that}, {@code thisElem} or {@code thatElem} is null
      */
     public <U extends @Nullable Object> Vector<Tuple2<T, U>> zipAll(
             Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(thisElem, "Vector.zipAll: thisElem is null");
+        Objects.requireNonNull(thatElem, "Vector.zipAll: thatElem is null");
         return ofAll(Iterator.ofAll(this).zipAll(that, thisElem, thatElem));
     }
 
@@ -3031,16 +3090,22 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param <U>    the type of elements in the resulting {@code Vector}
      * @param mapper a function mapping an element and its index to a new element
      * @return a new {@code Vector} containing the mapped elements
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <U extends @Nullable Object> Vector<U> zipWithIndex(
             BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+        return zipWithIndex(mapper, "Vector.zipWithIndex");
+    }
+
+    /* zipWithIndex(mapper), a null from mapper reported as method ("NonEmptyVector.zipWithIndex") */
+    <U extends @Nullable Object> Vector<U> zipWithIndex(
+            BiFunction<? super T, ? super Integer, ? extends U> mapper, String method) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
             return empty();
         }
         VectorBuilder<U> elements = VectorBuilder.forExactly(size());
-        writeZippedWithIndex(elements, trie, mapper);
+        writeZippedWithIndex(elements, trie, mapper, method);
         return ofTree(elements.result());
     }
 
@@ -3048,11 +3113,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     private static <T extends @Nullable Object, U extends @Nullable Object> void writeZippedWithIndex(
             VectorBuilder<U> elements,
             RadixVector<T> source,
-            BiFunction<? super T, ? super Integer, ? extends U> mapper) {
-        @SuppressWarnings("Var")
-        int index = 0;
-        for (T element : source) {
-            elements.addUnchecked(Objects.requireNonNull(mapper.apply(element, index++), "Iterator: element is null"));
+            BiFunction<? super T, ? super Integer, ? extends U> mapper,
+            String method) {
+        java.util.Iterator<T> it = source.iterator();
+        for (int index = 0; it.hasNext(); index++) {
+            elements.addUnchecked(Collections.nonNullMapped(mapper.apply(it.next(), index), method, index));
         }
     }
 

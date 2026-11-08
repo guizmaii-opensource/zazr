@@ -2,6 +2,7 @@ package dev.zazr.collection.internal;
 
 import dev.zazr.Tuple;
 import dev.zazr.Tuple2;
+import dev.zazr.Tuple3;
 import dev.zazr.collection.List;
 import dev.zazr.collection.List.Nil;
 import java.util.Objects;
@@ -11,6 +12,57 @@ import java.util.function.ToIntFunction;
 import org.jspecify.annotations.Nullable;
 
 public interface ListModule {
+
+    /// The `unzip` and `unzip3` of `List` and `Queue`: one pass over `elements`, one `List` per side. `method`
+    /// (`"Queue.unzip"`) names the method in the null messages.
+    interface Unzip {
+
+        @SuppressWarnings("Var")
+        static <T extends @Nullable Object, T1 extends @Nullable Object, T2 extends @Nullable Object>
+                Tuple2<List<T1>, List<T2>> apply(
+                        Iterable<? extends T> elements,
+                        Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper,
+                        String method) {
+            List<T1> xs = Nil.instance();
+            List<T2> ys = Nil.instance();
+            java.util.Iterator<? extends T> it = elements.iterator();
+            for (int i = 0; it.hasNext(); i++) {
+                Tuple2<? extends T1, ? extends T2> t = unzipper.apply(it.next());
+                if (t == null) {
+                    throw new NullPointerException(method + ": unzipper returned null");
+                }
+                xs = xs.prepend(Collections.nonNullComponent(t._1(), method, "first", i));
+                ys = ys.prepend(Collections.nonNullComponent(t._2(), method, "second", i));
+            }
+            return Tuple.of(xs.reverse(), ys.reverse());
+        }
+
+        @SuppressWarnings("Var")
+        static <
+                        T extends @Nullable Object,
+                        T1 extends @Nullable Object,
+                        T2 extends @Nullable Object,
+                        T3 extends @Nullable Object>
+                Tuple3<List<T1>, List<T2>, List<T3>> apply3(
+                        Iterable<? extends T> elements,
+                        Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper,
+                        String method) {
+            List<T1> xs = Nil.instance();
+            List<T2> ys = Nil.instance();
+            List<T3> zs = Nil.instance();
+            java.util.Iterator<? extends T> it = elements.iterator();
+            for (int i = 0; it.hasNext(); i++) {
+                Tuple3<? extends T1, ? extends T2, ? extends T3> t = unzipper.apply(it.next());
+                if (t == null) {
+                    throw new NullPointerException(method + ": unzipper returned null");
+                }
+                xs = xs.prepend(Collections.nonNullComponent(t._1(), method, "first", i));
+                ys = ys.prepend(Collections.nonNullComponent(t._2(), method, "second", i));
+                zs = zs.prepend(Collections.nonNullComponent(t._3(), method, "third", i));
+            }
+            return Tuple.of(xs.reverse(), ys.reverse(), zs.reverse());
+        }
+    }
 
     interface Combinations {
 

@@ -34,6 +34,28 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Collections {
 
+    /// `value`, or a `NullPointerException` whose message names `method` (`"Vector.unzip"`), the component
+    /// (`"first"`) and the index of the element it was split from: `Vector.unzip: the first component of element 3
+    /// is null`. The message is built only when it throws.
+    public static <T extends @Nullable Object> T nonNullComponent(
+            @Nullable T value, String method, String component, int index) {
+        if (value == null) {
+            throw new NullPointerException(
+                    method + ": the " + component + " component of element " + index + " is null");
+        }
+        return value;
+    }
+
+    /// `value`, or a `NullPointerException` whose message names `method` (`"Vector.zipWithIndex"`) and the index of
+    /// the element `mapper` returned it for: `Vector.zipWithIndex: mapper returned null for element 3`. The message
+    /// is built only when it throws.
+    public static <T extends @Nullable Object> T nonNullMapped(@Nullable T value, String method, int index) {
+        if (value == null) {
+            throw new NullPointerException(method + ": mapper returned null for element " + index);
+        }
+        return value;
+    }
+
     // checks, if the *elements* of the given iterables are equal
     static boolean areEqual(Iterable<?> iterable1, Iterable<?> iterable2) {
         java.util.Iterator<?> iter1 = iterable1.iterator();
@@ -847,12 +869,18 @@ public final class Collections {
         return !(iterable instanceof Collection) || copiesOnToArray(iterable.getClass());
     }
 
-    // the java.util collections whose toArray() returns an array allocated for the call, read in the JDK 25 sources:
+    // the JDK collections whose toArray() returns an array allocated for the call, read in the JDK 25 sources:
     // ArrayList and its sub-list, LinkedList, ArrayDeque, HashSet, LinkedHashSet, TreeSet (AbstractCollection's),
-    // Arrays.asList, and List.of, Set.of and the sub-lists of List.of. Matched by exact class, since a subclass may
-    // override toArray(). The array of ListN may be of another class than Object[]: ofOwnedArray copies it.
-    // The classes are taken from the running JDK; OwnedArrayTest pins their names, so that another JDK's classes are
-    // read before they are trusted.
+    // Arrays.asList, and List.of, Set.of and the sub-lists of List.of; PriorityQueue (a copy of its heap array);
+    // CopyOnWriteArrayList and its sub-list (a copy of the snapshot array); the key and value views of HashMap and
+    // LinkedHashMap (an array of size() filled from the table or the links), of TreeMap (AbstractCollection's,
+    // which the descending and sub-map key sets share), and the key, value and entry views of ConcurrentHashMap (an
+    // array filled from the iterator, grown or trimmed to what it returned; its entries are new copies, not the
+    // map's nodes). Matched by exact class, since a subclass may override toArray(). An array of another length than
+    // size() is kept as it is, since ofOwnedArray reads its length. The array of ListN may be of another class than
+    // Object[]: ofOwnedArray copies it. The entry sets of HashMap, LinkedHashMap and TreeMap are not trusted: their
+    // elements are the map's own entries, which a later put changes. The classes are taken from the running JDK;
+    // OwnedArrayTest pins their names, so that another JDK's classes are read before they are trusted.
     static final Class<?> ARRAY_LIST_SUB_LIST =
             new ArrayList<>(java.util.List.of(0)).subList(0, 1).getClass();
     static final Class<?> ARRAYS_AS_LIST = Arrays.asList(0).getClass();
@@ -862,6 +890,21 @@ public final class Collections {
             java.util.List.of(0, 1, 2).subList(0, 1).getClass();
     static final Class<?> SET_12 = java.util.Set.of(0).getClass();
     static final Class<?> SET_N = java.util.Set.of(0, 1, 2).getClass();
+    static final Class<?> COW_SUB_LIST = new java.util.concurrent.CopyOnWriteArrayList<>(java.util.List.of(0))
+            .subList(0, 1)
+            .getClass();
+    static final Class<?> HASH_MAP_KEY_SET = new java.util.HashMap<>().keySet().getClass();
+    static final Class<?> HASH_MAP_VALUES = new java.util.HashMap<>().values().getClass();
+    static final Class<?> LINKED_HASH_MAP_KEY_SET =
+            new java.util.LinkedHashMap<>().keySet().getClass();
+    static final Class<?> LINKED_HASH_MAP_VALUES =
+            new java.util.LinkedHashMap<>().values().getClass();
+    static final Class<?> TREE_MAP_KEY_SET = new java.util.TreeMap<>().keySet().getClass();
+    static final Class<?> TREE_MAP_VALUES = new java.util.TreeMap<>().values().getClass();
+    static final Class<?> CONCURRENT_HASH_MAP_VALUES =
+            new java.util.concurrent.ConcurrentHashMap<>().values().getClass();
+    static final Class<?> CONCURRENT_HASH_MAP_ENTRY_SET =
+            new java.util.concurrent.ConcurrentHashMap<>().entrySet().getClass();
 
     static boolean copiesOnToArray(Class<?> type) {
         return type == ArrayList.class
@@ -876,7 +919,19 @@ public final class Collections {
                 || type == LIST_N
                 || type == IMMUTABLE_SUB_LIST
                 || type == SET_12
-                || type == SET_N;
+                || type == SET_N
+                || type == java.util.PriorityQueue.class
+                || type == java.util.concurrent.CopyOnWriteArrayList.class
+                || type == COW_SUB_LIST
+                || type == HASH_MAP_KEY_SET
+                || type == HASH_MAP_VALUES
+                || type == LINKED_HASH_MAP_KEY_SET
+                || type == LINKED_HASH_MAP_VALUES
+                || type == TREE_MAP_KEY_SET
+                || type == TREE_MAP_VALUES
+                || type == java.util.concurrent.ConcurrentHashMap.KeySetView.class
+                || type == CONCURRENT_HASH_MAP_VALUES
+                || type == CONCURRENT_HASH_MAP_ENTRY_SET;
     }
 
     public static <T extends @Nullable Object> IterableWithSize<T> withSize(Iterable<? extends T> iterable) {
