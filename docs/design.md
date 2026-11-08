@@ -2409,6 +2409,10 @@ deleted. Attribution in `NOTICE`.
       32, 33, 63, 64, 65, 1023, 1024, 1025, 32767, 32768, 32769 and a larger size, with colliding hashes, then
       `append`, `prepend`, `drop`, `dropRight`, `update`, `slice` and `appendAll`; and a `Traversable` whose `size()`
       is wrong, read as before. `VectorBuilderBenchmark` is the measurement.
+    - `HashSet.replace` and `replaceAll` stored a null `newElement`, against the null rule above, and the leaves would
+      then have taken it. They now throw `HashSet: element is null` when `currentElement` is a member and differs
+      from `newElement`, as `LinkedHashSet.replace` does (decided 2026-11-09, #380); an absent `currentElement` still
+      gives the set itself.
   - Not rerouted: `HashMap.removeAll` of a `HashSet` (Scala removes key by key too), `partition`, `groupBy`, `map`,
     `flatMap`.
   - Tests: `ChampBulkTest` fuzzes each subtree operation against a model of the kept key and value objects, with

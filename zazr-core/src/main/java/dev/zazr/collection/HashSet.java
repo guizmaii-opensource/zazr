@@ -1081,6 +1081,8 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
      * {@inheritDoc}
      * <p>
      * Complexity: effectively O(1): one lookup, one removal and one insertion.
+     *
+     * @throws NullPointerException if {@code currentElement} is a member and {@code newElement} is null
      */
     @Override
     public HashSet<T> replace(T currentElement, T newElement) {
@@ -1089,6 +1091,7 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
             // absent, or replaced by the object already there
             return this;
         } else {
+            Objects.requireNonNull(newElement, "HashSet: element is null");
             // `newElement` replaces an equal element elsewhere in the set too, as on the other sets
             return wrap(tree.removed(currentElement).updated(newElement, true));
         }

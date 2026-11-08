@@ -258,6 +258,40 @@ public class VectorOfAllIntoLeavesTest {
                 .hasMessage("Vector: element is null");
     }
 
+    @Test
+    public void aHashSetRejectsANullReplacementSoNoNullReachesTheLeaves() {
+        for (int size : new int[] {1, 32, 33, 1025}) {
+            HashSet<Object> set = HashSet.ofAll(Arrays.asList((Object[]) keys(size, i -> i)));
+            Object present = new Key(size / 2, size / 2);
+            Object absent = new Key(-7, -7);
+            String where = "size " + size;
+            assertThatThrownBy(() -> set.replace(present, null))
+                    .as(where)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("HashSet: element is null");
+            assertThatThrownBy(() -> set.replaceAll(present, null))
+                    .as(where)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("HashSet: element is null");
+            // an absent element is not replaced, as on LinkedHashSet
+            assertThat(set.replace(absent, null)).as(where).isSameAs(set);
+            assertThat(set.replaceAll(absent, null)).as(where).isSameAs(set);
+            // the set that would have held the null is never made, so neither ofAll nor a NonEmptySet reads one
+            assertThatThrownBy(() -> Vector.ofAll(set.replace(present, null)))
+                    .as(where)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("HashSet: element is null");
+            assertThatThrownBy(() -> Vector.ofAll(
+                            NonEmptySet.fromSet(set.replaceAll(present, null)).get()))
+                    .as(where)
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("HashSet: element is null");
+            // the set is left as it was
+            assertSameElements(Vector.ofAll(set), reference(set), where);
+            assertThat(set.size()).as(where).isEqualTo(size);
+        }
+    }
+
     /// A `Traversable` written elsewhere: every method goes to `elements` but `size()`, which answers `size`.
     @SuppressWarnings("unchecked")
     private static Traversable<Object> withSize(Traversable<Object> elements, int size) {
