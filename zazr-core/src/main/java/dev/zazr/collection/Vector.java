@@ -51,10 +51,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
 
     @SuppressWarnings("ObjectEquality")
     private Vector<T> wrap(RadixVector<T> trie) {
-        return (trie == this.trie) ? this : ofAll(trie);
+        return (trie == this.trie) ? this : ofTree(trie);
     }
 
-    private static <T extends @Nullable Object> Vector<T> ofAll(RadixVector<T> trie) {
+    /* the Vector of a tree, with no copy; the empty one for an empty tree. It has a name of its own because RadixVector
+     * is Iterable: a call to ofAll would compile too, and copy every element. The maps' values() build their tree with
+     * VectorBuilder.forExactly */
+    static <T extends @Nullable Object> Vector<T> ofTree(RadixVector<T> trie) {
         return (trie.length() == 0) ? empty() : new Vector<>(trie);
     }
 
@@ -168,7 +171,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     @SuppressWarnings("varargs")
     public static <T extends @Nullable Object> Vector<T> of(T... elements) {
         Objects.requireNonNull(elements, "elements is null");
-        return ofAll(RadixVector.<T>ofAll(elements));
+        return ofTree(RadixVector.<T>ofAll(elements));
     }
 
     /**
@@ -245,7 +248,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then whole-leaf
             // copies into the tree, is cheaper than element-wise adds; the builder pays off for one-shot and unsized
             // sources only
-            return ofAll(RadixVector.<T>ofAll(withSize(iterable).toArray()));
+            return ofTree(RadixVector.<T>ofAll(withSize(iterable).toArray()));
         }
         return Vector.<T>newBuilder().addAll(iterable).result();
     }
@@ -1165,7 +1168,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
                 builder.add(element);
             }
         }
-        return ofAll(builder.result());
+        return ofTree(builder.result());
     }
 
     /**
@@ -1790,7 +1793,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public <U extends @Nullable Object> Vector<U> map(Function<? super T, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         // the same shape, array by array: no builder
-        return ofAll(trie.map(mapper));
+        return ofTree(trie.map(mapper));
     }
 
     /**
@@ -1810,7 +1813,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     public Vector<T> mapConserve(Function<? super T, ? extends T> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         RadixVector<T> mapped = trie.mapConserve(mapper);
-        return (mapped == trie) ? this : ofAll(mapped);
+        return (mapped == trie) ? this : ofTree(mapped);
     }
 
     public <U extends @Nullable Object> Vector<U> collect(Function<? super T, ? extends Option<? extends U>> mapper) {
@@ -3097,7 +3100,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
          * @throws IllegalStateException if {@link #result()} has already been called
          */
         public Vector<T> result() {
-            return ofAll(builder.result());
+            return ofTree(builder.result());
         }
 
         /* appends n elements f(0) .. f(n - 1) */
