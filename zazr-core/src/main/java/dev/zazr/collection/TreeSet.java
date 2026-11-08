@@ -1584,7 +1584,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     /// Whether `tree` and `other` hold the same elements, compared with `equals`. `HashSet` and `LinkedHashSet`
     /// call it for a `TreeSet` argument, so that both directions take the same path. Each fast path returns only an
-    /// answer it proves for any comparator; the others go to [Collections#sameElementCounts].
+    /// answer it proves for any deterministic comparator; the others go to [Collections#sameElementCounts].
     @SuppressWarnings("unchecked")
     static boolean sameElements(TreeSet<?> tree, Set<?> other) {
         if (tree == other) {

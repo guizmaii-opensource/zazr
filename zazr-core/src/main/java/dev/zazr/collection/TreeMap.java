@@ -2031,7 +2031,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     /// Whether `tree` and `other` hold the same entries, keys and values compared with `equals`. `HashMap` and
     /// `LinkedHashMap` call it for a `TreeMap` argument, so that both directions take the same path. Each fast path
-    /// returns only an answer it proves for any comparator; the others go to [Collections#sameElementCounts].
+    /// returns only an answer it proves for any deterministic comparator; the others go to
+    /// [Collections#sameElementCounts].
     @SuppressWarnings("unchecked")
     static boolean sameEntries(TreeMap<?, ?> tree, Map<?, ?> other) {
         if (tree == other) {
@@ -2052,16 +2053,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
                             tree.entries, tree.comparator(), that.entries, that.comparator(), true)
                     || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
                             && Collections.sameElementCounts(tree, that));
-        } else if (other instanceof HashMap || other instanceof LinkedHashMap) {
-            // `other` holds no two equal keys, so each entry found equal in the tree is a different entry of it:
-            // with the same size, that is every entry. When one is not found, the tree may still hold its key at
-            // another place under a comparator that tells equal keys apart: an entry of the tree missing from
-            // `other` decides; otherwise the entries are counted.
+        } else {
+            // A HashMap or a LinkedHashMap (Map is sealed). `other` holds no two equal keys, so each entry found
+            // equal in the tree is a different entry of it: with the same size, that is every entry. When one is not
+            // found, the tree may still hold its key at another place under a comparator that tells equal keys apart:
+            // an entry of the tree missing from `other` decides; otherwise the entries are counted.
             return findsEach(tree, other)
                     || (((TreeMap<Object, Object>) tree).forAll(((Map<Object, Object>) other)::contains)
                             && Collections.sameElementCounts(tree, other));
-        } else {
-            return Collections.sameElementCounts(tree, other);
         }
     }
 
