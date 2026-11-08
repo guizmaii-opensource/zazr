@@ -6,6 +6,7 @@ import dev.zazr.collection.internal.Collections;
 import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.RadixVector;
+import dev.zazr.collection.internal.Ranges;
 import dev.zazr.collection.internal.TraversableModule;
 import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.collection.internal.VectorModule;
@@ -436,7 +437,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of char values as specified or the empty range if {@code from >= toExclusive}
      */
     public static Vector<Character> range(char from, char toExclusive) {
-        return ofAll(Iterator.range(from, toExclusive));
+        return rangeBy(from, toExclusive, 1);
     }
 
     /**
@@ -462,7 +463,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Character> rangeBy(char from, char toExclusive, int step) {
-        return ofAll(Iterator.rangeBy(from, toExclusive, step));
+        return rangeOfChars(from, toExclusive - (step > 0 ? 1 : -1), step);
     }
 
     /**
@@ -506,9 +507,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toExclusive the last number + 1
      * @return a range of int values as specified or the empty range if {@code from >= toExclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> range(int from, int toExclusive) {
-        return ofAll(Iterator.range(from, toExclusive));
+        return rangeBy(from, toExclusive, 1);
     }
 
     /**
@@ -531,10 +533,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of int values as specified or the empty range if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> rangeBy(int from, int toExclusive, int step) {
-        return ofAll(Iterator.rangeBy(from, toExclusive, step));
+        if ((step > 0 && toExclusive == Integer.MIN_VALUE) || (step < 0 && toExclusive == Integer.MAX_VALUE)) {
+            // no int lies strictly before the type boundary in the step direction
+            return empty();
+        }
+        return rangeClosedBy(from, toExclusive - (step > 0 ? 1 : -1), step);
     }
 
     /**
@@ -552,9 +559,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toExclusive the last number + 1
      * @return a range of long values as specified or the empty range if {@code from >= toExclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> range(long from, long toExclusive) {
-        return ofAll(Iterator.range(from, toExclusive));
+        return rangeBy(from, toExclusive, 1L);
     }
 
     /**
@@ -577,10 +585,15 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of long values as specified or the empty range if<br>
      * {@code from >= toExclusive} and {@code step > 0} or<br>
      * {@code from <= toExclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> rangeBy(long from, long toExclusive, long step) {
-        return ofAll(Iterator.rangeBy(from, toExclusive, step));
+        if ((step > 0 && toExclusive == Long.MIN_VALUE) || (step < 0 && toExclusive == Long.MAX_VALUE)) {
+            // no long lies strictly before the type boundary in the step direction
+            return empty();
+        }
+        return rangeClosedBy(from, toExclusive - (step > 0 ? 1 : -1), step);
     }
 
     /**
@@ -600,7 +613,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of char values as specified or the empty range if {@code from > toInclusive}
      */
     public static Vector<Character> rangeClosed(char from, char toInclusive) {
-        return ofAll(Iterator.rangeClosed(from, toInclusive));
+        return rangeOfChars(from, toInclusive, 1);
     }
 
     /**
@@ -626,7 +639,21 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @throws IllegalArgumentException if {@code step} is zero
      */
     public static Vector<Character> rangeClosedBy(char from, char toInclusive, int step) {
-        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+        return rangeOfChars(from, toInclusive, step);
+    }
+
+    /* the chars from, from + step, ... up to toInclusive, which is a char, or -1 or 65536 for an exclusive bound at
+     * the ends of the char values; the count is at most 65536 */
+    private static Vector<Character> rangeOfChars(char from, int toInclusive, int step) {
+        int size = Ranges.sizeOf(from, toInclusive, step);
+        if (size == 0) {
+            return empty();
+        }
+        VectorBuilder<Character> elements = VectorBuilder.forExactly(size);
+        for (int k = 0; k < size; k++) {
+            elements.addUnchecked((char) (from + k * step));
+        }
+        return ofTree(elements.result());
     }
 
     /**
@@ -670,9 +697,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toInclusive the last number
      * @return a range of int values as specified or the empty range if {@code from > toInclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> rangeClosed(int from, int toInclusive) {
-        return ofAll(Iterator.rangeClosed(from, toInclusive));
+        return rangeClosedBy(from, toInclusive, 1);
     }
 
     /**
@@ -695,10 +723,20 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of int values as specified or the empty range if<br>
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Integer> rangeClosedBy(int from, int toInclusive, int step) {
-        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+        int size = Ranges.sizeOf(from, toInclusive, step);
+        if (size == 0) {
+            return empty();
+        }
+        VectorBuilder<Integer> elements = VectorBuilder.forExactly(size);
+        for (int k = 0; k < size; k++) {
+            // k * step may wrap, but the sum is the k-th element, which is an int
+            elements.addUnchecked(from + k * step);
+        }
+        return ofTree(elements.result());
     }
 
     /**
@@ -716,9 +754,10 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param from        the first number
      * @param toInclusive the last number
      * @return a range of long values as specified or the empty range if {@code from > toInclusive}
+     * @throws IllegalArgumentException if the range holds more than {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> rangeClosed(long from, long toInclusive) {
-        return ofAll(Iterator.rangeClosed(from, toInclusive));
+        return rangeClosedBy(from, toInclusive, 1L);
     }
 
     /**
@@ -741,10 +780,20 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return a range of long values as specified or the empty range if<br>
      * {@code from > toInclusive} and {@code step > 0} or<br>
      * {@code from < toInclusive} and {@code step < 0}
-     * @throws IllegalArgumentException if {@code step} is zero
+     * @throws IllegalArgumentException if {@code step} is zero, or if the range holds more than
+     * {@code Integer.MAX_VALUE} elements
      */
     public static Vector<Long> rangeClosedBy(long from, long toInclusive, long step) {
-        return ofAll(Iterator.rangeClosedBy(from, toInclusive, step));
+        int size = Ranges.sizeOf(from, toInclusive, step);
+        if (size == 0) {
+            return empty();
+        }
+        VectorBuilder<Long> elements = VectorBuilder.forExactly(size);
+        for (int k = 0; k < size; k++) {
+            // k * step may wrap, but the sum is the k-th element, which is a long
+            elements.addUnchecked(from + k * step);
+        }
+        return ofTree(elements.result());
     }
 
     /**
