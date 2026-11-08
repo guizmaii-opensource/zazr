@@ -1566,10 +1566,13 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * <p>
      * Complexity: O(n log n) against a HashSet or a LinkedHashSet: each of its elements is looked up in this tree by
      * the comparator, and the element found compared with {@code equals}. O(n) against a TreeSet with an equal
-     * comparator: the two are walked in order, side by side; O(n) against a TreeSet with another comparator, with a
-     * temporary hash table of this set's elements. O(1) when the sizes differ. A comparator under which two objects
-     * equal by {@code equals} compare as different (so that the set can hold both) adds, when the first check
-     * cannot decide, one O(n) count of the elements in a temporary hash table.
+     * comparator: the two are walked in order, side by side. O(n log n) against a TreeSet with another comparator:
+     * the two are walked in order, side by side, and when an element differs, each element of this set is looked up
+     * in the other tree by its comparator, then found back in this one; when that fails too, the sums of the two
+     * sets' hash codes are compared, O(n). None of these allocates per element. O(1) when the sizes differ. When none
+     * decides (under a comparator for which two objects equal by {@code equals} compare as different, so that the
+     * set can hold both, or for two different sets of the same hash sum), one O(n) count of the elements in a
+     * temporary hash table follows. Against a Set of another implementation: the hash sums, then the count.
      *
      * @param o any object
      * @return true if {@code o} is a Set of the same elements

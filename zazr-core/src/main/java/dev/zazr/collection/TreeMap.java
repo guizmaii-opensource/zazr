@@ -2013,10 +2013,13 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * <p>
      * Complexity: O(n log n) against a HashMap or a LinkedHashMap: the key of each of its entries is looked up in
      * this tree by the comparator, and the entry found compared with {@code equals}. O(n) against a TreeMap with an
-     * equal comparator: the two are walked in order, side by side; O(n) against a TreeMap with another comparator,
-     * with a temporary hash table of this map's entries. O(1) when the sizes differ. A comparator under which two
-     * keys equal by {@code equals} compare as different (so that the map can hold both) adds, when the first check
-     * cannot decide, one O(n) count of the entries in a temporary hash table.
+     * equal comparator: the two are walked in order, side by side. O(n log n) against a TreeMap with another
+     * comparator: the two are walked in order, side by side, and when an entry differs, the key of each entry of
+     * this map is looked up in the other tree by its comparator, then found back in this one; when that fails too,
+     * the sums of the two maps' hash codes are compared, O(n). None of these allocates per entry. O(1) when the sizes
+     * differ. When none decides (under a comparator for which two keys equal by {@code equals} compare as different,
+     * so that the map can hold both, or for two different maps of the same hash sum), one O(n) count of the entries
+     * in a temporary hash table follows.
      *
      * @param o any object
      * @return true if {@code o} is a Map of the same entries

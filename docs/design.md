@@ -1869,9 +1869,26 @@ the value) and follow the same rule: keys and values by `equals`.
     elements, so with the same size a match for each is a bijection: equal under any comparator. When one is not
     found, each element of the tree is looked up in the hash set: one missing proves inequality; when none is, the
     comparator tells equal objects apart and the elements are counted.
-  - Any other pair (`TreeSet`s with different comparators, a `Set` of another implementation): the count.
+  - Two `TreeSet`s with different comparators (#362, 2026-11-09), in three allocation-free steps before the count.
+    First the in-order walk: a full match proves equality whatever the comparators (two comparators of one order, as
+    `naturalOrder()` and a `comparing` of the same key, decide here, O(n)). Then lookups
+    (`RedBlackTreeModule.Node.pairsByLookup`, O(n log n)): each node of one tree finds, by the other tree's
+    comparator, a node of an equal element, and that node finds back, by the first tree's comparator, the very node
+    it came from. So no two nodes find the same one: the lookups pair the nodes one to one, each with an equal
+    element, which proves equality for any two deterministic comparators, neither side being assumed free of equal
+    elements. Lookups in one direction only, with equal sizes, would not: {x1, x2} and {x, y} under a comparator
+    that tells x1 from x2 each find an equal element. When the two sets are equal under comparators for which equal
+    objects compare as 0, every lookup succeeds; the step succeeds from one tree exactly when it does from the
+    other, so the path does not depend on the receiver. A failed lookup proves nothing, and neither does a
+    comparator that throws on an element of the other tree (any `RuntimeException`, so that the answer stays the
+    count's: equality does not depend on the comparators). Last, different hash sums prove inequality, O(n). Only
+    equal hash sums after all that go to the count: a comparator that tells equal objects apart, or two different
+    sets of the same hash sum.
+  - A `Set` of another implementation (#362): it can hold equal elements, so no lookup proves equality; different
+    hash sums prove inequality, and equal ones go to the count.
 - **Maps** take the same paths over their entries: the key of each hash-map entry is found in the tree by the
-  comparator, and the entry found must have an equal key and an equal value. `TreeMap.contains(entry)` is not used
+  comparator, and the entry found must have an equal key and an equal value; between two `TreeMap`s of different
+  comparators, the lookups go by key and compare the entries found, keys and values, with `equals` (#362). `TreeMap.contains(entry)` is not used
   there, since it compares only the value of the key it finds.
 - **The non-empty wrappers** delegate to the wrapped set or map and need nothing more; their notes that equality held
   one way only under such a comparator are gone.
@@ -1882,7 +1899,11 @@ the value) and follow the same rule: keys and values by `equals`.
   an element the comparator equates, by every element, by size; empty sets; sizes 31 to 1025; another
   implementation of `Set` or `Map`; the non-empty wrappers; an item whose `equals` ignores a field its comparator
   uses (a tree holding two equal elements, equal elements stored in another order); and random sets and maps of
-  every pair of kinds checked against a count of their elements.
+  every pair of kinds checked against a count of their elements. `EqualityPathsTest` (#362) checks every pair of
+  sets (maps) made from the subsets of a small universe, by every kind and comparator (natural, reversed, a second
+  comparator of the natural order, one that equates unequal elements, one that tells equal elements apart), with
+  colliding hash codes, the non-empty wrappers and another implementation of `Set`, against a count; and which step
+  decided, from the `equals`, `hashCode` and `compare` calls of instrumented elements.
 
 **`Map` and `SortedMap` are implemented by Zazr only (#369, decided 2026-11-08).** Both were public interfaces that
 any code could implement, and every abstract method added to them (`filter(BiPredicate)`, then
