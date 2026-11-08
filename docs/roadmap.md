@@ -13,9 +13,6 @@ the work and shows where it stands.
 
 ## Next releases
 
-- **[0.5.0: performance](https://github.com/guizmaii-opensource/zazr/milestone/6).** Faster operations, with the same
-  behaviour: tree deletion without temporary objects, `keySet()` without rebuilding, faster `combinations` and
-  `permutations`, a real-time `Queue`, and operations that change nothing giving back the collection itself.
 - **[0.6.0: warnings and sequence operations](https://github.com/guizmaii-opensource/zazr/milestone/7).** A
   `Validation` that also collects warnings, which never block the result, and sequence operations such as
   `zipWithPrevious`, `mapAccum` and `foldWhile`.
@@ -24,6 +21,9 @@ the work and shows where it stands.
 
 ## Released
 
+- **[0.5.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.5.0).** Performance: operations that change
+  nothing give back the collection itself, untouched subtrees are shared, and `combinations`, `permutations`,
+  `keySet()`, the maps' `values()` and tree deletion are faster.
 - **[0.4.0](https://github.com/guizmaii-opensource/zazr/releases/tag/v0.4.0).** More of Scala's collections:
   `groupMap`, `groupMapReduce`, `sizeCompare`, `updateWith` on maps and range operations on sorted sets and maps. In
   `zazr-test`, generators for the non-empty sets and maps and for null values.
