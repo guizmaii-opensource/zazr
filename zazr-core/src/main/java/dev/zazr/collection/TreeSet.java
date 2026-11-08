@@ -919,9 +919,8 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     }
 
     // the elements of a tree to remove, marked by rank in a bitmap, then dropped in one filter: `Node.filter` tests
-    // each
-    // element once, in ascending order, so the element tested is the one of the next rank. The first `limit` elements
-    // marked are kept as given, to be deleted one by one when no more are marked
+    // each element once, in ascending order, so the element tested is the one of the next rank. The first `limit`
+    // elements marked are kept as given, to be deleted one by one when no more are marked
     private static final class Marks<T extends @Nullable Object> implements Predicate<T> {
 
         private final RedBlackTree<T> tree;
