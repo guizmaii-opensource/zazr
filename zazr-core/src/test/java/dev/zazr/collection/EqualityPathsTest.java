@@ -174,21 +174,23 @@ class EqualityPathsTest {
         }
     }
 
-    private static int checkEveryPair(java.util.List<Made> made) {
-        int equalPairs = 0;
-        for (Made a : made) {
-            for (Made b : made) {
-                boolean expected = a.counts().equals(b.counts());
-                String what = a.what() + " and " + b.what();
-                check(what, a.collection(), b.collection(), expected);
-                if (a.wrapped() != null && b.wrapped() != null) {
-                    check(what + ", wrapped", a.wrapped(), b.wrapped(), expected);
-                    check(what + ", one wrapped", a.wrapped(), b.collection(), false);
-                }
-                equalPairs += expected ? 1 : 0;
-            }
+    // checks every pair of `made`, and returns how many are equal
+    private static long checkEveryPair(java.util.List<Made> made) {
+        return made.stream()
+                .flatMap(a -> made.stream().filter(b -> checkPair(a, b)))
+                .count();
+    }
+
+    // checks the pair against the model, plain and wrapped, and returns whether it is equal
+    private static boolean checkPair(Made a, Made b) {
+        boolean expected = a.counts().equals(b.counts());
+        String what = a.what() + " and " + b.what();
+        check(what, a.collection(), b.collection(), expected);
+        if (a.wrapped() != null && b.wrapped() != null) {
+            check(what + ", wrapped", a.wrapped(), b.wrapped(), expected);
+            check(what + ", one wrapped", a.wrapped(), b.collection(), false);
         }
-        return equalPairs;
+        return expected;
     }
 
     private static @Nullable Object wrapSet(Set<Elem> set) {
@@ -203,7 +205,7 @@ class EqualityPathsTest {
         }
     }
 
-    private static int checkEverySetPair(java.util.List<Elem> universe) {
+    private static long checkEverySetPair(java.util.List<Elem> universe) {
         java.util.List<Made> made = new ArrayList<>();
         for (java.util.List<Elem> subset : subsets(universe)) {
             for (SetKind kind : SET_KINDS) {
@@ -275,7 +277,7 @@ class EqualityPathsTest {
         }
     }
 
-    private static int checkEveryMapPair(java.util.List<Tuple2<Elem, Integer>> universe) {
+    private static long checkEveryMapPair(java.util.List<Tuple2<Elem, Integer>> universe) {
         java.util.List<Made> made = new ArrayList<>();
         for (java.util.List<Tuple2<Elem, Integer>> subset : subsets(universe)) {
             for (MapKind kind : MAP_KINDS) {
