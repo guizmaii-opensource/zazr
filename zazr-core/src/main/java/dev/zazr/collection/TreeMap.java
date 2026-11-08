@@ -2013,10 +2013,13 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
      * <p>
      * Complexity: O(n log n) against a HashMap or a LinkedHashMap: the key of each of its entries is looked up in
      * this tree by the comparator, and the entry found compared with {@code equals}. O(n) against a TreeMap with an
-     * equal comparator: the two are walked in order, side by side; O(n) against a TreeMap with another comparator,
-     * with a temporary hash table of this map's entries. O(1) when the sizes differ. A comparator under which two
-     * keys equal by {@code equals} compare as different (so that the map can hold both) adds, when the first check
-     * cannot decide, one O(n) count of the entries in a temporary hash table.
+     * equal comparator: the two are walked in order, side by side. O(n log n) against a TreeMap with another
+     * comparator: the two are walked in order, side by side, and when an entry differs, the sums of the two maps'
+     * hash codes are compared, O(n); when they are equal, the key of each entry of this map is looked up in the
+     * other tree by its comparator, then found back in this one. None of these allocates per entry. O(1) when the sizes
+     * differ. When none decides (under a comparator for which two keys equal by {@code equals} compare as different,
+     * so that the map can hold both, or for two different maps of the same hash sum), one O(n) count of the entries
+     * in a temporary hash table follows.
      *
      * @param o any object
      * @return true if {@code o} is a Map of the same entries
@@ -2028,7 +2031,8 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
 
     /// Whether `tree` and `other` hold the same entries, keys and values compared with `equals`. `HashMap` and
     /// `LinkedHashMap` call it for a `TreeMap` argument, so that both directions take the same path. Each fast path
-    /// returns only an answer it proves for any comparator; the others go to [Collections#sameElementCounts].
+    /// returns only an answer it proves for any deterministic comparator; the others go to
+    /// [Collections#sameElementCounts].
     @SuppressWarnings("unchecked")
     static boolean sameEntries(TreeMap<?, ?> tree, Map<?, ?> other) {
         if (tree == other) {
@@ -2041,16 +2045,23 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
             return inOrder(tree, that)
                     || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
                             && Collections.sameElementCounts(tree, that));
-        } else if (other instanceof HashMap || other instanceof LinkedHashMap) {
-            // `other` holds no two equal keys, so each entry found equal in the tree is a different entry of it:
-            // with the same size, that is every entry. When one is not found, the tree may still hold its key at
-            // another place under a comparator that tells equal keys apart: an entry of the tree missing from
-            // `other` decides; otherwise the entries are counted.
+        } else if (other instanceof TreeMap<?, ?> that) {
+            // Two key orders: a full match of the in-order walk proves equality, as do key lookups that pair the
+            // entries one to one; neither proves a difference. Different hash sums do, in O(n), so they come before
+            // the O(n log n) lookups.
+            return inOrder(tree, that)
+                    || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
+                            && (RedBlackTreeModule.Node.pairsByLookup(
+                                            tree.entries, tree.comparator(), that.entries, that.comparator(), true)
+                                    || Collections.sameElementCounts(tree, that)));
+        } else {
+            // A HashMap or a LinkedHashMap (Map is sealed). `other` holds no two equal keys, so each entry found
+            // equal in the tree is a different entry of it: with the same size, that is every entry. When one is not
+            // found, the tree may still hold its key at another place under a comparator that tells equal keys apart:
+            // an entry of the tree missing from `other` decides; otherwise the entries are counted.
             return findsEach(tree, other)
                     || (((TreeMap<Object, Object>) tree).forAll(((Map<Object, Object>) other)::contains)
                             && Collections.sameElementCounts(tree, other));
-        } else {
-            return Collections.sameElementCounts(tree, other);
         }
     }
 

@@ -1370,7 +1370,8 @@ public final class LinkedHashSet<T extends @Nullable Object> implements Set<T> {
      * <p>
      * Complexity: O(n log n) against a TreeSet, as {@link TreeSet#equals(Object)}; O(n) against a HashSet or a
      * LinkedHashSet: each element of this set is looked up in the other one; O(n) against a Set of another
-     * implementation, with a temporary hash table of this set's elements. O(1) when the sizes differ.
+     * implementation: the sums of the two sets' hash codes are compared, and when they are equal the elements are
+     * counted in a temporary hash table. O(1) when the sizes differ.
      */
     @Override
     public boolean equals(@Nullable Object o) {

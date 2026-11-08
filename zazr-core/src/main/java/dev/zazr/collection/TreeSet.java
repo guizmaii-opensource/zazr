@@ -1566,10 +1566,13 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * <p>
      * Complexity: O(n log n) against a HashSet or a LinkedHashSet: each of its elements is looked up in this tree by
      * the comparator, and the element found compared with {@code equals}. O(n) against a TreeSet with an equal
-     * comparator: the two are walked in order, side by side; O(n) against a TreeSet with another comparator, with a
-     * temporary hash table of this set's elements. O(1) when the sizes differ. A comparator under which two objects
-     * equal by {@code equals} compare as different (so that the set can hold both) adds, when the first check
-     * cannot decide, one O(n) count of the elements in a temporary hash table.
+     * comparator: the two are walked in order, side by side. O(n log n) against a TreeSet with another comparator:
+     * the two are walked in order, side by side, and when an element differs, the sums of the two sets' hash codes
+     * are compared, O(n); when they are equal, each element of this set is looked up in the other tree by its
+     * comparator, then found back in this one. None of these allocates per element. O(1) when the sizes differ. When none
+     * decides (under a comparator for which two objects equal by {@code equals} compare as different, so that the
+     * set can hold both, or for two different sets of the same hash sum), one O(n) count of the elements in a
+     * temporary hash table follows. Against a Set of another implementation: the hash sums, then the count.
      *
      * @param o any object
      * @return true if {@code o} is a Set of the same elements
@@ -1581,7 +1584,7 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     /// Whether `tree` and `other` hold the same elements, compared with `equals`. `HashSet` and `LinkedHashSet`
     /// call it for a `TreeSet` argument, so that both directions take the same path. Each fast path returns only an
-    /// answer it proves for any comparator; the others go to [Collections#sameElementCounts].
+    /// answer it proves for any deterministic comparator; the others go to [Collections#sameElementCounts].
     @SuppressWarnings("unchecked")
     static boolean sameElements(TreeSet<?> tree, Set<?> other) {
         if (tree == other) {
@@ -1594,6 +1597,15 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return inOrder(tree, that)
                     || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
                             && Collections.sameElementCounts(tree, that));
+        } else if (other instanceof TreeSet<?> that) {
+            // Two orders: a full match of the in-order walk proves equality, as do lookups that pair the elements
+            // one to one; neither proves a difference. Different hash sums do, in O(n), so they come before the
+            // O(n log n) lookups.
+            return inOrder(tree, that)
+                    || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
+                            && (RedBlackTreeModule.Node.pairsByLookup(
+                                            tree.tree, tree.comparator(), that.tree, that.comparator(), false)
+                                    || Collections.sameElementCounts(tree, that)));
         } else if (other instanceof HashSet || other instanceof LinkedHashSet) {
             // `other` holds no two equal elements, so each one found equal in the tree is a different element of it:
             // with the same size, that is every element. When one is not found, the tree may still hold it at
@@ -1602,7 +1614,10 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return findsEach(tree, other)
                     || (tree.forAll(((Set<Object>) other)::contains) && Collections.sameElementCounts(tree, other));
         } else {
-            return Collections.sameElementCounts(tree, other);
+            // a set of another kind can hold two equal elements: different hash sums prove a difference, and
+            // otherwise the elements are counted
+            return Collections.hashUnordered(tree) == Collections.hashUnordered(other)
+                    && Collections.sameElementCounts(tree, other);
         }
     }
 
