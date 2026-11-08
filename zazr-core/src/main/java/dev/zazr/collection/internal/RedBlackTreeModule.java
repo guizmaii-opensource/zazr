@@ -1001,6 +1001,29 @@ public interface RedBlackTreeModule {
             return null;
         }
 
+        /// The rank of the element whose key equals `key` (the number of elements before it in `tree`), or -1
+        /// when there is none. It compares as [#findByKey] does, and adds up the sizes of the subtrees left
+        /// behind on the way. One walk down the tree, O(log n).
+        public static <E extends @Nullable Object, K extends @Nullable Object> int rankByKey(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            @SuppressWarnings("Var")
+            int rank = 0;
+            while (t instanceof Node<E> node) {
+                int c = compareKey(comparator, entries, key, node.value);
+                if (c < 0) {
+                    t = node.left;
+                } else if (c > 0) {
+                    rank += node.left.size() + 1;
+                    t = node.right;
+                } else {
+                    return rank + node.left.size();
+                }
+            }
+            return -1;
+        }
+
         /// The least element whose key is greater than or equal to `key`, or `null` when there is none. One walk
         /// down the tree, O(log n).
         public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E minAfter(
