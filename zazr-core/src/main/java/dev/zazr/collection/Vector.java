@@ -255,26 +255,82 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     @SuppressWarnings("unchecked")
     public static <T extends @Nullable Object> Vector<T> ofAll(Iterable<? extends T> iterable) {
         Objects.requireNonNull(iterable, "iterable is null");
-        if (iterable instanceof Traversable && dev.zazr.collection.internal.Collections.isEmpty(iterable)) {
+        Iterable<? extends T> source = (Iterable<? extends T>) wrappedByNonEmpty(iterable);
+        if (source instanceof Traversable && dev.zazr.collection.internal.Collections.isEmpty(source)) {
             return empty();
         }
-        if (iterable instanceof Vector) {
-            return (Vector<T>) iterable;
+        if (source instanceof Vector) {
+            return (Vector<T>) source;
         }
-        if (JavaConverters.underlying(iterable) instanceof Vector<?> underlying) {
+        if (JavaConverters.underlying(source) instanceof Vector<?> underlying) {
             return (Vector<T>) underlying;
         }
-        if (dev.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
-            // a sized source (a JDK Collection, a Zazr Traversable): one bulk copy into a flat array, then whole-leaf
-            // copies into the tree, is cheaper than element-wise adds; the builder pays off for one-shot and unsized
-            // sources only. Up to 32 elements, an array that nothing else holds is the tree's one leaf as it is.
-            Object[] elements = Collections.toArrayOfSized(iterable);
+        RadixVector<T> written = writtenIntoLeaves(source);
+        if (written != null) {
+            return ofTree(written);
+        }
+        if (dev.zazr.collection.internal.Collections.isTraversableAgain(source)) {
+            // any other sized source (a JDK Collection, a Traversable written elsewhere, a Zazr collection of up to
+            // 32 elements, a Map): one bulk copy into a flat array, then whole-leaf copies into the tree. Up to 32
+            // elements, an array that nothing else holds is the tree's one leaf as it is.
+            Object[] elements = Collections.toArrayOfSized(source);
             return ofTree(
-                    Collections.toArrayIsOwned(iterable)
+                    Collections.toArrayIsOwned(source)
                             ? RadixVector.<T>ofOwnedArray(elements)
                             : RadixVector.<T>ofAll(elements));
         }
-        return Vector.<T>newBuilder().addAll(iterable).result();
+        return Vector.<T>newBuilder().addAll(source).result();
+    }
+
+    /* the collection that a non-empty type wraps, which yields the same elements in the same order; iterable itself
+     * for any other iterable */
+    private static Iterable<?> wrappedByNonEmpty(Iterable<?> iterable) {
+        return switch (iterable) {
+            case NonEmptyVector<?> nonEmpty -> nonEmpty.toVector();
+            case NonEmptySet<?> nonEmpty -> nonEmpty.toSet();
+            case NonEmptySortedSet<?> nonEmpty -> nonEmpty.toSortedSet();
+            case NonEmptyMap<?, ?> nonEmpty -> nonEmpty.toMap();
+            case NonEmptySortedMap<?, ?> nonEmpty -> nonEmpty.toSortedMap();
+            default -> iterable;
+        };
+    }
+
+    /*
+     * The elements of a Zazr List, Queue, HashSet, LinkedHashSet or TreeSet of more than 32 elements, written straight
+     * into the leaves of a new tree through the collection's own walk, in iteration order: no flat array is made. Null
+     * for any other iterable, and for 32 elements or fewer, where the array ofAll makes is the tree's one leaf. The
+     * classes are matched exactly, and they are final or sealed and immutable: their size() is the number of elements
+     * their walk yields, never null, which forExactly checks again in result(). A Traversable written elsewhere may
+     * report another size, so it is read as before.
+     */
+    @SuppressWarnings("unchecked")
+    private static <T extends @Nullable Object> @Nullable RadixVector<T> writtenIntoLeaves(
+            Iterable<? extends T> iterable) {
+        if (!(iterable instanceof HashSet
+                || iterable instanceof TreeSet
+                || iterable instanceof LinkedHashSet
+                || iterable instanceof List
+                || iterable instanceof Queue)) {
+            return null;
+        }
+        Traversable<T> source = (Traversable<T>) iterable;
+        // List and Queue count their elements here: the flat array would need the same count
+        int size = source.size();
+        if (size <= 32) {
+            return null;
+        }
+        VectorBuilder<T> leaves = VectorBuilder.forExactly(size);
+        switch (source) {
+            case HashSet<T> set -> set.writeTo(leaves);
+            case TreeSet<T> set -> set.writeTo(leaves);
+            case LinkedHashSet<T> set -> set.writeTo(leaves);
+            default -> {
+                for (T element : source) {
+                    leaves.addUnchecked(element);
+                }
+            }
+        }
+        return leaves.result();
     }
 
     /**

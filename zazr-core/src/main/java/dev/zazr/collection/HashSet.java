@@ -8,6 +8,7 @@ import dev.zazr.collection.internal.Iterator;
 import dev.zazr.collection.internal.JavaConverters;
 import dev.zazr.collection.internal.SetNode;
 import dev.zazr.collection.internal.SetViews;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Either;
 import dev.zazr.control.Option;
 import java.io.*;
@@ -864,6 +865,11 @@ public final class HashSet<T extends @Nullable Object> implements Set<T> {
     @Override
     public java.util.Iterator<T> iterator() {
         return tree.iterator();
+    }
+
+    // writes the elements to builder, in iteration order, straight from the trie
+    void writeTo(VectorBuilder<? super T> builder) {
+        tree.writeTo(builder);
     }
 
     /**

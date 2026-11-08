@@ -9,6 +9,7 @@ import dev.zazr.collection.internal.RedBlackTree;
 import dev.zazr.collection.internal.RedBlackTreeBuilder;
 import dev.zazr.collection.internal.RedBlackTreeModule;
 import dev.zazr.collection.internal.TreeViews;
+import dev.zazr.collection.internal.VectorBuilder;
 import dev.zazr.control.Option;
 import java.util.Comparator;
 import java.util.Objects;
@@ -1075,6 +1076,11 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
     @Override
     public java.util.Iterator<T> iterator() {
         return tree.iterator();
+    }
+
+    // writes the elements to builder, in ascending order, straight from the tree
+    void writeTo(VectorBuilder<? super T> builder) {
+        RedBlackTreeModule.Node.writeTo(tree, builder);
     }
 
     /**
