@@ -341,18 +341,19 @@ class EqualityPathsTest {
     }
 
     @Test
-    void equalTreeSetsOfTwoOrdersArePairedByLookupsWithNoHashCode() {
+    void equalTreeSetsOfTwoOrdersArePairedByLookupsAfterTheHashSums() {
         Calls calls = new Calls();
         TreeSet<Elem> natural = TreeSet.ofAll(keys(calls));
         TreeSet<Elem> reversed = TreeSet.ofAll(Comparator.reverseOrder(), keys(calls));
         assertThat(counted(calls, natural, reversed)).isTrue();
         // the first pair of the in-order walk, then one per element; two lookups per element
         assertThat(calls.equals).isEqualTo(N + 1);
-        assertThat(calls.hashCodes).isZero();
+        // one hash code per element of each side, and none for a count
+        assertThat(calls.hashCodes).isEqualTo(2 * N);
         assertThat(calls.compares).isPositive().isLessThanOrEqualTo(N * 2 * 2 * 9);
         assertThat(counted(calls, reversed, natural)).isTrue();
         assertThat(calls.equals).isEqualTo(N + 1);
-        assertThat(calls.hashCodes).isZero();
+        assertThat(calls.hashCodes).isEqualTo(2 * N);
     }
 
     @Test
@@ -374,10 +375,12 @@ class EqualityPathsTest {
         TreeSet<Elem> natural = TreeSet.ofAll(keys(calls));
         TreeSet<Elem> reversed = TreeSet.ofAll(Comparator.reverseOrder(), keys(calls, 1_000_000, N + 5));
         assertThat(counted(calls, natural, reversed)).isFalse();
-        // one hash code per element of each side, and none for a count
+        // one hash code per element of each side, none for a count, and no lookup
         assertThat(calls.hashCodes).isEqualTo(2 * N);
+        assertThat(calls.compares).isZero();
         assertThat(counted(calls, reversed, natural)).isFalse();
         assertThat(calls.hashCodes).isEqualTo(2 * N);
+        assertThat(calls.compares).isZero();
     }
 
     @Test
@@ -387,9 +390,30 @@ class EqualityPathsTest {
         TreeSet<Elem> natural = TreeSet.ofAll(keys(calls, 1, N - 1));
         TreeSet<Elem> reversed = TreeSet.ofAll(Comparator.reverseOrder(), keys(calls, 1, N + 5));
         assertThat(counted(calls, natural, reversed)).isFalse();
+        // the hash sums, the lookups, then the count
         assertThat(calls.hashCodes).isGreaterThan(2 * N);
+        assertThat(calls.compares).isPositive();
         assertThat(counted(calls, reversed, natural)).isFalse();
         assertThat(calls.hashCodes).isGreaterThan(2 * N);
+        assertThat(calls.compares).isPositive();
+    }
+
+    @Test
+    void treeSetsUnderAComparatorThatTellsEqualElementsApartDifferByTheirHashSumsWithNoLookup() {
+        Calls calls = new Calls();
+        // 1b equals 1c, but 2a is not 3d; by tag then key 2a comes first
+        TreeSet<Elem> byTag = TreeSet.ofAll(BY_TAG_THEN_KEY, elements(true, 1000, calls, "1b", "2a"));
+        TreeSet<Elem> natural = TreeSet.ofAll(elements(true, 1000, calls, "1c", "3d"));
+        assertThat(counted(calls, byTag, natural)).isFalse();
+        assertThat(calls.hashCodes).isEqualTo(4);
+        assertThat(calls.compares).isZero();
+        assertThat(counted(calls, natural, byTag)).isFalse();
+        assertThat(calls.hashCodes).isEqualTo(4);
+        assertThat(calls.compares).isZero();
+        // the same with every hash code the same: the hash sums are equal, and the count decides
+        TreeSet<Elem> collidingByTag = TreeSet.ofAll(BY_TAG_THEN_KEY, elements(true, 1, calls, "1b", "2a"));
+        TreeSet<Elem> collidingNatural = TreeSet.ofAll(elements(true, 1, calls, "1c", "3d"));
+        check("colliding byTag and natural", collidingByTag, collidingNatural, false);
     }
 
     @Test
@@ -474,16 +498,42 @@ class EqualityPathsTest {
         assertThat(counted(calls, natural, reversed)).isTrue();
         // one per entry, and one more if the first pair of the walk compares its keys before its values
         assertThat(calls.equals).isBetween(N, N + 1);
-        assertThat(calls.hashCodes).isZero();
+        // the hash sums first: one hash code per key of each side
+        assertThat(calls.hashCodes).isEqualTo(2 * N);
+        assertThat(calls.compares).isPositive();
         assertThat(counted(calls, reversed, natural)).isTrue();
-        assertThat(calls.hashCodes).isZero();
+        assertThat(calls.hashCodes).isEqualTo(2 * N);
         assertThat(counted(calls, natural, byKeyThenTag)).isTrue();
         assertThat(calls.hashCodes).isZero();
         assertThat(calls.compares).isZero();
-        // the same keys, the last value different: the hash sums, and no count
+        // the same keys, the last value different: the hash sums, no lookup and no count
         assertThat(counted(calls, natural, lastValue)).isFalse();
         assertThat(calls.hashCodes).isEqualTo(2 * N);
+        assertThat(calls.compares).isZero();
         assertThat(counted(calls, lastValue, natural)).isFalse();
         assertThat(calls.hashCodes).isEqualTo(2 * N);
+        assertThat(calls.compares).isZero();
+    }
+
+    @Test
+    void treeMapsOfTwoOrdersThatDifferOnlyInValuesWithTheSameHashSumAreLookedUpThenCounted() {
+        Calls calls = new Calls();
+        // the values of the keys 0 and 1 swapped: an entry hashes as 31 times its key's hash plus its value's, so
+        // the sums are equal
+        java.util.List<Tuple2<Elem, Integer>> swapped = new ArrayList<>();
+        for (Tuple2<Elem, Integer> entry : keyed(calls, N - 1)) {
+            int key = entry._1().key;
+            swapped.add(Tuple.of(entry._1(), key == 0 ? 1 : key == 1 ? 0 : entry._2()));
+        }
+        TreeMap<Elem, Integer> natural = TreeMap.ofEntries(keyed(calls, N - 1));
+        TreeMap<Elem, Integer> reversed = TreeMap.ofEntries(Comparator.reverseOrder(), swapped);
+        assertThat(natural.hashCode()).isEqualTo(reversed.hashCode());
+        assertThat(counted(calls, natural, reversed)).isFalse();
+        // the hash sums, the lookups, then the count
+        assertThat(calls.hashCodes).isGreaterThan(2 * N);
+        assertThat(calls.compares).isPositive();
+        assertThat(counted(calls, reversed, natural)).isFalse();
+        assertThat(calls.hashCodes).isGreaterThan(2 * N);
+        assertThat(calls.compares).isPositive();
     }
 }

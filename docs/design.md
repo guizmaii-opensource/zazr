@@ -1871,19 +1871,20 @@ the value) and follow the same rule: keys and values by `equals`.
     comparator tells equal objects apart and the elements are counted.
   - Two `TreeSet`s with different comparators (#362, 2026-11-09), in three allocation-free steps before the count.
     First the in-order walk: a full match proves equality whatever the comparators (two comparators of one order, as
-    `naturalOrder()` and a `comparing` of the same key, decide here, O(n)). Then lookups
-    (`RedBlackTreeModule.Node.pairsByLookup`, O(n log n)): each node of one tree finds, by the other tree's
-    comparator, a node of an equal element, and that node finds back, by the first tree's comparator, the very node
-    it came from. So no two nodes find the same one: the lookups pair the nodes one to one, each with an equal
-    element, which proves equality for any two deterministic comparators, neither side being assumed free of equal
-    elements. Lookups in one direction only, with equal sizes, would not: {x1, x2} and {x, y} under a comparator
-    that tells x1 from x2 each find an equal element. When the two sets are equal under comparators for which equal
-    objects compare as 0, every lookup succeeds; the step succeeds from one tree exactly when it does from the
-    other, so the path does not depend on the receiver. A failed lookup proves nothing, and neither does a
-    comparator that throws on an element of the other tree (any `RuntimeException`, so that the answer stays the
-    count's: equality does not depend on the comparators). Last, different hash sums prove inequality, O(n). Only
-    equal hash sums after all that go to the count: a comparator that tells equal objects apart, or two different
-    sets of the same hash sum.
+    `naturalOrder()` and a `comparing` of the same key, decide here, O(n)). Then the hash sums, O(n): different
+    ones prove inequality. They come before the lookups, which cannot prove it and cost O(n log n): on two sets of
+    100 000 elements that differ, the lookups ran to the end before the sums decided (#379, measured by JMH). Then,
+    with equal sums, lookups (`RedBlackTreeModule.Node.pairsByLookup`, O(n log n)): each node of one tree finds, by
+    the other tree's comparator, a node of an equal element, and that node finds back, by the first tree's
+    comparator, the very node it came from. So no two nodes find the same one: the lookups pair the nodes one to
+    one, each with an equal element, which proves equality for any two deterministic comparators, neither side
+    being assumed free of equal elements. Lookups in one direction only, with equal sizes, would not: {x1, x2} and
+    {x, y} under a comparator that tells x1 from x2 each find an equal element. When the two sets are equal under
+    comparators for which equal objects compare as 0, every lookup succeeds; the step succeeds from one tree exactly
+    when it does from the other, so the path does not depend on the receiver. A failed lookup proves nothing, and
+    neither does a comparator that throws on an element of the other tree (any `RuntimeException`, so that the
+    answer stays the count's: equality does not depend on the comparators). Only equal hash sums and failed lookups
+    go to the count: a comparator that tells equal objects apart, or two different sets of the same hash sum.
   - A `Set` of another implementation (#362): it can hold equal elements, so no lookup proves equality; different
     hash sums prove inequality, and equal ones go to the count.
 - **Maps** take the same paths over their entries: the key of each hash-map entry is found in the tree by the

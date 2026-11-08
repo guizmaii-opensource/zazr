@@ -1567,9 +1567,9 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
      * Complexity: O(n log n) against a HashSet or a LinkedHashSet: each of its elements is looked up in this tree by
      * the comparator, and the element found compared with {@code equals}. O(n) against a TreeSet with an equal
      * comparator: the two are walked in order, side by side. O(n log n) against a TreeSet with another comparator:
-     * the two are walked in order, side by side, and when an element differs, each element of this set is looked up
-     * in the other tree by its comparator, then found back in this one; when that fails too, the sums of the two
-     * sets' hash codes are compared, O(n). None of these allocates per element. O(1) when the sizes differ. When none
+     * the two are walked in order, side by side, and when an element differs, the sums of the two sets' hash codes
+     * are compared, O(n); when they are equal, each element of this set is looked up in the other tree by its
+     * comparator, then found back in this one. None of these allocates per element. O(1) when the sizes differ. When none
      * decides (under a comparator for which two objects equal by {@code equals} compare as different, so that the
      * set can hold both, or for two different sets of the same hash sum), one O(n) count of the elements in a
      * temporary hash table follows. Against a Set of another implementation: the hash sums, then the count.
@@ -1599,12 +1599,13 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
                             && Collections.sameElementCounts(tree, that));
         } else if (other instanceof TreeSet<?> that) {
             // Two orders: a full match of the in-order walk proves equality, as do lookups that pair the elements
-            // one to one; neither proves a difference. Different hash sums do.
+            // one to one; neither proves a difference. Different hash sums do, in O(n), so they come before the
+            // O(n log n) lookups.
             return inOrder(tree, that)
-                    || RedBlackTreeModule.Node.pairsByLookup(
-                            tree.tree, tree.comparator(), that.tree, that.comparator(), false)
                     || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
-                            && Collections.sameElementCounts(tree, that));
+                            && (RedBlackTreeModule.Node.pairsByLookup(
+                                            tree.tree, tree.comparator(), that.tree, that.comparator(), false)
+                                    || Collections.sameElementCounts(tree, that)));
         } else if (other instanceof HashSet || other instanceof LinkedHashSet) {
             // `other` holds no two equal elements, so each one found equal in the tree is a different element of it:
             // with the same size, that is every element. When one is not found, the tree may still hold it at
