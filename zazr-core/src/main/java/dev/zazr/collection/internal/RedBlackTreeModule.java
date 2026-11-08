@@ -1073,7 +1073,7 @@ public interface RedBlackTreeModule {
         }
 
         // the key of a stored element: the element itself, or the key of an entry
-        private static @Nullable Object key(@Nullable Object element, boolean entries) {
+        private static @Nullable Object key(Object element, boolean entries) {
             return entries ? ((Tuple2<?, ?>) element)._1() : element;
         }
 
