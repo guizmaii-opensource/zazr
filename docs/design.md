@@ -2394,7 +2394,8 @@ deleted. Attribution in `NOTICE`.
     with the message the old path gave: `Vector: element is null` for `tabulate` and `fill`,
     `Vector.Builder.add: element is null` for each component of `Vector.unzip` and `unzip3`,
     `Iterator: element is null` for `zipWithIndex(BiFunction)` (as for `List`, `LazyList` and `Queue`), and
-    `Iterator.intersperse: element is null` for `intersperse`. `NonEmptyVector` keeps its own messages. A test
+    `Iterator.intersperse: element is null` for `intersperse`. `NonEmptyVector` keeps its own messages. The last
+    three are replaced by messages that name the method called (2026-11-09, #366, section 3.9). A test
     checks every component of every `unzip` and `unzip3`: that check is all that keeps a null out of a leaf. An empty
     receiver still gives `Vector.empty()` itself, without a builder: `forExactly` takes at least one element.
   - `tabulate` and `zipWithIndex(BiFunction)` keep their loop in a void method of its own, with `result()` in the
@@ -2460,15 +2461,32 @@ deleted. Attribution in `NOTICE`.
   the function again. `collect`, `unzip`/`unzip3` and `partitionMap` call the function again on a later force, as
   they did before: a deterministic function fails the same way, a stateful one may not (the general case of a
   re-forced `Stream` after a failure is #175).
-  A function that produces a plain element, key or value of a collection (`map`, `scan*`, `zipWith`, sequence
+  A function that produces a plain element, key or value of a collection (`map`, `scan*`, sequence
   `fill`/`tabulate`, `mapValues`, `mapKeys`, `computeIfAbsent`, `merge`, `replaceAll`, the `keyMapper`/`valueMapper`
   of `toMap`) is not checked by name: the collection's own null check rejects it (`Vector: element is null`,
   `HashMap: value is null`), and on a lazy `Stream` a re-force after such a failure may go on past the element.
+  The zip, unzip and intersperse family is the exception, in the next bullet: its messages name the method.
   `fold`, `reduce` and `getOrElse`-style methods return the caller's own value and are not checked. The check is a
   constant message on the failure path only. `NullResultTest` holds one row per overload and a reflective guard over
   the exported types that fails when a public method taking a function whose result is a Zazr type has no row. A
   null function *argument* is `<parameter> is null` at once, even where the function would not be called (an empty
   map's `replaceAll`, a non-empty collection's `orElse(Supplier)`, a missing key's `computeIfPresent`).
+- **The zip, unzip and intersperse null messages name the method called (decided 2026-11-09, #366).** On `Vector`,
+  `NonEmptyVector`, `List`, `LazyList` and `Queue`, a null that these methods find is reported with the method the
+  caller called and what was null, where the internal path they share used to name `Vector.Builder.add`,
+  `Iterator` or `Iterator.intersperse`:
+  - a null component of the tuple `unzipper` returns: `Vector.unzip: the first component of element 3 is null`
+    (`second`, `third` for `unzip3`), the index counted from 0 as by `get`;
+  - a null from the mapper of `zipWithIndex`: `List.zipWithIndex: mapper returned null for element 3`;
+  - a null from the mapper of `zipWith`: `Queue.zipWith: mapper returned null`, the message `NonEmptyVector` had;
+  - a null filler of `zipAll`: `LazyList.zipAll: thisElem is null`, `thatElem is null`;
+  - a null separator of `intersperse`: `Vector.intersperse: element is null`.
+
+  Nothing else changes: the exception type, which calls throw (`intersperse` of fewer than two elements still
+  returns the receiver, except on `NonEmptyVector` and `LazyList`, which check at once), and when: `LazyList`
+  throws when the null element is read, and only the side of `unzip` that holds the null component. The message is
+  built on the failure path only; the loops count the index in a primitive. `SeqNullMessagesTest` checks each message
+  at the first, a middle and the last position, for each component.
 - **Slice searches read the slice as the type documents (decided in #163).** `Vector`, `NonEmptyVector` and a
   non-empty `List`/`Queue` copy the slice first, so a null element in it throws. A `Stream` compares the slice
   lazily and reads it only as far as the comparisons go: a null they reach throws, a null past them is not seen, and

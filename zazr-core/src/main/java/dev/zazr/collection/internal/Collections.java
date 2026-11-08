@@ -34,6 +34,28 @@ import org.jspecify.annotations.Nullable;
  */
 public final class Collections {
 
+    /// `value`, or a `NullPointerException` whose message names `method` (`"Vector.unzip"`), the component
+    /// (`"first"`) and the index of the element it was split from: `Vector.unzip: the first component of element 3
+    /// is null`. The message is built only when it throws.
+    public static <T extends @Nullable Object> T nonNullComponent(
+            @Nullable T value, String method, String component, int index) {
+        if (value == null) {
+            throw new NullPointerException(
+                    method + ": the " + component + " component of element " + index + " is null");
+        }
+        return value;
+    }
+
+    /// `value`, or a `NullPointerException` whose message names `method` (`"Vector.zipWithIndex"`) and the index of
+    /// the element `mapper` returned it for: `Vector.zipWithIndex: mapper returned null for element 3`. The message
+    /// is built only when it throws.
+    public static <T extends @Nullable Object> T nonNullMapped(@Nullable T value, String method, int index) {
+        if (value == null) {
+            throw new NullPointerException(method + ": mapper returned null for element " + index);
+        }
+        return value;
+    }
+
     // checks, if the *elements* of the given iterables are equal
     static boolean areEqual(Iterable<?> iterable1, Iterable<?> iterable2) {
         java.util.Iterator<?> iter1 = iterable1.iterator();

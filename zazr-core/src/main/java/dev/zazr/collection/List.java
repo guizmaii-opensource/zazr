@@ -1612,6 +1612,7 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
         if (isEmpty() || tail().isEmpty()) {
             return this;
         }
+        Objects.requireNonNull(element, "List.intersperse: element is null");
         return ofAll(Iterator.ofAll(this).intersperse(element));
     }
 
@@ -2995,35 +2996,14 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
     default <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<List<T1>, List<T2>> unzip(
             Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        @SuppressWarnings("Var")
-        List<T1> xs = Nil.instance();
-        @SuppressWarnings("Var")
-        List<T2> ys = Nil.instance();
-        for (T element : this) {
-            Tuple2<? extends T1, ? extends T2> t =
-                    Objects.requireNonNull(unzipper.apply(element), "List.unzip: unzipper returned null");
-            xs = xs.prepend(t._1());
-            ys = ys.prepend(t._2());
-        }
-        return Tuple.of(xs.reverse(), ys.reverse());
+        return ListModule.Unzip.apply(this, unzipper, "List.unzip");
     }
 
-    @SuppressWarnings("Var")
     default <T1 extends @Nullable Object, T2 extends @Nullable Object, T3 extends @Nullable Object>
             Tuple3<List<T1>, List<T2>, List<T3>> unzip3(
                     Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        List<T1> xs = Nil.instance();
-        List<T2> ys = Nil.instance();
-        List<T3> zs = Nil.instance();
-        for (T element : this) {
-            Tuple3<? extends T1, ? extends T2, ? extends T3> t =
-                    Objects.requireNonNull(unzipper.apply(element), "List.unzip3: unzipper returned null");
-            xs = xs.prepend(t._1());
-            ys = ys.prepend(t._2());
-            zs = zs.prepend(t._3());
-        }
-        return Tuple.of(xs.reverse(), ys.reverse(), zs.reverse());
+        return ListModule.Unzip.apply3(this, unzipper, "List.unzip3");
     }
 
     /**
@@ -3121,13 +3101,13 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param that   an {@code Iterable} providing the second parameter of the mapper
      * @param mapper a function that combines elements from this and {@code that} into a new element
      * @return a new {@code List} containing mapped elements
-     * @throws NullPointerException if {@code that} or {@code mapper} is null
+     * @throws NullPointerException if {@code that} or {@code mapper} is null, or {@code mapper} returns null
      */
     default <U extends @Nullable Object, R extends @Nullable Object> List<R> zipWith(
             Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(Iterator.ofAll(this).zipWith(that, mapper));
+        return ofAll(Iterator.ofAll(this).zipWith(that, mapper, "List.zipWith: mapper returned null"));
     }
 
     /**
@@ -3147,10 +3127,12 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param thisElem the element used to fill missing values if this {@code List} is shorter than {@code that}
      * @param thatElem the element used to fill missing values if {@code that} is shorter than this {@code List}
      * @return a new {@code List} containing pairs of elements, including fillers as needed
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that}, {@code thisElem} or {@code thatElem} is null
      */
     default <U extends @Nullable Object> List<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(thisElem, "List.zipAll: thisElem is null");
+        Objects.requireNonNull(thatElem, "List.zipAll: thatElem is null");
         return ofAll(Iterator.ofAll(this).zipAll(that, thisElem, thatElem));
     }
 
@@ -3173,12 +3155,12 @@ public sealed interface List<T extends @Nullable Object> extends Traversable<T> 
      * @param <U>    the type of elements in the resulting {@code List}
      * @param mapper a function mapping an element and its index to a new element
      * @return a new {@code List} containing the mapped elements
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     default <U extends @Nullable Object> List<U> zipWithIndex(
             BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(Iterator.ofAll(this).zipWithIndex(mapper));
+        return ofAll(Iterator.ofAll(this).zipWithIndex(mapper, "List.zipWithIndex"));
     }
 
     /**

@@ -2087,7 +2087,7 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @return a new LazyList, or this LazyList if it is empty
      */
     default LazyList<T> intersperse(T element) {
-        Objects.requireNonNull(element, "LazyList: element is null");
+        Objects.requireNonNull(element, "LazyList.intersperse: element is null");
         return lazilyUnlessEmpty(
                 () -> isEmpty() ? empty() : LazyCell.cons(head(), LazyListModule.separated(tail(), element)));
     }
@@ -3113,8 +3113,8 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         Objects.requireNonNull(unzipper, "unzipper is null");
         LazyList<Tuple2<? extends T1, ? extends T2>> stream = map(
                 element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip: unzipper returned null"));
-        LazyList<T1> stream1 = stream.map(t -> t._1());
-        LazyList<T2> stream2 = stream.map(t -> t._2());
+        LazyList<T1> stream1 = LazyListModule.components(stream, t -> t._1(), "LazyList.unzip", "first", 0);
+        LazyList<T2> stream2 = LazyListModule.components(stream, t -> t._2(), "LazyList.unzip", "second", 0);
         return Tuple.of(stream1, stream2);
     }
 
@@ -3136,9 +3136,9 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
         Objects.requireNonNull(unzipper, "unzipper is null");
         LazyList<Tuple3<? extends T1, ? extends T2, ? extends T3>> stream = map(
                 element -> Objects.requireNonNull(unzipper.apply(element), "LazyList.unzip3: unzipper returned null"));
-        LazyList<T1> stream1 = stream.map(t -> t._1());
-        LazyList<T2> stream2 = stream.map(t -> t._2());
-        LazyList<T3> stream3 = stream.map(t -> t._3());
+        LazyList<T1> stream1 = LazyListModule.components(stream, t -> t._1(), "LazyList.unzip3", "first", 0);
+        LazyList<T2> stream2 = LazyListModule.components(stream, t -> t._2(), "LazyList.unzip3", "second", 0);
+        LazyList<T3> stream3 = LazyListModule.components(stream, t -> t._3(), "LazyList.unzip3", "third", 0);
         return Tuple.of(stream1, stream2, stream3);
     }
 
@@ -3216,14 +3216,14 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param that   an {@code Iterable} providing the second parameter of the mapper
      * @param mapper a function that combines elements from this and {@code that} into a new element
      * @return a new {@code LazyList} containing mapped elements
-     * @throws NullPointerException if {@code that} or {@code mapper} is null
+     * @throws NullPointerException if {@code that} or {@code mapper} is null, or {@code mapper} returns null
      */
     default <U extends @Nullable Object, R extends @Nullable Object> LazyList<R> zipWith(
             Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return lazilyUnlessEmpty(
-                () -> LazyListFactory.create(Iterator.ofAll(this).zipWith(that, mapper)));
+        return lazilyUnlessEmpty(() -> LazyListFactory.create(
+                Iterator.ofAll(this).zipWith(that, mapper, "LazyList.zipWith: mapper returned null")));
     }
 
     /**
@@ -3243,13 +3243,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param thisElem the element used to fill missing values if this {@code LazyList} is shorter than {@code iterable}
      * @param thatElem the element used to fill missing values if {@code iterable} is shorter than this {@code LazyList}
      * @return a new {@code LazyList} containing pairs of elements, including fillers as needed
-     * @throws NullPointerException if {@code iterable} is null
+     * @throws NullPointerException if {@code iterable}, {@code thisElem} or {@code thatElem} is null
      */
     default <U extends @Nullable Object> LazyList<Tuple2<T, U>> zipAll(
             Iterable<? extends U> iterable, T thisElem, U thatElem) {
         Objects.requireNonNull(iterable, "iterable is null");
-        Objects.requireNonNull(thisElem, "LazyList: element is null");
-        Objects.requireNonNull(thatElem, "LazyList: element is null");
+        Objects.requireNonNull(thisElem, "LazyList.zipAll: thisElem is null");
+        Objects.requireNonNull(thatElem, "LazyList.zipAll: thatElem is null");
         return lazily(() -> LazyListFactory.create(Iterator.ofAll(this).zipAll(iterable, thisElem, thatElem)));
     }
 
@@ -3272,13 +3272,13 @@ public interface LazyList<T extends @Nullable Object> extends Traversable<T> {
      * @param <U>    the type of elements in the resulting {@code LazyList}
      * @param mapper a function mapping an element and its index to a new element
      * @return a new {@code LazyList} containing the mapped elements
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     default <U extends @Nullable Object> LazyList<U> zipWithIndex(
             BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
         return lazilyUnlessEmpty(
-                () -> LazyListFactory.create(Iterator.ofAll(this).zipWithIndex(mapper)));
+                () -> LazyListFactory.create(Iterator.ofAll(this).zipWithIndex(mapper, "LazyList.zipWithIndex")));
     }
 
     /**

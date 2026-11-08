@@ -1484,16 +1484,16 @@ public class NonEmptyVectorTest {
                     .withMessage("NonEmptyVector.unzip: unzipper returned null");
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.unzip(i -> Tuple.of(i, null)))
-                    .withMessage("NonEmptyVector.unzip: unzipper returned a null component");
+                    .withMessage("NonEmptyVector.unzip: the second component of element 0 is null");
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.unzip(i -> Tuple.of(null, i)))
-                    .withMessage("NonEmptyVector.unzip: unzipper returned a null component");
+                    .withMessage("NonEmptyVector.unzip: the first component of element 0 is null");
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.unzip3(i -> null))
                     .withMessage("NonEmptyVector.unzip3: unzipper returned null");
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.unzip3(i -> Tuple.of(i, i, null)))
-                    .withMessage("NonEmptyVector.unzip3: unzipper returned a null component");
+                    .withMessage("NonEmptyVector.unzip3: the third component of element 0 is null");
             assertThatNullPointerException()
                     .isThrownBy(() -> nev.arrangeBy(i -> null))
                     .withMessage("NonEmptyVector.arrangeBy: getKey returned null");

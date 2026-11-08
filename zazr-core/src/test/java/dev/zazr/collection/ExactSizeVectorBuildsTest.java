@@ -180,6 +180,8 @@ public class ExactSizeVectorBuildsTest {
         }
     }
 
+    private static final String[] ORDINALS = {"", "first", "second", "third"};
+
     // the tuples of i, with the component `at` (from 1) null for the last element `last`
     private static Tuple2<Integer, Integer> pair(int i, int last, int at) {
         return Tuple.of(i == last && at == 1 ? null : i, i == last && at == 2 ? null : i);
@@ -202,11 +204,13 @@ public class ExactSizeVectorBuildsTest {
                 assertThatNullPointerException()
                         .as(where)
                         .isThrownBy(() -> vector.unzip(i -> pair(i, last, component)))
-                        .withMessage("Vector.Builder.add: element is null");
+                        .withMessage("Vector.unzip: the " + ORDINALS[component] + " component of element " + last
+                                + " is null");
                 assertThatNullPointerException()
                         .as(where)
                         .isThrownBy(() -> nonEmpty.unzip(i -> pair(i, last, component)))
-                        .withMessage("NonEmptyVector.unzip: unzipper returned a null component");
+                        .withMessage("NonEmptyVector.unzip: the " + ORDINALS[component] + " component of element "
+                                + last + " is null");
             }
             for (int at = 1; at <= 3; at++) {
                 int component = at;
@@ -214,11 +218,13 @@ public class ExactSizeVectorBuildsTest {
                 assertThatNullPointerException()
                         .as(where)
                         .isThrownBy(() -> vector.unzip3(i -> triple(i, last, component)))
-                        .withMessage("Vector.Builder.add: element is null");
+                        .withMessage("Vector.unzip3: the " + ORDINALS[component] + " component of element " + last
+                                + " is null");
                 assertThatNullPointerException()
                         .as(where)
                         .isThrownBy(() -> nonEmpty.unzip3(i -> triple(i, last, component)))
-                        .withMessage("NonEmptyVector.unzip3: unzipper returned a null component");
+                        .withMessage("NonEmptyVector.unzip3: the " + ORDINALS[component] + " component of element "
+                                + last + " is null");
             }
         }
     }
@@ -315,12 +321,12 @@ public class ExactSizeVectorBuildsTest {
             int last = size - 1;
             assertThatNullPointerException()
                     .isThrownBy(() -> Vector.range(0, size).zipWithIndex((e, i) -> i == last ? null : e))
-                    .withMessage("Iterator: element is null");
+                    .withMessage("Vector.zipWithIndex: mapper returned null for element " + last);
             assertThatNullPointerException()
                     .isThrownBy(() -> NonEmptyVector.fromVector(Vector.range(0, size))
                             .get()
                             .zipWithIndex((e, i) -> i == last ? null : e))
-                    .withMessage("Iterator: element is null");
+                    .withMessage("NonEmptyVector.zipWithIndex: mapper returned null for element " + last);
         }
     }
 
@@ -344,6 +350,6 @@ public class ExactSizeVectorBuildsTest {
         }
         assertThatNullPointerException()
                 .isThrownBy(() -> Vector.of(1, 2).intersperse(null))
-                .withMessage("Iterator.intersperse: element is null");
+                .withMessage("Vector.intersperse: element is null");
     }
 }
