@@ -875,6 +875,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
         };
     }
 
+    // the keys in insertion order: no entry is made
+    java.util.Iterator<K> keyIterator() {
+        return order.iterator();
+    }
+
     /**
      * An unmodifiable {@link java.util.SequencedMap} view of this LinkedHashMap, in insertion order: nothing is
      * copied, reads go through to this map, which never changes, and every mutator of the view (including those of
@@ -1020,6 +1025,11 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
 
     @Override
     public Tuple2<LinkedHashMap<K, V>, LinkedHashMap<K, V>> partition(Predicate<? super Tuple2<K, V>> predicate) {
+        return Maps.partition(this, this::createFromEntries, predicate);
+    }
+
+    @Override
+    public Tuple2<LinkedHashMap<K, V>, LinkedHashMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
         return Maps.partition(this, this::createFromEntries, predicate);
     }
 
@@ -1797,12 +1807,18 @@ public final class LinkedHashMap<K extends @Nullable Object, V extends @Nullable
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n log n) against a TreeMap, O(n) against a HashMap or a LinkedHashMap: after a size check,
-     * each entry of this map is looked up in the other one. O(1) when the sizes differ.
+     * The keys and the values are compared with their own {@code equals}, against every kind of map, a TreeMap
+     * included: a TreeMap's key comparator decides its lookups, not its equality. So
+     * {@code a.equals(b) == b.equals(a)}, and two equal maps have the same {@link #hashCode()}. The insertion order
+     * does not count.
+     * <p>
+     * Complexity: O(n log n) against a TreeMap, as {@link TreeMap#equals(Object)}; O(n) against a HashMap or a
+     * LinkedHashMap: each entry of this map is looked up in the other one; O(n) against a Map of another
+     * implementation, with a temporary hash table of this map's entries. O(1) when the sizes differ.
      */
     @Override
     public boolean equals(@Nullable Object o) {
-        return Collections.equals(this, o);
+        return o instanceof TreeMap<?, ?> sorted ? TreeMap.sameEntries(sorted, this) : Collections.equals(this, o);
     }
 
     /**

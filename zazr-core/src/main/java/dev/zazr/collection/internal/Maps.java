@@ -277,6 +277,12 @@ public final class Maps {
     }
 
     public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<M, M> partition(
+            M map, OfEntries<K, V, M> ofEntries, BiPredicate<? super K, ? super V> predicate) {
+        Objects.requireNonNull(predicate, "predicate is null");
+        return partition(map, ofEntries, t -> predicate.test(t._1(), t._2()));
+    }
+
+    public static <K extends @Nullable Object, V extends @Nullable Object, M extends Map<K, V>> Tuple2<M, M> partition(
             M map, OfEntries<K, V, M> ofEntries, Predicate<? super Tuple2<K, V>> predicate) {
         Objects.requireNonNull(predicate, "predicate is null");
         java.util.List<Tuple2<K, V>> left = new java.util.ArrayList<>();
