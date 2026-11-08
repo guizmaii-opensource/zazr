@@ -470,6 +470,29 @@ class TreeSetComparatorMembershipTest {
                 assertSameObjects("diff, " + at, set.diff(set(kind, given)), expected);
             }
         }
+        // a NonEmptyVector, which is no Traversable and so is not among the kinds made of no item
+        if (!given.isEmpty()) {
+            NonEmptyVector<Item> vector = NonEmptyVector.fromIterable(given.get(0), given.subList(1, given.size()));
+            String at = "n = " + n + ", " + given.size() + " given, a NonEmptyVector";
+            assertSameObjects("removeAll, " + at, set.removeAll(vector), expected);
+        }
+    }
+
+    // -- a NonEmptyVector argument, whose size is known in advance
+
+    @Test
+    void removeAllAndAddAllOfANonEmptyVector() {
+        for (int n = 0; n <= 6; n++) {
+            TreeSet<Integer> set = n == 0 ? TreeSet.empty() : TreeSet.rangeClosed(1, n);
+            for (NonEmptyVector<Integer> vector : java.util.List.of(
+                    NonEmptyVector.of(1), NonEmptyVector.of(1, 2), NonEmptyVector.of(2, 9, 1, 2, 4, 3))) {
+                String at = "n = " + n + ", " + vector;
+                TreeSet<Integer> removed = vector.toVector().foldLeft(set, TreeSet::remove);
+                TreeSet<Integer> added = vector.toVector().foldLeft(set, TreeSet::add);
+                assertThat(set.removeAll(vector)).as("removeAll, " + at).containsExactlyElementsOf(removed);
+                assertThat(set.addAll(vector)).as("addAll, " + at).containsExactlyElementsOf(added);
+            }
+        }
     }
 
     // the items of the first k keys of `keys`, tagged so that they equal no item of the receiver

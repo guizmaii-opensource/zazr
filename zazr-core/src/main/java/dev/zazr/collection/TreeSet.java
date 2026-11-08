@@ -783,15 +783,13 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
 
     // the number of elements of `elements` when a collection answers it in O(1) without walking them, otherwise -1
     private static int knownSize(Iterable<?> elements) {
-        if (elements instanceof java.util.Collection<?> collection) {
-            return collection.size();
-        } else if (elements instanceof Set<?>
-                || elements instanceof Vector<?>
-                || elements instanceof NonEmptyVector<?>) {
-            return ((Traversable<?>) elements).size();
-        } else {
-            return -1;
-        }
+        return switch (elements) {
+            case java.util.Collection<?> collection -> collection.size();
+            case Set<?> set -> set.size();
+            case Vector<?> vector -> vector.size();
+            case NonEmptyVector<?> vector -> vector.size();
+            default -> -1;
+        };
     }
 
     /**
