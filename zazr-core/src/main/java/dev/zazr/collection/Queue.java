@@ -1738,7 +1738,9 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public Queue<T> intersperse(T element) {
         if (sizeCompare(1) <= 0) {
             return this;
-        } else if (rear.isEmpty()) {
+        }
+        Objects.requireNonNull(element, "Queue.intersperse: element is null");
+        if (rear.isEmpty()) {
             return new Queue<>(front.intersperse(element), rear);
         } else {
             return new Queue<>(
@@ -2655,8 +2657,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
     public <T1 extends @Nullable Object, T2 extends @Nullable Object> Tuple2<Queue<T1>, Queue<T2>> unzip(
             Function<? super T, Tuple2<? extends T1, ? extends T2>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().<T1, T2>unzip(
-                        t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip: unzipper returned null"))
+        return ListModule.Unzip.<T, T1, T2>apply(this, unzipper, "Queue.unzip")
                 .map(dev.zazr.collection.List::toQueue, dev.zazr.collection.List::toQueue);
     }
 
@@ -2664,8 +2665,7 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             Tuple3<Queue<T1>, Queue<T2>, Queue<T3>> unzip3(
                     Function<? super T, Tuple3<? extends T1, ? extends T2, ? extends T3>> unzipper) {
         Objects.requireNonNull(unzipper, "unzipper is null");
-        return toList().<T1, T2, T3>unzip3(
-                        t -> Objects.requireNonNull(unzipper.apply(t), "Queue.unzip3: unzipper returned null"))
+        return ListModule.Unzip.<T, T1, T2, T3>apply3(this, unzipper, "Queue.unzip3")
                 .map(
                         dev.zazr.collection.List::toQueue,
                         dev.zazr.collection.List::toQueue,
@@ -2753,8 +2753,8 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
             Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        dev.zazr.collection.List<R> zipped = dev.zazr.collection.List.ofAll(
-                Iterator.ofAll(new InOrder<>(front, rear)).zipWith(that, mapper));
+        dev.zazr.collection.List<R> zipped = dev.zazr.collection.List.ofAll(Iterator.ofAll(new InOrder<>(front, rear))
+                .zipWith(that, mapper, "Queue.zipWith: mapper returned null"));
         return zipped.isEmpty() ? empty() : new Queue<>(zipped, dev.zazr.collection.List.empty());
     }
 
@@ -2775,10 +2775,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param thisElem the element used to fill missing values if this {@code Queue} is shorter than {@code that}
      * @param thatElem the element used to fill missing values if {@code that} is shorter than this {@code Queue}
      * @return a new {@code Queue} containing pairs of elements, including fillers as needed
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that}, {@code thisElem} or {@code thatElem} is null
      */
     public <U extends @Nullable Object> Queue<Tuple2<T, U>> zipAll(Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(thisElem, "Queue.zipAll: thisElem is null");
+        Objects.requireNonNull(thatElem, "Queue.zipAll: thatElem is null");
         return ofAll(toList().zipAll(that, thisElem, thatElem));
     }
 
@@ -2801,12 +2803,12 @@ public final class Queue<T extends @Nullable Object> implements Traversable<T> {
      * @param <U>    the type of elements in the resulting {@code Queue}
      * @param mapper a function mapping an element and its index to a new element
      * @return a new {@code Queue} containing the mapped elements
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <U extends @Nullable Object> Queue<U> zipWithIndex(
             BiFunction<? super T, ? super Integer, ? extends U> mapper) {
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(toList().zipWithIndex(mapper));
+        return ofAll(Iterator.ofAll(new InOrder<>(front, rear)).zipWithIndex(mapper, "Queue.zipWithIndex"));
     }
 
     /**

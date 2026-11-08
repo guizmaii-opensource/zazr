@@ -1257,6 +1257,13 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
     default <U extends @Nullable Object, R extends @Nullable Object> Iterator<R> zipWith(
             Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+        return zipWith(that, mapper, "Iterator: element is null");
+    }
+
+    /// [#zipWith(Iterable, BiFunction)], a `null` from `mapper` reported with `nullMessage`
+    /// (`"Vector.zipWith: mapper returned null"`) when the pair is read.
+    default <U extends @Nullable Object, R extends @Nullable Object> Iterator<R> zipWith(
+            Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper, String nullMessage) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
@@ -1272,7 +1279,7 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
 
                 @Override
                 public R getNext() {
-                    return mapper.apply(it1.next(), it2.next());
+                    return Objects.requireNonNull(mapper.apply(it1.next(), it2.next()), nullMessage);
                 }
             };
         }
@@ -1326,6 +1333,32 @@ public interface Iterator<T extends @Nullable Object> extends java.util.Iterator
                 @Override
                 public U getNext() {
                     return mapper.apply(it1.next(), index++);
+                }
+            };
+        }
+    }
+
+    /// [#zipWithIndex(BiFunction)], a `null` from `mapper` reported as `method` (`"List.zipWithIndex"`) with the
+    /// index of its element ([Collections#nonNullMapped]) when that element is read.
+    default <U extends @Nullable Object> Iterator<U> zipWithIndex(
+            BiFunction<? super T, ? super Integer, ? extends U> mapper, String method) {
+        Objects.requireNonNull(mapper, "mapper is null");
+        if (isEmpty()) {
+            return empty();
+        } else {
+            Iterator<T> it1 = this;
+            return new AbstractIterator<U>() {
+                private int index = 0;
+
+                @Override
+                public boolean hasNext() {
+                    return it1.hasNext();
+                }
+
+                @Override
+                public U getNext() {
+                    int at = index++;
+                    return Collections.nonNullMapped(mapper.apply(it1.next(), at), method, at);
                 }
             };
         }

@@ -1591,7 +1591,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (size() <= 1) {
             return this;
         }
-        Objects.requireNonNull(element, "Iterator.intersperse: element is null");
+        Objects.requireNonNull(element, "Vector.intersperse: element is null");
         VectorBuilder<T> elements = VectorBuilder.forExactly(2 * size() - 1);
         java.util.Iterator<T> it = trie.iterator();
         elements.addUnchecked(it.next());
@@ -2868,11 +2868,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         }
         VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
         VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
-        for (T element : trie) {
+        java.util.Iterator<T> it = trie.iterator();
+        for (int i = 0; it.hasNext(); i++) {
             Tuple2<? extends T1, ? extends T2> t =
-                    Objects.requireNonNull(unzipper.apply(element), "Vector.unzip: unzipper returned null");
-            xs.addUnchecked(Objects.requireNonNull(t._1(), "Vector.Builder.add: element is null"));
-            ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
+                    Objects.requireNonNull(unzipper.apply(it.next()), "Vector.unzip: unzipper returned null");
+            xs.addUnchecked(Collections.nonNullComponent(t._1(), "Vector.unzip", "first", i));
+            ys.addUnchecked(Collections.nonNullComponent(t._2(), "Vector.unzip", "second", i));
         }
         return Tuple.of(ofTree(xs.result()), ofTree(ys.result()));
     }
@@ -2899,12 +2900,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         VectorBuilder<T1> xs = VectorBuilder.forExactly(size());
         VectorBuilder<T2> ys = VectorBuilder.forExactly(size());
         VectorBuilder<T3> zs = VectorBuilder.forExactly(size());
-        for (T element : trie) {
+        java.util.Iterator<T> it = trie.iterator();
+        for (int i = 0; it.hasNext(); i++) {
             Tuple3<? extends T1, ? extends T2, ? extends T3> t =
-                    Objects.requireNonNull(unzipper.apply(element), "Vector.unzip3: unzipper returned null");
-            xs.addUnchecked(Objects.requireNonNull(t._1(), "Vector.Builder.add: element is null"));
-            ys.addUnchecked(Objects.requireNonNull(t._2(), "Vector.Builder.add: element is null"));
-            zs.addUnchecked(Objects.requireNonNull(t._3(), "Vector.Builder.add: element is null"));
+                    Objects.requireNonNull(unzipper.apply(it.next()), "Vector.unzip3: unzipper returned null");
+            xs.addUnchecked(Collections.nonNullComponent(t._1(), "Vector.unzip3", "first", i));
+            ys.addUnchecked(Collections.nonNullComponent(t._2(), "Vector.unzip3", "second", i));
+            zs.addUnchecked(Collections.nonNullComponent(t._3(), "Vector.unzip3", "third", i));
         }
         return Tuple.of(ofTree(xs.result()), ofTree(ys.result()), ofTree(zs.result()));
     }
@@ -2978,13 +2980,19 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param that   an {@code Iterable} providing the second parameter of the mapper
      * @param mapper a function that combines elements from this and {@code that} into a new element
      * @return a new {@code Vector} containing mapped elements
-     * @throws NullPointerException if {@code that} or {@code mapper} is null
+     * @throws NullPointerException if {@code that} or {@code mapper} is null, or {@code mapper} returns null
      */
     public <U extends @Nullable Object, R extends @Nullable Object> Vector<R> zipWith(
             Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper) {
+        return zipWith(that, mapper, "Vector.zipWith: mapper returned null");
+    }
+
+    /* zipWith(that, mapper), a null from mapper reported with nullMessage */
+    <U extends @Nullable Object, R extends @Nullable Object> Vector<R> zipWith(
+            Iterable<? extends U> that, BiFunction<? super T, ? super U, ? extends R> mapper, String nullMessage) {
         Objects.requireNonNull(that, "that is null");
         Objects.requireNonNull(mapper, "mapper is null");
-        return ofAll(Iterator.ofAll(this).zipWith(that, mapper));
+        return ofAll(Iterator.ofAll(this).zipWith(that, mapper, nullMessage));
     }
 
     /**
@@ -3004,11 +3012,13 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param thisElem the element used to fill missing values if this {@code Vector} is shorter than {@code that}
      * @param thatElem the element used to fill missing values if {@code that} is shorter than this {@code Vector}
      * @return a new {@code Vector} containing pairs of elements, including fillers as needed
-     * @throws NullPointerException if {@code that} is null
+     * @throws NullPointerException if {@code that}, {@code thisElem} or {@code thatElem} is null
      */
     public <U extends @Nullable Object> Vector<Tuple2<T, U>> zipAll(
             Iterable<? extends U> that, T thisElem, U thatElem) {
         Objects.requireNonNull(that, "that is null");
+        Objects.requireNonNull(thisElem, "Vector.zipAll: thisElem is null");
+        Objects.requireNonNull(thatElem, "Vector.zipAll: thatElem is null");
         return ofAll(Iterator.ofAll(this).zipAll(that, thisElem, thatElem));
     }
 
@@ -3031,16 +3041,22 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @param <U>    the type of elements in the resulting {@code Vector}
      * @param mapper a function mapping an element and its index to a new element
      * @return a new {@code Vector} containing the mapped elements
-     * @throws NullPointerException if {@code mapper} is null
+     * @throws NullPointerException if {@code mapper} is null or returns null
      */
     public <U extends @Nullable Object> Vector<U> zipWithIndex(
             BiFunction<? super T, ? super Integer, ? extends U> mapper) {
+        return zipWithIndex(mapper, "Vector.zipWithIndex");
+    }
+
+    /* zipWithIndex(mapper), a null from mapper reported as method ("NonEmptyVector.zipWithIndex") */
+    <U extends @Nullable Object> Vector<U> zipWithIndex(
+            BiFunction<? super T, ? super Integer, ? extends U> mapper, String method) {
         Objects.requireNonNull(mapper, "mapper is null");
         if (isEmpty()) {
             return empty();
         }
         VectorBuilder<U> elements = VectorBuilder.forExactly(size());
-        writeZippedWithIndex(elements, trie, mapper);
+        writeZippedWithIndex(elements, trie, mapper, method);
         return ofTree(elements.result());
     }
 
@@ -3048,11 +3064,11 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
     private static <T extends @Nullable Object, U extends @Nullable Object> void writeZippedWithIndex(
             VectorBuilder<U> elements,
             RadixVector<T> source,
-            BiFunction<? super T, ? super Integer, ? extends U> mapper) {
-        @SuppressWarnings("Var")
-        int index = 0;
-        for (T element : source) {
-            elements.addUnchecked(Objects.requireNonNull(mapper.apply(element, index++), "Iterator: element is null"));
+            BiFunction<? super T, ? super Integer, ? extends U> mapper,
+            String method) {
+        java.util.Iterator<T> it = source.iterator();
+        for (int index = 0; it.hasNext(); index++) {
+            elements.addUnchecked(Collections.nonNullMapped(mapper.apply(it.next(), index), method, index));
         }
     }
 

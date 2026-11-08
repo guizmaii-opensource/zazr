@@ -78,6 +78,23 @@ public interface LazyListModule {
                 : LazyCell.cons(element, LazyCell.cons(list.head(), separated(list.tail(), element))));
     }
 
+    // the component that part takes from each tuple of list, in order, the first at index; a null component throws
+    // when its cell is read, with a message naming method ("LazyList.unzip"), component ("first") and its index.
+    // The cells are those of list.map(part): an empty list known to be empty gives the empty list, and any other is
+    // read when the result is
+    static <S extends @Nullable Object, U extends @Nullable Object> LazyList<U> components(
+            LazyList<S> list, Function<? super S, ? extends U> part, String method, String component, int index) {
+        return LazyCell.knownIsEmpty(list)
+                ? LazyList.empty()
+                : LazyCell.defer(
+                        () -> list.isEmpty()
+                                ? LazyList.empty()
+                                : LazyCell.cons(
+                                        Collections.nonNullComponent(part.apply(list.head()), method, component, index),
+                                        components(list.tail(), part, method, component, index + 1)),
+                        "LazyList: an operation returned null");
+    }
+
     // list with the element at index replaced by what updater computes from it; original is the index of the call
     static <T extends @Nullable Object> LazyList<T> updated(
             LazyList<T> list, int index, int original, Function<? super T, ? extends T> updater) {
