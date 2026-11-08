@@ -1585,6 +1585,16 @@ public class DocsExamplesTest {
             assertThat(updated).isEqualTo(HashMap.of("apple", 3, "pear", 5, "fig", 2));
             assertThat(kept).isEqualTo(HashMap.of("apple", 3, "pear", 4, "fig", 2));
         }
+
+        @Test
+        void partitioningByKeyAndValue() {
+            var stock = HashMap.of("apple", 3, "pear", 0, "fig", 7);
+            var split = stock.partition((fruit, count) -> count > 0);
+            // split._1() has apple and fig, split._2() has pear
+
+            assertThat(split._1()).isEqualTo(HashMap.of("apple", 3, "fig", 7));
+            assertThat(split._2()).isEqualTo(HashMap.of("pear", 0));
+        }
     }
 
     @Nested

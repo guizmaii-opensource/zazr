@@ -48,9 +48,8 @@ import org.jspecify.annotations.Nullable;
  * with the same entries, as maps are equal to maps, never to a plain {@link Map}; use {@link #toSortedMap()} to
  * compare across the two.
  * <p>
- * The equality across the two representations holds, symmetric and with equal hash codes, when the sorted map's key
- * comparator is consistent with {@code equals}, as for a plain {@code HashMap} and {@code TreeMap}. With one that is
- * not (a case-insensitive order, say), {@code equals} can hold one way only and the hash codes differ.
+ * The keys and the values are compared with their own {@code equals}, not with the key comparator, as
+ * {@link TreeMap#equals(Object)} does, so the equality is symmetric and equal maps have equal hash codes.
  *
  * @param <K> Key type
  * @param <V> Value type
@@ -1034,6 +1033,15 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
     }
 
     /**
+     * @param predicate A test of a key and its value
+     * @return the entries that pass {@code predicate} and those that fail it; either may be empty
+     * @throws NullPointerException if {@code predicate} is null
+     */
+    public Tuple2<TreeMap<K, V>, TreeMap<K, V>> partition(BiPredicate<? super K, ? super V> predicate) {
+        return map.partition(predicate);
+    }
+
+    /**
      * Complexity: O(log n), as {@link TreeMap#tail()}.
      *
      * @return all entries but the first; empty when {@code size()} is 1. See {@link #tailNonEmpty()}.
@@ -1873,8 +1881,8 @@ public final class NonEmptySortedMap<K extends @Nullable Object, V extends @Null
 
     /**
      * Maps are equal to maps: a {@code NonEmptySortedMap} is equal to a {@code NonEmptySortedMap} or a
-     * {@code NonEmptyMap} with the same entries, and never to a plain {@link Map}; symmetric only when the key comparator
-     * is consistent with {@code equals}.
+     * {@code NonEmptyMap} with the same entries, and never to a plain {@link Map}. The keys and the values are compared
+     * with their own {@code equals}, not with the key comparator, which decides the lookups and the bulk operations.
      */
     @Override
     public boolean equals(@Nullable Object o) {

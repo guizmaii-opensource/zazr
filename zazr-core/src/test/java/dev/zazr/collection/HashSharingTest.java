@@ -210,7 +210,10 @@ class HashSharingTest {
     @Test
     void hashMapPartitionRejectsANullPredicate() {
         assertThatNullPointerException()
-                .isThrownBy(() -> HashMap.of(1, 2).partition(null))
+                .isThrownBy(() -> HashMap.of(1, 2).partition((Predicate<Tuple2<Integer, Integer>>) null))
+                .withMessage("predicate is null");
+        assertThatNullPointerException()
+                .isThrownBy(() -> HashMap.of(1, 2).partition((java.util.function.BiPredicate<Integer, Integer>) null))
                 .withMessage("predicate is null");
     }
 

@@ -303,6 +303,10 @@ public class TreeFilterAndBulkTest {
                             map, order, m -> m.partition(e -> keys.test(e._1()))._1(), e -> keys.test(e._1()));
                     checkMapFilter(
                             map, order, m -> m.partition(e -> keys.test(e._1()))._2(), e -> !keys.test(e._1()));
+                    checkMapFilter(
+                            map, order, m -> m.partition((k, v) -> keys.test(k))._1(), e -> keys.test(e._1()));
+                    checkMapFilter(
+                            map, order, m -> m.partition((k, v) -> keys.test(k))._2(), e -> !keys.test(e._1()));
                 }
             }
         }
@@ -320,6 +324,9 @@ public class TreeFilterAndBulkTest {
             calls.clear();
             map.partition(e -> calls.add(e._1()) && (e._1() & 1) == 0);
             assertThat(calls).isEqualTo(keys);
+            calls.clear();
+            map.partition((k, v) -> calls.add(k) && (k & 1) == 0);
+            assertThat(calls).isEqualTo(keys);
         }
     }
 
@@ -329,6 +336,11 @@ public class TreeFilterAndBulkTest {
         Integer last = map.last()._1();
         TreeMap<Integer, String> withoutLast = map.filterKeys(k -> !k.equals(last));
         assertThat(sharedNodes(tree(withoutLast), tree(map))).isGreaterThanOrEqualTo(1024 - 3 * 25);
+        Tuple2<TreeMap<Integer, String>, TreeMap<Integer, String>> byEntry = map.partition(e -> !e._1().equals(last));
+        Tuple2<TreeMap<Integer, String>, TreeMap<Integer, String>> byKeyAndValue =
+                map.partition((k, v) -> !k.equals(last));
+        assertThat(sharedNodes(tree(byEntry._1()), tree(map))).isGreaterThanOrEqualTo(1024 - 3 * 25);
+        assertThat(sharedNodes(tree(byKeyAndValue._1()), tree(map))).isGreaterThanOrEqualTo(1024 - 3 * 25);
     }
 
     @Test
@@ -344,7 +356,8 @@ public class TreeFilterAndBulkTest {
                         m -> m.rejectKeys(null),
                         m -> m.filterValues(null),
                         m -> m.rejectValues(null),
-                        m -> m.partition(null))) {
+                        m -> m.partition((Predicate<Tuple2<Integer, String>>) null),
+                        m -> m.partition((java.util.function.BiPredicate<Integer, String>) null))) {
             assertThatThrownBy(() -> operation.apply(map))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("predicate is null");

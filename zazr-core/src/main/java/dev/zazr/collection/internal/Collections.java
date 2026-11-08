@@ -46,25 +46,35 @@ public final class Collections {
         return iter1.hasNext() == iter2.hasNext();
     }
 
+    /// Whether `object` is a map of the same entries, keys and values compared with `equals`. A `TreeMap` on
+    /// either side is compared by `TreeMap` itself, before this is called. Two hash-based maps look each entry of
+    /// `source` up by hash in the other; any other kind of map is compared by counting its entries
+    /// ([#sameElementCounts]).
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> boolean equals(
             Map<K, V> source, @Nullable Object object) {
         if (source == object) {
             return true;
-        } else if (source != null && object instanceof Map) {
-            Map<K, V> map = (Map<K, V>) object;
+        } else if (source != null && object instanceof Map<?, ?> map) {
             if (source.size() != map.size()) {
                 return false;
-            } else {
+            } else if (isHashMap(source) && isHashMap(map)) {
+                // a hash lookup compares the keys with `equals`, and neither side holds two equal keys
                 try {
-                    return source.forAll(map::contains);
+                    return source.forAll(((Map<K, V>) map)::contains);
                 } catch (ClassCastException e) {
                     return false;
                 }
+            } else {
+                return sameElementCounts(source, map);
             }
         } else {
             return false;
         }
+    }
+
+    private static boolean isHashMap(Map<?, ?> map) {
+        return map instanceof HashMap || map instanceof LinkedHashMap;
     }
 
     public static <V extends @Nullable Object> boolean equals(Vector<V> source, @Nullable Object object) {
@@ -105,24 +115,57 @@ public final class Collections {
                 || object instanceof LazyList;
     }
 
+    /// Whether `object` is a set of the same elements, compared with `equals`. A `TreeSet` on either side is
+    /// compared by `TreeSet` itself, before this is called. Two hash-based sets look each element of `source` up by
+    /// hash in the other; any other kind of set is compared by counting its elements ([#sameElementCounts]).
     @SuppressWarnings("unchecked")
     public static <V extends @Nullable Object> boolean equals(Set<V> source, @Nullable Object object) {
         if (source == object) {
             return true;
-        } else if (source != null && object instanceof Set) {
-            Set<V> set = (Set<V>) object;
+        } else if (source != null && object instanceof Set<?> set) {
             if (source.size() != set.size()) {
                 return false;
-            } else {
+            } else if (isHashSet(source) && isHashSet(set)) {
+                // a hash lookup compares with `equals`, and neither side holds two equal elements
                 try {
-                    return source.forAll(set::contains);
+                    return source.forAll(((Set<V>) set)::contains);
                 } catch (ClassCastException e) {
                     return false;
                 }
+            } else {
+                return sameElementCounts(source, set);
             }
         } else {
             return false;
         }
+    }
+
+    private static boolean isHashSet(Set<?> set) {
+        return set instanceof HashSet || set instanceof LinkedHashSet;
+    }
+
+    /// Whether `a` and `b`, of the same size, hold the same elements as many times each, compared with
+    /// `equals` and `hashCode` only: no comparator and no `contains` of either side. A set ordered by a
+    /// comparator under which two objects equal by `equals` compare as different can hold both, so the
+    /// elements are counted, not just looked up. O(n), with a temporary hash table of the elements of `a`.
+    public static boolean sameElementCounts(Traversable<?> a, Traversable<?> b) {
+        java.util.HashMap<@Nullable Object, int[]> counts = java.util.HashMap.newHashMap(a.size());
+        for (Object element : a) {
+            int @Nullable [] count = counts.get(element);
+            if (count == null) {
+                counts.put(element, new int[] {1});
+            } else {
+                count[0]++;
+            }
+        }
+        for (Object element : b) {
+            int @Nullable [] count = counts.get(element);
+            if (count == null || count[0] == 0) {
+                return false;
+            }
+            count[0]--;
+        }
+        return true;
     }
 
     public static <T extends @Nullable Object> Iterator<T> fill(int n, Supplier<? extends T> supplier) {

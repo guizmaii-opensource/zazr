@@ -98,9 +98,9 @@ var big     = Vector.of(Integer.MAX_VALUE, 1).sumLong(n -> n);  // long
 // 12, Some(4.0), 2147483648
 ```
 
-A map is a collection of `Tuple2<K, V>` entries. `get` returns an `Option`; `map`, `filter` and `forEach` on a
-map take a function of the key and the value; `mapValues` and `filterKeys` work on one side; `keySet()` gives a set
-and `values()` a `Vector`.
+A map is a collection of `Tuple2<K, V>` entries. `get` returns an `Option`; `map`, `filter`, `partition` and `forEach`
+on a map take a function of the key and the value (`filter` and `partition` also take a one-argument function of the
+`Tuple2` entry); `mapValues` and `filterKeys` work on one side; `keySet()` gives a set and `values()` a `Vector`.
 `putAll(entries)` puts many entries as successive `put`s would, the argument's value winning on a shared key (Scala's
 `++`); `merge(that)` keeps this map's value and adds only the keys it lacks.
 `updateWith(key, f)` (Scala's `updatedWith`) reads and writes one key: `f` gets the value as an `Option` (`None` if
@@ -216,7 +216,8 @@ var fromJdk = Vector.ofAll(java.util.List.of(3, 1, 2));  // Vector<Integer>
   iteration order; `fold` over them needs an operation where order does not matter.
 - `max()` and `min()` on a set walk every element in natural order, even on a `TreeSet`; its own least and greatest
   are `head()` and `last()`.
-- `TreeSet` and `TreeMap` decide membership with the comparator, not `equals`.
+- `TreeSet` and `TreeMap` decide membership with the comparator, not `equals`. Their `equals` is the exception: it
+  compares elements, keys and values with their own `equals`, as on every set and map.
 - `LazyList`: nothing is computed before it is read, not even the first element (`LazyList.defer(() -> ...)` for a
   lazy first element too); `size`, `last`, `reverse`, `sorted`, `foldLeft`, `mkString` and `toVector` never return
   on an infinite one; it keeps every element it computed, and every exception.

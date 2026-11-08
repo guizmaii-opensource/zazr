@@ -46,9 +46,8 @@ import org.jspecify.annotations.Nullable;
  * with the same elements, as sets are equal to sets, never to a plain {@link Set}; use {@link #toSortedSet()} to
  * compare across the two.
  * <p>
- * The equality across the two representations holds, symmetric and with equal hash codes, when the sorted set's
- * comparator is consistent with {@code equals}, as for a plain {@code HashSet} and {@code TreeSet}. With one that is not
- * (a case-insensitive order, say), {@code equals} can hold one way only and the hash codes differ.
+ * The elements are compared with their own {@code equals}, not with the comparator, as {@link TreeSet#equals(Object)}
+ * does, so the equality is symmetric and equal sets have equal hash codes.
  *
  * @param <A> Component type.
  */
@@ -308,8 +307,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
     /**
      * Complexity: O(m log(n + m)) for a set of m elements, as {@link TreeSet#union(Set)}.
      * <p>
-     * Returns this set itself when nothing changes: when {@code elements} is empty or this set's own elements, or
-     * adds no element and is not another TreeSet of the same comparator, whose elements replace the equal ones.
+     * Returns this set itself when nothing changes: when {@code elements} adds no element, whatever its kind. Of
+     * equal elements, this set's stay, as {@link TreeSet#union(Set)} tells.
      *
      * @param elements A set, possibly empty
      * @return the elements of both sets, with this set's comparator
@@ -1557,8 +1556,8 @@ public final class NonEmptySortedSet<A extends @Nullable Object> implements Iter
 
     /**
      * Sets are equal to sets: a {@code NonEmptySortedSet} is equal to a {@code NonEmptySortedSet} or a
-     * {@code NonEmptySet} with the same elements, and never to a plain {@link Set}; symmetric only when the comparator
-     * is consistent with {@code equals}.
+     * {@code NonEmptySet} with the same elements, and never to a plain {@link Set}. The elements are compared with
+     * their own {@code equals}, not with the comparator, which decides {@code contains} and the bulk operations.
      */
     @Override
     public boolean equals(@Nullable Object o) {

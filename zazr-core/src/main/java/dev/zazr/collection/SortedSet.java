@@ -19,6 +19,12 @@ import org.jspecify.annotations.Nullable;
  * <li>{@link #flatMap(Comparator, Function)}</li>
  * <li>{@link #map(Comparator, Function)}</li>
  * </ul>
+ * <p>
+ * The {@link #comparator()} decides membership: {@code contains}, {@code add}, {@code remove} and the bulk
+ * operations treat two elements it compares as 0 as the same element. {@code equals} is the exception: it compares
+ * the elements with their own {@code equals}, as on every {@link Set}, so it is symmetric and equal sets have equal
+ * hash codes. A sorted set ordered case-insensitively that holds {@code "a"} contains {@code "A"}, but is not equal
+ * to a set that holds {@code "A"}.
  *
  * @param <T> Component type
  * @author Daniel Dietrich
@@ -455,9 +461,10 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * This set's comparator decides membership, as in {@link #contains(Object)}: an element is removed when
      * {@code elements} holds one the comparator equates with it, whatever the kind of {@code elements}.
      * <p>
-     * Complexity: O(n + m log n) for a set of m elements: each is looked up in this tree by the comparator; the first
-     * two found are deleted, then one walk of this tree removes the others found and keeps whole every part that
-     * loses no element. O(m log n) when at most two are found: the tree off the deleted paths is shared.
+     * Complexity: O(n + m log n) for a set of m elements: each is looked up in this tree by the comparator. Up to
+     * eight elements found (fewer in a tree of fewer than 640 elements, and at least two) are deleted one by one,
+     * O(m log n): the tree off the deleted paths is shared. More are removed in one walk of this tree that keeps
+     * whole every part that loses no element.
      * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), this tree is
      * walked and each element it visits is looked up in the part of the other tree within its bounds, found by
      * going down that tree: O(k log m) for the k nodes visited, at most n and at most about 2m log2 n. A part of
@@ -469,7 +476,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the new tree is built from the kept elements, which come in order, in one pass.
+     * Complexity: O(n), with no comparator call: one walk of the tree keeps whole every part whose elements are all
+     * kept, and joins the kept parts.
      */
     @Override
     SortedSet<T> filter(Predicate<? super T> predicate);
@@ -477,7 +485,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): the new tree is built from the kept elements, which come in order, in one pass.
+     * Complexity: O(n), with no comparator call: one walk of the tree keeps whole every part whose elements are all
+     * kept, and joins the kept parts.
      */
     @Override
     SortedSet<T> reject(Predicate<? super T> predicate);
@@ -569,7 +578,8 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(n): both results get their elements in order, and their trees are built from them in one pass.
+     * Complexity: O(n), with no comparator call: one walk of the tree gives each result whole every part whose
+     * elements all go to it, and joins its parts.
      */
     @Override
     Tuple2<? extends SortedSet<T>, ? extends SortedSet<T>> partition(Predicate<? super T> predicate);
@@ -592,10 +602,11 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
      * {@code elements} holds one the comparator equates with it, whatever the kind of {@code elements}. A null among
      * {@code elements} goes to the comparator too: the natural comparator throws {@code NullPointerException} for it.
      * <p>
-     * Complexity: O(n + m log n) for m elements: each is looked up in this tree by the comparator; the first two
-     * found are deleted, then one walk of this tree removes the others found and keeps whole every part that loses no
-     * element. O(m log n) when at most two are found: the tree off the deleted paths is shared. A TreeSet with an
-     * equal comparator costs what {@link #diff(Set)} of it costs.
+     * Complexity: O(n + m log n) for m elements: each is looked up in this tree by the comparator. Up to eight
+     * elements found (fewer in a tree of fewer than 640 elements, and at least two) are deleted one by one,
+     * O(m log n): the tree off the deleted paths is shared. More are removed in one walk of this tree that keeps
+     * whole every part that loses no element. A TreeSet with an equal comparator costs what {@link #diff(Set)} of it
+     * costs.
      */
     @Override
     SortedSet<T> removeAll(Iterable<? extends T> elements);
@@ -634,11 +645,10 @@ public interface SortedSet<T extends @Nullable Object> extends Set<T> {
     /**
      * {@inheritDoc}
      * <p>
-     * Complexity: O(m log(n + m)) for a set of m elements: one lookup each, then one insertion for each new one.
-     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), this tree is
-     * walked and each element it visits is looked up in the part of the other tree within its bounds, found by
-     * going down that tree: O(k log m) for the k nodes visited, at most n and at most about 2m log2 n. A part of
-     * this tree that loses no element is kept whole, and nothing of the other tree is copied.
+     * Complexity: O(m log(n + m)) for a set of m elements. When it holds fewer than n elements, each is looked up,
+     * then inserted when new; otherwise they are sorted into a tree, which is cut and joined with this one.
+     * When {@code elements} is a TreeSet with an equal comparator (for a lambda, the same object), the cost is
+     * O(m log(n / m + 1)), m then being the smaller of the two sizes: the two trees are cut and joined, not rebuilt.
      */
     @Override
     SortedSet<T> union(Set<? extends T> elements);
