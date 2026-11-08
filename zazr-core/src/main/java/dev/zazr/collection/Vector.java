@@ -17,8 +17,6 @@ import java.util.function.*;
 import java.util.stream.Collector;
 import org.jspecify.annotations.Nullable;
 
-import static dev.zazr.collection.internal.Collections.withSize;
-
 /**
  * The default sequence: an immutable, indexed sequence with effectively constant time access to any element.
  * Many other operations ({@code update}, {@code append}, {@code prepend}, {@code tail}, {@code drop}, {@code take},
@@ -221,6 +219,12 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         return builder.result();
     }
 
+    /* the Vector of the elements of an array that nothing else holds, which are of type T: up to 32 elements, the
+     * array is its one leaf */
+    private static <T extends @Nullable Object> Vector<T> ofOwnedArray(Object[] elements) {
+        return ofTree(RadixVector.<T>ofOwnedArray(elements));
+    }
+
     /**
      * Creates a Vector of the given elements.
      * <p>
@@ -245,10 +249,14 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
             return (Vector<T>) underlying;
         }
         if (dev.zazr.collection.internal.Collections.isTraversableAgain(iterable)) {
-            // a sized source (a JDK Collection, a Vavr Traversable): one bulk copy into a flat array, then whole-leaf
+            // a sized source (a JDK Collection, a Zazr Traversable): one bulk copy into a flat array, then whole-leaf
             // copies into the tree, is cheaper than element-wise adds; the builder pays off for one-shot and unsized
-            // sources only
-            return ofTree(RadixVector.<T>ofAll(withSize(iterable).toArray()));
+            // sources only. Up to 32 elements, an array that nothing else holds is the tree's one leaf as it is.
+            Object[] elements = Collections.toArrayOfSized(iterable);
+            return ofTree(
+                    Collections.toArrayIsOwned(iterable)
+                            ? RadixVector.<T>ofOwnedArray(elements)
+                            : RadixVector.<T>ofAll(elements));
         }
         return Vector.<T>newBuilder().addAll(iterable).result();
     }
@@ -738,7 +746,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * Complexity: O(rows * columns); the matrix itself is returned when it has no or one element.
      */
     public static <T extends @Nullable Object> Vector<Vector<T>> transpose(Vector<Vector<T>> matrix) {
-        return dev.zazr.collection.internal.Collections.transpose(matrix, Vector::ofAll, Vector::of);
+        return dev.zazr.collection.internal.Collections.transpose(matrix, Vector::ofAll, Vector::ofOwnedArray);
     }
 
     /**
@@ -869,7 +877,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
      * @return the k-combinations, in position order
      */
     public Vector<Vector<T>> combinations(int k) {
-        return Combinations.apply(this, Math.max(k, 0));
+        return Combinations.apply(this, Math.max(k, 0), Vector::ofOwnedArray);
     }
 
     /**
@@ -2010,7 +2018,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         } else if (size() == 1) {
             return of(this);
         } else {
-            return VectorModule.Permutations.apply(this);
+            return VectorModule.Permutations.apply(this, Vector::ofOwnedArray);
         }
     }
 
@@ -2441,10 +2449,9 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         if (size() <= 1) {
             return this;
         } else {
-            @SuppressWarnings("unchecked")
-            T[] list = (T[]) toArray();
-            Arrays.sort(list);
-            return Vector.of(list);
+            Object[] array = toArray();
+            Arrays.sort(array);
+            return ofTree(RadixVector.<T>ofOwnedArray(array));
         }
     }
 
@@ -2465,7 +2472,7 @@ public final class Vector<T extends @Nullable Object> implements Traversable<T> 
         @SuppressWarnings("unchecked")
         T[] array = (T[]) toArray();
         Arrays.sort(array, comparator);
-        return Vector.of(array);
+        return ofTree(RadixVector.<T>ofOwnedArray(array));
     }
 
     /**
