@@ -106,7 +106,8 @@ public final class Collections {
 
     /// Whether `object` is a set of the same elements, compared with `equals`. A `TreeSet` on either side is
     /// compared by `TreeSet` itself, before this is called. Two hash-based sets look each element of `source` up by
-    /// hash in the other; any other kind of set is compared by counting its elements ([#sameElementCounts]).
+    /// hash in the other; against any other kind of set, different hash sums answer `false`, and otherwise the
+    /// elements are counted ([#sameElementCounts]).
     @SuppressWarnings("unchecked")
     public static <V extends @Nullable Object> boolean equals(Set<V> source, @Nullable Object object) {
         if (source == object) {
@@ -122,7 +123,9 @@ public final class Collections {
                     return false;
                 }
             } else {
-                return sameElementCounts(source, set);
+                // a set of another kind can hold two equal elements: different hash sums prove a difference, and
+                // otherwise the elements are counted
+                return hashUnordered(source) == hashUnordered(set) && sameElementCounts(source, set);
             }
         } else {
             return false;

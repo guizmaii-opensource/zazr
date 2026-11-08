@@ -1001,6 +1001,82 @@ public interface RedBlackTreeModule {
             return null;
         }
 
+        // the node whose key equals `key`, or null: the walk of findByKey, which returns the node itself
+        private static <E extends @Nullable Object, K extends @Nullable Object> @Nullable Node<E> nodeByKey(
+                RedBlackTree<E> tree, K key, Comparator<? super K> comparator, boolean entries) {
+            @SuppressWarnings("Var")
+            RedBlackTree<E> t = tree;
+            while (t instanceof Node<E> node) {
+                int c = compareKey(comparator, entries, key, node.value);
+                if (c == 0) {
+                    return node;
+                }
+                t = c < 0 ? node.left : node.right;
+            }
+            return null;
+        }
+
+        /// Whether `a` and `b`, of the same size, hold the same elements (entries when `entries`),
+        /// compared with `equals`, proved by lookups. Each node of `a` finds, by the comparator of `b`, a
+        /// node whose element is equal to its own, and that node finds back, by the comparator of `a`,
+        /// the node it was found from. So no two nodes of `a` find the same node of `b`: the lookups pair
+        /// the nodes of the two trees one to one, each with an equal element. That is equality whatever
+        /// the two comparators, as long as each is deterministic.
+        ///
+        /// When the two trees are equal under comparators for which equal objects compare as 0, every
+        /// lookup succeeds. A `false` proves nothing: a comparator that tells equal objects apart can miss
+        /// an equal element stored at another place. A comparator that throws on an element of the other
+        /// tree (one of another type, say) proves nothing either: the answer is `false`, and the exception
+        /// is not passed on, since the equality of two sets does not depend on their comparators.
+        ///
+        /// The answer is the same whichever tree is `a`: when every node of `a` finds its way back, the
+        /// lookups from `b` are the same ones, made in another order. Nothing is allocated; at most two
+        /// walks down a tree per element, O(n log n).
+        @SuppressWarnings("unchecked")
+        public static boolean pairsByLookup(
+                RedBlackTree<?> a,
+                Comparator<?> aComparator,
+                RedBlackTree<?> b,
+                Comparator<?> bComparator,
+                boolean entries) {
+            try {
+                return !(a instanceof Node<?> root)
+                        || pairsByLookup(
+                                (Node<Object>) root,
+                                (RedBlackTree<Object>) a,
+                                (Comparator<Object>) aComparator,
+                                (RedBlackTree<Object>) b,
+                                (Comparator<Object>) bComparator,
+                                entries);
+            } catch (RuntimeException e) {
+                return false;
+            }
+        }
+
+        // the check of pairsByLookup for the node, then for each node of its subtrees
+        private static boolean pairsByLookup(
+                Node<Object> node,
+                RedBlackTree<Object> a,
+                Comparator<Object> aComparator,
+                RedBlackTree<Object> b,
+                Comparator<Object> bComparator,
+                boolean entries) {
+            Object element = node.value;
+            @Nullable Node<Object> found = nodeByKey(b, key(element, entries), bComparator, entries);
+            return found != null
+                    && Objects.equals(found.value, element)
+                    && nodeByKey(a, key(found.value, entries), aComparator, entries) == node
+                    && (!(node.left instanceof Node<Object> left)
+                            || pairsByLookup(left, a, aComparator, b, bComparator, entries))
+                    && (!(node.right instanceof Node<Object> right)
+                            || pairsByLookup(right, a, aComparator, b, bComparator, entries));
+        }
+
+        // the key of a stored element: the element itself, or the key of an entry
+        private static @Nullable Object key(@Nullable Object element, boolean entries) {
+            return entries ? ((Tuple2<?, ?>) element)._1() : element;
+        }
+
         /// The least element whose key is greater than or equal to `key`, or `null` when there is none. One walk
         /// down the tree, O(log n).
         public static <E extends @Nullable Object, K extends @Nullable Object> @Nullable E minAfter(

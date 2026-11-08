@@ -1594,6 +1594,14 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return inOrder(tree, that)
                     || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
                             && Collections.sameElementCounts(tree, that));
+        } else if (other instanceof TreeSet<?> that) {
+            // Two orders: a full match of the in-order walk proves equality, as do lookups that pair the elements
+            // one to one; neither proves a difference. Different hash sums do.
+            return inOrder(tree, that)
+                    || RedBlackTreeModule.Node.pairsByLookup(
+                            tree.tree, tree.comparator(), that.tree, that.comparator(), false)
+                    || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
+                            && Collections.sameElementCounts(tree, that));
         } else if (other instanceof HashSet || other instanceof LinkedHashSet) {
             // `other` holds no two equal elements, so each one found equal in the tree is a different element of it:
             // with the same size, that is every element. When one is not found, the tree may still hold it at
@@ -1602,7 +1610,10 @@ public final class TreeSet<T extends @Nullable Object> implements SortedSet<T> {
             return findsEach(tree, other)
                     || (tree.forAll(((Set<Object>) other)::contains) && Collections.sameElementCounts(tree, other));
         } else {
-            return Collections.sameElementCounts(tree, other);
+            // a set of another kind can hold two equal elements: different hash sums prove a difference, and
+            // otherwise the elements are counted
+            return Collections.hashUnordered(tree) == Collections.hashUnordered(other)
+                    && Collections.sameElementCounts(tree, other);
         }
     }
 

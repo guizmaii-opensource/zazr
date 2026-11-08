@@ -2041,6 +2041,14 @@ public final class TreeMap<K extends @Nullable Object, V extends @Nullable Objec
             return inOrder(tree, that)
                     || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
                             && Collections.sameElementCounts(tree, that));
+        } else if (other instanceof TreeMap<?, ?> that) {
+            // Two key orders: a full match of the in-order walk proves equality, as do key lookups that pair the
+            // entries one to one; neither proves a difference. Different hash sums do.
+            return inOrder(tree, that)
+                    || RedBlackTreeModule.Node.pairsByLookup(
+                            tree.entries, tree.comparator(), that.entries, that.comparator(), true)
+                    || (Collections.hashUnordered(tree) == Collections.hashUnordered(that)
+                            && Collections.sameElementCounts(tree, that));
         } else if (other instanceof HashMap || other instanceof LinkedHashMap) {
             // `other` holds no two equal keys, so each entry found equal in the tree is a different entry of it:
             // with the same size, that is every entry. When one is not found, the tree may still hold its key at
