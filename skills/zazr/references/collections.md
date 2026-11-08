@@ -53,6 +53,9 @@ infinite `LazyList`), `isEmpty()`,
 `contains`, `exists`, `forAll`, `count`, `find` (an `Option`), `foldLeft`, `mkString`, `toVector`, `toList`,
 `toSet`, `stream()`, `toArray`, `asJava()`.
 
+`Map` and `SortedMap` are sealed: `HashMap`, `LinkedHashMap` and `TreeMap` are their only implementations. Code that
+needs a map type of its own wraps one of them.
+
 `map`, `filter`, `flatMap` and the rest are declared by each type and return that type: `grouped` on a `List` is a
 `List` of `List`s. `partitionMap` splits in one pass with a function returning an `Either` (sequences and hash
 sets). `groupBy` returns a `Map` of groups, keyed in the order of their first element; `groupMap(key, value)` maps the

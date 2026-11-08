@@ -47,34 +47,23 @@ public final class Collections {
     }
 
     /// Whether `object` is a map of the same entries, keys and values compared with `equals`. A `TreeMap` on
-    /// either side is compared by `TreeMap` itself, before this is called. Two hash-based maps look each entry of
-    /// `source` up by hash in the other; any other kind of map is compared by counting its entries
-    /// ([#sameElementCounts]).
+    /// either side is compared by `TreeMap` itself, before this is called, so both maps are a `HashMap` or a
+    /// `LinkedHashMap` (`Map` is sealed): each entry of `source` is looked up by hash in the other.
     @SuppressWarnings("unchecked")
     public static <K extends @Nullable Object, V extends @Nullable Object> boolean equals(
             Map<K, V> source, @Nullable Object object) {
         if (source == object) {
             return true;
         } else if (source != null && object instanceof Map<?, ?> map) {
-            if (source.size() != map.size()) {
+            // a hash lookup compares the keys with `equals`, and neither side holds two equal keys
+            try {
+                return source.size() == map.size() && source.forAll(((Map<K, V>) map)::contains);
+            } catch (ClassCastException e) {
                 return false;
-            } else if (isHashMap(source) && isHashMap(map)) {
-                // a hash lookup compares the keys with `equals`, and neither side holds two equal keys
-                try {
-                    return source.forAll(((Map<K, V>) map)::contains);
-                } catch (ClassCastException e) {
-                    return false;
-                }
-            } else {
-                return sameElementCounts(source, map);
             }
         } else {
             return false;
         }
-    }
-
-    private static boolean isHashMap(Map<?, ?> map) {
-        return map instanceof HashMap || map instanceof LinkedHashMap;
     }
 
     public static <V extends @Nullable Object> boolean equals(Vector<V> source, @Nullable Object object) {
@@ -337,8 +326,8 @@ public final class Collections {
     /// The size of `iterable` when it is stored, so that reading it is O(1) and computes nothing: a [Vector], one of
     /// Zazr's sets or maps, or a non-empty collection. -1 for everything else: a [List], a [Queue] or a [LazyList],
     /// whose size takes a walk; a one-shot `Iterable`, whose size may never be known; a JDK collection, which
-    /// may be a view of a [LazyList]; and any other implementation of [Traversable], [Set] or [Map], which are
-    /// open to them.
+    /// may be a view of a [LazyList]; and any other implementation of [Traversable] or [Set], which are open to
+    /// them.
     public static int knownSize(Iterable<?> iterable) {
         return switch (iterable) {
             case Vector<?> vector -> vector.size();

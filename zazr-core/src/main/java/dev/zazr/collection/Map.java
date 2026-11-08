@@ -17,12 +17,17 @@ import org.jspecify.annotations.Nullable;
  * Supports typical map operations such as querying, updating, filtering,
  * transforming, and iterating over entries. Provides convenient methods
  * for converting to standard Java maps.
+ * <p>
+ * It is implemented by Zazr only: {@link HashMap}, {@link LinkedHashMap} and, through {@link SortedMap},
+ * {@link TreeMap}. The interface is sealed, so that a method added to it in a later release has an implementation
+ * in each of them.
  *
  * @param <K> Key type
  * @param <V> Value type
  * @author Daniel Dietrich, Ruslan Sennov, Grzegorz Piwowarek
  */
-public interface Map<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>> {
+public sealed interface Map<K extends @Nullable Object, V extends @Nullable Object> extends Traversable<Tuple2<K, V>>
+        permits HashMap, LinkedHashMap, SortedMap {
 
     /**
      * Narrows a widened {@code Map<? extends K, ? extends V>} to {@code Map<K, V>}

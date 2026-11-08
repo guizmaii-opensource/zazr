@@ -13,12 +13,16 @@ import org.jspecify.annotations.Nullable;
  * {@code remove} and the bulk operations treat two keys it compares as 0 as the same key. {@code equals} is the
  * exception: it compares the keys and the values with their own {@code equals}, as on every {@link Map}, so it is
  * symmetric and equal maps have equal hash codes.
+ * <p>
+ * It is implemented by Zazr only, by {@link TreeMap}. The interface is sealed, as {@link Map} is, so that a method
+ * added to it in a later release has an implementation in it.
  *
  * @param <K> Key type
  * @param <V> Value type
  * @author Daniel Dietrich
  */
-public interface SortedMap<K extends @Nullable Object, V extends @Nullable Object> extends Map<K, V> {
+public sealed interface SortedMap<K extends @Nullable Object, V extends @Nullable Object> extends Map<K, V>
+        permits TreeMap {
 
     /**
      * Narrows a widened {@code SortedMap<? extends K, ? extends V>} to {@code SortedMap<K, V>}

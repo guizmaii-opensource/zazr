@@ -13,6 +13,9 @@ new map.
 | `LinkedHashMap` | a hash-based map that also records the insertion order | insertion order | yes |
 | `TreeMap` | a sorted, balanced tree of entries | the key comparator's | yes |
 
+The three implement the `Map` interface, and `TreeMap` also `SortedMap`. Both interfaces are sealed: these classes
+are their only implementations.
+
 `HashMap` is the structure of the immutable `HashMap` of the Scala 2.13 collections library, which Scala 3 uses
 unchanged: a tree of nodes with up to 32 slots each, where five bits of a mix of the key's hash code pick the slot
 at each level. A node stores its entries inline, keys and values side by side in one array, so an entry costs no

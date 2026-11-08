@@ -1266,9 +1266,8 @@ public final class HashMap<K extends @Nullable Object, V extends @Nullable Objec
      * {@code a.equals(b) == b.equals(a)}, and two equal maps have the same {@link #hashCode()}.
      * <p>
      * Complexity: O(n log n) against a TreeMap, as {@link TreeMap#equals(Object)}; O(n) against a LinkedHashMap:
-     * each entry of this map is looked up in it; O(n) against a Map of another implementation, with a temporary hash
-     * table of this map's entries. O(1) when the sizes differ. Against another HashMap, the two are compared part by
-     * part, and a part of a different size or shape answers without looking at a key.
+     * each entry of this map is looked up in it. O(1) when the sizes differ. Against another HashMap, the two are
+     * compared part by part, and a part of a different size or shape answers without looking at a key.
      */
     @Override
     public boolean equals(@Nullable Object o) {

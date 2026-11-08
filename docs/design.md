@@ -1884,6 +1884,26 @@ the value) and follow the same rule: keys and values by `equals`.
   uses (a tree holding two equal elements, equal elements stored in another order); and random sets and maps of
   every pair of kinds checked against a count of their elements.
 
+**`Map` and `SortedMap` are implemented by Zazr only (#369, decided 2026-11-08).** Both were public interfaces that
+any code could implement, and every abstract method added to them (`filter(BiPredicate)`, then
+`partition(BiPredicate)` in 0.5.0) broke such an implementation. Zazr does not mean them to be implemented outside
+the library, so they are sealed: `Map` permits `HashMap`, `LinkedHashMap` and `SortedMap`, and `SortedMap` permits
+`TreeMap`; the three classes were already `final`. `NonEmptyMap` and `NonEmptySortedMap` wrap a map and implement
+neither interface. The javadoc of both interfaces says so.
+
+- **What it removes.** A map of another implementation can no longer exist, so the fallback of the hash maps'
+  `equals` that counted the entries of such a map is gone: a `HashMap` or a `LinkedHashMap` is compared with another
+  hash map by lookups, and with a `TreeMap` by `TreeMap` (#347 above). The map half of #347's test with another
+  implementation went with it (a dynamic proxy of a sealed interface is rejected by the JDK); `SealedMapTest` checks
+  the sealing instead.
+- **The trade-off.** A method added to `Map` or `SortedMap` is no longer a break. A fourth map class is one in a new
+  way: a pattern-matching `switch` over `HashMap`, `LinkedHashMap` and `TreeMap` compiles as exhaustive today and
+  would stop compiling. So the sites say only that Zazr implements these interfaces; they do not teach the
+  exhaustive `switch`.
+- **Source change** for users: a class outside Zazr that implemented `Map` or `SortedMap` no longer compiles.
+- **Not decided here:** `Set`, `SortedSet`, `LazyList` and `Traversable` stay open (the sequence interfaces `Seq`,
+  `IndexedSeq` and `LinearSeq` are gone, 3.7). Whether to seal them is proposed in the pull request of #369.
+
 ### 3.8 `Vector` builder
 
 **Decision.** Add a mutable, single-owner `Vector.Builder<A>` and route every bulk operation through it.
