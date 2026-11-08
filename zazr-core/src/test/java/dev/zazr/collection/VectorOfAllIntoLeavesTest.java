@@ -138,14 +138,13 @@ public class VectorOfAllIntoLeavesTest {
         sources.add(java.util.Map.entry(
                 "TreeSet in reverse",
                 TreeSet.ofAll(Comparator.comparing(o -> (Key) o).reversed(), list)));
-        HashMap<Object, Object> hashMap = HashMap.empty();
-        LinkedHashMap<Object, Object> linkedHashMap = LinkedHashMap.empty();
-        TreeMap<Object, Object> treeMap = TreeMap.empty(Comparator.comparing(o -> (Key) o));
+        java.util.LinkedHashMap<Object, Object> javaMap = new java.util.LinkedHashMap<>();
         for (Key key : keys) {
-            hashMap = hashMap.put(key, key.id());
-            linkedHashMap = linkedHashMap.put(key, key.id());
-            treeMap = treeMap.put(key, key.id());
+            javaMap.put(key, key.id());
         }
+        HashMap<Object, Object> hashMap = HashMap.ofAll(javaMap);
+        LinkedHashMap<Object, Object> linkedHashMap = LinkedHashMap.ofAll(javaMap);
+        TreeMap<Object, Object> treeMap = TreeMap.ofAll(Comparator.comparing(o -> (Key) o), javaMap);
         sources.add(java.util.Map.entry("HashMap.keySet", hashMap.keySet()));
         sources.add(java.util.Map.entry("LinkedHashMap.keySet", linkedHashMap.keySet()));
         sources.add(java.util.Map.entry("TreeMap.keySet", treeMap.keySet()));
