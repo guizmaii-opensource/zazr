@@ -370,4 +370,30 @@ public class TreeMapLookupTest {
             assertThat(none).isNull();
         }
     }
+
+    @Test
+    void rankByKeyOnTheElementsOfASetAndOfAMap() {
+        for (Comparator<Integer> order : List.of(NATURAL, REVERSED, MODULO_7)) {
+            for (int size : SIZES) {
+                java.util.TreeSet<Integer> model = new java.util.TreeSet<>(order);
+                for (int i = 0; i < size; i++) {
+                    model.add(3 * i - size);
+                }
+                RedBlackTree<Integer> tree = RedBlackTree.ofAll(order, model);
+                RedBlackTree<Tuple2<Integer, String>> entries = RedBlackTree.ofAll(
+                        Comparator.comparing(Tuple2::_1, order),
+                        model.stream().map(key -> Tuple.of(key, "v" + key)).toList());
+                for (int key = -size - 3; key <= 2 * size + 3; key++) {
+                    int expected = model.contains(key) ? model.headSet(key).size() : -1;
+                    String at = order + ", size " + size + ", key " + key;
+                    assertThat(RedBlackTreeModule.Node.rankByKey(tree, key, order, false))
+                            .as(at)
+                            .isEqualTo(expected);
+                    assertThat(RedBlackTreeModule.Node.rankByKey(entries, key, order, true))
+                            .as("entries, " + at)
+                            .isEqualTo(expected);
+                }
+            }
+        }
+    }
 }

@@ -1814,18 +1814,27 @@ keeps one rule for all four, the same as `contains`.
   a result as large as the receiver is the receiver. The equal-object rule above holds: the receiver's objects are
   kept.
 - **`diff` and `removeAll`** with a `TreeSet` of the same comparator take the red-black difference, as before. Any
-  other argument is walked once, each element looked up in the receiver's tree with `Node.findByKey`, and the
-  distinct receiver objects found are collected (compared by identity, so a repeat counts once). Up to a limit,
-  `max(2, min(8, n / (8 b)))` for n elements of bit length b, the k objects found are deleted one by one, O(m log n);
-  past it, they go into an `IdentityHashMap` and one `Node.filter` removes them, sharing every subtree that loses
-  nothing, O(n + m log n). The receiver itself comes back when nothing is found. The argument is read once, a
-  one-shot `Iterable` included, and the choice is made on the objects found. Measured (allocated bytes and time per
-  call, one thread, n from 4096 to 100 000): a deletion walks one path, so deletions are faster than the walk while
-  k log2 n is well below n (at n = 100 000, 3 found take about 1 µs deleted and 350 µs walked), but each rebuilds
-  its path, so from about nine found they allocate more than the walk at every n measured (+470 to +1 070 B for 9
-  to 12 found, +9 KB for 64 at n = 100 000, which they delete 90 times faster). The cap of eight keeps every case
-  within about 350 B of the walk; the size term decides only in trees of fewer than 640 elements, where the walk is
-  cheap.
+  other argument is read once, a one-shot `Iterable` included, and its length decides between deletions and one walk
+  of the tree (#367, 2026-11-09, which replaced the cap of eight deletions #355 had set; the same design as the one
+  prepared for Scala's `TreeSet.removedAll`, scala/scala#11377):
+  1. the first `L = max(1, n / (2 b))` elements found, for n elements of bit length b, are deleted one by one from the
+     tree left by the previous deletions, so a repeat, or a second element equated with the same object, is no hit;
+  2. the next `3 L` elements are kept in an array, not looked up. When the argument ends there, or its size known in
+     advance (`knownSize`: a `java.util.Collection`, a Zazr set or `Vector`) says it will, they are deleted one by one
+     too: O(m log n), and the tree off the deleted paths is shared;
+  3. otherwise each kept and remaining element is looked up by the comparator (`Node.rankByKey`) and its rank marked
+     in a bitmap over the tree; then one `Node.filter` drops the marked nodes, reading the next bit for each element
+     (it tests them once each, in order), and shares every subtree that loses nothing: O(n + m log n). When fewer
+     than L are marked, the first ones, kept as given, are deleted one by one instead.
+
+  The receiver itself comes back when nothing is found. A deletion walks one path, so deletions are faster than the
+  walk while k log2 n is well below n; with the cap of eight, 10 to 64 elements found in a set of 100 000 took the
+  walk (about 450 µs for 10, a few µs deleted). Deleting up to 4 L elements one by one allocates more than the walk
+  past about nine of them (+9 KB at 64 in a set of 100 000, measured for #355), the price of that speed; the length
+  of the array, 3 L, was measured on Scala's `TreeSet`: with L, the first count to take the walk was slower than
+  deleting. Once every element is deleted (possible in sets of up to three), the rest of the argument is still looked
+  up in the receiver's tree, so that every given element goes to the comparator and a null still throws under the
+  natural comparator.
 - **A null given element** now goes to the comparator, as in `contains`: the natural comparator throws
   `NullPointerException`, a comparator that orders nulls finds none. It threw from `HashSet.ofAll` before.
 - **`NonEmptySortedSet`** delegates and needs nothing more. **The sorted maps already followed the rule**:
