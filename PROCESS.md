@@ -89,6 +89,10 @@ pointer to this section. The implementer follows all of it.
 - **Correctness first, no benchmarking.** No JMH, no timing or allocation probes. If a rewrite exists only for speed
   and you cannot tell it is faster without measuring, keep the existing code and leave a note. Performance work is
   its own tickets.
+- **Allocation on a performance ticket.** On a performance ticket, and only there, measure allocation with a short
+  single-threaded probe (`ThreadMXBean.getThreadAllocatedBytes`, warm-up first, under a minute), `main` against the
+  branch, and put the bytes per call in the pull request body as a table. Leave the probe out of the repository. Make
+  no timing claim: time is measured with JMH, by the coordinator, on a quiet machine.
 - **Tests:** every new public method, every branch and fast path, the boundaries (0, 1, 2, 31, 32, 33, 1023, 1024,
   1025 for the tries), nulls, one-shot iterables, older versions of a persistent collection staying valid, reuse
   after close, each concrete representation an input can have (`Object[]` versus primitive leaves).

@@ -135,8 +135,9 @@ contributor's. The points below are the project-specific parts of the review rul
   on a hot path as a finding even when correct. Whether a given allocation survives escape analysis is
   left to a performance ticket, not assumed either way.
 - A PR makes no performance claim and carries no benchmark table: measurements belong to performance
-  tickets. Implementers do not reroute an existing operation through a new mechanism for speed
-  (`PROCESS.md` section 4).
+  tickets, where the PR shows the bytes per call of a short allocation probe, `main` against the branch,
+  and time waits for JMH on a quiet machine. Implementers do not reroute an existing operation through a
+  new mechanism for speed (`PROCESS.md` section 4).
 - Copilot reviews PRs automatically. Its comments are read and answered in-thread like any other
   review comment, but critically: it is often wrong, so each one is checked against the code before
   anything is changed, and a wrong comment gets a short reply saying why.
